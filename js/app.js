@@ -293,7 +293,7 @@ const Store={
 
 /* ---------- state ---------- */
 const S={
-  cfg:{gyms:[],defaultGymId:null,restSec:120},
+  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true},
   exLib:exLoad({}), exV:0, exLegacy:null, templates:{}, months:{}, body:{},
   bk:{last:null,points:[]}, // config/backup: datum poslední zálohy do souboru + body obnovy
   active:Store.loadActive(),
@@ -362,7 +362,7 @@ const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
 const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
 /* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
 function cfgNorm(c){
-  c=Object.assign({gyms:[],defaultGymId:null,restSec:120},c&&typeof c==="object"?c:{});
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true},c&&typeof c==="object"?c:{});
   c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
   return c;
 }
@@ -706,7 +706,7 @@ function startWorkout(tplId){
   const t=tplId&&S.templates[tplId];
   const d={mode:"active",id:null,title:t?t.name:defaultTitle(),gymId,start:Date.now(),tplId:tplId||null,ex:[]};
   if(t)for(const it of t.items||[])d.ex.push(exEntryFor(it.exId,gymId,it.sets));
-  S.active=d;saveActive();S.restEnd=null;go("train");
+  S.active=d;saveActive();restStop();go("train");
 }
 /* ---------- CVIČIT ZNOVU (F2-01) ----------
    Nový trénink podle tréninku z historie: stejný název a cviky, počet a druh sérií z něj,
@@ -730,7 +730,7 @@ function startAgain(){
   const t=w.tplId&&S.templates[w.tplId];
   const d={mode:"active",id:null,title:w.title,gymId,start:Date.now(),tplId:t?w.tplId:null,again:true,ex:[]};
   for(const e of againEx(w)){const x=exEntryFor(e.exId,gymId,e.sets);if(e.note&&gymId===w.gymId)x.note=e.note;d.ex.push(x)}
-  again=null;S.selGym=gymId;S.active=d;saveActive();S.restEnd=null;closeSheet();go("train");
+  again=null;S.selGym=gymId;S.active=d;saveActive();restStop();closeSheet();go("train");
 }
 function defaultTitle(){const h=new Date().getHours();return h<11?"Ranní trénink":h<17?"Odpolední trénink":"Večerní trénink"}
 const END_PAD=3*60000; // pár minut po poslední sérii
@@ -740,7 +740,7 @@ function finEndValue(d){const el=document.getElementById("fin-end");if(!el||!el.
 function finInfo(d,end,lastAt){return 'Délka <b>'+fmtDur(end-d.start)+'</b>'+(lastAt?' · poslední série v '+fmtTime(lastAt)+', navrženo +3 min':' · bez časů sérií, navržen aktuální čas')}
 function durLabel(w){const dur=fmtDur((w.end||w.start)-w.start);return w.endOrig?'<span title="Délka upravena ručně, původně '+fmtDur(w.endOrig-w.start)+'">'+dur+' <span class="edited">✎ upraveno</span></span>':'<span>'+dur+'</span>'}
 function curDraft(){return S.route==="edit"?S.editDraft:S.active}
-function touchDraft(){const d=curDraft();if(d&&d.mode==="active")saveActive();}
+function touchDraft(){const d=curDraft();if(d&&d.mode==="active"){saveActive();if(S.restEnd&&!S.restFired)restPost()}} // restPost: aktuální „Další:“ v oznámení
 
 function vEditor(d){
   const mode=d.mode;
@@ -1167,7 +1167,7 @@ function vSettings(){
   h+='</div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
-  h+='<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card row"><span class="grow">Výchozí časovač</span><div class="seg">'+[60,90,120,150,180].map(s=>'<button data-act="restSec" data-v="'+s+'" aria-pressed="'+(S.cfg.restSec===s)+'">'+fmtClock(s)+'</button>').join("")+'</div></div></section>';
+  h+=restSettings();
   h+=versionSettings();
   h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
   h+=backupSettings();
@@ -1349,25 +1349,118 @@ function openSheet(title,body,foot,noanim,nav){
 function closeSheet(){document.getElementById("sheetRoot").innerHTML="";document.body.style.overflow="";sheetNav=null}
 function confirmSheet(title,text,btn,act,v){openSheet(title,'<p style="margin:0">'+text+'</p>','<button class="btn grow" data-act="closeSheet">Zrušit</button><button class="btn primary grow" data-act="'+act+'" data-v="'+esc(v||"")+'">'+esc(btn)+'</button>')}
 
-/* ---------- rest timer ---------- */
-let audioCtx=null;
-function beep(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();[0,0.25,0.5].forEach(t=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;g.gain.value=0.15;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+t);o.stop(audioCtx.currentTime+t+0.15)})}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+/* Nastavení → Odpočinek mezi sériemi */
+function restSettings(){
+  const c=S.cfg,ns=notifState();
+  let h='<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card stack">';
+  h+='<div class="stack" style="gap:6px"><span>Výchozí časovač</span><div class="seg seg-wide">'+[60,90,120,150,180].map(s=>'<button data-act="restSec" data-v="'+s+'" aria-pressed="'+(c.restSec===s)+'">'+fmtClock(s)+'</button>').join("")+'</div></div>';
+  h+='<div class="stack" style="gap:6px"><span>Na konci pauzy</span><div class="seg seg-wide">'+[["both","Zvuk i vibrace"],["sound","Zvuk"],["vib","Vibrace"]].map(([k,l])=>'<button data-act="restAlert" data-v="'+k+'" aria-pressed="'+(c.restAlert===k)+'">'+l+'</button>').join("")+'</div></div>';
+  h+='<label class="switch"><input type="checkbox" data-act="restOver" '+(c.restOver?"checked":"")+'><span><b>Počítat přečas</b><br><span class="xs muted">Po konci pauzy lišta zůstane a ukazuje, jak dlouho už odpočíváš (+0:25), dokud neodškrtneš další sérii.</span></span></label>';
+  h+='<label class="switch"><input type="checkbox" data-act="restNotify" '+(c.restNotify?"checked":"")+(ns==="none"?" disabled":"")+'><span><b>Oznámení na pozadí</b><br><span class="xs muted">Když je appka na pozadí nebo máš zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. Zvuk a vibraci oznámení určuje nastavení oznámení v Androidu.</span></span></label>';
+  if(c.restNotify){
+    if(ns==="none")h+='<div class="xs muted">Tento prohlížeč oznámení nepodporuje.</div>';
+    else if(ns==="denied")h+='<div class="xs muted">Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).</div>';
+    else if(ns==="default")h+='<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
+    else h+='<div class="row"><span class="grow xs muted">Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.</span><button class="btn sm" data-act="notifTest">Vyzkoušet</button></div>';
+    }
+  return h+'</div></section>';
+}
+
+/* ---------- odpočinek mezi sériemi (F1-04) ----------
+   Časovač se počítá z času konce (S.restEnd), ne z odtikaných sekund, takže nevadí,
+   že Chrome appku na pozadí uspí. Stav je uložený v Local "rest" ({end,total,fired}),
+   přežije zavření appky i automatickou aktualizaci; smaže ho restStop().
+   Konec pauzy:
+   - appka je na očích celou dobu → pípnutí / vibrace podle S.cfg.restAlert,
+   - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
+     (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
+   S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série. */
+const REST_VIB=[700,300,700], REST_OVER_MAX=15*60; // 2 dlouhé vibrace; přečas zmizí po 15 min
+let audioCtx=null, visibleSince=document.hidden?Infinity:Date.now();
+{const r=Local.get("rest",null);if(r&&r.end>0){S.restEnd=r.end;S.restTotal=r.total||120;S.restFired=!!r.fired}}
+function audioUnlock(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume()}catch(e){}}
+function beep(){
+  const m=S.cfg.restAlert;
+  if(m!=="vib")try{audioUnlock();[0,0.25,0.5].forEach(t=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;g.gain.value=0.15;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+t);o.stop(audioCtx.currentTime+t+0.15)})}catch(e){}
+  if(m!=="sound")try{navigator.vibrate&&navigator.vibrate(REST_VIB)}catch(e){}
+}
+/* oznámení: podporuje prohlížeč / stav povolení ("granted", "denied", "default", "none") */
+const notifState=()=>("Notification" in window)&&("serviceWorker" in navigator)?Notification.permission:"none";
+const REST_TAG="rest-"+(TEST_PR?"pr"+TEST_PR:"main");
+/* co je na řadě po pauze: první nehotová série za naposledy odškrtnutou, jinak kdekoli */
+function restNext(){
+  const d=S.active;if(!d)return "";
+  let li=-1,lj=-1,la=0;
+  d.ex.forEach((e,i)=>e.sets.forEach((s,j)=>{if(s.done&&(s.at||0)>=la){la=s.at||0;li=i;lj=j}}));
+  const all=[];d.ex.forEach((e,i)=>{let wn=0;e.sets.forEach((s,j)=>{const n=s.t==="n"?++wn:0;if(!s.done)all.push({i,j,e,s,n})})});
+  const x=all.find(a=>a.i>li||(a.i===li&&a.j>lj))||all[0];
+  if(!x)return "Všechny série jsou hotové";
+  return "Další: "+exName(x.e.exId)+" · "+(x.s.t==="n"?x.n+". série":TYPE_NAME[x.s.t].toLowerCase()+" série");
+}
+/* předá service workeru, kdy má ukázat oznámení (nebo ho zruší) */
+function restPost(){
+  if(notifState()==="none")return;
+  const on=S.restEnd&&!S.restFired&&S.active&&S.cfg.restNotify&&notifState()==="granted";
+  const msg=on?{type:"rest",end:S.restEnd,tag:REST_TAG,title:"Odpočinek skončil",body:restNext(),vib:S.cfg.restAlert!=="sound"?REST_VIB:null}:{type:"rest",tag:REST_TAG};
+  navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage(msg)).catch(()=>{});
+}
+/* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo, kdy byla appka skrytá.
+   Jen pro vývoj: vede se a ukazuje (Nastavení → Verze aplikace) jen v testovací verzi PR a lokálně, ve vydané ne. */
+const DEV=!!TEST_PR||BUILD.kanal==="lokal";
+const REST_LOG="wdlog-"+(TEST_PR?"pr"+TEST_PR:"main");
+async function restLogRead(){try{const r=await (await caches.open(REST_LOG)).match("log");return r?await r.json():[]}catch(e){return []}}
+async function restLog(txt){if(!DEV||!window.caches)return;try{const a=await restLogRead();a.unshift({at:Date.now(),txt});await (await caches.open(REST_LOG)).put("log",new Response(JSON.stringify(a.slice(0,12))))}catch(e){}}
+async function sheetRestLog(){
+  const a=await restLogRead();
+  openSheet("Záznam oznámení",'<div class="xs muted" style="margin-bottom:8px">Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.</div>'+(a.length?'<div class="stack" style="gap:4px">'+a.map(x=>'<div class="small"><b class="num">'+esc(new Date(x.at).toLocaleTimeString("cs-CZ"))+'</b> '+esc(x.txt)+'</div>').join("")+'</div>':'<div class="muted small">Zatím nic.</div>'),'<button class="btn grow" data-act="restLogClear">Smazat záznam</button><button class="btn primary grow" data-act="closeSheet">Zavřít</button>');
+}
+function restClearNotif(){if(notifState()!=="none")navigator.serviceWorker.ready.then(r=>r.getNotifications({tag:REST_TAG})).then(ns=>ns.forEach(n=>n.close())).catch(()=>{})}
+/* zkouška z Nastavení: oznámení za 10 s, i když je appka na očích */
+function restTest(){navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage({type:"rest",end:Date.now()+10000,tag:REST_TAG+"-test",always:true,title:"Zkouška oznámení",body:"Takhle tě appka upozorní na konec pauzy.",vib:S.cfg.restAlert!=="sound"?REST_VIB:null})).catch(()=>{});toast("Oznámení přijde za 10 s")}
+function notifAsk(){if(notifState()!=="default")return;Local.set("notifAsked",true);Notification.requestPermission().then(()=>{restPost();scheduleRender()}).catch(()=>{})}
+function restSave(post){Local.set("rest",S.restEnd?{end:S.restEnd,total:S.restTotal,fired:!!S.restFired}:null);if(post!==false)restPost()}
+function restStart(){
+  audioUnlock(); // klepnutí = povolení zvuku na později
+  S.restTotal=S.cfg.restSec||120;S.restEnd=Date.now()+S.restTotal*1000;S.restFired=false;
+  if(S.cfg.restNotify&&notifState()==="default"&&!Local.get("notifAsked",false)){ // jednou, pak jen v Nastavení
+    notifAsk();
+  }
+  restSave();renderRest();
+}
+function restStop(){S.restEnd=null;S.restFired=false;restSave();renderRest()}
 function renderRest(){
   const el=document.getElementById("rest");
   if(!S.restEnd||!S.active){el.hidden=true;return}
-  const left=(S.restEnd-Date.now())/1000;
+  const left=(S.restEnd-Date.now())/1000,over=left<=0;
   el.hidden=false;
-  el.innerHTML='<div class="rest-in"><div class="bar" id="restBar" style="width:'+Math.max(0,left/S.restTotal*100)+'%"></div><b id="restClock">'+fmtClock(left)+'</b><span>Odpočinek</span><button data-act="restAdj" data-v="-15">−15</button><button data-act="restAdj" data-v="15">+15</button><button data-act="restSkip">Přeskočit</button></div>';
+  el.innerHTML='<div class="rest-in'+(over?' over':'')+'">'+(over?'':'<div class="bar" id="restBar" style="width:'+Math.max(0,left/S.restTotal*100)+'%"></div>')+'<b id="restClock">'+restClock(left)+'</b><span>'+(over?'Přečas':'Odpočinek')+'</span>'+
+    (over?'<button data-act="restSkip">Zavřít</button>':'<button data-act="restAdj" data-v="-15">−15</button><button data-act="restAdj" data-v="15">+15</button><button data-act="restSkip">Přeskočit</button>')+'</div>';
 }
-setInterval(()=>{
+const restClock=left=>left>0?fmtClock(left):"+"+fmtClock(-left);
+function restTick(){
   document.querySelectorAll("[data-elapsed]").forEach(e=>{const d=curDraft();if(d)e.textContent=fmtClock((Date.now()-d.start)/1000)});
-  if(S.restEnd){
-    const left=(S.restEnd-Date.now())/1000;
-    if(left<=0){S.restEnd=null;beep();renderRest();toast("Odpočinek skončil");return}
-    const c=document.getElementById("restClock"),b=document.getElementById("restBar");
-    if(c)c.textContent=fmtClock(left);if(b)b.style.width=Math.max(0,left/S.restTotal*100)+"%";
+  if(!S.restEnd||!S.active)return;
+  const left=(S.restEnd-Date.now())/1000;
+  if(left<=0&&!S.restFired){
+    // pípnout jen tehdy, když je appka na očích už od doby před koncem pauzy; jinak upozornilo oznámení
+    const seen=!document.hidden&&visibleSince<=S.restEnd;
+    if(seen){beep();setTimeout(restClearNotif,1500)}else if(!document.hidden&&!(S.cfg.restNotify&&notifState()==="granted"))toast("Odpočinek skončil");
+    S.restFired=true;
+    // service workeru nic neposílat: oznámení na pozadí si hlídá sám (zrušení by ho mohlo předběhnout)
+    if(!S.cfg.restOver){if(seen)toast("Odpočinek skončil");S.restEnd=null;S.restFired=false;restSave(false);renderRest();return}
+    restSave(false);renderRest();return;
   }
-},500);
+  if(left<=0&&-left>REST_OVER_MAX){restStop();return}
+  const c=document.getElementById("restClock"),b=document.getElementById("restBar");
+  if(left<=0&&!document.querySelector(".rest-in.over")){renderRest();return}
+  if(c)c.textContent=restClock(left);if(b)b.style.width=Math.max(0,left/S.restTotal*100)+"%";
+}
+setInterval(restTick,500);
+document.addEventListener("visibilitychange",()=>{
+  if(S.restEnd&&S.active&&!S.restFired)restLog(document.hidden?"appka na pozadí / zhasnutý displej":"appka zpět na očích");
+  if(document.hidden){visibleSince=Infinity;return}
+  visibleSince=Date.now();restClearNotif();restTick(); // po návratu hned správný čas, staré oznámení pryč
+});
 
 /* ---------- charts ---------- */
 const CH={};let chN=0;
@@ -1475,7 +1568,7 @@ document.addEventListener("click",ev=>{
         if(hasReps(kind)&&!(num(s.reps)>0)){toast("Zadej počet opakování.");break}
         if(isTimed(kind)&&!(parseSec(s.sec)>0)){toast("Zadej čas (např. 45 nebo 1:30).");break}
         if(kind==="dist"&&!(num(s.km)>0)){toast("Zadej vzdálenost.");break}
-        s.done=true;s.at=Date.now();S.restTotal=S.cfg.restSec||120;S.restEnd=Date.now()+S.restTotal*1000;
+        s.done=true;s.at=Date.now();if(d===S.active)restStart(); // v úpravě staršího tréninku bez časovače
         {const lr=liveRecords(d,i);const t=lr.sets[j];if(t&&t.length)toast("🏅 Nový rekord: "+t.map(recLow).join(", "))}
       }else{s.done=false;delete s.at}
       touchDraft();scheduleRender();break}
@@ -1540,8 +1633,8 @@ document.addEventListener("click",ev=>{
     case "statsRange":S.statsRange=v;lsSet("statsRange",v);scheduleRender();break;
     case "sumPeriod":S.sumPeriod=v;scheduleRender();break;
     case "closeSheet":closeSheet();break;
-    case "restAdj":S.restEnd+=(+v)*1000;S.restTotal=Math.max(S.restTotal,(S.restEnd-Date.now())/1000);renderRest();break;
-    case "restSkip":S.restEnd=null;renderRest();break;
+    case "restAdj":if(!S.restEnd)break;S.restEnd+=(+v)*1000;S.restTotal=Math.max(S.restTotal,(S.restEnd-Date.now())/1000);restSave();renderRest();break;
+    case "restSkip":restStop();break;
     case "finish":{
       const ex=draftToWorkout(d,true);
       const undone=d.ex.reduce((a,e)=>a+e.sets.filter(s=>!s.done).length,0);
@@ -1560,12 +1653,12 @@ document.addEventListener("click",ev=>{
       if(Math.abs(end-sug)>=60000)w.endOrig=sug;
       const id=uid("w");saveWorkout(id,w,null);
       if(upd&&upd.checked){const items=Object.assign({},S.templates);items[d.tplId]=Object.assign({},items[d.tplId],{items:ex.map(e=>({exId:e.exId,sets:e.sets.map(tplSet)}))});put("config/templates",{items})}
-      S.active=null;S.restEnd=null;saveActive();closeSheet();
+      S.active=null;saveActive();restStop();closeSheet();
       toast("Trénink uložen");go("hist");
       sheetWorkout(Object.assign({id,mk:monthKey(w.start)},w),true);
       break}
     case "discard":confirmSheet("Zahodit trénink?","Rozdělaný trénink se smaže a neuloží.","Zahodit","discardOk");break;
-    case "discardOk":S.active=null;S.restEnd=null;saveActive();closeSheet();go("train");break;
+    case "discardOk":S.active=null;saveActive();restStop();closeSheet();go("train");break;
     case "edCancel":navBack();break;
     case "edDiscard":closeSheet();navBack(true);break;
     case "saveEdit":{
@@ -1637,6 +1730,13 @@ document.addEventListener("click",ev=>{
     case "gymMove":{const cfg=JSON.parse(JSON.stringify(S.cfg)),a=cfg.gyms,k=a.findIndex(g=>g.id===v),n=k+(+t.dataset.d);
       if(k<0||n<0||n>=a.length)break;a.splice(n,0,a.splice(k,1)[0]);put("config/main",cfg);break}
     case "restSec":{const cfg=Object.assign({},S.cfg,{restSec:+v});put("config/main",cfg);break}
+    case "restAlert":put("config/main",Object.assign({},S.cfg,{restAlert:v}));restPost();break;
+    case "restOver":put("config/main",Object.assign({},S.cfg,{restOver:t.checked}));break;
+    case "restNotify":put("config/main",Object.assign({},S.cfg,{restNotify:t.checked}));if(t.checked)notifAsk();restPost();break;
+    case "notifAsk":notifAsk();break;
+    case "notifTest":restTest();break;
+    case "restLog":sheetRestLog();break;
+    case "restLogClear":if(window.caches)caches.delete(REST_LOG).then(sheetRestLog);break;
     case "theme":setTheme(v);scheduleRender();break;
     case "export":doExport();break;
     case "importOk":doImport(v);break;
@@ -1960,6 +2060,7 @@ function versionSettings(){
     h+='<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="'+esc(MAIN_URL)+'">Otevřít vydanou verzi</a>';
   }else if(S.testData===undefined)scanTestData();
   else if(S.testData.n)h+='<div class="row"><span class="small grow">Data testovacích verzí v telefonu: '+S.testData.n+' '+plural(S.testData.n,"verze","verze","verzí")+' (≈ '+fmtSize(S.testData.bytes)+')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
+  if(DEV&&window.caches)h+='<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>'; // jen pro vývoj (F1-04)
   return h+'</div></section>';
 }
 async function checkUpdate(){
@@ -1987,7 +2088,7 @@ async function deleteTestData(){
   try{
     for(const k of testKeys())localStorage.removeItem(k);
     for(const n of await testDbs())await new Promise(r=>{const q=indexedDB.deleteDatabase(n);q.onsuccess=q.onerror=q.onblocked=()=>r()});
-    if(window.caches)for(const k of await caches.keys())if(/^wd-pr\d+-/.test(k))await caches.delete(k);
+    if(window.caches)for(const k of await caches.keys())if(/^wd-pr\d+-|^wdlog-pr\d+$/.test(k))await caches.delete(k); // i záznam oznámení (F1-04)
     if(navigator.serviceWorker)for(const r of await navigator.serviceWorker.getRegistrations())if(/\/pr-\d+\/$/.test(new URL(r.scope).pathname))await r.unregister();
     toast("Data testovacích verzí smazána");
   }catch(e){toast("Nepodařilo se smazat všechno.")}
@@ -2047,5 +2148,6 @@ render();
   const ok=await Store.init(IndexedDbBackend(),applyDoc,()=>{updSync();scheduleRender();autoPoint();migrateEx()});
   if(ok){pointsApi=LocalPoints;scheduleRender();autoPoint();migrateEx()}
   if(ok&&!S.active){const a=await Store.fetchActive();if(a){S.active=a;Local.set("active",a);scheduleRender()}}
+  if(S.restEnd>Date.now()&&!S.restFired)restPost(); // po znovuotevření appky znovu naplánovat oznámení (F1-04)
 })();
 })();

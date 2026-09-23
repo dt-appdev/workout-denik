@@ -86,3 +86,64 @@ self.addEventListener("fetch", event => {
     return res;
   })());
 });
+
+/* Oznámení na konci pauzy (F1-04). Appka pošle zprávu {type:"rest", tag, end, title, body, vib, always};
+   bez "end" = zrušit. Web neumí naplánovat oznámení do systému, proto worker čeká sám:
+   waitUntil ho drží vzhůru, Chrome to dovolí nejvýš asi 5 minut (každá nová zpráva lhůtu obnoví).
+   Když je appka zrovna na očích (viditelná a aktivní), oznámení se neukáže (pípne appka sama),
+   kromě zkoušky (always). V testovací verzi PR (a lokálně) se průběh zapisuje
+   do záznamu (cache "wdlog-…"), appka ho ukáže v Nastavení → Verze aplikace. */
+const restTimers = new Map();   // tag → {t: časovač, done: ukončí waitUntil}
+const LOG = "wdlog-" + (PR ? "pr" + PR : "main");
+const DEV = !!PR || B.kanal === "lokal";   // záznam jen v testovací verzi PR a lokálně, ve vydané ne
+async function restLog(txt) {
+  if (!DEV) return;
+  try {
+    const c = await caches.open(LOG), r = await c.match("log");
+    const a = r ? await r.json() : [];
+    // opakované přeplánování (±15 s) za sebou = jen jeden řádek
+    if (a[0] && txt.startsWith("naplánováno") && a[0].txt.startsWith("naplánováno") && Date.now() - a[0].at < 15000) a.shift();
+    a.unshift({ at: Date.now(), txt });
+    await c.put("log", new Response(JSON.stringify(a.slice(0, 12))));
+  } catch (e) {}
+}
+self.addEventListener("message", event => {
+  const m = event.data || {};
+  if (m.type !== "rest" || !m.tag) return;
+  const old = restTimers.get(m.tag);
+  if (old) { clearTimeout(old.t); old.done(); restTimers.delete(m.tag); }
+  if (!m.end) { if (old) restLog("zrušeno (konec byl " + new Date(old.end).toLocaleTimeString("cs-CZ") + ")"); return; }
+  const plan = new Date(m.end).toLocaleTimeString("cs-CZ");
+  event.waitUntil(new Promise(done => {
+    const r = { done, end: m.end };
+    r.t = setTimeout(async () => {
+      try {
+        const late = Math.round((Date.now() - m.end) / 1000);
+        const wins = (await self.clients.matchAll({ type: "window", includeUncontrolled: true })).filter(c => c.url.startsWith(self.registration.scope));
+        const seen = wins.some(c => c.visibilityState === "visible" && c.focused);
+        const st = wins.map(c => c.visibilityState + (c.focused ? "+aktivní" : "")).join(", ") || "zavřená";
+        if (m.always || !seen) {
+          const o = { body: m.body || "", tag: m.tag, renotify: true, icon: "icons/icon-192.png" };
+          if (m.vib) o.vibrate = m.vib;
+          await self.registration.showNotification(m.title || "Odpočinek skončil", o);
+          await restLog("konec " + plan + ": oznámení zobrazeno" + (late > 1 ? ", zpoždění " + late + " s" : "") + " (appka: " + st + ")");
+        } else await restLog("konec " + plan + ": appka na očích, bez oznámení (appka: " + st + ")");
+      } catch (e) { await restLog("konec " + plan + ": chyba " + (e && e.message || e)); }
+      if (restTimers.get(m.tag) === r) restTimers.delete(m.tag);
+      done();
+    }, Math.max(0, m.end - Date.now()));
+    restTimers.set(m.tag, r);
+    if (!old || old.end !== m.end) restLog("naplánováno na " + plan + (m.always ? " (zkouška)" : ""));
+  }));
+});
+
+// klepnutí na oznámení = otevřít appku (už otevřenou jen přepnout do popředí)
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const w = wins.find(c => c.url.startsWith(self.registration.scope));
+    if (w) return w.focus();
+    return self.clients.openWindow(self.registration.scope);
+  })());
+});
