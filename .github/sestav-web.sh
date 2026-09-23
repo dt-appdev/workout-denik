@@ -1,22 +1,29 @@
 #!/usr/bin/env bash
-# Sestaví celý web pro GitHub Pages do složky $1 (F0-04):
-#   kořen  = vydaná verze z větve main,
-#   pr-N/  = testovací verze každého otevřeného PR (jen větve z tohoto repa, ne z forků).
+# Sestaví web pro GitHub Pages (F0-04). Dva režimy:
+#   sestav-web.sh vydana <složka>     vydaná verze z větve main (web tohoto repa)
+#   sestav-web.sh testovaci <složka>  testovací verze otevřených PR do <složka>/pr-N/
+#                                     (web repa <repo>-test, jen větve z tohoto repa, ne z forků)
+# Testovací verze leží v jiném repu, protože adresa pod …/workout-denik/ patří
+# nainstalované vydané appce a Android by testovací verzi nedovolil nainstalovat zvlášť.
+#
 # Do každé kopie zapíše js/verze.js (kanál, PR, větev, commit, čas nasazení).
 # Testovací kopie dostane oranžové ikony (icons/test/) a název „Workout TEST #N".
-#
 # Čas nasazení se převezme z právě zveřejněného webu, pokud se commit dané kopie
-# nezměnil. Jinak by každé nasazení (třeba jiného PR) změnilo verze.js všech kopií
-# a appka v telefonu by se zbytečně aktualizovala.
+# nezměnil, jinak by se appka v telefonu zbytečně aktualizovala.
 #
 # Potřebuje git, jq, curl a gh (s GH_TOKEN). Proměnné:
-#   SITE_URL  adresa zveřejněného webu (např. https://dt-appdev.github.io/workout-denik/)
-#   PR_JSON   seznam PR místo volání gh (pro zkoušku na počítači), formát jako
-#             gh pr list --json number,title,headRefName,isCrossRepository
-#   MAIN_REF  co nasadit jako vydanou verzi (výchozí: origin/main po stažení)
+#   SITE_URL     adresa zveřejněného webu, do kterého se sestavuje (pro převzetí času)
+#   VYDANA_URL   adresa vydané verze (odkaz „Vydaná verze" v testovací verzi)
+#   PR_JSON      seznam PR místo volání gh (pro zkoušku na počítači), formát jako
+#                gh pr list --json number,title,headRefName,isCrossRepository
+#   MAIN_REF     co nasadit jako vydanou verzi (výchozí: origin/main po stažení)
 set -euo pipefail
 
-OUT=${1:?Použití: sestav-web.sh <výstupní složka>}
+MODE=${1:-}
+OUT=${2:-}
+if [ "$MODE" != vydana ] && [ "$MODE" != testovaci ] || [ -z "$OUT" ]; then
+  echo "Použití: sestav-web.sh vydana|testovaci <výstupní složka>" >&2; exit 2
+fi
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 rm -rf "$OUT"
 mkdir -p "$OUT"
@@ -47,21 +54,26 @@ write_version() {
 }
 
 # --- vydaná verze (main) ---
-if [ -z "${MAIN_REF:-}" ]; then
-  git fetch -q --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
-  MAIN_REF=origin/main
+if [ "$MODE" = vydana ]; then
+  if [ -z "${MAIN_REF:-}" ]; then
+    git fetch -q --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+    MAIN_REF=origin/main
+  fi
+  sha=$(git rev-parse --short=7 "$MAIN_REF")
+  export_tree "$MAIN_REF" "$OUT"
+  write_version "$OUT" "$(jq -nc --arg c "$sha" --arg t "$(build_time "" "$sha")" \
+    '{kanal:"main",pr:0,nazev:"",vetev:"main",commit:$c,cas:$t}')"
+  echo "main: $sha"
+  exit 0
 fi
-sha=$(git rev-parse --short=7 "$MAIN_REF")
-export_tree "$MAIN_REF" "$OUT"
-write_version "$OUT" "$(jq -nc --arg c "$sha" --arg t "$(build_time "" "$sha")" \
-  '{kanal:"main",pr:0,nazev:"",vetev:"main",commit:$c,cas:$t}')"
-echo "main: $sha"
 
 # --- testovací verze otevřených PR ---
 if [ -z "${PR_JSON:-}" ]; then
   PR_JSON=$(gh pr list --repo "${GITHUB_REPOSITORY:?}" --state open --limit 100 \
     --json number,title,headRefName,isCrossRepository)
 fi
+: > "$OUT/.nojekyll"
+list=""
 while read -r pr; do
   [ -n "$pr" ] || continue
   n=$(jq -r .number <<<"$pr")
@@ -78,7 +90,22 @@ while read -r pr; do
   cp "$d"/icons/test/* "$d/icons/"
   jq --arg n "$n" '.name="Workout TEST #"+$n | .short_name="TEST #"+$n | .theme_color="#f59f00"' \
     "$d/manifest.webmanifest" > "$d/manifest.tmp" && mv "$d/manifest.tmp" "$d/manifest.webmanifest"
-  write_version "$d" "$(jq -c --arg c "$sha" --arg t "$(build_time "pr-$n/" "$sha")" \
-    '{kanal:"pr",pr:.number,nazev:.title,vetev:.headRefName,commit:$c,cas:$t}' <<<"$pr")"
+  write_version "$d" "$(jq -c --arg c "$sha" --arg t "$(build_time "pr-$n/" "$sha")" --arg v "${VYDANA_URL:-}" \
+    '{kanal:"pr",pr:.number,nazev:.title,vetev:.headRefName,commit:$c,cas:$t,vydana:$v}' <<<"$pr")"
+  list+=$(jq -r '"<li><a href=\"pr-\(.number)/\">PR #\(.number)</a> · \(.title | @html)</li>"' <<<"$pr")
   echo "pr-$n: $sha"
 done < <(jq -c '.[] | select(.isCrossRepository | not)' <<<"$PR_JSON")
+
+# rozcestník testovacích verzí
+cat > "$OUT/index.html" <<EOF
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Workout deník – testovací verze</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:560px;margin:24px auto;padding:0 16px}li{margin:8px 0}</style>
+</head><body>
+<h1>Testovací verze</h1>
+<p>Testovací verze otevřených pull requestů. Každá má vlastní data, oddělená od vydané verze.</p>
+<ul>${list:-<li>Žádný otevřený PR.</li>}</ul>
+<p><a href="${VYDANA_URL:-../workout-denik/}">Vydaná verze</a></p>
+</body></html>
+EOF

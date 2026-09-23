@@ -6,13 +6,13 @@
    verze, stáhne se a staré soubory se smažou. VERSION se už ručně nemění.
    Nový soubor appky přidej do FILES, jinak nebude fungovat offline.
 
-   Vydaná verze (…/workout-denik/) a testovací verze PR (…/workout-denik/pr-12/)
+   Vydaná verze (…/workout-denik/) a testovací verze PR (…/workout-denik-test/pr-12/)
    běží na stejné doméně a sdílejí úložiště cache. Každá proto maže jen své
-   cache (předpona wd-main- / wd-pr12-) a vydaná verze neobsluhuje adresy pr-N. */
+   cache (předpona wd-main- / wd-pr12-). */
 importScripts("js/verze.js");
 const B = self.APP_BUILD || {};
 const VERSION = B.commit ? B.commit + "-" + B.cas : "lokal";
-const SCOPE = new URL(self.registration.scope).pathname;   // "/workout-denik/" nebo "/workout-denik/pr-12/"
+const SCOPE = new URL(self.registration.scope).pathname;   // "/workout-denik/" nebo "/workout-denik-test/pr-12/"
 const PR = (SCOPE.match(/\/pr-(\d+)\/$/) || [])[1];
 const PREFIX = "wd-" + (PR ? "pr" + PR : "main") + "-";
 const CACHE = PREFIX + VERSION;
@@ -69,10 +69,7 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const req = event.request;
-  const url = new URL(req.url);
-  if (req.method !== "GET" || url.origin !== self.location.origin) return;
-  // testovací verze PR (pr-12/…) obsluhuje její vlastní service worker, ne vydaná verze
-  if (!PR && url.pathname.startsWith(SCOPE) && /^pr-\d+(\/|$)/.test(url.pathname.slice(SCOPE.length))) return;
+  if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     // otevření appky (i s ?parametry) = vždy index.html z cache, funguje i bez signálu

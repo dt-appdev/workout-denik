@@ -12,7 +12,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Jen řešení zdarma, žádné placené služby, API ani knihovny.
 - Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí. Nasazuje
   GitHub Actions (`.github/workflows/nasazeni.yml`, F0-04): `main` = vydaná verze
-  v kořeni webu, každý otevřený PR = testovací verze v `…/workout-denik/pr-N/`.
+  v kořeni webu, každý otevřený PR = testovací verze v `…/workout-denik-test/pr-N/`
+  (web samostatného repa `workout-denik-test`, aby šla v Androidu nainstalovat
+  vedle vydané appky; adresa pod `…/workout-denik/` patří nainstalované appce).
 - Cílová platforma: Android, Chrome, instalace jako PWA. Musí fungovat offline.
 - Uživatelské rozhraní česky.
 - Data uživatele v repu nikdy nejsou, zůstávají jen v telefonu (IndexedDB).
@@ -48,8 +50,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
-| `.github/workflows/nasazeni.yml` | GitHub Actions: nasazení na Pages při změně v `main` a v PR, komentář s odkazem na testovací verzi v PR. |
-| `.github/sestav-web.sh` | Sestaví celý web: `main` do kořene, otevřené PR do `pr-N/`, zapíše `js/verze.js`. |
+| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR. |
+| `.github/sestav-web.sh` | Sestaví web: `vydana` = `main`, `testovaci` = otevřené PR do `pr-N/` + rozcestník; zapíše `js/verze.js`. |
+| `.github/komentare.sh` | Komentář s odkazem na testovací verzi v každém nasazeném PR. |
 | `manifest.webmanifest` | Název, ikony a barvy pro instalaci PWA. |
 | `icons/` | Ikony appky (PNG 192/512, maskable 512, apple-touch, SVG). `icons/test/` = oranžové ikony TEST pro testovací verze. |
 | `fonts/` | Písma Barlow a Barlow Condensed (OFL), lokálně kvůli offline. |
@@ -126,11 +129,14 @@ po úpravě kódu drží staré soubory. Používej čistý profil prohlížeče
 kontext v Playwrightu) nebo v DevTools „Update on reload".
 
 Celý web včetně testovací verze jde sestavit i lokálně (bez `gh`, PR se zadají
-ručně), např. do složky `/tmp/www/workout-denik` a pak servírovat `/tmp/www`:
+ručně), do složek `/tmp/www/workout-denik` a `/tmp/www/workout-denik-test`
+a pak servírovat `/tmp/www`:
 
 ```
 PR_JSON='[{"number":99,"title":"Zkouška","headRefName":"vetev","isCrossRepository":false}]' \
-  bash .github/sestav-web.sh /tmp/www/workout-denik
+  VYDANA_URL=http://localhost:8000/workout-denik/ \
+  bash .github/sestav-web.sh testovaci /tmp/www/workout-denik-test
+bash .github/sestav-web.sh vydana /tmp/www/workout-denik
 ```
 
 Skript bere větve z `origin` (`main` a `refs/pull/N/head`). Workflow při každém
