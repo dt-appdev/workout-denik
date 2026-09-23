@@ -136,7 +136,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restAlert`
   (`both`/`sound`/`vib`), `restOver` (přečas), `restNotify`. Oznámení na pozadí ukazuje
   service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
-  na očích; drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
+  na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
+  Záznam událostí oznámení (cache `wdlog-main` / `wdlog-prN`, píše `sw.js` i appka)
+  ukazuje Nastavení → Záznam oznámení (`sheetRestLog`).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).

@@ -1362,6 +1362,7 @@ function restSettings(){
     else if(ns==="denied")h+='<div class="xs muted">Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).</div>';
     else if(ns==="default")h+='<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
     else h+='<div class="row"><span class="grow xs muted">Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.</span><button class="btn sm" data-act="notifTest">Vyzkoušet</button></div>';
+    if(ns!=="none")h+='<button class="btn block" data-act="restLog">Záznam oznámení</button>';
   }
   return h+'</div></section>';
 }
@@ -1404,6 +1405,14 @@ function restPost(){
   const msg=on?{type:"rest",end:S.restEnd,tag:REST_TAG,title:"Odpočinek skončil",body:restNext(),vib:S.cfg.restAlert!=="sound"?REST_VIB:null}:{type:"rest",tag:REST_TAG};
   navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage(msg)).catch(()=>{});
 }
+/* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo, kdy byla appka skrytá */
+const REST_LOG="wdlog-"+(TEST_PR?"pr"+TEST_PR:"main");
+async function restLogRead(){try{const r=await (await caches.open(REST_LOG)).match("log");return r?await r.json():[]}catch(e){return []}}
+async function restLog(txt){if(!window.caches)return;try{const a=await restLogRead();a.unshift({at:Date.now(),txt});await (await caches.open(REST_LOG)).put("log",new Response(JSON.stringify(a.slice(0,12))))}catch(e){}}
+async function sheetRestLog(){
+  const a=await restLogRead();
+  openSheet("Záznam oznámení",'<div class="xs muted" style="margin-bottom:8px">Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.</div>'+(a.length?'<div class="stack" style="gap:4px">'+a.map(x=>'<div class="small"><b class="num">'+esc(new Date(x.at).toLocaleTimeString("cs-CZ"))+'</b> '+esc(x.txt)+'</div>').join("")+'</div>':'<div class="muted small">Zatím nic.</div>'),'<button class="btn grow" data-act="restLogClear">Smazat záznam</button><button class="btn primary grow" data-act="closeSheet">Zavřít</button>');
+}
 function restClearNotif(){if(notifState()!=="none")navigator.serviceWorker.ready.then(r=>r.getNotifications({tag:REST_TAG})).then(ns=>ns.forEach(n=>n.close())).catch(()=>{})}
 /* zkouška z Nastavení: oznámení za 10 s, i když je appka na očích */
 function restTest(){navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage({type:"rest",end:Date.now()+10000,tag:REST_TAG+"-test",always:true,title:"Zkouška oznámení",body:"Takhle tě appka upozorní na konec pauzy.",vib:S.cfg.restAlert!=="sound"?REST_VIB:null})).catch(()=>{});toast("Oznámení přijde za 10 s")}
@@ -1434,7 +1443,7 @@ function restTick(){
   if(left<=0&&!S.restFired){
     // pípnout jen tehdy, když je appka na očích už od doby před koncem pauzy; jinak upozornilo oznámení
     const seen=!document.hidden&&visibleSince<=S.restEnd;
-    if(seen)beep();else if(!document.hidden&&!(S.cfg.restNotify&&notifState()==="granted"))toast("Odpočinek skončil");
+    if(seen){beep();setTimeout(restClearNotif,1500)}else if(!document.hidden&&!(S.cfg.restNotify&&notifState()==="granted"))toast("Odpočinek skončil");
     S.restFired=true;
     // service workeru nic neposílat: oznámení na pozadí si hlídá sám (zrušení by ho mohlo předběhnout)
     if(!S.cfg.restOver){if(seen)toast("Odpočinek skončil");S.restEnd=null;S.restFired=false;restSave(false);renderRest();return}
@@ -1447,6 +1456,7 @@ function restTick(){
 }
 setInterval(restTick,500);
 document.addEventListener("visibilitychange",()=>{
+  if(S.restEnd&&S.active&&!S.restFired)restLog(document.hidden?"appka na pozadí / zhasnutý displej":"appka zpět na očích");
   if(document.hidden){visibleSince=Infinity;return}
   visibleSince=Date.now();restClearNotif();restTick(); // po návratu hned správný čas, staré oznámení pryč
 });
@@ -1724,6 +1734,8 @@ document.addEventListener("click",ev=>{
     case "restNotify":put("config/main",Object.assign({},S.cfg,{restNotify:t.checked}));if(t.checked)notifAsk();restPost();break;
     case "notifAsk":notifAsk();break;
     case "notifTest":restTest();break;
+    case "restLog":sheetRestLog();break;
+    case "restLogClear":if(window.caches)caches.delete(REST_LOG).then(sheetRestLog);break;
     case "theme":setTheme(v);scheduleRender();break;
     case "export":doExport();break;
     case "importOk":doImport(v);break;
@@ -2074,7 +2086,7 @@ async function deleteTestData(){
   try{
     for(const k of testKeys())localStorage.removeItem(k);
     for(const n of await testDbs())await new Promise(r=>{const q=indexedDB.deleteDatabase(n);q.onsuccess=q.onerror=q.onblocked=()=>r()});
-    if(window.caches)for(const k of await caches.keys())if(/^wd-pr\d+-/.test(k))await caches.delete(k);
+    if(window.caches)for(const k of await caches.keys())if(/^wd-pr\d+-|^wdlog-pr\d+$/.test(k))await caches.delete(k); // i záznam oznámení (F1-04)
     if(navigator.serviceWorker)for(const r of await navigator.serviceWorker.getRegistrations())if(/\/pr-\d+\/$/.test(new URL(r.scope).pathname))await r.unregister();
     toast("Data testovacích verzí smazána");
   }catch(e){toast("Nepodařilo se smazat všechno.")}
