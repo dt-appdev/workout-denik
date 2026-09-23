@@ -107,6 +107,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v `localStorage`. Stránka cviku (route `exd`, `vExDetail`) má části Popis
   a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
   (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
+- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (šipky v Nastavení, akce `gymMove`).
+  Barva je uložená v `g.col` (1–`GYM_COLORS`, CSS proměnná `--sN`), doplňuje ji
+  `cfgNorm` při načtení; nová barva přes `freeGymCol`. Barvu nikdy nepočítat z pořadí.
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
   stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
