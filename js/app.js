@@ -479,24 +479,15 @@ const draftBefore=d=>d.mode==="edit"?d.start:0;
 function draftLast(d,exId){return lastSession(exId,d.gymId,d.id,draftBefore(d))}
 /* ---------- MINULE A PŘEDVYPLNĚNÍ (F1-01) ----------
    Série se párují podle druhu: zahřívací zvlášť, ostatní (pracovní, drop set, do selhání) spolu, v pořadí.
-   Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Pořadí zdrojů:
-   odpovídající série z minula -> dnes zapsaná série nad ní (stejný druh) -> s.ph (hodnoty ze šablony u nikdy
-   necvičeného cviku) -> předvyplnění série nad ní.
-   Když minule odpovídající série nebyla, sloupec Minule ukáže „–“. */
+   Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Zdroj: odpovídající série z minula,
+   jinak s.ph (hodnoty ze šablony u nikdy necvičeného cviku). Když ani jedno není, ukáže se „–“
+   ve sloupci Minule i v políčkách (hodnoty ze série nad ní se nepřebírají). */
 const setGrp=t=>t==="w"?"w":"n";
 const HINT_F=["kg","reps","sec","km"];
-function draftSetVals(s){return {kg:num(s.kg),reps:num(s.reps),sec:parseSec(s.sec),km:num(s.km)}}
 function exHints(e,last){
   const prev={w:[],n:[]};if(last)for(const q of last.e.sets)prev[setGrp(q.t)].push(q);
-  const cnt={w:0,n:0},above={},typed={};
-  return e.sets.map(s=>{
-    const g=setGrp(s.t),p=prev[g][cnt[g]++]||null;
-    const h=p||(typed[g]&&above[g])||s.ph||above[g]||null;
-    const v=draftSetVals(s),eff={};let any=false;
-    for(const f of HINT_F){const ok=isFinite(v[f])&&s[f]!=="";if(ok)any=true;eff[f]=ok?v[f]:(h&&h[f])||0}
-    above[g]=eff;typed[g]=any;
-    return {p,h};
-  });
+  const cnt={w:0,n:0};
+  return e.sets.map(s=>{const g=setGrp(s.t),p=prev[g][cnt[g]++]||null;return {p,h:p||s.ph||null}});
 }
 function setsStr(sets,onlyWork,kind){
   kind=kind||"wr";
@@ -768,7 +759,7 @@ function vExCard(d,e,i){
   let wn=0;
   const hints=exHints(e,last);
   const fval=(s,f)=>f==="sec"?(s.sec||""):f==="km"?(s.km||""):f==="reps"?(s.reps||""):(s.kg||"");
-  const phOf=(p,f)=>{if(!p)return "";if(f==="sec")return p.sec?fmtSec(p.sec):"";if(f==="km")return String(p.km||"");if(f==="reps")return String(p.reps||"");return p.kg?fmtKg(p.kg).replace(/\s/g,""):""};
+  const phOf=(p,f)=>{if(!p)return "–";if(f==="sec")return p.sec?fmtSec(p.sec):"";if(f==="km")return String(p.km||"");if(f==="reps")return String(p.reps||"");return p.kg?fmtKg(p.kg).replace(/\s/g,""):""};
   e.sets.forEach((s,j)=>{
     const lbl=s.t==="w"?"W":s.t==="d"?"D":s.t==="f"?"F":String(++wn);
     const p=hints[j].p,hn=hints[j].h;
@@ -1461,7 +1452,7 @@ document.addEventListener("click",ev=>{
       }else{s.done=false;delete s.at}
       touchDraft();scheduleRender();break}
     case "delSet":d.ex[i].sets.splice(j,1);touchDraft();scheduleRender();break;
-    case "addSet":{const ss=d.ex[i].sets;const l=[...ss].reverse().find(s=>s.t!=="w");const n=d.mode==="template"&&l?newSetFrom({t:l.t,kg:num(l.kg),reps:num(l.reps)}):newSetFrom(l?{t:l.t}:null);ss.push(n);touchDraft();scheduleRender();break} // mimo šablonu prázdná, šedé předvyplnění z minula nebo ze série nad ní
+    case "addSet":{const ss=d.ex[i].sets;const l=[...ss].reverse().find(s=>s.t!=="w");const n=d.mode==="template"&&l?newSetFrom({t:l.t,kg:num(l.kg),reps:num(l.reps)}):newSetFrom(l?{t:l.t}:null);ss.push(n);touchDraft();scheduleRender();break} // mimo šablonu prázdná, šedé předvyplnění z minula (jinak „–“)
     case "addWarm":{const ss=d.ex[i].sets;let k=0;while(k<ss.length&&ss[k].t==="w")k++;ss.splice(k,0,{t:"w",kg:"",reps:"",done:false});touchDraft();scheduleRender();break}
     case "exMenu":{const e=d.ex[i];openSheet(exName(e.exId),'<div class="stack"><button class="btn block" data-act="exNote" data-i="'+i+'">'+(e.note||e.showNote?"Upravit poznámku":"Přidat poznámku")+'</button><button class="btn block" data-act="exReplace" data-i="'+i+'">Nahradit jiným cvikem</button><div class="grid2"><button class="btn" data-act="exUp" data-i="'+i+'" '+(i===0?"disabled":"")+'>↑ Posunout výš</button><button class="btn" data-act="exDown" data-i="'+i+'" '+(i===d.ex.length-1?"disabled":"")+'>↓ Posunout níž</button></div><button class="btn block" data-act="openEx" data-v="'+esc(e.exId)+'">Stránka cviku (popis, statistiky)</button><button class="btn block danger" data-act="exRemove" data-i="'+i+'">Odebrat cvik z tréninku</button></div>');break}
     case "exNote":d.ex[i].showNote=true;closeSheet();scheduleRender();setTimeout(()=>{const n=document.getElementById("note-"+d.ex[i].k);n&&n.focus()},60);break;
