@@ -686,6 +686,8 @@ function wVol(w){let v=0;for(const e of w.ex||[]){const k=kindOf(e.exId);for(con
 function wSets(w){let n=0;for(const e of w.ex||[])for(const s of e.sets)if(isWork(s.t))n++;return n}
 
 /* ---------- EDITOR (active / edit past / template) ---------- */
+// série do šablony z uloženého tréninku (i čas a vzdálenost)
+function tplSet(s){return {t:s.t,kg:s.kg||0,reps:s.reps||0,sec:s.sec||0,km:s.km||0}}
 function newSetFrom(s){return {t:s?s.t:"n",kg:s&&s.kg?String(s.kg):"",reps:s&&s.reps?String(s.reps):"",sec:s&&s.sec?(typeof s.sec==="string"?s.sec:fmtSec(s.sec)):"",km:s&&s.km?String(s.km):"",done:false}}
 // nový cvik v tréninku: série podle šablony, jinak podle minula v tomto fitku; hodnoty zůstávají prázdné (šedé předvyplnění, F1-01)
 function exEntryFor(exId,gymId,fromTplSets){
@@ -705,6 +707,30 @@ function startWorkout(tplId){
   const d={mode:"active",id:null,title:t?t.name:defaultTitle(),gymId,start:Date.now(),tplId:tplId||null,ex:[]};
   if(t)for(const it of t.items||[])d.ex.push(exEntryFor(it.exId,gymId,it.sets));
   S.active=d;saveActive();S.restEnd=null;go("train");
+}
+/* ---------- CVIČIT ZNOVU (F2-01) ----------
+   Nový trénink podle tréninku z historie: stejný název a cviky, počet a druh sérií z něj,
+   hodnoty jen šedě z minula v zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen ve stejném fitku.
+   Vazba na šablonu zůstane (když šablona ještě existuje), „Aktualizovat šablonu“ je ale nezaškrtnuté (d.again). */
+let again=null; // {w, gym}: otevřené okno Cvičit znovu
+const againEx=w=>(w.ex||[]).filter(e=>S.exLib[e.exId]);
+function againInfo(){
+  const w=again.w,n=(w.ex||[]).length-againEx(w).length;
+  return (again.gym!==w.gymId?'<p class="small muted" style="margin:0">Trénink byl v '+esc(gymName(w.gymId))+'. Hodnoty z minula se vezmou z vybraného fitka.</p>':'')+
+    (n?'<p class="small muted" style="margin:0">'+n+' '+plural(n,"cvik už v appce není","cviky už v appce nejsou","cviků už v appce není")+(n===1?', vynechá se.':', vynechají se.')+'</p>':'');
+}
+function sheetAgain(w){
+  again={w,gym:S.cfg.gyms.some(g=>g.id===curGym())?curGym():w.gymId};
+  const ex=againEx(w);
+  const b='<p style="margin:0">'+ex.length+' '+plural(ex.length,"cvik","cviky","cviků")+': '+esc(ex.map(e=>exName(e.exId)).join(", "))+'</p><div class="small" style="font-weight:600">Kde dnes cvičíš</div>'+gymChips("againGym",again.gym,false)+'<div class="stack" id="againInfo" style="gap:6px">'+againInfo()+'</div>';
+  openSheet("Cvičit znovu: "+w.title,b,'<button class="btn grow" data-act="againBack">Zpět</button><button class="btn primary grow" data-act="againOk">Začít</button>',false,{lv:2,back:()=>sheetWorkout(w)});
+}
+function startAgain(){
+  const w=again.w,gymId=again.gym;
+  const t=w.tplId&&S.templates[w.tplId];
+  const d={mode:"active",id:null,title:w.title,gymId,start:Date.now(),tplId:t?w.tplId:null,again:true,ex:[]};
+  for(const e of againEx(w)){const x=exEntryFor(e.exId,gymId,e.sets);if(e.note&&gymId===w.gymId)x.note=e.note;d.ex.push(x)}
+  again=null;S.selGym=gymId;S.active=d;saveActive();S.restEnd=null;closeSheet();go("train");
 }
 function defaultTitle(){const h=new Date().getHours();return h<11?"Ranní trénink":h<17?"Odpolední trénink":"Večerní trénink"}
 const END_PAD=3*60000; // pár minut po poslední sérii
@@ -833,7 +859,7 @@ function sheetWorkout(w,justSaved){
     const er=R.filter(r=>r.exId===e.exId);
     b+='<div class="card"><div style="font-weight:700;color:var(--accent-2)"><button class="linkbtn" data-act="openEx" data-v="'+esc(e.exId)+'">'+esc(exName(e.exId))+'</button>'+(er.length?' <span class="medals">🏅 '+er.length+'</span>':'')+'</div>'+(e.note?'<div class="xs muted">'+esc(e.note)+'</div>':'')+'<div class="dset">'+(()=>{const k=kindOf(e.exId);return e.sets.map(s=>{const l=s.t==="w"?"W":s.t==="d"?"D":s.t==="f"?"F":++wn;const L=setLoad(k,s,w.start);const r=hasReps(k)&&L&&s.reps?e1rm(L,s.reps):0;return '<div><span class="lbl '+s.t+'">'+l+'</span><span>'+esc(setStr(k,s))+(s.rpe?' @'+s.rpe:'')+'</span>'+(isWork(s.t)&&r?'<span class="muted">1RM ≈ '+fmtKg(Math.round(r*10)/10)+'</span>':'')+'</div>'}).join("")})()+'</div></div>';
   }
-  openSheet((justSaved?"Hotovo · ":"")+w.title,b,'<button class="btn grow" data-act="wToTpl" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Uložit jako šablonu</button><button class="btn primary grow" data-act="editW" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Upravit</button>');
+  openSheet((justSaved?"Hotovo · ":"")+w.title,b,(justSaved?'':'<button class="btn primary full" data-act="wAgain" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Cvičit znovu</button>')+'<button class="btn grow" data-act="wToTpl" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Uložit jako šablonu</button><button class="btn grow'+(justSaved?' primary':'')+'" data-act="editW" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Upravit</button>');
 }
 
 
@@ -1438,7 +1464,7 @@ document.addEventListener("click",ev=>{
     case "startEmpty":if(S.active){go("train");break}startWorkout(null);break;
     case "startTpl":if(S.active){toast("Nejdřív dokonči rozdělaný trénink.");go("train");break}startWorkout(v);break;
     case "newTpl":S.editDraft={mode:"template",id:null,title:"Nová šablona",ex:[]};goEdit();break;
-    case "editTpl":{const t=S.templates[v];S.editDraft={mode:"template",id:v,title:t.name,gymId:curGym(),ex:(t.items||[]).map(it=>({k:uid("e"),exId:it.exId,note:"",sets:(it.sets||[]).map(s=>({t:s.t,kg:s.kg?String(s.kg):"",reps:s.reps?String(s.reps):""}))}))};goEdit();break}
+    case "editTpl":{const t=S.templates[v];S.editDraft={mode:"template",id:v,title:t.name,gymId:curGym(),ex:(t.items||[]).map(it=>({k:uid("e"),exId:it.exId,note:"",sets:(it.sets||[]).map(newSetFrom)}))};goEdit();break}
     case "cycType":{const s=d.ex[i].sets[j];s.t=TYPES[(TYPES.indexOf(s.t)+1)%TYPES.length];touchDraft();scheduleRender();break}
     case "done":{const s=d.ex[i].sets[j];
       const kind=kindOf(d.ex[i].exId);
@@ -1522,7 +1548,7 @@ document.addEventListener("click",ev=>{
       const sug=suggestEnd(d);
       let b='<p style="margin:0">'+ex.length+' cviků, '+ex.reduce((a,e)=>a+e.sets.length,0)+' sérií.</p>'+(undone?'<p class="small muted" style="margin:0">'+undone+' neoznačených sérií se neuloží.</p>':'');
       b+='<div class="card stack" style="gap:8px"><div class="row"><label class="f grow">Začátek<input class="inp" type="time" value="'+toTimeInput(d.start)+'" disabled></label><label class="f grow">Konec<input class="inp" type="time" id="fin-end" data-f="finEnd" value="'+toTimeInput(sug)+'"></label></div><div class="small muted" id="fin-info">'+finInfo(d,sug,lastAt)+'</div></div>';
-      if(d.tplId&&S.templates[d.tplId])b+='<label class="switch"><input type="checkbox" id="updTpl" checked> Aktualizovat šablonu „'+esc(S.templates[d.tplId].name)+'“ (cviky a váhy)</label>';
+      if(d.tplId&&S.templates[d.tplId])b+='<label class="switch"><input type="checkbox" id="updTpl"'+(d.again?'':' checked')+'> Aktualizovat šablonu „'+esc(S.templates[d.tplId].name)+'“ (cviky a váhy)</label>';
       openSheet("Dokončit trénink?",b,'<button class="btn grow" data-act="closeSheet">Zpět</button><button class="btn primary grow" data-act="finishOk">Uložit trénink</button>');break}
     case "finishOk":{
       const ex=draftToWorkout(d,true);const upd=document.getElementById("updTpl");
@@ -1531,7 +1557,7 @@ document.addEventListener("click",ev=>{
       const w={title:d.title.trim()||defaultTitle(),start:d.start,end,gymId:d.gymId,ex};if(d.tplId)w.tplId=d.tplId;
       if(Math.abs(end-sug)>=60000)w.endOrig=sug;
       const id=uid("w");saveWorkout(id,w,null);
-      if(upd&&upd.checked){const items=Object.assign({},S.templates);items[d.tplId]=Object.assign({},items[d.tplId],{items:ex.map(e=>({exId:e.exId,sets:e.sets.map(s=>({t:s.t,kg:s.kg,reps:s.reps}))}))});put("config/templates",{items})}
+      if(upd&&upd.checked){const items=Object.assign({},S.templates);items[d.tplId]=Object.assign({},items[d.tplId],{items:ex.map(e=>({exId:e.exId,sets:e.sets.map(tplSet)}))});put("config/templates",{items})}
       S.active=null;S.restEnd=null;saveActive();closeSheet();
       toast("Trénink uložen");go("hist");
       sheetWorkout(Object.assign({id,mk:monthKey(w.start)},w),true);
@@ -1559,9 +1585,13 @@ document.addEventListener("click",ev=>{
     case "delTplOk":{const items=Object.assign({},S.templates);delete items[S.editDraft.id];put("config/templates",{items});S.editDraft=null;closeSheet();go("train");break}
     case "histGym":S.histGym=v;S.histLimit=40;scheduleRender();break;
     case "histMore":S.histLimit=(S.histLimit||40)+40;scheduleRender();break;
+    case "wAgain":{if(S.active){closeSheet();toast("Nejdřív dokonči rozdělaný trénink.");go("train");break}sheetAgain(Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]));break}
+    case "againGym":{if(!again)break;again.gym=v;document.querySelectorAll('[data-act="againGym"]').forEach(c=>c.setAttribute("aria-pressed",c.dataset.v===v));const el=document.getElementById("againInfo");if(el)el.innerHTML=againInfo();break}
+    case "againBack":navBack();break;
+    case "againOk":if(again&&!S.active)startAgain();break;
     case "openW":{const w=Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]);sheetWorkout(w);break}
     case "editW":{const w=Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]);S.editDraft=workoutToDraft(w,"edit");goEdit();break}
-    case "wToTpl":{const w=S.months[t.dataset.m][v];const items=Object.assign({},S.templates);const id=uid("t");items[id]={name:w.title,order:Object.keys(items).length,items:(w.ex||[]).map(e=>({exId:e.exId,sets:e.sets.map(s=>({t:s.t,kg:s.kg,reps:s.reps}))}))};put("config/templates",{items});closeSheet();toast("Šablona „"+w.title+"“ vytvořena");break}
+    case "wToTpl":{const w=S.months[t.dataset.m][v];const items=Object.assign({},S.templates);const id=uid("t");items[id]={name:w.title,order:Object.keys(items).length,items:(w.ex||[]).map(e=>({exId:e.exId,sets:e.sets.map(tplSet)}))};put("config/templates",{items});closeSheet();toast("Šablona „"+w.title+"“ vytvořena");break}
     case "statsGym":S.statsGym=v;scheduleRender();break;
     case "statsMetric":S.statsMetric=v;scheduleRender();break;
     case "exMuscle":S.exMuscle=v;scheduleRender();break;
