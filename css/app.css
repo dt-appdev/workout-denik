@@ -306,6 +306,8 @@ textarea.inp{min-height:84px;resize:vertical;line-height:1.4}
 .gain{color:var(--good)}.loss{color:var(--fail)}.flat{color:var(--ink-3)}
 .kpi .dl{display:block;margin-top:4px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25;letter-spacing:0;text-transform:none}
 .kpi .dl+.dl{margin-top:0}
+.kpi .dl.pc{padding-left:1em} /* procenta pod číslem, za trojúhelníkem */
+.tri{width:.72em;height:.72em;fill:currentColor;vertical-align:-.02em}.tri.tri2{width:1.44em}
 .kpi .dl.gain{color:var(--good)}.kpi .dl.loss{color:var(--fail)}
 .cmp{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.35}
 .cmp .chev{color:var(--ink-3);font-size:22px;line-height:1}

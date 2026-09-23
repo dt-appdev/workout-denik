@@ -918,28 +918,33 @@ function wMuscles(w){
   for(const k in m)if(!MUSCLE_MAP.NAMES[k])delete m[k];
   return m;
 }
-// rozdíl zeleně/červeně (u cviku se šipkou ▲/▼, v kartách bez ní kvůli místu), neutral = šedě (čas)
+// rozdíl proti minule: ▲ víc (zeleně), ▼ míň (červeně), ◄► beze změny; neutral = jen šedě (čas)
+// trojúhelníčky jako SVG, aby vypadaly stejně v každém písmu
+const TRI=(()=>{const t=d=>'<svg class="tri" viewBox="0 0 10 10" aria-hidden="true"><path d="'+d+'"/></svg>';return {up:t("M5 1.5 9.5 8.5H.5z"),down:t("M5 8.5 .5 1.5h9z"),same:'<svg class="tri tri2" viewBox="0 0 20 10" aria-hidden="true"><path d="M.5 5 7 .8v8.4zM19.5 5 13 .8v8.4z"/></svg>'}})();
+const SAME=TRI.same+' stejně';
 function dHtml(d,fmt,cls,neutral){
-  if(Math.abs(d)<EPS||fmt(Math.abs(d))===fmt(0))return '<span class="'+cls+' flat">= stejně</span>';
-  return '<span class="'+cls+' '+(neutral?"flat":d>0?"gain":"loss")+'">'+(neutral||cls==="dl"?"":d>0?"▲ ":"▼ ")+(d>0?"+":"−")+fmt(Math.abs(d))+'</span>';
+  if(Math.abs(d)<EPS||fmt(Math.abs(d))===fmt(0))return '<span class="'+cls+' flat">'+SAME+'</span>';
+  return '<span class="'+cls+' '+(neutral?"flat":d>0?"gain":"loss")+'">'+(d>0?TRI.up+" +":TRI.down+" −")+fmt(Math.abs(d))+'</span>';
 }
+// den s rokem, jen když se liší od roku tréninku
+const dayY=(t,ref)=>fmtDay(t)+(new Date(t).getFullYear()!==new Date(ref).getFullYear()?" "+new Date(t).getFullYear():"");
 function sumKpis(w,p){
   const dur=wDur(w),vol=wVol(w),sets=wSets(w),rec=wRecs(w).length;
   const kpi=(v,l,dl)=>'<div class="kpi"><b>'+v+'</b><span>'+l+'</span>'+(p?dl:'')+'</div>';
   let dv="";
-  if(p){const pv=wVol(p);const pc=pv>0?Math.round((vol-pv)/pv*100):0;dv=dHtml(vol-pv,x=>fmtInt(x)+" kg","dl")+(pc?'<span class="dl '+(pc>0?"gain":"loss")+'">'+(pc>0?"+":"−")+Math.abs(pc)+' %</span>':'')}
+  if(p){const pv=wVol(p);const pc=pv>0?Math.round((vol-pv)/pv*100):0;dv=dHtml(vol-pv,x=>fmtInt(x)+" kg","dl")+(pc?'<span class="dl pc '+(pc>0?"gain":"loss")+'">'+(pc>0?"+":"−")+Math.abs(pc)+' %</span>':'')}
   return '<div class="kpis k4">'+
     kpi(fmtDurS(dur),"Čas",p?dHtml(Math.round(dur/60000)-Math.round(wDur(p)/60000),m=>fmtDurS(m*60000),"dl",true):"")+
     kpi(fmtVol(vol),"Objem",dv)+
     kpi(sets,"Série",p?dHtml(sets-wSets(p),String,"dl"):"")+
-    kpi(rec,"Rekordy",p?'<span class="dl flat">minule '+wRecs(p).length+'</span>':"")+
+    kpi(rec,"Rekordy",p?dHtml(rec-wRecs(p).length,String,"dl"):"")+
   '</div>';
 }
 function sumCompare(w,p){
   if(!p)return '<div class="small muted">'+(w.tplId||w.againOf||runKey(w.title)?'První trénink „'+esc(w.title)+'“, zatím není s čím porovnat.':'Trénink bez šablony, není s čím porovnat.')+'</div>';
   const have=new Set((w.ex||[]).map(e=>e.exId));
   const extra=[...new Set((p.ex||[]).map(e=>e.exId))].filter(id=>!have.has(id));
-  return '<button class="cmp" data-act="prevW" data-v="'+esc(p.id)+'" data-m="'+p.mk+'"><div class="grow">Porovnáno s <b>'+esc(p.title)+'</b> · '+fmtDay(p.start)+' · '+esc(gymName(p.gymId))+(p.gymId!==w.gymId?' (jiné fitko)':'')+
+  return '<button class="cmp" data-act="prevW" data-v="'+esc(p.id)+'" data-m="'+p.mk+'"><div class="grow">Porovnáno s <b>'+esc(p.title)+'</b> · '+dayY(p.start,w.start)+' · '+esc(gymName(p.gymId))+(p.gymId!==w.gymId?' (jiné fitko)':'')+
     (extra.length?'<div class="xs muted">Minule navíc: '+esc(extra.map(exName).join(", "))+'</div>':'')+'</div><span class="chev">›</span></button>';
 }
 function sumMuscles(w){
@@ -955,9 +960,9 @@ function sumEx(w,exId){
   const ps=exSetsIn(pw,exId);
   const b=bestOf(kind,sets),pb=bestOf(kind,ps),t=exTotal(kind,sets,w.start),pt=exTotal(kind,ps,pw.start);
   let h='';
-  if(b)h+='<span class="k">Nejlepší</span><span class="v">'+esc(setStr(kind,b.s))+'</span>'+(!pb?'<span></span>':keyCmp(b.k,pb.k)?'<span class="d '+(keyCmp(b.k,pb.k)>0?'gain">▲':'loss">▼')+' z '+esc(setStr(kind,pb.s))+'</span>':'<span class="d flat">= stejně</span>');
+  if(b)h+='<span class="k">Nejlepší</span><span class="v">'+esc(setStr(kind,b.s))+'</span>'+(!pb?'<span></span>':keyCmp(b.k,pb.k)?'<span class="d '+(keyCmp(b.k,pb.k)>0?'gain">'+TRI.up:'loss">'+TRI.down)+' z '+esc(setStr(kind,pb.s))+'</span>':'<span class="d flat">'+SAME+'</span>');
   if(t.v>0||pt.v>0)h+='<span class="k">'+t.lab+'</span><span class="v">'+t.fmt(t.v)+'</span>'+dHtml(t.v-pt.v,t.fmt,"d");
-  return {h:h+'<span class="src">Minule '+fmtDay(pw.start)+' · '+esc(pw.title)+(sameRun(w,pw)?'':' (jiný trénink)')+'</span>'};
+  return {h:h+'<span class="src">Minule '+dayY(pw.start,w.start)+' · '+esc(pw.title)+(sameRun(w,pw)?'':' (jiný trénink)')+'</span>'};
 }
 let wOpen=null; // otevřený panel tréninku {w, justSaved, nav} – pro panel v panelu a krok zpět
 const wBack=o=>o?()=>sheetWorkout(o.w,o.justSaved,o.nav,true):closeSheet;
