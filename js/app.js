@@ -1459,7 +1459,9 @@ document.addEventListener("click",ev=>{
   if(act==="scrim"){if(ev.target===t)closeSheet();return}
   const d=curDraft();
   switch(act){
-    case "tab":S.exDetail=null;if(S.route==="edit")S.editDraft=null;if(v==="ex"&&S.route!=="ex"&&S.route!=="exd"){S.exlQ="";S.exlLimit=0}go(v);break;
+    // přepnutí záložky z rozdělané úpravy (i ze stránky cviku otevřené z úpravy) se zeptá jako Zpět
+    case "tab":if(edChanged()){confirmSheet("Zahodit změny?","Neuložené změny se ztratí.","Zahodit","tabDiscard",v);break}goTab(v);break;
+    case "tabDiscard":closeSheet();goTab(v);break;
     case "selGym":S.selGym=v;scheduleRender();break;
     case "startEmpty":if(S.active){go("train");break}startWorkout(null);break;
     case "startTpl":if(S.active){toast("Nejdřív dokonči rozdělaný trénink.");go("train");break}startWorkout(v);break;
@@ -1694,11 +1696,13 @@ function navDepth(){
 }
 // místo, kam se vrátit ze stránky cviku nebo z úpravy (i s otevřeným panelem a posunem stránky)
 function navFrame(){return {route:S.route,re:sheetNav&&sheetNav.re,y:window.scrollY,d:navDepth()}}
+const edChanged=()=>!!S.editDraft&&JSON.stringify(S.editDraft)!==S.editOrig; // úprava tréninku/šablony má neuložené změny
+function goTab(v){S.exDetail=null;S.editDraft=null;if(v==="ex"&&S.route!=="ex"&&S.route!=="exd"){S.exlQ="";S.exlLimit=0}go(v)}
 function goEdit(){const f=navFrame();closeSheet();S.nav.push(f);S.editOrig=JSON.stringify(S.editDraft);go("edit")}
 function navBack(force){
   if(sheetNav){sheetNav.back();return true}
   const r=S.route;
-  if(r==="edit"&&S.editDraft&&!force&&JSON.stringify(S.editDraft)!==S.editOrig){confirmSheet("Zahodit změny?","Neuložené změny se ztratí.","Zahodit","edDiscard");return true}
+  if(r==="edit"&&!force&&edChanged()){confirmSheet("Zahodit změny?","Neuložené změny se ztratí.","Zahodit","edDiscard");return true}
   if(r==="exd"||r==="edit"){
     const d=S.editDraft;if(r==="edit")S.editDraft=null;
     const f=S.nav.pop();
