@@ -86,3 +86,43 @@ self.addEventListener("fetch", event => {
     return res;
   })());
 });
+
+/* Oznámení na konci pauzy (F1-04). Appka pošle zprávu {type:"rest", tag, end, title, body, vib, always};
+   bez "end" = zrušit. Web neumí naplánovat oznámení do systému, proto worker čeká sám:
+   waitUntil ho drží vzhůru, Chrome to dovolí nejvýš asi 5 minut (každá nová zpráva lhůtu obnoví).
+   Když je appka zrovna na očích, oznámení se neukáže (pípne appka sama), kromě zkoušky (always). */
+const restTimers = new Map();   // tag → {t: časovač, done: ukončí waitUntil}
+self.addEventListener("message", event => {
+  const m = event.data || {};
+  if (m.type !== "rest" || !m.tag) return;
+  const old = restTimers.get(m.tag);
+  if (old) { clearTimeout(old.t); old.done(); restTimers.delete(m.tag); }
+  if (!m.end) return;
+  event.waitUntil(new Promise(done => {
+    const r = { done };
+    r.t = setTimeout(async () => {
+      try {
+        const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+        if (m.always || !wins.some(c => c.url.startsWith(self.registration.scope) && c.visibilityState === "visible")) {
+          const o = { body: m.body || "", tag: m.tag, renotify: true, icon: "icons/icon-192.png" };
+          if (m.vib) o.vibrate = m.vib;
+          await self.registration.showNotification(m.title || "Odpočinek skončil", o);
+        }
+      } catch (e) {}
+      if (restTimers.get(m.tag) === r) restTimers.delete(m.tag);
+      done();
+    }, Math.max(0, m.end - Date.now()));
+    restTimers.set(m.tag, r);
+  }));
+});
+
+// klepnutí na oznámení = otevřít appku (už otevřenou jen přepnout do popředí)
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const w = wins.find(c => c.url.startsWith(self.registration.scope));
+    if (w) return w.focus();
+    return self.clients.openWindow(self.registration.scope);
+  })());
+});

@@ -131,6 +131,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (volba fitka, stav `again`), `startAgain` založí trénink přes `exEntryFor` se sériemi vybraného
   tréninku (jako šablona). Rozdělaný trénink má `again:true` (jen kvůli nezaškrtnutému „Aktualizovat
   šablonu“), do uloženého tréninku se nepíše. Série do šablony z tréninku vždy přes `tplSet` (i `sec`, `km`).
+- Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
+  `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
+  konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restAlert`
+  (`both`/`sound`/`vib`), `restOver` (přečas), `restNotify`. Oznámení na pozadí ukazuje
+  service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
+  na očích; drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
