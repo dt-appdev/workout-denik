@@ -4,6 +4,7 @@
 const MUSCLES={chest:"Hrudník",back:"Záda",shoulders:"Ramena",biceps:"Biceps",triceps:"Triceps",forearms:"Předloktí",quads:"Kvadricepsy",hams:"Hamstringy",glutes:"Hýždě",adductors:"Přitahovače",calves:"Lýtka",abs:"Břicho",lowback:"Spodní záda",neck:"Krk",other:"Ostatní"};
 const EQUIP={barbell:"Velká činka",dumbbell:"Jednoručky",machine:"Stroj",cable:"Kladka",smith:"Multipress",bodyweight:"Vlastní váha",band:"Guma",kettlebell:"Kettlebell",other:"Jiné"};
 const GYMDEP_EQUIP={machine:1,cable:1,smith:1};
+const GYM_COLORS=6; // počet barev fitek (--s1 … --s6 v css/app.css)
 const TYPES=["n","w","d","f"]; // cycle order
 const TYPE_NAME={n:"Pracovní",w:"Zahřívací",d:"Drop set",f:"Do selhání"};
 const MONTHS=["led","úno","bře","dub","kvě","čvn","čvc","srp","zář","říj","lis","pro"];
@@ -20,7 +21,9 @@ const IC={
   more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
   close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
-  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
 };
 
 
@@ -288,7 +291,7 @@ let downloads=null, pointsApi=null;
 (function loadCache(){
   const c=Store.loadCache();
   if(!c)return;
-  S.cfg=c.cfg||S.cfg;S.exLib=exLoad(c.exLib,c.exV!==EX_V);S.templates=c.templates||{};S.months=c.months||{};S.body=c.body||{};if(c.bk)S.bk=c.bk;
+  S.cfg=cfgNorm(c.cfg||S.cfg);S.exLib=exLoad(c.exLib,c.exV!==EX_V);S.templates=c.templates||{};S.months=c.months||{};S.body=c.body||{};if(c.bk)S.bk=c.bk;
 })();
 const snapshot=()=>({cfg:S.cfg,exLib:S.exLib,exV:EX_V,templates:S.templates,months:S.months,body:S.body,bk:S.bk});
 function saveCache(){Store.saveCache(snapshot)}
@@ -296,7 +299,7 @@ function saveCache(){Store.saveCache(snapshot)}
 function applyDoc(path,data){
   const [col,id]=path.split("/");
   if(col==="config"){
-    if(id==="main")S.cfg=Object.assign({gyms:[],defaultGymId:null,restSec:120},data||{});
+    if(id==="main")S.cfg=cfgNorm(data);
     else if(id==="exercises"){const items=(data&&data.items)||{};S.exV=data&&data.v||0;S.exLegacy=S.exV!==EX_V&&Object.keys(items).length?items:null;S.exLib=exLoad(items,S.exV!==EX_V,S.exV===EX_V)}
     else if(id==="templates")S.templates=(data&&data.items)||{};
     else if(id==="backup")S.bk=Object.assign({last:null,points:[]},data||{});
@@ -334,7 +337,16 @@ const isWork=t=>t!=="w";
 const exName=id=>(S.exLib[id]&&S.exLib[id].name)||id;
 const gymName=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return g?g.name:"Neznámé fitko"};
 const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
-const gymColor=id=>"var(--s"+((gymIdx(id)%6)+1)+")";
+/* barva fitka (F0-07): uložená v g.col (číslo 1–GYM_COLORS = proměnná --sN), nezávislá na pořadí */
+const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
+/* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
+function cfgNorm(c){
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120},c&&typeof c==="object"?c:{});
+  c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
+  return c;
+}
+/* barva pro nové fitko: první nepoužitá, jinak nejméně používaná */
+function freeGymCol(gyms){const n={};for(const g of gyms)n[g.col]=(n[g.col]||0)+1;let b=1;for(let c=2;c<=GYM_COLORS;c++)if((n[c]||0)<(n[b]||0))b=c;return b}
 const toDateInput=t=>{const d=new Date(t);return d.getFullYear()+"-"+d2(d.getMonth()+1)+"-"+d2(d.getDate())};
 const toTimeInput=t=>{const d=new Date(t);return d2(d.getHours())+":"+d2(d.getMinutes())};
 
@@ -969,7 +981,7 @@ function vExDetail(){
   // statistiky
   if(!list.length)return h+'<div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>';
   h+='<p class="xs muted" style="margin:0 0 8px">'+(ex.gymDep?'Vázáno na fitko: počítá se zvlášť pro každé fitko.':'Nevázáno na fitko: data ze všech fitek se sčítají.')+' Změníš v Popisu.</p>';
-  const gymsWith=[...new Set(list.map(s=>s.w.gymId))];
+  const gymsWith=[...new Set(list.map(s=>s.w.gymId))].sort((a,b)=>gymIdx(a)-gymIdx(b));
   if(ex.gymDep&&gymsWith.length>1){
     h+='<div class="sec"><div class="chips" data-ck="detailGym"><button class="chip" data-act="detailGym" data-v="all" aria-pressed="'+(S.detailGym==="all")+'">Všechna (zvlášť)</button>'+gymsWith.map(g=>'<button class="chip" data-act="detailGym" data-v="'+g+'" aria-pressed="'+(S.detailGym===g)+'"><span class="sw" style="background:'+gymColor(g)+'"></span>'+esc(gymName(g))+'</button>').join("")+'</div></div>';
   }
@@ -1078,9 +1090,11 @@ function vSettings(){
   let h=topbar("Nastavení","Fitka, vzhled, záloha");
   const counts={};for(const w of derive().all)counts[w.gymId]=(counts[w.gymId]||0)+1;
   h+='<section class="sec"><div class="sec-h"><h2>Fitka</h2><button class="btn sm" data-act="addGym">+ Přidat</button></div><div class="stack" style="gap:6px">';
-  for(const g of S.cfg.gyms){
-    h+='<div class="card row" style="padding:10px 12px"><span class="sw" style="width:12px;height:12px;border-radius:50%;background:'+gymColor(g.id)+'"></span><div class="grow"><b>'+esc(g.name)+'</b><div class="xs muted">'+(counts[g.id]||0)+' tréninků'+(S.cfg.defaultGymId===g.id?' · výchozí':'')+'</div></div><button class="btn sm" data-act="editGym" data-v="'+g.id+'">Upravit</button></div>';
-  }
+  S.cfg.gyms.forEach((g,i,a)=>{
+    h+='<div class="card row" style="padding:10px 12px"><span class="sw" style="width:12px;height:12px;border-radius:50%;background:'+gymColor(g.id)+'"></span><div class="grow"><b>'+esc(g.name)+'</b><div class="xs muted">'+(counts[g.id]||0)+' tréninků'+(S.cfg.defaultGymId===g.id?' · výchozí':'')+'</div></div>'+
+      (a.length>1?'<div class="gymmv"><button class="iconbtn" data-act="gymMove" data-v="'+g.id+'" data-d="-1" aria-label="Posunout '+esc(g.name)+' výš"'+(i===0?" disabled":"")+'>'+IC.up+'</button><button class="iconbtn" data-act="gymMove" data-v="'+g.id+'" data-d="1" aria-label="Posunout '+esc(g.name)+' níž"'+(i===a.length-1?" disabled":"")+'>'+IC.down+'</button></div>':'')+
+      '<button class="btn sm" data-act="editGym" data-v="'+g.id+'">Upravit</button></div>';
+  });
   h+='</div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
@@ -1456,10 +1470,12 @@ document.addEventListener("click",ev=>{
     case "saveGym":{
       const name=document.getElementById("g-name").value.trim();if(!name){toast("Zadej název fitka.");break}
       const cfg=JSON.parse(JSON.stringify(S.cfg));let id=v;
-      if(id)cfg.gyms.find(g=>g.id===id).name=name;else{id=uid("g");cfg.gyms.push({id,name})}
+      if(id)cfg.gyms.find(g=>g.id===id).name=name;else{id=uid("g");cfg.gyms.push({id,name,col:freeGymCol(cfg.gyms)})}
       if(document.getElementById("g-def").checked)cfg.defaultGymId=id;
       put("config/main",cfg);closeSheet();break}
     case "delGym":{const cfg=JSON.parse(JSON.stringify(S.cfg));cfg.gyms=cfg.gyms.filter(g=>g.id!==v);if(cfg.defaultGymId===v)cfg.defaultGymId=cfg.gyms[0].id;put("config/main",cfg);closeSheet();break}
+    case "gymMove":{const cfg=JSON.parse(JSON.stringify(S.cfg)),a=cfg.gyms,k=a.findIndex(g=>g.id===v),n=k+(+t.dataset.d);
+      if(k<0||n<0||n>=a.length)break;a.splice(n,0,a.splice(k,1)[0]);put("config/main",cfg);break}
     case "restSec":{const cfg=Object.assign({},S.cfg,{restSec:+v});put("config/main",cfg);break}
     case "theme":setTheme(v);scheduleRender();break;
     case "export":doExport();break;
@@ -1581,8 +1597,7 @@ function normBackup(o){
   if((+o.version||1)>BK_VERSION)throw new Error("Záloha je z novější verze appky. Nejdřív appku aktualizuj.");
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x)?x:{};
   const months={};for(const mk in obj(o.months)){if(/^\d{4}-\d{2}$/.test(mk))months[mk]=obj(o.months[mk])}
-  const cfg=Object.assign({gyms:[],defaultGymId:null,restSec:120},obj(o.cfg));
-  if(!Array.isArray(cfg.gyms))cfg.gyms=[];
+  const cfg=cfgNorm(obj(o.cfg));
   return {exported:o.exported,cfg,exercises:exLoad(obj(o.exercises),o.exDb!==EX_V),templates:obj(o.templates),months,body:obj(o.body),photos:obj(o.photos)};
 }
 let importData=null;
@@ -1636,8 +1651,8 @@ function applyMerge(o){
   let [ex,ne]=addMissing(S.exLib,o.exercises);if(ne){putEx(ex);r.other+=ne}
   let [tp,nt]=addMissing(S.templates,o.templates);if(nt){put("config/templates",{items:tp});r.other+=nt}
   let [bd,nb]=addMissing(S.body,o.body);if(nb){put("body/all",{items:bd});r.other+=nb}
-  const have=new Set(S.cfg.gyms.map(g=>g.id)),add=o.cfg.gyms.filter(g=>g&&g.id&&!have.has(g.id));
-  if(add.length){put("config/main",Object.assign({},S.cfg,{gyms:S.cfg.gyms.concat(add)}));r.other+=add.length}
+  const have=new Set(S.cfg.gyms.map(g=>g.id)),add=o.cfg.gyms.filter(g=>!have.has(g.id));
+  if(add.length){const gs=S.cfg.gyms.slice();for(const g of add)gs.push(gs.some(x=>x.col===g.col)?Object.assign({},g,{col:freeGymCol(gs)}):g);put("config/main",Object.assign({},S.cfg,{gyms:gs}));r.other+=add.length}
   return r;
 }
 
