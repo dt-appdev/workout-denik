@@ -129,8 +129,15 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   prázdné hodnoty; `s.ph` = hodnoty ze šablony jen u nikdy necvičeného cviku (jen v rozdělaném tréninku).
 - Cvičit znovu (F2-01, sekce „CVIČIT ZNOVU“): tlačítko `wAgain` v `sheetWorkout` otevře `sheetAgain`
   (volba fitka, stav `again`), `startAgain` založí trénink přes `exEntryFor` se sériemi vybraného
-  tréninku (jako šablona). Rozdělaný trénink má `again:true` (jen kvůli nezaškrtnutému „Aktualizovat
-  šablonu“), do uloženého tréninku se nepíše. Série do šablony z tréninku vždy přes `tplSet` (i `sec`, `km`).
+  tréninku (jako šablona). Rozdělaný trénink má `again` = id původního tréninku (kvůli nezaškrtnutému
+  „Aktualizovat šablonu“), uložený trénink ho má jako `againOf` (porovnání v souhrnu, F3-03; starší
+  rozdělaný trénink může mít `again:true`). Série do šablony z tréninku vždy přes `tplSet` (i `sec`, `km`).
+- Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“): panel `sheetWorkout(w, justSaved, nav)` po uložení
+  i z Historie. Minulý běh stejného tréninku `prevRun` (pravidlo `sameRun`: šablona, jinak název bez
+  automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné fitko), u cviku poslední výskyt `prevEx`
+  (vázaný cvik jen ve stejném fitku). Klepnutí na „Porovnáno s…“ = panel v panelu (`prevW`, `wOpen`,
+  `wBack`). Procvičené partie `wMuscles` (pomocná partie = půl série), postava přes `musFigs`
+  (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
 - Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`list`/`cal`, `Local` `histView`),
   `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
   Tréninky podle dne přes `wByDay` (klíč `dayKey`, použít i pro heatmapu F3-07), měření `bodyByDay`.
