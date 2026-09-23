@@ -48,7 +48,7 @@ write_version() {
 
 # --- vydaná verze (main) ---
 if [ -z "${MAIN_REF:-}" ]; then
-  git fetch -q --no-tags --depth=1 origin main
+  git fetch -q --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
   MAIN_REF=origin/main
 fi
 sha=$(git rev-parse --short=7 "$MAIN_REF")
