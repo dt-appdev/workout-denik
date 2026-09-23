@@ -12,15 +12,19 @@ Adresa appky: https://dt-appdev.github.io/workout-denik/
 
 ## Nasazení
 
-Appka je čisté HTML/CSS/JavaScript bez build kroku. GitHub Pages ji servíruje
-přímo z větve `main`:
+Appka je čisté HTML/CSS/JavaScript bez build kroku. Na GitHub Pages ji nasazuje
+GitHub Actions (`.github/workflows/nasazeni.yml`):
 
 1. Změny se dělají ve vlastní větvi a slučují přes pull request do `main`.
-2. Při každé změně se zvýší `VERSION` v `sw.js`.
-3. Po sloučení do `main` GitHub Pages do pár minut nasadí novou verzi.
-   Appka v telefonu si ji sama stáhne při dalším otevření.
+2. Každý otevřený PR má vlastní **testovací verzi** na adrese
+   `https://dt-appdev.github.io/workout-denik/pr-<číslo PR>/`. Odkaz se objeví
+   v komentáři v PR. Testovací verze má oranžovou ikonu, oranžový pruh nahoře
+   a vlastní data, oddělená od vydané verze.
+3. Po sloučení do `main` se do pár minut nasadí nová vydaná verze. Appka
+   v telefonu si ji sama stáhne při dalším otevření. Jakou verzi používáš,
+   uvidíš v **Nastavení → Verze aplikace**.
 
-Zapnutí GitHub Pages: **Settings → Pages → Source: Deploy from a branch →
-Branch: `main`, složka `/ (root)` → Save.**
+Nastavení GitHub Pages (jednou): **Settings → Pages → Build and deployment →
+Source: GitHub Actions.**
 
 Plán vývoje: [docs/plan-vyvoje.md](docs/plan-vyvoje.md). Kontext pro Claude Code: [CLAUDE.md](CLAUDE.md).

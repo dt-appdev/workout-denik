@@ -1736,7 +1736,7 @@ function versionSettings(){
   h+='<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
   if(TEST_PR){
     h+='<div class="small muted">Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se vydané verze netýká.</div>';
-    h+='<div class="row wrap-r"><button class="btn grow" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn grow" href="../">Otevřít vydanou verzi</a></div>';
+    h+='<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="../">Otevřít vydanou verzi</a>';
   }else if(S.testData===undefined)scanTestData();
   else if(S.testData.n)h+='<div class="row"><span class="small grow">Data testovacích verzí v telefonu: '+S.testData.n+' '+plural(S.testData.n,"verze","verze","verzí")+' (≈ '+fmtSize(S.testData.bytes)+')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
   return h+'</div></section>';
