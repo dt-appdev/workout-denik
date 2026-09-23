@@ -1074,6 +1074,8 @@ function sheetBody(id){
 }
 
 /* ---------- SETTINGS ---------- */
+// návod a release notes na GitHubu (otevřou se v Chromu, potřebují internet)
+const DOCS_URL="https://github.com/dt-appdev/workout-denik/blob/main/docs/";
 function vSettings(){
   let h=topbar("Nastavení","Fitka, vzhled, záloha");
   const counts={};for(const w of derive().all)counts[w.gymId]=(counts[w.gymId]||0)+1;
@@ -1085,7 +1087,7 @@ function vSettings(){
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card row"><span class="grow">Výchozí časovač</span><div class="seg">'+[60,90,120,150,180].map(s=>'<button data-act="restSec" data-v="'+s+'" aria-pressed="'+(S.cfg.restSec===s)+'">'+fmtClock(s)+'</button>').join("")+'</div></div></section>';
-  h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
+  h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="row wrap-r" style="gap:8px;margin-bottom:8px"><a class="btn sm grow" href="'+DOCS_URL+'navod/README.md" target="_blank" rel="noopener">Návod ↗</a><a class="btn sm grow" href="'+DOCS_URL+'release-notes.md" target="_blank" rel="noopener">Co je nového ↗</a></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
   h+=backupSettings();
   return h;
 }

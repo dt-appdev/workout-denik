@@ -25,9 +25,18 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   ne rebase). Konflikty vyřeš tak, aby zůstaly změny z obou stran:
   - `VERSION` v `sw.js` nastav vyšší než je v `main` (dnešní datum, další `.N`),
   - v logu plánu nech řádky z obou větví (nejnovější nahoře),
+  - v `docs/release-notes.md` nech záznamy z obou větví a svůj záznam přečísluj
+    na novou `VERSION` (nahoře nejvyšší verze),
   - v kódu zachovej funkce z `main` i z úlohy a po sloučení appku znovu ověř.
 - V rámci PR úlohy zaškrtni úlohu v `docs/plan-vyvoje.md` a přidej řádek
   do logu na konci plánu (nejnovější nahoře).
+- Každá změna appky, kterou uživatel uvidí, dostane záznam nahoru do
+  `docs/release-notes.md`: nadpis `## <VERSION ze sw.js> – <krátký název>`,
+  pak Nové / Změny / Opravy a řádek **Data:** (mění se uložená data nebo záloha?).
+  Psát pro uživatele, ne pro programátora.
+- Když se změní ovládání nebo vzhled, uprav návod `docs/navod/README.md`
+  a přegeneruj obrázky (viz Testování). Zkontroluj, že čísla v rámečcích
+  odpovídají textu pod obrázkem.
 - Stará data se nesmí ztratit: nová pole mají výchozí hodnoty a uložená data
   se při načtení automaticky doplní. Formát zálohy měň jen zpětně kompatibilně
   (`BK_VERSION`, `normBackup` v `js/app.js`).
@@ -47,6 +56,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `icons/` | Ikony appky (PNG 192/512, maskable 512, apple-touch, SVG). |
 | `fonts/` | Písma Barlow a Barlow Condensed (OFL), lokálně kvůli offline. |
 | `docs/plan-vyvoje.md` | Plán vývoje, otevřené otázky, log. |
+| `docs/release-notes.md` | Co je nového: změny pro uživatele podle verzí (nejnovější nahoře). |
+| `docs/navod/README.md` | Návod k appce s obrázky (odkaz z Nastavení → O aplikaci). |
+| `docs/navod/img/` | Snímky obrazovky do návodu (generované, needitovat ručně). |
+| `docs/navod/snimky/` | Skript na snímky (`snimky.js`) a ukázková data (`demo-data.js`). |
 | `puvodni/workout-denik.html` | Poslední verze artefaktu (verze 9). Jen pro referenci, needitovat. |
 | `.nojekyll` | GitHub Pages servíruje soubory tak, jak jsou (bez Jekyllu). |
 
@@ -95,3 +108,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 `python3 -m http.server` a otevřít `http://localhost:8000/`. Service worker
 funguje jen na `localhost` nebo přes HTTPS. Pro kontrolu v prohlížeči lze
 použít Playwright s předinstalovaným Chromiem (bez instalace do repa).
+
+Obrázky do návodu: `NODE_PATH=$(npm root -g) node docs/navod/snimky/snimky.js`
+(z kořene repa). Skript spustí appku s vymyšlenými daty z `demo-data.js`,
+proklikne ji na mobilním rozlišení a uloží snímky s očíslovanými rámečky
+do `docs/navod/img/`. Nový snímek = nový `shot(...)` ve skriptu. Pokud skript
+spadne na chybějícím prvku, změnilo se ovládání – uprav skript i návod.

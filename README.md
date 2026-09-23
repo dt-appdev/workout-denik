@@ -10,6 +10,8 @@ neposílají. Zálohu uděláš v appce: **Nastavení → Záloha → Stáhnout 
 
 Adresa appky: https://dt-appdev.github.io/workout-denik/
 
+**[Návod k appce](docs/navod/README.md)** (s obrázky) · **[Co je nového](docs/release-notes.md)**
+
 ## Nasazení
 
 Appka je čisté HTML/CSS/JavaScript bez build kroku. GitHub Pages ji servíruje

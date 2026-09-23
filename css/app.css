@@ -80,6 +80,7 @@ button{cursor:pointer}
 .small{font-size:13px}
 .xs{font-size:12px}
 .btn{border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px}
+a.btn{color:inherit;text-decoration:none}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.ghost{border-color:transparent;background:transparent}
 .btn.danger{color:var(--fail)}
