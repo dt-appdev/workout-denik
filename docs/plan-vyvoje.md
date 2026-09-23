@@ -67,17 +67,18 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 
 Největší přínos při každém tréninku, většinou malé úpravy.
 
-- [ ] **F1-01** „Minule" u každé série: hodnoty z posledního tréninku v tomtéž fitku, předvyplněné.
+- [x] **F1-01** „Minule" u každé série: hodnoty z posledního tréninku v tomtéž fitku, předvyplněné.
 - [ ] **F1-02** Displej nezhasne během tréninku (Wake Lock).
 - [ ] **F1-03** Velká tlačítka +/− pro váhu a opakování, ovládání jednou rukou.
 - [ ] **F1-04** Časovač počítaný z času startu (nevypadne na pozadí) a vibrace na konci pauzy.
 - [ ] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče.
 - [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05).
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
+- [ ] **F1-08** U warm-up série tlačitko "60%", které přednastaví váhu v sérii na 60% maxima z minula, následna editace je zachována
 
 ### Fáze 2 – Šablony a historie
 
-- [ ] **F2-01** „Cvičit znovu" z historie: spustí trénink bez nutnosti vytvářet šablonu.
+- [x] **F2-01** „Cvičit znovu" z historie: spustí trénink bez nutnosti vytvářet šablonu.
 - [ ] **F2-02** Šablony podle fitka: přiřazení k fitkům, šablony pro aktuální fitko nahoře, ostatní sbalené.
 - [ ] **F2-03** Swipe pro dokončení série, tlačítko Zpět po smazání.
 - [ ] **F2-04** Rotace programu: appka ukáže, která šablona je na řadě.
@@ -134,7 +135,8 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F0-05 | Bude spodní lišta se 6 záložkami na telefonu ještě pohodlná? | Vyřešeno 23. 9.: 6 záložek s popisky, menší písmo; Cviky mají ikonu otevřené knihy (činka zůstává Tréninku). |
 | F0-06 | Co má Zpět udělat na hlavní obrazovce Tréninku? | Vyřešeno 23. 9.: první stisk ukáže hlášku, druhý appku zavře, dokud se mezitím nedotkneš displeje (klepnutí i swipe) (limit 2 s Chrome neumožní spolehlivě hlídat) |
 | F0-07 | Ruční pořadí, nebo automaticky podle počtu návštěv? | Vyřešeno 23. 9.: ruční, šipky ↑/↓ přímo v řádku fitka; výchozí fitko zůstává zvlášť; nové fitko dostane první volnou barvu; „Podle fitek“ ve Statistikách dál podle počtu tréninků; 6 barev je málo, řeší F3-01. |
-| F2-01 | „Cvičit znovu" z tréninku v jiném fitku: spustit v aktuálním, nebo původním fitku? | Aktuální fitko |
+| F1-01 | Šedé, nebo černé předvyplnění? Co v novém fitku? Hodnoty ze šablony? Víc sérií než minule? | Vyřešeno 23. 9.: šedé (✓ převezme); cvik vázaný na fitko bez záznamu v tomto fitku = prázdné, jen info „V jiném fitku (…)“; hodnoty ze šablony jen u nikdy necvičeného cviku; série bez záznamu z minula = „–“ ve sloupci Minule i v políčkách; „minule“ = poslední trénink s cvikem (ne běh šablony); sloupec Minule jen informace; univerzální cviky dál z kteréhokoli fitka. |
+| F2-01 | „Cvičit znovu" z tréninku v jiném fitku: spustit v aktuálním, nebo původním fitku? | Vyřešeno 23. 9.: před startem okno s volbou fitka (předvybrané aktuální); počet a druh sérií z vybraného tréninku, hodnoty šedě z minula ve zvoleném fitku (F1-01); vazba na šablonu zůstává, „Aktualizovat šablonu“ nezaškrtnuté; poznámky ke cvikům jen ve stejném fitku; tlačítko jen v detailu tréninku. |
 | F2-02 | Mají mít šablony různé výchozí váhy pro každé fitko? | Ne, stačí F1-01 |
 | F2-05 | Zahrnout fotky do zálohy (F0-01)? Záloha tím naroste o jednotky až desítky MB. | Přepínač „s fotkami / bez fotek" (formát zálohy v2 už má připravené pole pro fotky) |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
@@ -148,6 +150,8 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 | Datum | Úloha | Poznámka |
 |---|---|---|
 | 23. 9. 2026 | F0-06 | Oprava: přepnutí záložky z úpravy tréninku nebo šablony (i ze stránky cviku otevřené z úpravy) už neuložené změny nezahodí potichu, ale zeptá se „Zahodit změny?“ stejně jako Zpět. Bez změn se záložka přepne rovnou. |
+| 23. 9. 2026 | F2-01 | „Cvičit znovu“ v detailu tréninku v Historii (ne v okně Hotovo po dokončení): okno s volbou fitka (předvybrané aktuální, upozornění, když byl trénink v jiném fitku), pak nový trénink se stejným názvem a cviky. Počet a druh sérií z vybraného tréninku, hodnoty šedě z minula ve zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen ve stejném fitku, cvik, který už v appce není, se vynechá. Vazba na šablonu zůstává (naposledy u šablony), „Aktualizovat šablonu“ při dokončení je nezaškrtnuté. Při rozdělaném tréninku jen hláška. Oprava: šablona z tréninku, aktualizace šablony při dokončení a úprava šablony už neztrácí čas a vzdálenost (plank, běh). Data ani formát zálohy beze změny. |
+| 23. 9. 2026 | F1-01 | „Minule“ podle fitka: série se párují podle druhu (zahřívací se zahřívací, pracovní s pracovní), takže zahřívací série už neposunou porovnání. Hodnoty z minula v aktuálním fitku jsou v políčkách šedě a klepnutí na ✓ je převezme; zapsané číslo je bílé/černé. Ani šablona už nepředvyplní váhy natvrdo (počet a druh sérií ano, hodnoty jen u cviku, který jsi nikdy necvičil). Přepnutí fitka během tréninku šedé hodnoty přepočítá. Cvik vázaný na fitko bez záznamu v tomto fitku ukáže jen informaci „V jiném fitku (…)“. Série bez záznamu z minula (navíc oproti minule, nové fitko) má „–“ ve sloupci Minule i v políčkách, hodnoty ze série nad ní se nepřebírají. Oprava: při úpravě starého tréninku se „Minule“ bere z tréninku před ním. Data ani formát zálohy beze změny. |
 | 23. 9. 2026 | F0-06 | Systémové tlačítko Zpět (i gesto): panel o úroveň zpět nebo zavřít, stránka cviku a úprava tréninku/šablony zpět tam, odkud se přišlo (i do otevřeného panelu, např. detail tréninku nebo výběr cviků se zaškrtnutými cviky, a na stejné místo seznamu), jiná záložka → Trénink. Na hlavní obrazovce Tréninku první Zpět ukáže hlášku, druhý appku zavře (dokud se mezitím nedotkneš displeje; klepnutí i swipe hlášku hned schová a pojistku obnoví). Úprava se změnami se zeptá „Zahodit změny?“. Šipka ← v appce dělá totéž. Zapojené i panely hledání v online databázi (F0-03): výsledky → formulář a zpět, ze stránky cviku zpět do výsledků. Rozdělaný trénink Zpět nikdy neukončí. Data ani formát zálohy beze změny. |
 | 23. 9. 2026 | F0-07 | Pořadí fitek se mění šipkami ↑/↓ v Nastavení → Fitka a platí všude (začátek tréninku, úprava tréninku, filtry v Historii a Statistikách, přepínač a graf na stránce cviku). Každé fitko má uloženou barvu (`col`, 1–6), při prvním načtení se doplní podle dosavadního pořadí, takže se nic nepřebarví; barva se nemění ani přesunem, ani smazáním jiného fitka. Nové fitko dostane první volnou barvu, při sloučení zálohy se kolize barvy vyřeší stejně. Formát zálohy beze změny. |
 | 23. 9. 2026 | F0-03 | Hledání cviků v online databázi free-exercise-db (876 cviků, kopie v `js/fedb.js`, načte se až při prvním hledání, pak funguje i offline). Tlačítko „Hledat v online databázi“ ve výběru cviků, v záložce Cviky a ve formuláři Nový cvik. Hledá se česky i anglicky, posilovací cviky nahoře, protahování/kardio/plyometrie na přepínač. Výběr předvyplní formulář (název, český název, partie – nejvýš 3 pomocné, vybavení, typ zápisu, vázáno na fitko, anglický popis). U cviků, které už v appce jsou, „Už máš“ s tlačítkem Vybrat/Otevřít (224 shod s výchozí databází). Vlastní cvik dostane značku `src`, formát zálohy beze změny. Popis cviku nově zachovává řádky. wger odloženo. |
