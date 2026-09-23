@@ -1,10 +1,21 @@
 /* Service worker Workout deníku: offline běh a aktualizace.
 
-   PRAVIDLO: při KAŽDÉ změně kteréhokoli souboru appky zvyš VERSION.
-   Jen tak Chrome pozná, že je nová verze, stáhne ji a staré soubory smaže.
-   Nový soubor appky přidej i do FILES, jinak nebude fungovat offline. */
-const VERSION = "2026-09-23.4";
-const CACHE = "workout-denik-" + VERSION;
+   Verze appky (F0-04): údaje o nasazení jsou v js/verze.js, který při každém
+   nasazení přepíše GitHub Actions (.github/sestav-web.sh). Chrome porovnává
+   sw.js i soubory načtené přes importScripts, takže nové nasazení = nová
+   verze, stáhne se a staré soubory se smažou. VERSION se už ručně nemění.
+   Nový soubor appky přidej do FILES, jinak nebude fungovat offline.
+
+   Vydaná verze (…/workout-denik/) a testovací verze PR (…/workout-denik-test/pr-12/)
+   běží na stejné doméně a sdílejí úložiště cache. Každá proto maže jen své
+   cache (předpona wd-main- / wd-pr12-). */
+importScripts("js/verze.js");
+const B = self.APP_BUILD || {};
+const VERSION = B.commit ? B.commit + "-" + B.cas : "lokal";
+const SCOPE = new URL(self.registration.scope).pathname;   // "/workout-denik/" nebo "/workout-denik-test/pr-12/"
+const PR = (SCOPE.match(/\/pr-(\d+)\/$/) || [])[1];
+const PREFIX = "wd-" + (PR ? "pr" + PR : "main") + "-";
+const CACHE = PREFIX + VERSION;
 const FILES = [
   "./",
   "index.html",
@@ -14,6 +25,7 @@ const FILES = [
   "js/atlas.js",
   "js/cviky.js",
   "js/pwa.js",
+  "js/verze.js",
   "fonts/fonts.css",
   "fonts/barlow-400-latin.woff2",
   "fonts/barlow-400-latin-ext.woff2",
@@ -48,7 +60,8 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     for (const key of await caches.keys()) {
-      if (key.startsWith("workout-denik-") && key !== CACHE) await caches.delete(key);
+      // vlastní starší cache; vydaná verze smaže i cache z doby před F0-04 ("workout-denik-…")
+      if ((key.startsWith(PREFIX) && key !== CACHE) || (!PR && key.startsWith("workout-denik-"))) await caches.delete(key);
     }
     await self.clients.claim();
   })());
@@ -65,6 +78,11 @@ self.addEventListener("fetch", event => {
       if (page) return page;
     }
     const hit = await cache.match(req, { ignoreSearch: true });
-    return hit || fetch(req);
+    if (hit) return hit;
+    const res = await fetch(req);
+    // databáze cviků pro hledání (js/fedb.js, F0-03) není ve FILES, aby nezdržovala instalaci;
+    // uloží se do cache až při prvním hledání a pak funguje i offline
+    if (res.ok && new URL(req.url).pathname.endsWith("/js/fedb.js")) await cache.put(req, res.clone());
+    return res;
   })());
 });
