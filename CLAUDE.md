@@ -33,6 +33,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `css/app.css` | Všechny styly (světlý i tmavý motiv přes proměnné v `:root`). |
 | `js/app.js` | Celá appka: datová vrstva, stav, vykreslování, akce, záloha. |
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
+| `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `sw.js` | Service worker: offline cache, verze appky (`VERSION`), seznam souborů (`FILES`). |
 | `manifest.webmanifest` | Název, ikony a barvy pro instalaci PWA. |
@@ -62,12 +63,17 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`zd1:active`). Zápis se nejdřív uloží do fronty, pak do backendu.
 - Backend: `IndexedDbBackend`, databáze IndexedDB `workout-denik`:
   - úložiště `docs` – dokumenty podle cesty: `config/main` (fitka, nastavení),
-    `config/exercises`, `config/templates`, `config/backup` (datum zálohy,
+    `config/exercises` (`{v:2, items}`: jen odchylky od `EX_DB` a vlastní cviky),
+    `config/templates`, `config/backup` (datum zálohy,
     seznam bodů obnovy), `workouts/RRRR-MM` (tréninky po měsících),
     `body/all` (měření), `state/active` (rozdělaný trénink),
   - úložiště `points` – body obnovy (celá záloha jako JSON text).
 - Při startu se volá `navigator.storage.persist()`, aby Chrome data nemazal.
 - Drobná nastavení zobrazení jsou v `localStorage` s prefixem `zd1:`.
+- Cviky (F0-02): `S.exLib` = `EX_DB` + odchylky (`exLoad`), zápis vždy přes
+  `putEx(items)`, který uloží jen rozdíly. Partie jsou klíče `MUSCLE_MAP.NAMES`,
+  ramena jsou jedna partie `delts` (staré `delt_f/s/r` se převádějí). Záloha
+  obsahuje celé cviky a značku `exDb:2`.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
