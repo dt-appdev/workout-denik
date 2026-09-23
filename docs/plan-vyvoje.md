@@ -74,6 +74,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [ ] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče.
 - [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05).
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
+- [ ] **F1-08** U warm-up série tlačitko "60%", které přednastaví váhu v sérii na 60% maxima z minula, následna editace je zachována
 
 ### Fáze 2 – Šablony a historie
 
