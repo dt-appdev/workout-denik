@@ -1,0 +1,2 @@
+# Zálohy dat nikdy nepatří do repa (data zůstávají jen v telefonu).
+*.json
