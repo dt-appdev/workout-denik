@@ -305,6 +305,7 @@ const S={
   histGym:"all", statsGym:"all", statsMetric:"count", statsRange:lsGet("statsRange","30d"), sumPeriod:"month", exSearch:"", exMuscle:"all",
   detailMetric:"e1rm", detailRange:"1y", detailGym:"all",
   bodyMetric:"weight", bodyRange:"all",
+  histView:lsGet("histView","list"), calM:0, // Historie: seznam / kalendář (F3-06), zobrazený měsíc kalendáře (0 = aktuální)
   selGym:null
 };
 let downloads=null, pointsApi=null;
@@ -839,7 +840,9 @@ function vHist(){
   const {all}=derive();
   const list=all.filter(w=>S.histGym==="all"||w.gymId===S.histGym);
   let h=topbar("Historie",list.length+" tréninků");
+  h+='<div class="seg seg-wide" style="margin-bottom:10px">'+[["list","Seznam"],["cal","Kalendář"]].map(([k,l])=>'<button data-act="histView" data-v="'+k+'" aria-pressed="'+(S.histView===k)+'">'+l+'</button>').join("")+'</div>';
   h+=gymChips("histGym",S.histGym,true);
+  if(S.histView==="cal")return h+vCal(all,list);
   if(!list.length)return h+'<div class="empty" style="margin-top:14px">Žádné tréninky.</div>';
   let curM="";const lim=S.histLimit||40;
   list.slice(0,lim).forEach(w=>{
@@ -850,7 +853,7 @@ function vHist(){
   if(list.length>lim)h+='<button class="btn block" data-act="histMore">Zobrazit další</button>';
   return h;
 }
-function sheetWorkout(w,justSaved){
+function sheetWorkout(w,justSaved,nav){
   let b='<div class="row wrap-r small muted num"><span class="pill"><span class="sw" style="background:'+gymColor(w.gymId)+'"></span>'+esc(gymName(w.gymId))+'</span><span>'+fmtDay(w.start)+' '+fmtTime(w.start)+'</span>'+durLabel(w)+'<span>'+fmtInt(wVol(w))+' kg</span></div>'+(w.endOrig?'<div class="xs muted">Délka upravena ručně: původně '+fmtDur(w.endOrig-w.start)+' (konec '+fmtTime(w.endOrig)+'), uloženo '+fmtDur(w.end-w.start)+' (konec '+fmtTime(w.end)+').</div>':'');
   const R=wRecs(w);
   if(justSaved||R.length)b+=R.length?'<div class="recbox"><h3>🏅 '+R.length+' '+plural(R.length,"rekord","rekordy","rekordů")+'</h3>'+recListHtml(R,true)+'</div>':'<div class="small muted">Tentokrát bez nového rekordu.</div>';
@@ -859,9 +862,75 @@ function sheetWorkout(w,justSaved){
     const er=R.filter(r=>r.exId===e.exId);
     b+='<div class="card"><div style="font-weight:700;color:var(--accent-2)"><button class="linkbtn" data-act="openEx" data-v="'+esc(e.exId)+'">'+esc(exName(e.exId))+'</button>'+(er.length?' <span class="medals">🏅 '+er.length+'</span>':'')+'</div>'+(e.note?'<div class="xs muted">'+esc(e.note)+'</div>':'')+'<div class="dset">'+(()=>{const k=kindOf(e.exId);return e.sets.map(s=>{const l=s.t==="w"?"W":s.t==="d"?"D":s.t==="f"?"F":++wn;const L=setLoad(k,s,w.start);const r=hasReps(k)&&L&&s.reps?e1rm(L,s.reps):0;return '<div><span class="lbl '+s.t+'">'+l+'</span><span>'+esc(setStr(k,s))+(s.rpe?' @'+s.rpe:'')+'</span>'+(isWork(s.t)&&r?'<span class="muted">1RM ≈ '+fmtKg(Math.round(r*10)/10)+'</span>':'')+'</div>'}).join("")})()+'</div></div>';
   }
-  openSheet((justSaved?"Hotovo · ":"")+w.title,b,(justSaved?'':'<button class="btn primary full" data-act="wAgain" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Cvičit znovu</button>')+'<button class="btn grow" data-act="wToTpl" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Uložit jako šablonu</button><button class="btn grow'+(justSaved?' primary':'')+'" data-act="editW" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Upravit</button>');
+  openSheet((justSaved?"Hotovo · ":"")+w.title,b,(justSaved?'':'<button class="btn primary full" data-act="wAgain" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Cvičit znovu</button>')+'<button class="btn grow" data-act="wToTpl" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Uložit jako šablonu</button><button class="btn grow'+(justSaved?' primary':'')+'" data-act="editW" data-v="'+esc(w.id)+'" data-m="'+w.mk+'">Upravit</button>',false,nav);
 }
 
+/* ---------- KALENDÁŘ (F3-06) ----------
+   Historie → Kalendář: měsíc, kolečko v barvě fitka, pod ním název tréninku (víc tréninků = kolečko
+   rozdělené na barvy a „2×“), tečka = měření v Tělo, čárkované kolečko = rozdělaný trénink.
+   Filtr fitek skryje tréninky z jiných fitek, streak a volné dny se počítají vždy ze všech fitek.
+   Otevře se vždy aktuální měsíc (S.calM = 0), přepíná se šipkami nebo swipem.
+   Budoucí dny jsou zatím neaktivní (místo pro plánované tréninky, F4-07). */
+const dayKey=t=>{const d=new Date(t);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+const dayStart=t=>new Date(t).setHours(0,0,0,0);
+// tréninky podle dne (klíč dayKey), v rámci dne od nejstaršího; poslouží i roční heatmapě (F3-07)
+function wByDay(ws){const m={};for(const w of ws)(m[dayKey(w.start)]=m[dayKey(w.start)]||[]).push(w);for(const k in m)m[k].sort((a,b)=>a.start-b.start);return m}
+function bodyByDay(){const m={};for(const [id,b] of Object.entries(S.body||{}))(m[dayKey(b.date)]=m[dayKey(b.date)]||[]).push(Object.assign({id},b));return m}
+// týdny po sobě (po–ne) aspoň s jedním tréninkem; rozběhnutý týden bez tréninku řadu nepřeruší
+function calStreak(all){
+  const wk=new Set(all.map(w=>startOfWeek(w.start)));
+  let t=startOfWeek(Date.now()),n=0;if(!wk.has(t))t=startOfWeek(t-3*DAY);
+  while(wk.has(t)){n++;t=startOfWeek(t-3*DAY)} // −3 dny a zpět na pondělí: bez chyby při změně času
+  return n;
+}
+// dny od posledního tréninku (dnes cvičil nebo rozdělaný trénink = 0, bez tréninků null)
+function calRest(all){if(S.active)return 0;if(!all.length)return null;return Math.round((dayStart(Date.now())-dayStart(all[0].start))/DAY)}
+const calMonth=()=>{const n=new Date();return S.calM||new Date(n.getFullYear(),n.getMonth(),1).getTime()};
+const calMonthName=d=>MONTHS_FULL[d.getMonth()].replace(/^./,c=>c.toUpperCase());
+function vCal(all,list){
+  const m0=new Date(calMonth()),y=m0.getFullYear(),mo=m0.getMonth(),now=new Date();
+  const byDay=wByDay(list),byAll=wByDay(all),bDay=bodyByDay();
+  const today=dayKey(now),endToday=dayStart(now)+DAY,first=all.length?dayStart(all[all.length-1].start):endToday; // volné dny až od prvního tréninku
+  const act=S.active&&(S.histGym==="all"||S.active.gymId===S.histGym)?S.active:null;
+  const streak=calStreak(all),rest=calRest(all);
+  let h='<div class="kpis cal-k"><div class="kpi"><b>🔥 '+streak+'</b><span>'+plural(streak,"týden","týdny","týdnů")+' v řadě</span></div><div class="kpi"><b>'+(rest==null?"–":rest)+'</b><span>'+(rest==null?"dní":plural(rest,"den","dny","dní"))+' volna</span></div></div>';
+  const isNow=y===now.getFullYear()&&mo===now.getMonth();
+  h+='<div class="card cal" data-cal="1"><div class="cal-nav"><button class="iconbtn" data-act="calM" data-v="-1" aria-label="Předchozí měsíc">‹</button>'+(isNow?'<b class="cal-t">':'<button class="cal-t" data-act="calM" data-v="0" title="Zpět na aktuální měsíc">')+calMonthName(m0)+' '+y+(isNow?'</b>':' <small>↺</small></button>')+'<button class="iconbtn" data-act="calM" data-v="1" aria-label="Další měsíc">›</button></div>';
+  h+='<div class="cal-g">'+["po","út","st","čt","pá","so","ne"].map(d=>'<div class="cal-wd">'+d+'</div>').join("");
+  for(let i=(m0.getDay()+6)%7;i>0;i--)h+='<div></div>';
+  const dim=new Date(y,mo+1,0).getDate();let nW=0,nRest=0,nBody=0;
+  for(let d=1;d<=dim;d++){
+    const t=new Date(y,mo,d).getTime(),k=dayKey(t),ws=byDay[k]||[],fut=t>=endToday,bs=bDay[k]||[],a=act&&k===today?act:null;
+    if(!fut&&t>=first&&!byAll[k]&&!(S.active&&k===today))nRest++;
+    nW+=ws.length;if(bs.length)nBody++;
+    let cls="cal-c",st="";
+    if(ws.length){cls+=" on";const c=ws.map(w=>gymColor(w.gymId));st=c.length>1?'background:conic-gradient('+c.map((x,i)=>x+' '+Math.round(i*100/c.length)+'% '+Math.round((i+1)*100/c.length)+'%').join(",")+')':'background:'+c[0]}
+    else if(a){cls+=" act";st='border-color:'+gymColor(a.gymId)}
+    const lab=ws.length>1?ws.length+"×":ws.length?ws[0].title:a?a.title:"";
+    const aria=fmtDay(t)+(ws.length?": "+ws.map(w=>w.title).join(", "):"")+(bs.length?", měření":"")+(a?", rozdělaný trénink":"");
+    const tap=fut||!(ws.length||bs.length||a)?' tabindex="-1" aria-disabled="true"':a&&!ws.length&&!bs.length?' data-act="calActive"':' data-act="calDay" data-v="'+k+'"';
+    h+='<button class="cal-d'+(k===today?' today':'')+(fut?' fut':'')+'"'+tap+' aria-label="'+esc(aria)+'"><span class="'+cls+'"'+(st?' style="'+st+'"':'')+'>'+d+(bs.length?'<i class="cal-b"></i>':'')+'</span>'+(lab?'<span class="cal-l">'+esc(lab)+'</span>':'')+'</button>';
+  }
+  h+='</div></div>';
+  h+='<div class="small muted num cal-sum">'+calMonthName(m0)+': <b>'+nW+'</b> '+plural(nW,"trénink","tréninky","tréninků")+(S.histGym!=="all"?' ('+esc(gymName(S.histGym))+')':'')+' · <b>'+nRest+'</b> '+plural(nRest,"volný den","volné dny","volných dnů")+(nBody?' · <i class="cal-b"></i> <b>'+nBody+'</b> '+plural(nBody,"den","dny","dní")+' s měřením':'')+'</div>';
+  return h;
+}
+// klepnutí na den: jedna věc se otevře rovnou, víc (tréninky, měření) = výběr
+function sheetCalDay(k,noanim){
+  const ws=wByDay(derive().all.filter(w=>S.histGym==="all"||w.gymId===S.histGym))[k]||[],bs=bodyByDay()[k]||[];
+  if(!ws.length&&!bs.length){closeSheet();return}
+  if(ws.length+bs.length===1){if(ws.length)sheetWorkout(ws[0]);else sheetBody(bs[0].id);return}
+  let b='<div class="stack" style="gap:8px">';
+  for(const w of ws)b+='<button class="hw" data-act="calW" data-v="'+esc(w.id)+'" data-m="'+w.mk+'" data-k="'+k+'"><div class="row"><h3 class="grow">'+esc(w.title)+'</h3><span class="pill"><span class="sw" style="background:'+gymColor(w.gymId)+'"></span>'+esc(gymName(w.gymId))+'</span></div><div class="line num"><span>'+fmtTime(w.start)+'</span>'+durLabel(w)+'<span>'+fmtInt(wVol(w))+' kg</span><span>'+wSets(w)+' sérií</span></div></button>';
+  for(const x of bs)b+='<button class="hw" data-act="calBody" data-v="'+esc(x.id)+'" data-k="'+k+'"><div class="row"><h3 class="grow"><i class="cal-b"></i> Měření</h3></div><div class="line num">'+BODY_F.filter(([f])=>x[f]!==undefined&&x[f]!==null&&x[f]!=="").slice(0,3).map(([f,l,u])=>'<span>'+esc(l)+' <b>'+fmtKg(+x[f])+'</b> '+esc(u)+'</span>').join("")+'</div></button>';
+  const d=new Date(ws.length?ws[0].start:bs[0].date);
+  openSheet(fmtDay(d.getTime())+" "+d.getFullYear(),b+'</div>',null,noanim);
+}
+function calShift(v){if(!v)S.calM=0;else{const m=new Date(calMonth());S.calM=new Date(m.getFullYear(),m.getMonth()+v,1).getTime()}scheduleRender()}
+// swipe doleva/doprava po kalendáři přepne měsíc
+{let x0=null,y0=0;
+document.addEventListener("touchstart",e=>{x0=e.touches.length===1&&e.target.closest&&e.target.closest("[data-cal]")?e.touches[0].clientX:null;if(x0!=null)y0=e.touches[0].clientY},{passive:true});
+document.addEventListener("touchend",e=>{if(x0==null)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)calShift(dx<0?1:-1)},{passive:true});}
 
 /* ---------- STATS ---------- */
 const RANGES=[["7d","7 dní",7],["30d","30 dní",30],["3m","3M",91],["6m","6M",182],["1y","Rok",365],["all","Vše",null]];
@@ -1146,12 +1215,12 @@ function vBody(){
   h+='</div></section>';
   return h;
 }
-function sheetBody(id){
+function sheetBody(id,nav){
   const v=id?S.body[id]:{date:Date.now()};
   let b='<label class="f">Datum<input class="inp" type="date" id="b-date" value="'+toDateInput(v.date)+'"></label><div class="grid2">';
   for(const [k,l,u] of BODY_F)b+='<label class="f">'+esc(l)+(u?' ('+esc(u)+')':'')+'<input class="inp" id="b-'+k+'" inputmode="decimal" value="'+(v[k]!=null?esc(String(v[k]).replace(".",",")):"")+'"></label>';
   b+='</div><label class="f">Poznámka<input class="inp" id="b-note" value="'+esc(v.note||"")+'"></label>';
-  openSheet(id?"Upravit měření":"Nové měření",b,(id?'<button class="btn danger" data-act="delBody" data-v="'+id+'">Smazat</button>':'')+'<button class="btn primary grow" data-act="saveBody" data-v="'+(id||"")+'">Uložit</button>');
+  openSheet(id?"Upravit měření":"Nové měření",b,(id?'<button class="btn danger" data-act="delBody" data-v="'+id+'">Smazat</button>':'')+'<button class="btn primary grow" data-act="saveBody" data-v="'+(id||"")+'">Uložit</button>',false,nav);
 }
 
 /* ---------- SETTINGS ---------- */
@@ -1679,6 +1748,12 @@ document.addEventListener("click",ev=>{
     case "delTpl":confirmSheet("Smazat šablonu?","Šablona „"+esc(d.title)+"“ se smaže. Tréninky podle ní zůstanou.","Smazat","delTplOk");break;
     case "delTplOk":{const items=Object.assign({},S.templates);delete items[S.editDraft.id];put("config/templates",{items});S.editDraft=null;closeSheet();go("train");break}
     case "histGym":S.histGym=v;S.histLimit=40;scheduleRender();break;
+    case "histView":S.histView=v;lsSet("histView",v);scheduleRender();break;
+    case "calM":calShift(+v);break;
+    case "calDay":sheetCalDay(v);break;
+    case "calActive":go("train");break;
+    case "calW":sheetWorkout(Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]),false,{lv:2,back:()=>sheetCalDay(t.dataset.k,true)});break;
+    case "calBody":sheetBody(v,{lv:2,back:()=>sheetCalDay(t.dataset.k,true)});break;
     case "histMore":S.histLimit=(S.histLimit||40)+40;scheduleRender();break;
     case "wAgain":{if(S.active){closeSheet();toast("Nejdřív dokonči rozdělaný trénink.");go("train");break}sheetAgain(Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]));break}
     case "againGym":{if(!again)break;again.gym=v;document.querySelectorAll('[data-act="againGym"]').forEach(c=>c.setAttribute("aria-pressed",c.dataset.v===v));const el=document.getElementById("againInfo");if(el)el.innerHTML=againInfo();break}
@@ -1797,7 +1872,7 @@ function navDepth(){
 // místo, kam se vrátit ze stránky cviku nebo z úpravy (i s otevřeným panelem a posunem stránky)
 function navFrame(){return {route:S.route,re:sheetNav&&sheetNav.re,y:window.scrollY,d:navDepth()}}
 const edChanged=()=>!!S.editDraft&&JSON.stringify(S.editDraft)!==S.editOrig; // úprava tréninku/šablony má neuložené změny
-function goTab(v){S.exDetail=null;S.editDraft=null;if(v==="ex"&&S.route!=="ex"&&S.route!=="exd"){S.exlQ="";S.exlLimit=0}go(v)}
+function goTab(v){S.exDetail=null;S.editDraft=null;if(v==="hist"&&S.route!=="hist")S.calM=0;if(v==="ex"&&S.route!=="ex"&&S.route!=="exd"){S.exlQ="";S.exlLimit=0}go(v)}
 function goEdit(){const f=navFrame();closeSheet();S.nav.push(f);S.editOrig=JSON.stringify(S.editDraft);go("edit")}
 function navBack(force){
   if(sheetNav){sheetNav.back();return true}

@@ -131,6 +131,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (volba fitka, stav `again`), `startAgain` založí trénink přes `exEntryFor` se sériemi vybraného
   tréninku (jako šablona). Rozdělaný trénink má `again:true` (jen kvůli nezaškrtnutému „Aktualizovat
   šablonu“), do uloženého tréninku se nepíše. Série do šablony z tréninku vždy přes `tplSet` (i `sec`, `km`).
+- Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`list`/`cal`, `Local` `histView`),
+  `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
+  Tréninky podle dne přes `wByDay` (klíč `dayKey`, použít i pro heatmapu F3-07), měření `bodyByDay`.
+  Pod kolečkem název tréninku, streak `calStreak` a volné dny `calRest` vždy ze všech fitek. Klepnutí `sheetCalDay`:
+  jedna věc rovnou, víc = výběr, z něj `sheetWorkout`/`sheetBody` s `nav` zpět do výběru. Budoucí dny jsou neaktivní
+  (místo pro F4-07).
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
   konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restAlert`
