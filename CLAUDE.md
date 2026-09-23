@@ -139,8 +139,6 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
   Záznam událostí oznámení (cache `wdlog-main` / `wdlog-prN`, píše `sw.js` i appka)
   ukazuje Nastavení → Záznam oznámení (`sheetRestLog`).
-  Zamčený Android uspí procesor a časovač v service workeru se zpozdí; pokusná volba
-  `restKeep` (`keepOn`/`keepOff`) proto během pauzy pouští neslyšitelný tón, který telefon drží vzhůru.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
