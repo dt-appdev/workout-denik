@@ -921,7 +921,7 @@ function wMuscles(w){
 // rozdíl proti minule: ▲ víc (zeleně), ▼ míň (červeně), ◄► beze změny; neutral = jen šedě (čas)
 // trojúhelníčky jako SVG, aby vypadaly stejně v každém písmu
 const TRI=(()=>{const t=d=>'<svg class="tri" viewBox="0 0 10 10" aria-hidden="true"><path d="'+d+'"/></svg>';return {up:t("M5 1.5 9.5 8.5H.5z"),down:t("M5 8.5 .5 1.5h9z"),same:'<svg class="tri tri2" viewBox="0 0 20 10" aria-hidden="true"><path d="M.5 5 7 .8v8.4zM19.5 5 13 .8v8.4z"/></svg>'}})();
-const SAME=TRI.same+' stejně';
+const SAME=TRI.same+' 0';
 function dHtml(d,fmt,cls,neutral){
   if(Math.abs(d)<EPS||fmt(Math.abs(d))===fmt(0))return '<span class="'+cls+' flat">'+SAME+'</span>';
   return '<span class="'+cls+' '+(neutral?"flat":d>0?"gain":"loss")+'">'+(d>0?TRI.up+" +":TRI.down+" −")+fmt(Math.abs(d))+'</span>';
