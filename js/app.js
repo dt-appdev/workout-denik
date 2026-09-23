@@ -1631,9 +1631,12 @@ document.addEventListener("change",ev=>{
    Na hlavní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
    Historie prohlížeče jen „počítá kroky“: drží se v ní aspoň tolik záznamů, kolik kroků zbývá
    na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
-   přidané bez klepnutí může při Zpět přeskočit. Rozdělaný trénink Zpět nikdy neukončí. */
-const Nav={pos:0,ignore:false,exit:false};
-(function(){const st=history.state;Nav.pos=st&&typeof st.zd==="number"?st.zd:0;try{history.replaceState({zd:Nav.pos},"")}catch(e){}})();
+   přidané bez klepnutí může při Zpět přeskočit. Po hlášce na hlavní obrazovce zůstanou kroky
+   „dopředu“ v historii; dotyk (klepnutí i swipe) pojistku obnoví krokem vpřed (history.forward),
+   ten klepnutí nepotřebuje. Rozdělaný trénink Zpět nikdy neukončí. */
+// pos = kde v historii appky jsme, top = nejvyšší existující záznam, wait = čeká se na krok vpřed
+const Nav={pos:0,top:0,ignore:false,exit:false,wait:false};
+(function(){const st=history.state;Nav.pos=Nav.top=st&&typeof st.zd==="number"?st.zd:0;try{history.replaceState({zd:Nav.pos},"")}catch(e){}})();
 // kolik stisků Zpět zbývá na hlavní obrazovku Tréninku
 function navDepth(){
   const r=S.route,top=S.nav[S.nav.length-1];
@@ -1657,23 +1660,31 @@ function navBack(force){
   return false;
 }
 function navEnsure(){
-  if(Nav.exit||(navigator.userActivation&&!navigator.userActivation.isActive))return;
+  if(Nav.exit||Nav.wait||(navigator.userActivation&&!navigator.userActivation.isActive))return;
   const need=navDepth()+1;
-  while(Nav.pos<need){Nav.pos++;history.pushState({zd:Nav.pos},"")}
+  while(Nav.pos<need){Nav.pos++;Nav.top=Nav.pos;history.pushState({zd:Nav.pos},"")}
 }
 window.addEventListener("popstate",ev=>{
   const p=ev.state&&typeof ev.state.zd==="number"?ev.state.zd:0;
-  const fwd=p>Nav.pos;Nav.pos=p;
+  const fwd=p>Nav.pos;Nav.pos=p;if(p>Nav.top)Nav.top=p;
+  if(fwd){Nav.wait=false;navEnsure();return}
   if(Nav.ignore){Nav.ignore=false;return}
-  if(fwd)return;
   saveChipScroll();
   if(navBack())return;
   // hlavní obrazovka Tréninku: zahodit zbylé kroky, další Zpět appku zavře
   if(p>0){Nav.ignore=true;history.go(-p)}
   Nav.exit=true;toast("Stiskni Zpět ještě jednou pro zavření","exit");
 });
-// klepnutí do appky obnoví pojistku proti zavření a schová hlášku (a doplní kroky po otevření panelu či stránky)
-document.addEventListener("click",()=>{if(!Nav.exit)return;Nav.exit=false;const t=document.querySelector(".toast.exit");if(t)t.remove()},true);
+// dotyk do appky (klepnutí i swipe) po hlášce: schovat ji a obnovit pojistku proti zavření
+function navRearm(){
+  if(!Nav.exit)return;Nav.exit=false;
+  const t=document.querySelector(".toast.exit");if(t)t.remove();
+  if(Nav.top>Nav.pos){Nav.wait=true;history.forward();setTimeout(()=>{if(Nav.wait){Nav.wait=false;navEnsure()}},800)}
+}
+document.addEventListener("pointerdown",navRearm,true);
+document.addEventListener("touchstart",navRearm,{capture:true,passive:true});
+document.addEventListener("click",navRearm,true);
+// po klepnutí doplnit kroky (otevřený panel, stránka)
 document.addEventListener("click",()=>navEnsure());
 
 /* ---------- backup (F0-01) ----------
