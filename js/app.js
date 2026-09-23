@@ -1754,7 +1754,7 @@ async function scanTestData(){
   if(scanTestData.busy)return;
   scanTestData.busy=true;
   const prs={};let bytes=0;
-  for(const k of testKeys()){prs[k.match(/\d+/)[0]]=1;bytes+=k.length+(localStorage.getItem(k)||"").length}
+  for(const k of testKeys()){prs[k.match(/^zd1-pr(\d+):/)[1]]=1;bytes+=k.length+(localStorage.getItem(k)||"").length}
   for(const n of await testDbs()){
     prs[n.match(/\d+$/)[0]]=1;
     try{const db=await idbOpenExisting(n);for(const st of ["docs","points"])for(const [k,v] of await idbAll(db,st))bytes+=String(k).length+JSON.stringify(v).length;db.close()}catch(e){}
