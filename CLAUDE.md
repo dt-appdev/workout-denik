@@ -19,6 +19,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Uživatel není profesionální programátor: změny vysvětluj srozumitelně
   a v PR popisuj, co si má na telefonu vyzkoušet (krok za krokem).
 - Každá úloha = vlastní větev a pull request, do `main` nic přímo.
+- Na víc úlohách se může pracovat souběžně (každá ve své větvi). Proto před
+  dokončením PR (a vždy, když GitHub hlásí konflikt nebo uživatel řekne, že se
+  sloučil jiný PR) stáhni aktuální `main` a slouč ho do své větve (`git merge`,
+  ne rebase). Konflikty vyřeš tak, aby zůstaly změny z obou stran:
+  - `VERSION` v `sw.js` nastav vyšší než je v `main` (dnešní datum, další `.N`),
+  - v logu plánu nech řádky z obou větví (nejnovější nahoře),
+  - v kódu zachovej funkce z `main` i z úlohy a po sloučení appku znovu ověř.
 - V rámci PR úlohy zaškrtni úlohu v `docs/plan-vyvoje.md` a přidej řádek
   do logu na konci plánu (nejnovější nahoře).
 - Stará data se nesmí ztratit: nová pole mají výchozí hodnoty a uložená data

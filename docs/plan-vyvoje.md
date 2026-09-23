@@ -146,6 +146,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 23. 9. 2026 | – | Do CLAUDE.md přidáno pravidlo pro souběžnou práci na víc úlohách: před dokončením PR sloučit aktuální `main` do větve a vyřešit konflikty (vyšší `VERSION`, v logu nechat řádky z obou větví). |
 | 23. 9. 2026 | – | Do plánu přidány úlohy F0-06 (systémové tlačítko Zpět) a F0-07 (měnitelné pořadí fitek). |
 | 23. 9. 2026 | F0-05 | Nová záložka Cviky (6. ve spodní liště, ikona kniha): všechny cviky, nahoře cvičené; řazení Naposledy / A–Z; filtr partie a vybavení (pamatuje se), filtr Skryté; + Nový cvik. Hledání všude bez ohledu na diakritiku. Stránka cviku rozdělená na Popis a Statistiky: ze záložky Cviky a z výběru cviku se otevře Popis, ze Statistik, Historie a tréninku Statistiky. „Spravovat“ z Nastavení odstraněno. Data ani formát zálohy beze změny. |
 | 23. 9. 2026 | – | Do plánu přidány úlohy F0-04 (verze appky v Nastavení) a F0-05 (záložka Cviky). |
