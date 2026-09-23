@@ -62,6 +62,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   jako řetězce, texty escapovat přes `esc()`. Komentáře česky.
 - Kliknutí se řeší delegací přes `data-act` / `data-v` (jeden velký `switch`).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
+- Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
+  krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
+  dostane `nav.lv` (hloubka) a `nav.back` (krok o úroveň), dynamický panel `nav.re`
+  (znovu otevření). Nová podstránka (jako `exd`, `edit`) uloží místo návratu
+  `S.nav.push(navFrame())` a musí se doplnit do `navBack` a `navDepth`. Šipky ←
+  v appce volají `navBack()`. Záznamy historie se přidávají jen po klepnutí (`navEnsure`).
 
 ## Datová vrstva (js/app.js, sekce „DATOVÁ VRSTVA")
 

@@ -3,7 +3,7 @@
    PRAVIDLO: při KAŽDÉ změně kteréhokoli souboru appky zvyš VERSION.
    Jen tak Chrome pozná, že je nová verze, stáhne ji a staré soubory smaže.
    Nový soubor appky přidej i do FILES, jinak nebude fungovat offline. */
-const VERSION = "2026-09-23.3";
+const VERSION = "2026-09-23.4";
 const CACHE = "workout-denik-" + VERSION;
 const FILES = [
   "./",

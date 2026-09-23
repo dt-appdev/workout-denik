@@ -60,7 +60,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [ ] **F0-03** Přidání cviku vyhledáním v otevřené databázi (free-exercise-db, případně wger): napíšu název, appka nabídne cviky a předvyplní partie, vybavení, popis a návrh českého názvu. Stačí online.
 - [ ] **F0-04** Verze appky v Nastavení: zobrazit, jakou verzi právě používám – vydaná verze (z `main`), nebo testovací verze před merge (s názvem větve / PR) – a datum a čas verze. Pomůže při testování PR na telefonu poznat, že se appka opravdu aktualizovala.
 - [x] **F0-05** Záložka Cviky: nová záložka ve spodní liště vedle Trénink, Historie, Statistiky, Tělo a Nastavení s databází cviků. Procházení, hledání a filtr podle partie, otevření detailu cviku a úprava (název CZ/EN, partie, popis…) bez nutnosti chodit přes přidání cviku do tréninku nebo přes statistiky. Nahradí tlačítko „Spravovat" v Nastavení → Databáze cviků.
-- [ ] **F0-06** Systémové tlačítko Zpět (Android): vrátí o krok zpět v appce místo zavření. Pořadí: zavřít otevřený panel (sheet) → ze stránky cviku nebo úpravy tréninku zpět, odkud se přišlo → z jiné záložky na Trénink. Na hlavní obrazovce Tréninku se appka zavře až po druhém stisku (hláška „Stiskni Zpět ještě jednou pro zavření"). Rozdělaný trénink se tlačítkem Zpět nikdy neukončí ani nesmaže. Technicky přes historii prohlížeče (`history.pushState` + `popstate`), zdarma a offline.
+- [x] **F0-06** Systémové tlačítko Zpět (Android): vrátí o krok zpět v appce místo zavření. Pořadí: zavřít otevřený panel (sheet) → ze stránky cviku nebo úpravy tréninku zpět, odkud se přišlo → z jiné záložky na Trénink. Na hlavní obrazovce Tréninku se appka zavře až po druhém stisku (hláška „Stiskni Zpět ještě jednou pro zavření"). Rozdělaný trénink se tlačítkem Zpět nikdy neukončí ani nesmaže. Technicky přes historii prohlížeče (`history.pushState` + `popstate`), zdarma a offline.
 - [ ] **F0-07** Měnitelné pořadí fitek v Nastavení (šipky ↑/↓ u fitka). Pořadí se promítne všude, kde se fitka vybírají (začátek tréninku, filtry v Historii a Statistikách). Barva fitka se dnes počítá z jeho pořadí, takže se při přesunu nesmí změnit: každé fitko dostane uloženou barvu (výchozí = barva podle dnešního pořadí, doplní se automaticky při načtení).
 
 ### Fáze 1 – Ovládání při tréninku
@@ -131,7 +131,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F0-02 | Obsahuje databáze cviků už svalové partie, nebo je doplníme? | Vyřešeno 23. 9.: partie všech 388 cviků zkontrolované a schválené, výchozí databáze je součástí appky. |
 | F0-04 | Jak dostat testovací verzi (před merge) do telefonu? GitHub Pages teď nasazuje jen `main`. | Zdarma přes GitHub Actions: nasadit i větve PR do podsložky (např. `…/workout-denik/pr-12/`) s vlastními daty, verzi a čas doplnit automaticky při nasazení |
 | F0-05 | Bude spodní lišta se 6 záložkami na telefonu ještě pohodlná? | Vyřešeno 23. 9.: 6 záložek s popisky, menší písmo; Cviky mají ikonu otevřené knihy (činka zůstává Tréninku). |
-| F0-06 | Co má Zpět udělat na hlavní obrazovce Tréninku? | Zavřít appku až po druhém stisku do 2 s, první stisk ukáže hlášku |
+| F0-06 | Co má Zpět udělat na hlavní obrazovce Tréninku? | Vyřešeno 23. 9.: první stisk ukáže hlášku, druhý appku zavře, dokud mezitím neklepneš do appky (limit 2 s Chrome neumožní spolehlivě hlídat) |
 | F0-07 | Ruční pořadí, nebo automaticky podle počtu návštěv? | Ruční (šipky ↑/↓); automatické řazení by pořadí měnilo samo a zmátlo by |
 | F2-01 | „Cvičit znovu" z tréninku v jiném fitku: spustit v aktuálním, nebo původním fitku? | Aktuální fitko |
 | F2-02 | Mají mít šablony různé výchozí váhy pro každé fitko? | Ne, stačí F1-01 |
@@ -146,6 +146,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 23. 9. 2026 | F0-06 | Systémové tlačítko Zpět (i gesto): panel o úroveň zpět nebo zavřít, stránka cviku a úprava tréninku/šablony zpět tam, odkud se přišlo (i do otevřeného panelu, např. detail tréninku nebo výběr cviků se zaškrtnutými cviky, a na stejné místo seznamu), jiná záložka → Trénink. Na hlavní obrazovce Tréninku první Zpět ukáže hlášku, druhý appku zavře (dokud mezitím neklepneš). Úprava se změnami se zeptá „Zahodit změny?“. Šipka ← v appce dělá totéž. Rozdělaný trénink Zpět nikdy neukončí. Data ani formát zálohy beze změny. |
 | 23. 9. 2026 | – | Do CLAUDE.md přidáno pravidlo pro souběžnou práci na víc úlohách: před dokončením PR sloučit aktuální `main` do větve a vyřešit konflikty (vyšší `VERSION`, v logu nechat řádky z obou větví). |
 | 23. 9. 2026 | – | Do plánu přidány úlohy F0-06 (systémové tlačítko Zpět) a F0-07 (měnitelné pořadí fitek). |
 | 23. 9. 2026 | F0-05 | Nová záložka Cviky (6. ve spodní liště, ikona kniha): všechny cviky, nahoře cvičené; řazení Naposledy / A–Z; filtr partie a vybavení (pamatuje se), filtr Skryté; + Nový cvik. Hledání všude bez ohledu na diakritiku. Stránka cviku rozdělená na Popis a Statistiky: ze záložky Cviky a z výběru cviku se otevře Popis, ze Statistik, Historie a tréninku Statistiky. „Spravovat“ z Nastavení odstraněno. Data ani formát zálohy beze změny. |
