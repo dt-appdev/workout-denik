@@ -12,7 +12,7 @@ MARK="<!-- testovaci-verze -->"
 upsert() {
   local body="$MARK
 $2" id old
-  id=$(gh api "repos/$REPO/issues/$1/comments" --paginate --jq ".[] | select(.body | startswith(\"$MARK\")) | .id" | head -n1)
+  id=$(gh api "repos/$REPO/issues/$1/comments" --paginate --jq ".[] | select(.body | startswith(\"$MARK\")) | .id" | head -n1 || true)
   if [ -z "$id" ]; then
     gh api -X POST "repos/$REPO/issues/$1/comments" -f body="$body" > /dev/null
   else
