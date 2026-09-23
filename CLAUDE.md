@@ -127,6 +127,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   podle druhu (`setGrp`: zahřívací zvlášť), `exHints` vrátí pro každou sérii minulou sérii
   (sloupec Minule) a šedé předvyplnění (placeholder), ✓ ho převezme. Nový cvik v tréninku má
   prázdné hodnoty; `s.ph` = hodnoty ze šablony jen u nikdy necvičeného cviku (jen v rozdělaném tréninku).
+- Cvičit znovu (F2-01, sekce „CVIČIT ZNOVU“): tlačítko `wAgain` v `sheetWorkout` otevře `sheetAgain`
+  (volba fitka, stav `again`), `startAgain` založí trénink přes `exEntryFor` se sériemi vybraného
+  tréninku (jako šablona). Rozdělaný trénink má `again:true` (jen kvůli nezaškrtnutému „Aktualizovat
+  šablonu“), do uloženého tréninku se nepíše. Série do šablony z tréninku vždy přes `tplSet` (i `sec`, `km`).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).

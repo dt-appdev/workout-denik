@@ -221,6 +221,7 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 .sheet-b>.chips,.sheet-b>.row,.sheet-b>.pickrow{flex:none}
 .sheet-b .chips{min-height:36px}
 .sheet-f{padding:10px 16px 14px;border-top:1px solid var(--line);display:flex;gap:8px}
+.sheet-f:has(>.full){flex-wrap:wrap}.sheet-f>.full{flex:1 0 100%}
 .pick{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:52px}
 .pick[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .pick .chk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line-2);flex:none;display:flex;align-items:center;justify-content:center}
