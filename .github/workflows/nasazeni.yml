@@ -1,0 +1,110 @@
+# Nasazení webu na GitHub Pages (F0-04), skript .github/sestav-web.sh:
+#   https://<uživatel>.github.io/workout-denik/            = vydaná verze (main), web tohoto repa
+#   https://<uživatel>.github.io/workout-denik-test/pr-12/ = testovací verze PR č. 12, web repa workout-denik-test
+# Testovací verze jsou v jiném repu, aby šly v Androidu nainstalovat vedle vydané appky.
+# Při každé události se testovací web sestaví celý znovu z otevřených PR,
+# zavřený nebo sloučený PR tím zmizí.
+#
+# Nastavení (jednou), podrobně v README:
+#   - tady: Settings → Pages → Source: GitHub Actions,
+#   - repo workout-denik-test: Pages → Deploy from a branch → main, / (root),
+#   - tady: secret TEST_REPO_TOKEN = token se zápisem do workout-denik-test.
+#
+# pull_request_target spouští workflow v podobě z main, ne z PR. Kód z PR se tu
+# nikdy nespouští, jen se rozbalí jako soubory webu (git archive).
+name: Nasazení webu
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, closed]
+  pull_request: # jen kontrola, že se web dá sestavit (skript z větve PR), nic se nenasazuje
+  workflow_dispatch:
+
+env:
+  VYDANA_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+  TEST_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}-test/
+  TEST_REPO: ${{ github.repository }}-test
+
+jobs:
+  kontrola:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sestavit web (zkouška)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SITE_URL=$VYDANA_URL bash .github/sestav-web.sh vydana _site
+          SITE_URL=$TEST_URL bash .github/sestav-web.sh testovaci _test
+      - name: Obsah webu
+        run: find _site _test -maxdepth 2 -not -path '*/fonts/*' | sort
+
+  vydana:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/configure-pages@v5
+      - name: Sestavit vydanou verzi
+        run: SITE_URL=$VYDANA_URL bash .github/sestav-web.sh vydana _site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  testovaci:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: testovaci
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sestavit testovací verze
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: SITE_URL=$TEST_URL bash .github/sestav-web.sh testovaci _test
+      - name: Nahrát do repa workout-denik-test
+        id: push
+        env:
+          TOKEN: ${{ secrets.TEST_REPO_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::Chybí secret TEST_REPO_TOKEN, testovací verze se nenasadí (návod v README)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          cd _test
+          git init -q -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Testovací verze (workout-denik ${GITHUB_SHA::7})"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${TEST_REPO}.git" main
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+      - name: Komentáře s odkazem v PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          OK: ${{ steps.push.outputs.ok }}
+          EVENT_PR: ${{ github.event_name == 'pull_request_target' && github.event.action != 'closed' && github.event.pull_request.number || '' }}
+        run: bash .github/komentare.sh _test

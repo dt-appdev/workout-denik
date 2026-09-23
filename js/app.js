@@ -4,6 +4,7 @@
 const MUSCLES={chest:"Hrudník",back:"Záda",shoulders:"Ramena",biceps:"Biceps",triceps:"Triceps",forearms:"Předloktí",quads:"Kvadricepsy",hams:"Hamstringy",glutes:"Hýždě",adductors:"Přitahovače",calves:"Lýtka",abs:"Břicho",lowback:"Spodní záda",neck:"Krk",other:"Ostatní"};
 const EQUIP={barbell:"Velká činka",dumbbell:"Jednoručky",machine:"Stroj",cable:"Kladka",smith:"Multipress",bodyweight:"Vlastní váha",band:"Guma",kettlebell:"Kettlebell",other:"Jiné"};
 const GYMDEP_EQUIP={machine:1,cable:1,smith:1};
+const GYM_COLORS=6; // počet barev fitek (--s1 … --s6 v css/app.css)
 const TYPES=["n","w","d","f"]; // cycle order
 const TYPE_NAME={n:"Pracovní",w:"Zahřívací",d:"Drop set",f:"Do selhání"};
 const MONTHS=["led","úno","bře","dub","kvě","čvn","čvc","srp","zář","říj","lis","pro"];
@@ -20,7 +21,9 @@ const IC={
   more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
   close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
-  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
 };
 
 
@@ -115,18 +118,26 @@ function exTags(e){
      config/main, config/exercises, config/templates, config/backup,
      workouts/RRRR-MM, body/all, state/active
    ===================================================================== */
+/* Verze a kanál appky (F0-04). BUILD doplní při nasazení GitHub Actions do js/verze.js.
+   Testovací verze PR běží na adrese …/workout-denik-test/pr-12/ a má VLASTNÍ data: jiný prefix
+   v localStorage a jinou databázi IndexedDB. Vydaná verze se jí tak nedotkne.
+   Proto data ukládat vždy jen přes Local / Idb / Store, nikdy přímo. */
+const BUILD=Object.assign({kanal:"lokal",pr:0,nazev:"",vetev:"",commit:"",cas:""},window.APP_BUILD||{});
+const TEST_PR=(location.pathname.match(/\/pr-(\d+)\//)||[])[1]||"";
+const MAIN_P="zd1:", MAIN_DB="workout-denik";
+const FILE_P="workout-denik"+(TEST_PR?"-test-pr"+TEST_PR:""); // začátek názvu staženého souboru
 const Local={ // drobnosti v zařízení (cache, fronta, nastavení zobrazení)
-  P:"zd1:",
+  P:TEST_PR?"zd1-pr"+TEST_PR+":":MAIN_P,
   get(k,d){try{const v=localStorage.getItem(this.P+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{if(v===undefined||v===null)localStorage.removeItem(this.P+k);else localStorage.setItem(this.P+k,JSON.stringify(v))}catch(e){}}
 };
 const lsGet=(k,d)=>Local.get(k,d), lsSet=(k,v)=>Local.set(k,v);
 
-/* IndexedDB "workout-denik":
+/* IndexedDB "workout-denik" (testovací verze PR 12: "workout-denik-pr12"):
      docs   – dokumenty appky, klíč = cesta ("config/main", "workouts/2026-09", …)
      points – body obnovy, klíč = id, hodnota {id, at, data (JSON text zálohy)} */
 const Idb={
-  NAME:"workout-denik", VER:1, db:null,
+  NAME:TEST_PR?MAIN_DB+"-pr"+TEST_PR:MAIN_DB, VER:1, db:null,
   open(){
     if(this.db)return Promise.resolve(this.db);
     return new Promise((res,rej)=>{
@@ -155,16 +166,28 @@ const Idb={
   get(store,key){return this.run(store,"readonly",s=>s.get(key))},
   put(store,key,val){return this.run(store,"readwrite",s=>s.put(val,key))},
   del(store,key){return this.run(store,"readwrite",s=>s.delete(key))},
-  async all(store){
-    const db=await this.open();
-    return new Promise((res,rej)=>{
-      const out=[],tx=db.transaction(store,"readonly"),rq=tx.objectStore(store).openCursor();
-      rq.onsuccess=()=>{const c=rq.result;if(c){out.push([c.key,c.value]);c.continue()}};
-      tx.oncomplete=()=>res(out);
-      tx.onerror=()=>rej(tx.error);
-    });
-  }
+  async all(store){return idbAll(await this.open(),store)}
 };
+// všechny položky úložiště jako [[klíč, hodnota], …]
+function idbAll(db,store){
+  return new Promise((res,rej)=>{
+    if(!db.objectStoreNames.contains(store)){res([]);return}
+    const out=[],tx=db.transaction(store,"readonly"),rq=tx.objectStore(store).openCursor();
+    rq.onsuccess=()=>{const c=rq.result;if(c){out.push([c.key,c.value]);c.continue()}};
+    tx.oncomplete=()=>res(out);
+    tx.onerror=()=>rej(tx.error);
+  });
+}
+// otevře cizí existující databázi (vydaná / testovací verze); neexistující nevytváří
+function idbOpenExisting(name){
+  return new Promise((res,rej)=>{
+    const rq=indexedDB.open(name);
+    rq.onupgradeneeded=()=>rq.transaction.abort();
+    rq.onsuccess=()=>res(rq.result);
+    rq.onerror=()=>rej(rq.error||new Error("Databáze neexistuje."));
+    rq.onblocked=()=>rej(new Error("blocked"));
+  });
+}
 
 function IndexedDbBackend(){
   return {
@@ -289,7 +312,7 @@ let downloads=null, pointsApi=null;
 (function loadCache(){
   const c=Store.loadCache();
   if(!c)return;
-  S.cfg=c.cfg||S.cfg;S.exLib=exLoad(c.exLib,c.exV!==EX_V);S.templates=c.templates||{};S.months=c.months||{};S.body=c.body||{};if(c.bk)S.bk=c.bk;
+  S.cfg=cfgNorm(c.cfg||S.cfg);S.exLib=exLoad(c.exLib,c.exV!==EX_V);S.templates=c.templates||{};S.months=c.months||{};S.body=c.body||{};if(c.bk)S.bk=c.bk;
 })();
 const snapshot=()=>({cfg:S.cfg,exLib:S.exLib,exV:EX_V,templates:S.templates,months:S.months,body:S.body,bk:S.bk});
 function saveCache(){Store.saveCache(snapshot)}
@@ -297,7 +320,7 @@ function saveCache(){Store.saveCache(snapshot)}
 function applyDoc(path,data){
   const [col,id]=path.split("/");
   if(col==="config"){
-    if(id==="main")S.cfg=Object.assign({gyms:[],defaultGymId:null,restSec:120},data||{});
+    if(id==="main")S.cfg=cfgNorm(data);
     else if(id==="exercises"){const items=(data&&data.items)||{};S.exV=data&&data.v||0;S.exLegacy=S.exV!==EX_V&&Object.keys(items).length?items:null;S.exLib=exLoad(items,S.exV!==EX_V,S.exV===EX_V)}
     else if(id==="templates")S.templates=(data&&data.items)||{};
     else if(id==="backup")S.bk=Object.assign({last:null,points:[]},data||{});
@@ -335,7 +358,16 @@ const isWork=t=>t!=="w";
 const exName=id=>(S.exLib[id]&&S.exLib[id].name)||id;
 const gymName=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return g?g.name:"Neznámé fitko"};
 const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
-const gymColor=id=>"var(--s"+((gymIdx(id)%6)+1)+")";
+/* barva fitka (F0-07): uložená v g.col (číslo 1–GYM_COLORS = proměnná --sN), nezávislá na pořadí */
+const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
+/* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
+function cfgNorm(c){
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120},c&&typeof c==="object"?c:{});
+  c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
+  return c;
+}
+/* barva pro nové fitko: první nepoužitá, jinak nejméně používaná */
+function freeGymCol(gyms){const n={};for(const g of gyms)n[g.col]=(n[g.col]||0)+1;let b=1;for(let c=2;c<=GYM_COLORS;c++)if((n[c]||0)<(n[b]||0))b=c;return b}
 const toDateInput=t=>{const d=new Date(t);return d.getFullYear()+"-"+d2(d.getMonth()+1)+"-"+d2(d.getDate())};
 const toTimeInput=t=>{const d=new Date(t);return d2(d.getHours())+":"+d2(d.getMinutes())};
 
@@ -581,7 +613,7 @@ function renderTabs(){
   document.getElementById("tabs").innerHTML=t.map(([k,l])=>'<button data-act="tab" data-v="'+k+'" aria-current="'+(cur===k)+'">'+IC[k]+(k==="train"&&S.active&&S.route!=="train"?'<span class="dot"></span>':'')+l+'</button>').join("");
 }
 function topbar(title,sub,left,subCls){
-  return '<header class="top">'+(left||"")+'<h1'+(String(title).length>18?' class="long"':'')+'>'+esc(title)+(sub?'<small'+(subCls?' class="'+subCls+'"':'')+'>'+esc(sub)+'</small>':'')+'</h1><span class="sync" id="sync"></span></header>';
+  return testBar()+'<header class="top">'+(left||"")+'<h1'+(String(title).length>18?' class="long"':'')+'>'+esc(title)+(sub?'<small'+(subCls?' class="'+subCls+'"':'')+'>'+esc(sub)+'</small>':'')+'</h1><span class="sync" id="sync"></span></header>';
 }
 function render(){
   const app=document.getElementById("app");
@@ -939,10 +971,10 @@ function vExList(){
   h+='<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…" value="'+esc(S.exlQ)+'" autocomplete="off">';
   h+='<div class="chips" data-ck="exlM" style="margin-top:8px"><button class="chip" data-act="exlM" data-v="all" aria-pressed="'+(S.exlM==="all")+'">Všechny partie</button>'+Object.entries(MUSCLES).filter(([k])=>k!=="other").map(([k,l])=>'<button class="chip" data-act="exlM" data-v="'+k+'" aria-pressed="'+(S.exlM===k)+'">'+l+'</button>').join("")+'</div>';
   h+='<div class="chips" data-ck="exlEq" style="margin-top:6px"><button class="chip" data-act="exlEq" data-v="all" aria-pressed="'+(S.exlEq==="all")+'">Všechno vybavení</button>'+Object.entries(EQUIP).map(([k,l])=>'<button class="chip" data-act="exlEq" data-v="'+k+'" aria-pressed="'+(S.exlEq===k)+'">'+l+'</button>').join("")+'</div>';
-  h+='<div class="row wrap-r" style="margin-top:8px;gap:8px"><div class="seg">'+[["last","Naposledy"],["az","A–Z"]].map(([k,l])=>'<button data-act="exlSort" data-v="'+k+'" aria-pressed="'+(S.exlSort===k)+'">'+l+'</button>').join("")+'</div>'+(nHid?'<button class="chip" data-act="exlHid" aria-pressed="'+S.exlHid+'">Skryté ('+nHid+')</button>':'')+'<span class="grow"></span><button class="btn sm" data-act="exlNew">+ Nový cvik</button></div>';
+  h+='<div class="row wrap-r" style="margin-top:8px;gap:8px"><div class="seg">'+[["last","Naposledy"],["az","A–Z"]].map(([k,l])=>'<button data-act="exlSort" data-v="'+k+'" aria-pressed="'+(S.exlSort===k)+'">'+l+'</button>').join("")+'</div>'+(nHid?'<button class="chip" data-act="exlHid" aria-pressed="'+S.exlHid+'">Skryté ('+nHid+')</button>':'')+'<span class="grow"></span><button class="btn sm" data-act="fedbOpen" data-v="list">Hledat online</button><button class="btn sm" data-act="exlNew">+ Nový cvik</button></div>';
   h+='<section class="sec"><div class="sec-h"><h2>'+(S.exlHid?"Skryté cviky":"Seznam")+'</h2><span class="xs muted">'+rows.length+'</span></div>';
   if(S.exlHid)h+='<p class="xs muted" style="margin:0 0 8px">Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš je přes Upravit → Zobrazit.</p>';
-  if(!rows.length)h+='<div class="empty">Nic neodpovídá hledání nebo filtru.</div>';
+  if(!rows.length)h+='<div class="empty">Nic neodpovídá hledání nebo filtru.'+(S.exlQ.trim()&&!S.exlHid?'<br><button class="btn sm" data-act="fedbOpen" data-v="list" style="margin-top:10px">Hledat „'+esc(S.exlQ.trim())+'“ online</button>':'')+'</div>';
   h+='<div class="stack" style="gap:6px">';
   for(const r of rows.slice(0,lim)){
     const e=r.e;
@@ -972,7 +1004,7 @@ function vExDetail(){
   // statistiky
   if(!list.length)return h+'<div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>';
   h+='<p class="xs muted" style="margin:0 0 8px">'+(ex.gymDep?'Vázáno na fitko: počítá se zvlášť pro každé fitko.':'Nevázáno na fitko: data ze všech fitek se sčítají.')+' Změníš v Popisu.</p>';
-  const gymsWith=[...new Set(list.map(s=>s.w.gymId))];
+  const gymsWith=[...new Set(list.map(s=>s.w.gymId))].sort((a,b)=>gymIdx(a)-gymIdx(b));
   if(ex.gymDep&&gymsWith.length>1){
     h+='<div class="sec"><div class="chips" data-ck="detailGym"><button class="chip" data-act="detailGym" data-v="all" aria-pressed="'+(S.detailGym==="all")+'">Všechna (zvlášť)</button>'+gymsWith.map(g=>'<button class="chip" data-act="detailGym" data-v="'+g+'" aria-pressed="'+(S.detailGym===g)+'"><span class="sw" style="background:'+gymColor(g)+'"></span>'+esc(gymName(g))+'</button>').join("")+'</div></div>';
   }
@@ -1081,13 +1113,16 @@ function vSettings(){
   let h=topbar("Nastavení","Fitka, vzhled, záloha");
   const counts={};for(const w of derive().all)counts[w.gymId]=(counts[w.gymId]||0)+1;
   h+='<section class="sec"><div class="sec-h"><h2>Fitka</h2><button class="btn sm" data-act="addGym">+ Přidat</button></div><div class="stack" style="gap:6px">';
-  for(const g of S.cfg.gyms){
-    h+='<div class="card row" style="padding:10px 12px"><span class="sw" style="width:12px;height:12px;border-radius:50%;background:'+gymColor(g.id)+'"></span><div class="grow"><b>'+esc(g.name)+'</b><div class="xs muted">'+(counts[g.id]||0)+' tréninků'+(S.cfg.defaultGymId===g.id?' · výchozí':'')+'</div></div><button class="btn sm" data-act="editGym" data-v="'+g.id+'">Upravit</button></div>';
-  }
+  S.cfg.gyms.forEach((g,i,a)=>{
+    h+='<div class="card row" style="padding:10px 12px"><span class="sw" style="width:12px;height:12px;border-radius:50%;background:'+gymColor(g.id)+'"></span><div class="grow"><b>'+esc(g.name)+'</b><div class="xs muted">'+(counts[g.id]||0)+' tréninků'+(S.cfg.defaultGymId===g.id?' · výchozí':'')+'</div></div>'+
+      (a.length>1?'<div class="gymmv"><button class="iconbtn" data-act="gymMove" data-v="'+g.id+'" data-d="-1" aria-label="Posunout '+esc(g.name)+' výš"'+(i===0?" disabled":"")+'>'+IC.up+'</button><button class="iconbtn" data-act="gymMove" data-v="'+g.id+'" data-d="1" aria-label="Posunout '+esc(g.name)+' níž"'+(i===a.length-1?" disabled":"")+'>'+IC.down+'</button></div>':'')+
+      '<button class="btn sm" data-act="editGym" data-v="'+g.id+'">Upravit</button></div>';
+  });
   h+='</div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card row"><span class="grow">Výchozí časovač</span><div class="seg">'+[60,90,120,150,180].map(s=>'<button data-act="restSec" data-v="'+s+'" aria-pressed="'+(S.cfg.restSec===s)+'">'+fmtClock(s)+'</button>').join("")+'</div></div></section>';
+  h+=versionSettings();
   h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
   h+=backupSettings();
   return h;
@@ -1119,7 +1154,7 @@ function pickerRows(){
 function pickerList(){
   const {byEx}=derive();
   const arr=pickerRows();
-  if(!arr.length)return '<div class="empty">Nic neodpovídá filtru.</div>';
+  if(!arr.length)return '<div class="empty">Nic neodpovídá filtru.'+(pick.q.trim()?'<br><button class="btn sm" data-act="fedbOpen" data-v="picker" style="margin-top:10px">Hledat „'+esc(pick.q.trim())+'“ online</button>':'')+'</div>';
   let h='';
   for(const [id,e] of arr.slice(0,pick.limit||120)){
     const on=pick.sel.includes(id);const n=byEx[id]?byEx[id].length:0;
@@ -1134,7 +1169,7 @@ function pickerBody(){
     '<div class="chips" data-ck="pickM"><button class="chip" data-act="pickM" data-v="all" aria-pressed="'+(pick.m==="all")+'">Všechny partie</button>'+Object.entries(MUSCLES).filter(([k])=>k!=="other").map(([k,l])=>'<button class="chip" data-act="pickM" data-v="'+k+'" aria-pressed="'+(pick.m===k)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="chips" data-ck="pickEq"><button class="chip" data-act="pickEq" data-v="all" aria-pressed="'+(pick.eq==="all")+'">Vše</button>'+Object.entries(EQUIP).map(([k,l])=>'<button class="chip" data-act="pickEq" data-v="'+k+'" aria-pressed="'+(pick.eq===k)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="row wrap-r" style="justify-content:space-between"><button class="chip" data-act="pickHist" aria-pressed="'+pick.hist+'">Jen cviky z historie</button><span class="xs muted">'+n+' '+plural(n,"cvik","cviky","cviků")+'</span></div>'+
-    '<button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button>'+
+    '<div class="row wrap-r" style="gap:8px"><button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button><button class="btn sm" data-act="fedbOpen" data-v="picker">Hledat v online databázi</button></div>'+
     '<div class="stack" id="pickList" style="gap:6px">'+pickerList()+'</div>';
 }
 function renderPicker(keep){
@@ -1166,15 +1201,18 @@ function sheetExInfo(id){
 }
 let exEd=null;
 const exEdOut=()=>exEd&&(exEd.from==="detail"||exEd.from==="list"); // úprava otevřená mimo výběr cviků
-function sheetExEdit(id,from){
-  const e=id?S.exLib[id]:{name:(from==="list"?S.exlQ:pick.q)||"",equip:"machine",gymDep:true,pri:[],sec:[]};
-  exEd={id,from:from||"picker",pri:exPri(e).slice(),sec:(e.sec||[]).slice()};
+// fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
+function sheetExEdit(id,from,fx){
+  const e=id?S.exLib[id]:fx?{name:fx.n,cz:fx.cz,equip:fx.e,kind:fx.k,gymDep:!!GYMDEP_EQUIP[fx.e],pri:fx.p,sec:fx.s,desc:fx.d.join("\n")}:{name:(from==="list"?S.exlQ:pick.q)||"",equip:"machine",gymDep:true,pri:[],sec:[]};
+  exEd={id,from:from||"picker",pri:exPri(e).slice(),sec:(e.sec||[]).slice(),fx:fx||null};
   renderExEdit(e);
 }
 function renderExEdit(e){
   const v=k=>{const el=document.getElementById(k);return el?el.value:null};
   const name=v("x-name")!=null?v("x-name"):e.name, cz=v("x-cz")!=null?v("x-cz"):(e.cz||""), desc=v("x-desc")!=null?v("x-desc"):(e.desc||""), url=v("x-url")!=null?v("x-url"):(e.url||""), equip=v("x-equip")||e.equip, kind=v("x-kind")||(KIND[e.kind]?e.kind:"wr"), gd=document.getElementById("x-gd")?document.getElementById("x-gd").checked:!!e.gymDep;
-  const b='<label class="f">Název (anglicky, jako v Hevy)<input class="inp" id="x-name" value="'+esc(name)+'"></label>'+
+  const fx=exEd.fx,have=fx&&fedbHave(fx);
+  const b=(exEd.id?'':fx?'<div class="banner" style="margin-top:0">Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český název je jen návrh.'+(have?'<br><b>Podobný cvik už máš: '+esc(exOf(have).cz||exOf(have).name)+'</b>':'')+'</div>':'<button class="btn sm" data-act="fedbOpen" data-v="form">Předvyplnit z online databáze</button>')+
+    '<label class="f">Název (anglicky, jako v Hevy)<input class="inp" id="x-name" value="'+esc(name)+'"></label>'+
     '<label class="f">Český název<input class="inp" id="x-cz" value="'+esc(cz)+'"></label>'+
     '<div><div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div><div class="mpick">'+MKEYS.map(k=>'<button type="button" class="'+(exEd.pri.includes(k)?"p":exEd.sec.includes(k)?"s":"")+'" data-act="xMus" data-v="'+k+'">'+esc(MUSCLE_MAP.NAMES[k])+'</button>').join("")+'</div></div>'+
     exFigures({pri:exEd.pri,sec:exEd.sec},true)+
@@ -1184,11 +1222,73 @@ function renderExEdit(e){
     '<label class="f">Popis provedení<textarea class="inp" id="x-desc" rows="4">'+esc(desc)+'</textarea></label>'+
     '<label class="f">Odkaz (Hevy nebo video)<input class="inp" id="x-url" inputmode="url" value="'+esc(url)+'" placeholder="prázdné = vyhledat video podle názvu"></label>';
   const id=exEd.id;
-  // Zpět o úroveň: do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
-  const nav=exEdOut()?{}:exEd.from==="info"?{lv:3,back:()=>sheetExInfo(id)}:{lv:2,back:()=>{exEd=null;renderPicker(true)}};
+  // Zpět o úroveň: do výsledků online databáze, do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
+  const nav=fx&&fs?{lv:fsLv()+1,back:()=>{exEd=null;renderFs()}}:exEdOut()?{}:exEd.from==="info"?{lv:3,back:()=>sheetExInfo(id)}:{lv:2,back:()=>{exEd=null;renderPicker(true)}};
   const sb=document.querySelector(".sheet-b");const st=sb?sb.scrollTop:null;
   openSheet(id?"Upravit cvik":"Nový cvik",b,(id?'<button class="btn danger" data-act="archEx" data-v="'+esc(id)+'">'+(e.archived?"Zobrazit":"Skrýt")+'</button>':'')+'<button class="btn grow" data-act="backPicker">Zpět</button>'+(id&&exChanged(id)?'<button class="btn" data-act="resetEx" data-v="'+esc(id)+'">Výchozí</button>':'')+'<button class="btn primary grow" data-act="saveEx" data-v="'+esc(id||"")+'">Uložit</button>',false,nav);
   if(st!==null){const sh=document.querySelector(".sheet");if(sh)sh.classList.add("noanim");const nb=document.querySelector(".sheet-b");if(nb)nb.scrollTop=st}
+}
+
+/* ---------- hledání v databázi free-exercise-db (F0-03) ----------
+   Data jsou v js/fedb.js (FEDB, vytváří tools/fedb/build.py). Načtou se až při prvním
+   hledání: poprvé je potřeba internet, pak soubor drží service worker v cache.
+   Vybraný cvik předvyplní formulář Nový cvik a uloží se jako vlastní cvik se značkou
+   src:"fedb:<id>". Fotky se jen ukazují ve výsledcích (online), nic se neukládá. */
+let fs=null,fedbP=null;
+function fedbLoad(){
+  if(typeof FEDB!=="undefined")return Promise.resolve();
+  if(!fedbP)fedbP=new Promise((ok,ko)=>{const s=document.createElement("script");s.src="js/fedb.js";s.onload=()=>typeof FEDB!=="undefined"?ok():ko();s.onerror=()=>{s.remove();ko()};document.head.appendChild(s)}).catch(()=>{fedbP=null;throw new Error("fedb")});
+  return fedbP;
+}
+const FEDB_CAT={S:"",W:"silový trojboj",O:"vzpírání",M:"strongman",P:"plyometrie",T:"protahování",C:"kardio"};
+const fedbStrength=x=>"SWOM".includes(x.c);
+// cvik, který už mám: stejný cvik ve výchozí databázi (h) nebo vlastní cvik převzatý z tohoto záznamu
+function fedbHave(x){
+  if(x.h&&S.exLib[x.h])return x.h;
+  for(const id in S.exLib)if(S.exLib[id].src==="fedb:"+x.id)return id;
+  return null;
+}
+// hledá se v anglickém i českém názvu, bez diakritiky, slova v libovolném pořadí;
+// konce slov se useknou, aby „lavice“ našla „lavici“ a „rows“ i „row“
+function fedbRows(){
+  const words=fold(fs.q).split(/[^a-z0-9]+/).filter(Boolean).map(w=>w.length>=7?w.slice(0,-3):w.length>=5||/s$/.test(w)&&w.length===4?w.slice(0,-1):w);
+  if(!words.length)return [];
+  const hay=x=>{if(!x._f){const h=fold(x.n+" "+x.cz).replace(/[^a-z0-9]+/g," ").replace(/\bdb\b/g,"dumbbell");x._f=h+"|"+h.replace(/ /g,"")}return x._f};
+  const r=FEDB.filter(x=>words.every(w=>hay(x).includes(w)));
+  const st=x=>fold(x.n).startsWith(words[0])||fold(x.cz).startsWith(words[0])?0:1;
+  return r.sort((a,b)=>fedbStrength(b)-fedbStrength(a)||st(a)-st(b)||a.n.length-b.n.length);
+}
+function fedbOpen(from,q,form){fs={from,q:q||"",all:false,limit:0,form:!!form};renderFs()}
+function renderFs(){
+  const b='<input class="inp" id="fsQ" data-f="fsQ" placeholder="Název anglicky i česky, např. bench press, dřep…" value="'+esc(fs.q)+'" autocomplete="off">'+
+    '<div class="row wrap-r" id="fsBar" style="gap:8px"></div>'+
+    '<div class="stack" id="fsList" style="gap:6px"></div>'+
+    '<p class="xs muted" style="margin:2px 0 0">Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před uložením je zkontroluj.</p>';
+  openSheet("Online databáze cviků",b,'<button class="btn grow" data-act="fsBack">Zpět</button>',false,{lv:fsLv(),back:fsBack,re:renderFs});
+  refreshFs();
+  if(typeof FEDB==="undefined")fedbLoad().then(()=>{if(fs)refreshFs()}).catch(()=>{const el=document.getElementById("fsList");if(el)el.innerHTML='<div class="empty">Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i offline.<br><button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button></div>'});
+  const inp=document.getElementById("fsQ");if(inp&&!fs.q)inp.focus();
+}
+// tlačítko Zpět (F0-06): hledání je o úroveň pod výběrem cviků, resp. pod formulářem Nový cvik
+const fsLv=()=>(fs.from==="picker"?2:1)+(fs.form?1:0);
+function fsBack(){if(fs.form){sheetExEdit(null,fs.from);return}if(fs.from==="picker")renderPicker(true);else closeSheet()}
+function refreshFs(){
+  const el=document.getElementById("fsList"),bar=document.getElementById("fsBar");if(!el||!bar)return;
+  if(typeof FEDB==="undefined"){bar.innerHTML="";el.innerHTML='<div class="empty">Načítám databázi cviků…</div>';return}
+  const q=fs.q.trim(),all=q?fedbRows():[],str=all.filter(fedbStrength),rows=fs.all?all:str,hid=all.length-str.length;
+  bar.innerHTML='<button class="chip" data-act="fsAll" aria-pressed="'+fs.all+'">I protahování, kardio a plyometrie'+(hid?' ('+hid+')':'')+'</button><span class="grow"></span><span class="xs muted">'+(q?rows.length+' '+plural(rows.length,"cvik","cviky","cviků"):FEDB.length+' cviků v databázi')+'</span>';
+  if(!q){el.innerHTML='<div class="empty">Napiš název cviku anglicky nebo česky.</div>';return}
+  if(!rows.length){el.innerHTML='<div class="empty">Nic nenalezeno.'+(hid?' Zapni „I protahování, kardio a plyometrie“.':' Zkus jiné slovo, třeba anglicky.')+'</div>';return}
+  const lim=fs.limit||40;let h="";
+  for(const x of rows.slice(0,lim)){
+    const have=fedbHave(x),he=have&&S.exLib[have];
+    h+='<div class="pickrow"><button class="pick" data-act="fsPick" data-v="'+esc(x.id)+'">'+(x.ni?'<span class="fsimg"></span>':'<img class="fsimg" src="'+esc(FEDB_IMG+x.id+"/0.jpg")+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">')+
+      '<div class="grow"><div style="font-weight:600">'+esc(x.n)+'</div><div class="cz">'+esc(x.cz)+'</div><div class="xs muted">'+esc(x.p.map(k=>MUSCLE_MAP.NAMES[k]).join(", "))+' · '+esc(EQUIP[x.e]||"")+(FEDB_CAT[x.c]?' · '+FEDB_CAT[x.c]:'')+'</div>'+
+      (he?'<div class="xs have">Už máš: '+esc(he.cz||he.name)+(he.archived?' (skrytý)':'')+'</div>':'')+'</div></button>'+
+      (he?'<button class="btn sm fshave" data-act="fsHave" data-v="'+esc(have)+'">'+(fs.from==="picker"?"Vybrat":"Otevřít")+'</button>':'')+'</div>';
+  }
+  if(rows.length>lim)h+='<button class="btn block" data-act="fsMore">Další cviky ('+(rows.length-lim)+')</button>';
+  el.innerHTML=h;
 }
 
 /* ---------- sheet ---------- */
@@ -1356,12 +1456,24 @@ document.addEventListener("click",ev=>{
       touchDraft();closeSheet();scheduleRender();break}
     case "newEx":sheetExEdit(null);break;
     case "backPicker":navBack();break;
+    case "fedbOpen":{ // v = odkud: picker (výběr cviků), list (záložka Cviky), form (formulář Nový cvik)
+      if(v==="form"){const n=document.getElementById("x-name");fedbOpen(exEd?exEd.from:"picker",n?n.value.trim():"",true)}
+      else fedbOpen(v,v==="list"?S.exlQ:pick.q);break}
+    case "fsBack":navBack();break;
+    case "fsAll":fs.all=!fs.all;fs.limit=0;refreshFs();break;
+    case "fsMore":fs.limit=(fs.limit||40)+40;refreshFs();break;
+    case "fsRetry":renderFs();break;
+    case "fsPick":{const x=typeof FEDB!=="undefined"&&FEDB.find(o=>o.id===v);if(x)sheetExEdit(null,fs.from,x);break}
+    case "fsHave":
+      if(fs.from==="picker"){if(pick.mode==="replace")pick.sel=[v];else if(!pick.sel.includes(v))pick.sel.push(v);renderPicker();toast("Vybráno: "+exOf(v).name);break}
+      {const f=S.route!=="exd"?navFrame():null;closeSheet();S.exPart="info";S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(f){S.prevRoute=S.route;S.nav.push(f)}go("exd");break}
     case "saveEx":{
       const name=document.getElementById("x-name").value.trim();if(!name){toast("Zadej název cviku.");break}
       const id=v||("c-"+name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").slice(0,40)+"-"+Date.now().toString(36).slice(-4));
       if(!exEd.pri.length){toast("Vyber aspoň jednu hlavní partii.");break}
       const items=Object.assign({},S.exLib);
       const o=Object.assign({},items[id]||{custom:true},{name,cz:document.getElementById("x-cz").value.trim(),pri:exEd.pri.slice(),sec:exEd.sec.slice(),muscle:GROUP_OF[exEd.pri[0]],equip:document.getElementById("x-equip").value,kind:document.getElementById("x-kind").value,gymDep:document.getElementById("x-gd").checked,desc:document.getElementById("x-desc").value.trim()});
+      if(!v&&exEd.fx)o.src="fedb:"+exEd.fx.id; // F0-03: cvik převzatý z free-exercise-db
       const url=document.getElementById("x-url").value.trim();if(url)o.url=url;else delete o.url;
       if(!o.cz)delete o.cz;if(!o.desc)delete o.desc;
       items[id]=o;putEx(items);
@@ -1466,10 +1578,12 @@ document.addEventListener("click",ev=>{
     case "saveGym":{
       const name=document.getElementById("g-name").value.trim();if(!name){toast("Zadej název fitka.");break}
       const cfg=JSON.parse(JSON.stringify(S.cfg));let id=v;
-      if(id)cfg.gyms.find(g=>g.id===id).name=name;else{id=uid("g");cfg.gyms.push({id,name})}
+      if(id)cfg.gyms.find(g=>g.id===id).name=name;else{id=uid("g");cfg.gyms.push({id,name,col:freeGymCol(cfg.gyms)})}
       if(document.getElementById("g-def").checked)cfg.defaultGymId=id;
       put("config/main",cfg);closeSheet();break}
     case "delGym":{const cfg=JSON.parse(JSON.stringify(S.cfg));cfg.gyms=cfg.gyms.filter(g=>g.id!==v);if(cfg.defaultGymId===v)cfg.defaultGymId=cfg.gyms[0].id;put("config/main",cfg);closeSheet();break}
+    case "gymMove":{const cfg=JSON.parse(JSON.stringify(S.cfg)),a=cfg.gyms,k=a.findIndex(g=>g.id===v),n=k+(+t.dataset.d);
+      if(k<0||n<0||n>=a.length)break;a.splice(n,0,a.splice(k,1)[0]);put("config/main",cfg);break}
     case "restSec":{const cfg=Object.assign({},S.cfg,{restSec:+v});put("config/main",cfg);break}
     case "theme":setTheme(v);scheduleRender();break;
     case "export":doExport();break;
@@ -1480,6 +1594,11 @@ document.addEventListener("click",ev=>{
     case "bkSave":savePoint(v);break;
     case "bkNoHelp":lsSet("bkHelpOff",true);closeSheet();break;
     case "bkHelp":showBackupHelp(true);break;
+    case "updCheck":checkUpdate();break;
+    case "copyMain":confirmSheet("Zkopírovat data z vydané verze?","Data této testovací verze se nahradí kopií dat z vydané verze v tomto telefonu. Vydaná verze se nijak nezmění.","Zkopírovat","copyMainOk");break;
+    case "copyMainOk":closeSheet();copyFromMain();break;
+    case "testDel":confirmSheet("Smazat data testovacích verzí?","Smažou se tréninky a nastavení ze všech testovacích verzí v tomto telefonu. Data vydané verze zůstanou.","Smazat","testDelOk");break;
+    case "testDelOk":closeSheet();deleteTestData();break;
   }
 });
 document.addEventListener("input",ev=>{
@@ -1493,6 +1612,7 @@ document.addEventListener("input",ev=>{
   if(f==="exSearch"){S.exSearch=t.value;scheduleRender();return}
   if(f==="exlQ"){S.exlQ=t.value;S.exlLimit=0;scheduleRender();return}
   if(f==="pickQ"){pick.q=t.value;pick.limit=0;refreshPickList();return}
+  if(f==="fsQ"){fs.q=t.value;fs.limit=0;refreshFs();return}
 });
 document.addEventListener("change",ev=>{
   const t=ev.target;const f=t.dataset&&t.dataset.f;const d=curDraft();
@@ -1618,7 +1738,7 @@ function backupSettings(){
 /* stažení souboru */
 async function doExport(){
   const data=JSON.stringify(snapshotAll());
-  const name="workout-denik-"+toDateInput(Date.now())+".json";
+  const name=FILE_P+"-"+toDateInput(Date.now())+".json";
   if(!downloads){toast("Stahování tady není dostupné.");return}
   try{
     await downloads.save({filename:name,data});
@@ -1642,8 +1762,7 @@ function normBackup(o){
   if((+o.version||1)>BK_VERSION)throw new Error("Záloha je z novější verze appky. Nejdřív appku aktualizuj.");
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x)?x:{};
   const months={};for(const mk in obj(o.months)){if(/^\d{4}-\d{2}$/.test(mk))months[mk]=obj(o.months[mk])}
-  const cfg=Object.assign({gyms:[],defaultGymId:null,restSec:120},obj(o.cfg));
-  if(!Array.isArray(cfg.gyms))cfg.gyms=[];
+  const cfg=cfgNorm(obj(o.cfg));
   return {exported:o.exported,cfg,exercises:exLoad(obj(o.exercises),o.exDb!==EX_V),templates:obj(o.templates),months,body:obj(o.body),photos:obj(o.photos)};
 }
 let importData=null;
@@ -1697,8 +1816,8 @@ function applyMerge(o){
   let [ex,ne]=addMissing(S.exLib,o.exercises);if(ne){putEx(ex);r.other+=ne}
   let [tp,nt]=addMissing(S.templates,o.templates);if(nt){put("config/templates",{items:tp});r.other+=nt}
   let [bd,nb]=addMissing(S.body,o.body);if(nb){put("body/all",{items:bd});r.other+=nb}
-  const have=new Set(S.cfg.gyms.map(g=>g.id)),add=o.cfg.gyms.filter(g=>g&&g.id&&!have.has(g.id));
-  if(add.length){put("config/main",Object.assign({},S.cfg,{gyms:S.cfg.gyms.concat(add)}));r.other+=add.length}
+  const have=new Set(S.cfg.gyms.map(g=>g.id)),add=o.cfg.gyms.filter(g=>!have.has(g.id));
+  if(add.length){const gs=S.cfg.gyms.slice();for(const g of add)gs.push(gs.some(x=>x.col===g.col)?Object.assign({},g,{col:freeGymCol(gs)}):g);put("config/main",Object.assign({},S.cfg,{gyms:gs}));r.other+=add.length}
   return r;
 }
 
@@ -1749,9 +1868,96 @@ async function savePoint(id){
   if(!downloads){toast("Stahování tady není dostupné.");return}
   try{
     const data=await fetchPoint(id);
-    await downloads.save({filename:"workout-denik-bod-obnovy-"+toDateInput(p?p.at:Date.now())+".json",data});
+    await downloads.save({filename:FILE_P+"-bod-obnovy-"+toDateInput(p?p.at:Date.now())+".json",data});
     toast("Bod obnovy stažen");
   }catch(e){if(!(e&&e.code==="declined"))toast(e.message||"Stažení se nepovedlo.")}
+}
+
+/* ---------- verze appky (F0-04) ----------
+   Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
+   (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
+   Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA). */
+const MAIN_URL=BUILD.vydana||"../"; // adresa vydané verze (z testovací verze)
+const fmtSize=b=>b<1048576?Math.max(1,Math.round(b/1024))+" kB":(b/1048576).toLocaleString("cs-CZ",{maximumFractionDigits:1})+" MB";
+function testBar(){
+  if(!TEST_PR)return "";
+  return '<div class="testbar"><b>TEST · PR #'+esc(TEST_PR)+'</b><span class="grow">'+esc(BUILD.nazev)+'</span><a href="'+esc(MAIN_URL)+'">Vydaná verze ›</a></div>';
+}
+function versionSettings(){
+  const t=Date.parse(BUILD.cas);
+  let h='<section class="sec"><div class="sec-h"><h2>Verze aplikace</h2></div><div class="card stack">';
+  h+='<div class="row"><b class="grow">'+(TEST_PR?"Testovací verze · PR #"+esc(TEST_PR):BUILD.kanal==="main"?"Vydaná verze":"Lokální spuštění")+'</b>'+(TEST_PR?'<span class="pill test">TEST</span>':'')+'</div>';
+  if(TEST_PR&&BUILD.nazev)h+='<div class="small">'+esc(BUILD.nazev)+(BUILD.vetev?'<div class="xs muted">Větev '+esc(BUILD.vetev)+'</div>':'')+'</div>';
+  h+='<div class="small muted">'+(BUILD.commit&&isFinite(t)?'Nasazeno '+fmtDate(t)+' '+fmtTime(t)+' · kód změny '+esc(BUILD.commit):'Bez údajů o nasazení (spuštěno mimo GitHub Pages).')+'</div>';
+  h+='<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
+  if(TEST_PR){
+    h+='<div class="small muted">Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se vydané verze netýká.</div>';
+    h+='<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="'+esc(MAIN_URL)+'">Otevřít vydanou verzi</a>';
+  }else if(S.testData===undefined)scanTestData();
+  else if(S.testData.n)h+='<div class="row"><span class="small grow">Data testovacích verzí v telefonu: '+S.testData.n+' '+plural(S.testData.n,"verze","verze","verzí")+' (≈ '+fmtSize(S.testData.bytes)+')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
+  return h+'</div></section>';
+}
+async function checkUpdate(){
+  if(!window.PWA){toast("Aktualizace tady nejde zkontrolovat.");return}
+  toast("Kontroluji…");
+  const r=await window.PWA.check();
+  toast(r==="new"?"Stahuji novou verzi, appka se hned znovu načte.":r==="same"?"Máš nejnovější verzi.":r==="offline"?"Nepodařilo se spojit se serverem. Jsi online?":"Aktualizace tady nejde zkontrolovat.");
+}
+/* data testovacích verzí v tomto telefonu (jen pro vydanou verzi): databáze workout-denik-prN a klíče zd1-prN: */
+const testKeys=()=>{const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^zd1-pr\d+:/.test(k||""))out.push(k)}}catch(e){}return out};
+async function testDbs(){try{return indexedDB.databases?(await indexedDB.databases()).map(d=>d.name).filter(n=>/^workout-denik-pr\d+$/.test(n||"")):[]}catch(e){return []}}
+async function scanTestData(){
+  if(scanTestData.busy)return;
+  scanTestData.busy=true;
+  const prs={};let bytes=0;
+  for(const k of testKeys()){prs[k.match(/^zd1-pr(\d+):/)[1]]=1;bytes+=k.length+(localStorage.getItem(k)||"").length}
+  for(const n of await testDbs()){
+    prs[n.match(/\d+$/)[0]]=1;
+    try{const db=await idbOpenExisting(n);for(const st of ["docs","points"])for(const [k,v] of await idbAll(db,st))bytes+=String(k).length+JSON.stringify(v).length;db.close()}catch(e){}
+  }
+  S.testData={n:Object.keys(prs).length,bytes};scanTestData.busy=false;scheduleRender();
+}
+async function deleteTestData(){
+  toast("Mažu…");
+  try{
+    for(const k of testKeys())localStorage.removeItem(k);
+    for(const n of await testDbs())await new Promise(r=>{const q=indexedDB.deleteDatabase(n);q.onsuccess=q.onerror=q.onblocked=()=>r()});
+    if(window.caches)for(const k of await caches.keys())if(/^wd-pr\d+-/.test(k))await caches.delete(k);
+    if(navigator.serviceWorker)for(const r of await navigator.serviceWorker.getRegistrations())if(/\/pr-\d+\/$/.test(new URL(r.scope).pathname))await r.unregister();
+    toast("Data testovacích verzí smazána");
+  }catch(e){toast("Nepodařilo se smazat všechno.")}
+  S.testData=undefined;scheduleRender();
+}
+/* testovací verze: nahradí svá data kopií dat vydané verze (vydaná verze se jen čte) */
+async function copyFromMain(){
+  let src=null,stopped=false;
+  try{
+    const names=indexedDB.databases?(await indexedDB.databases()).map(d=>d.name):[MAIN_DB];
+    if(!names.includes(MAIN_DB)){toast("Vydaná verze v tomto telefonu zatím nemá žádná data.");return}
+    toast("Kopíruji data…");
+    src=await idbOpenExisting(MAIN_DB);
+    const docs=await idbAll(src,"docs"),pts=await idbAll(src,"points");
+    src.close();src=null;
+    // zastavit ukládání této verze, ať kopii nic nepřepíše; po kopii se appka znovu načte
+    Store.backend=null;clearTimeout(Store._ct);clearTimeout(Store._at);stopped=true;
+    const db=await Idb.open();
+    await new Promise((res,rej)=>{
+      const tx=db.transaction(["docs","points"],"readwrite"),d=tx.objectStore("docs"),p=tx.objectStore("points");
+      d.clear();p.clear();
+      for(const [k,v] of docs)d.put(v,k);
+      for(const [k,v] of pts)p.put(v,k);
+      tx.oncomplete=()=>res();tx.onerror=tx.onabort=()=>rej(Idb.err(tx.error));
+    });
+    // drobnosti z localStorage: fronta zápisů, rozdělaný trénink, nastavení zobrazení
+    const ks=[];for(let i=0;i<localStorage.length;i++)ks.push(localStorage.key(i));
+    for(const k of ks)if(k&&k.startsWith(Local.P))localStorage.removeItem(k);
+    for(const k of ks)if(k&&k.startsWith(MAIN_P))localStorage.setItem(Local.P+k.slice(MAIN_P.length),localStorage.getItem(k));
+    location.reload();
+  }catch(e){
+    if(src)src.close();
+    toast("Kopírování se nepovedlo: "+(e&&e.message||"chyba"));
+    if(stopped)setTimeout(()=>location.reload(),2500);
+  }
 }
 
 /* ---------- vzhled ---------- */
@@ -1762,8 +1968,9 @@ function setTheme(v){
   if(v==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",v);
   // PWA: barva stavového řádku Androidu podle pozadí appky
   const m=document.querySelector("meta[name=theme-color]");
-  if(m)m.content=getComputedStyle(r).getPropertyValue("--bg").trim()||"#0e1013";
+  if(m)m.content=TEST_PR?"#f59f00":getComputedStyle(r).getPropertyValue("--bg").trim()||"#0e1013";
 }
+if(TEST_PR)document.title="TEST #"+TEST_PR+" · Workout deník";
 setTheme(themePref());
 
 /* ---------- boot ---------- */
