@@ -271,6 +271,12 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 .reclist{display:flex;flex-direction:column;gap:6px}
 .rec{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}
 .rec .md{flex:none}
+.recex{font-size:14px;line-height:1.35}
+.recex .rn{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.recex .rn b{overflow:hidden;text-overflow:ellipsis}
+.recex .md{flex:none;width:20px;text-align:center}
+.recex .rr{padding-left:28px}
+.recex .rr .muted{font-size:13px}
 .recgrid{padding:10px 14px}
 .rg-h{margin-bottom:6px}
 .rg-r{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:6px 0;border-top:1px solid var(--line)}
@@ -301,3 +307,24 @@ textarea.inp{min-height:84px;resize:vertical;line-height:1.4}
 .fsimg{flex:none;width:52px;height:52px;border-radius:8px;object-fit:cover;background:var(--surface-2)}
 .have{color:var(--good);font-weight:600;margin-top:2px}
 .pickrow .fshave{flex:none;padding:0 10px}
+
+/* ---------- souhrn tréninku (F3-03) ---------- */
+.gain{color:var(--good)}.loss{color:var(--fail)}.flat{color:var(--ink-3)}
+.kpi .dl{display:block;margin-top:4px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25;letter-spacing:0;text-transform:none}
+.kpi .dl+.dl{margin-top:0}
+.kpi .dl.pc{padding-left:1em} /* procenta pod číslem, za trojúhelníkem */
+.tri{width:.72em;height:.72em;fill:currentColor;vertical-align:-.02em}.tri.tri2{width:1.44em}
+.kpi .dl.gain{color:var(--good)}.kpi .dl.loss{color:var(--fail)}
+.cmp{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.35}
+.cmp .chev{color:var(--ink-3);font-size:22px;line-height:1}
+.sumh{margin:0 0 6px;font-family:var(--display);font-size:20px;font-weight:700}
+.mbars{display:flex;flex-direction:column;gap:7px}
+.mbar{display:grid;grid-template-columns:minmax(90px,38%) 1fr;gap:8px;align-items:center;font-size:13px}
+.mbar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbar i{display:block;height:10px;border-radius:0 4px 4px 0;background:var(--m-pri)}
+.excmp{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;margin-top:8px;padding:8px 10px;background:var(--surface-2);border-radius:8px;font-size:13px;font-variant-numeric:tabular-nums}
+.excmp .k{color:var(--ink-3);font-weight:600}
+.excmp .v{font-weight:600}
+.excmp .d{text-align:right;font-weight:700;white-space:nowrap}
+.excmp .src{grid-column:1/-1;font-size:12px;color:var(--ink-3);margin-top:2px}
+.pill.new{background:var(--good-bg);color:var(--good);font-size:11px;padding:1px 7px;vertical-align:1px}
