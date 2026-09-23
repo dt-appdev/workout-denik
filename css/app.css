@@ -271,6 +271,12 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 .reclist{display:flex;flex-direction:column;gap:6px}
 .rec{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}
 .rec .md{flex:none}
+.recex{font-size:14px;line-height:1.35}
+.recex .rn{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.recex .rn b{overflow:hidden;text-overflow:ellipsis}
+.recex .md{flex:none;width:20px;text-align:center}
+.recex .rr{padding-left:28px}
+.recex .rr .muted{font-size:13px}
 .recgrid{padding:10px 14px}
 .rg-h{margin-bottom:6px}
 .rg-r{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:6px 0;border-top:1px solid var(--line)}

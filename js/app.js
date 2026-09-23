@@ -608,7 +608,11 @@ function liveRecords(d,i){
 }
 function recListHtml(list,withEx){
   if(!list.length)return "";
-  return '<div class="reclist">'+list.map(r=>'<div class="rec"><span class="md">🏅</span><div class="grow">'+(withEx?'<b>'+esc(exName(r.exId))+'</b> · ':'')+esc(REC[r.type])+': <b>'+esc(recFmt(r.type,r.v,r.set))+'</b><span class="muted"> (dříve '+esc(recFmt(r.type,r.prev,r.prevSet))+')</span></div></div>').join("")+'</div>';
+  if(withEx){ // po cvicích: název na vlastním řádku, pod ním každý rekord zvlášť
+    const g={};for(const r of list)(g[r.exId]=g[r.exId]||[]).push(r);
+    return '<div class="reclist">'+Object.keys(g).map(id=>'<div class="recex"><div class="rn"><span class="md">🏅</span><b>'+esc(exName(id))+'</b></div>'+g[id].map(r=>'<div class="rr">'+esc(REC[r.type])+': <b>'+esc(recFmt(r.type,r.v,r.set))+'</b><span class="muted"> (dříve '+esc(recFmt(r.type,r.prev,r.prevSet))+')</span></div>').join("")+'</div>').join("")+'</div>';
+  }
+  return '<div class="reclist">'+list.map(r=>'<div class="rec"><span class="md">🏅</span><div class="grow">'+esc(REC[r.type])+': <b>'+esc(recFmt(r.type,r.v,r.set))+'</b><span class="muted"> (dříve '+esc(recFmt(r.type,r.prev,r.prevSet))+')</span></div></div>').join("")+'</div>';
 }
 const plural=(n,a,b,c)=>n===1?a:(n>=2&&n<=4?b:c);
 
