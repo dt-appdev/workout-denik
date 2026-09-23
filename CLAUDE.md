@@ -45,6 +45,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `js/app.js` | Celá appka: datová vrstva, stav, vykreslování, akce, záloha. |
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
+| `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
+| `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
@@ -63,7 +65,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - **Verze a cache (F0-04):** verzi určuje `js/verze.js`, který se přepíše při
   každém nasazení (commit + čas), takže se appka v telefonu aktualizuje sama.
   `VERSION` v `sw.js` ručně neměnit. Nový soubor přidej do `FILES` v `sw.js`,
-  jinak nepojede offline. Soubory `.github/`, `docs/`, `puvodni/` a `*.md`
+  jinak nepojede offline. Soubory `.github/`, `docs/`, `puvodni/`, `tools/` a `*.md`
   se na web nekopírují.
 - **Testovací verze PR:** běží na stejné doméně jako vydaná verze, proto má
   vlastní data (`localStorage` prefix `zd1-prN:`, IndexedDB `workout-denik-prN`,
@@ -105,6 +107,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v `localStorage`. Stránka cviku (route `exd`, `vExDetail`) má části Popis
   a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
   (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
+- Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
+  hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
+  stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
+  předvyplní `sheetExEdit(null, from, fx)` a vlastní cvik dostane `src:"fedb:<id>"`.
+  Fotky jen jako náhled z GitHubu (`FEDB_IMG`), nic se neukládá. Změna českých názvů
+  nebo shod: upravit TSV v `tools/fedb/` a spustit `python3 tools/fedb/build.py`.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).

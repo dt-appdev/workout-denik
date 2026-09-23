@@ -78,6 +78,11 @@ self.addEventListener("fetch", event => {
       if (page) return page;
     }
     const hit = await cache.match(req, { ignoreSearch: true });
-    return hit || fetch(req);
+    if (hit) return hit;
+    const res = await fetch(req);
+    // databáze cviků pro hledání (js/fedb.js, F0-03) není ve FILES, aby nezdržovala instalaci;
+    // uloží se do cache až při prvním hledání a pak funguje i offline
+    if (res.ok && new URL(req.url).pathname.endsWith("/js/fedb.js")) await cache.put(req, res.clone());
+    return res;
   })());
 });

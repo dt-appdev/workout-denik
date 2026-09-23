@@ -45,7 +45,7 @@ build_time() {
 export_tree() {
   mkdir -p "$2"
   git archive "$1" | tar -x -C "$2"
-  rm -rf "$2/.github" "$2/docs" "$2/puvodni" "$2/.gitignore" "$2"/*.md
+  rm -rf "$2/.github" "$2/docs" "$2/puvodni" "$2/tools" "$2/.gitignore" "$2"/*.md
 }
 
 # zapsat js/verze.js do kopie $1, údaje $2 (JSON na jeden řádek)
