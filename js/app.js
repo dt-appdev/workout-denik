@@ -293,7 +293,7 @@ const Store={
 
 /* ---------- state ---------- */
 const S={
-  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true},
+  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,restKeep:false},
   exLib:exLoad({}), exV:0, exLegacy:null, templates:{}, months:{}, body:{},
   bk:{last:null,points:[]}, // config/backup: datum poslední zálohy do souboru + body obnovy
   active:Store.loadActive(),
@@ -362,7 +362,7 @@ const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
 const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
 /* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
 function cfgNorm(c){
-  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true},c&&typeof c==="object"?c:{});
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,restKeep:false},c&&typeof c==="object"?c:{});
   c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
   return c;
 }
@@ -1362,8 +1362,9 @@ function restSettings(){
     else if(ns==="denied")h+='<div class="xs muted">Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).</div>';
     else if(ns==="default")h+='<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
     else h+='<div class="row"><span class="grow xs muted">Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.</span><button class="btn sm" data-act="notifTest">Vyzkoušet</button></div>';
-    if(ns!=="none")h+='<button class="btn block" data-act="restLog">Záznam oznámení</button>';
   }
+  h+='<label class="switch"><input type="checkbox" data-act="restKeep" '+(c.restKeep?"checked":"")+'><span><b>Hlídat pauzu i při zamčeném displeji (pokus)</b><br><span class="xs muted">Zamčený telefon appku uspí a oznámení pak přijde pozdě. Během pauzy proto appka pouští neslyšitelný tón, který telefon drží vzhůru, a na konci pípne i při zamčeném displeji. Může trochu víc vybíjet baterii. Ověř, že nepřeruší hudbu.</span></span></label>';
+  if(ns!=="none")h+='<button class="btn block" data-act="restLog">Záznam oznámení</button>';
   return h+'</div></section>';
 }
 
@@ -1379,6 +1380,12 @@ function restSettings(){
 const REST_VIB=[700,300,700], REST_OVER_MAX=15*60; // 2 dlouhé vibrace; přečas zmizí po 15 min
 let audioCtx=null, visibleSince=document.hidden?Infinity:Date.now();
 {const r=Local.get("rest",null);if(r&&r.end>0){S.restEnd=r.end;S.restTotal=r.total||120;S.restFired=!!r.fired}}
+/* hlídání při zamčeném displeji (pokus, S.cfg.restKeep): zamčený Android uspí procesor a časovače
+   (i v service workeru) se zpozdí. Během pauzy proto hraje neslyšitelný tón (30 Hz, −60 dB), otevřený
+   zvukový výstup drží telefon vzhůru; na konci appka pípne i při zamčeném displeji. Spustit jde jen po klepnutí. */
+let keepOsc=null;
+function keepOn(){if(!S.cfg.restKeep||keepOsc)return;try{audioUnlock();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=30;g.gain.value=0.001;o.connect(g);g.connect(audioCtx.destination);o.start();keepOsc=o}catch(e){}}
+function keepOff(){if(keepOsc){try{keepOsc.stop()}catch(e){}keepOsc=null}}
 function audioUnlock(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume()}catch(e){}}
 function beep(){
   const m=S.cfg.restAlert;
@@ -1415,7 +1422,7 @@ async function sheetRestLog(){
 }
 function restClearNotif(){if(notifState()!=="none")navigator.serviceWorker.ready.then(r=>r.getNotifications({tag:REST_TAG})).then(ns=>ns.forEach(n=>n.close())).catch(()=>{})}
 /* zkouška z Nastavení: oznámení za 10 s, i když je appka na očích */
-function restTest(){navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage({type:"rest",end:Date.now()+10000,tag:REST_TAG+"-test",always:true,title:"Zkouška oznámení",body:"Takhle tě appka upozorní na konec pauzy.",vib:S.cfg.restAlert!=="sound"?REST_VIB:null})).catch(()=>{});toast("Oznámení přijde za 10 s")}
+function restTest(){if(S.cfg.restKeep&&!keepOsc){keepOn();setTimeout(()=>{if(!S.restEnd||S.restFired)keepOff()},12000)}navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage({type:"rest",end:Date.now()+10000,tag:REST_TAG+"-test",always:true,title:"Zkouška oznámení",body:"Takhle tě appka upozorní na konec pauzy.",vib:S.cfg.restAlert!=="sound"?REST_VIB:null})).catch(()=>{});toast("Oznámení přijde za 10 s")}
 function notifAsk(){if(notifState()!=="default")return;Local.set("notifAsked",true);Notification.requestPermission().then(()=>{restPost();scheduleRender()}).catch(()=>{})}
 function restSave(post){Local.set("rest",S.restEnd?{end:S.restEnd,total:S.restTotal,fired:!!S.restFired}:null);if(post!==false)restPost()}
 function restStart(){
@@ -1424,9 +1431,10 @@ function restStart(){
   if(S.cfg.restNotify&&notifState()==="default"&&!Local.get("notifAsked",false)){ // jednou, pak jen v Nastavení
     notifAsk();
   }
+  keepOn();
   restSave();renderRest();
 }
-function restStop(){S.restEnd=null;S.restFired=false;restSave();renderRest()}
+function restStop(){S.restEnd=null;S.restFired=false;keepOff();restSave();renderRest()}
 function renderRest(){
   const el=document.getElementById("rest");
   if(!S.restEnd||!S.active){el.hidden=true;return}
@@ -1443,8 +1451,8 @@ function restTick(){
   if(left<=0&&!S.restFired){
     // pípnout jen tehdy, když je appka na očích už od doby před koncem pauzy; jinak upozornilo oznámení
     const seen=!document.hidden&&visibleSince<=S.restEnd;
-    if(seen){beep();setTimeout(restClearNotif,1500)}else if(!document.hidden&&!(S.cfg.restNotify&&notifState()==="granted"))toast("Odpočinek skončil");
-    S.restFired=true;
+    if(seen){beep();setTimeout(restClearNotif,1500)}else if(document.hidden&&keepOsc)beep();else if(!document.hidden&&!(S.cfg.restNotify&&notifState()==="granted"))toast("Odpočinek skončil");
+    S.restFired=true;setTimeout(keepOff,1500); // až dopípá
     // service workeru nic neposílat: oznámení na pozadí si hlídá sám (zrušení by ho mohlo předběhnout)
     if(!S.cfg.restOver){if(seen)toast("Odpočinek skončil");S.restEnd=null;S.restFired=false;restSave(false);renderRest();return}
     restSave(false);renderRest();return;
@@ -1456,7 +1464,7 @@ function restTick(){
 }
 setInterval(restTick,500);
 document.addEventListener("visibilitychange",()=>{
-  if(S.restEnd&&S.active&&!S.restFired)restLog(document.hidden?"appka na pozadí / zhasnutý displej":"appka zpět na očích");
+  if(S.restEnd&&S.active&&!S.restFired)restLog((document.hidden?"appka na pozadí / zhasnutý displej":"appka zpět na očích")+(keepOsc&&audioCtx?" (hlídání zvukem: "+audioCtx.state+")":""));
   if(document.hidden){visibleSince=Infinity;return}
   visibleSince=Date.now();restClearNotif();restTick(); // po návratu hned správný čas, staré oznámení pryč
 });
@@ -1732,6 +1740,7 @@ document.addEventListener("click",ev=>{
     case "restAlert":put("config/main",Object.assign({},S.cfg,{restAlert:v}));restPost();break;
     case "restOver":put("config/main",Object.assign({},S.cfg,{restOver:t.checked}));break;
     case "restNotify":put("config/main",Object.assign({},S.cfg,{restNotify:t.checked}));if(t.checked)notifAsk();restPost();break;
+    case "restKeep":put("config/main",Object.assign({},S.cfg,{restKeep:t.checked}));if(!t.checked)keepOff();break;
     case "notifAsk":notifAsk();break;
     case "notifTest":restTest();break;
     case "restLog":sheetRestLog();break;
