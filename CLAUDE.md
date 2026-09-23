@@ -122,6 +122,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   předvyplní `sheetExEdit(null, from, fx)` a vlastní cvik dostane `src:"fedb:<id>"`.
   Fotky jen jako náhled z GitHubu (`FEDB_IMG`), nic se neukládá. Změna českých názvů
   nebo shod: upravit TSV v `tools/fedb/` a spustit `python3 tools/fedb/build.py`.
+- Minule a předvyplnění (F1-01, sekce „MINULE A PŘEDVYPLNĚNÍ“): „minule“ = `lastSession`
+  (vázaný cvik jen v tomtéž fitku, při úpravě jen tréninky před ní, `draftLast`). Série se párují
+  podle druhu (`setGrp`: zahřívací zvlášť), `exHints` vrátí pro každou sérii minulou sérii
+  (sloupec Minule) a šedé předvyplnění (placeholder), ✓ ho převezme. Nový cvik v tréninku má
+  prázdné hodnoty; `s.ph` = hodnoty ze šablony jen u nikdy necvičeného cviku (jen v rozdělaném tréninku).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
