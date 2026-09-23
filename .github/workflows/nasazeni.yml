@@ -1,0 +1,94 @@
+# Nasazení webu na GitHub Pages (F0-04).
+# Při každé změně v main a v každém PR sestaví celý web znovu (.github/sestav-web.sh):
+#   https://<uživatel>.github.io/workout-denik/        = vydaná verze (main)
+#   https://<uživatel>.github.io/workout-denik/pr-12/  = testovací verze PR č. 12
+# Zavřený nebo sloučený PR ze sestavení vypadne, jeho testovací verze tím zmizí.
+#
+# Nastavení repa (jednou): Settings → Pages → Source: GitHub Actions.
+#
+# pull_request_target spouští workflow v podobě z main, ne z PR. Kód z PR se tu
+# nikdy nespouští, jen se rozbalí jako soubory webu (git archive).
+name: Nasazení webu
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, closed]
+  pull_request: # jen kontrola, že se web dá sestavit (skript z větve PR), nic se nenasazuje
+  workflow_dispatch:
+
+jobs:
+  kontrola:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sestavit web (zkouška)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: bash .github/sestav-web.sh _site
+      - name: Obsah webu
+        run: find _site -maxdepth 2 -not -path '*/fonts/*' | sort
+
+  nasadit:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      pull-requests: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Sestavit web
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: bash .github/sestav-web.sh _site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Komentář s odkazem v PR
+        if: github.event_name == 'pull_request_target' && github.event.action != 'closed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          N: ${{ github.event.pull_request.number }}
+          BASE: ${{ steps.pages.outputs.base_url }}
+        run: |
+          url="${BASE%/}/pr-$N/"
+          if [ -f "_site/pr-$N/js/verze.js" ]; then
+            b=$(sed -n 's/^self\.APP_BUILD=\(.*\);$/\1/p' "_site/pr-$N/js/verze.js")
+            kdy=$(TZ=Europe/Prague date -d "$(jq -r .cas <<<"$b")" +'%-d. %-m. %Y %H:%M')
+            body="**Testovací verze tohoto PR:** $url
+
+          Otevři odkaz v Chromu v telefonu. V Nastavení → Verze aplikace musí být kód změny \`$(jq -r .commit <<<"$b")\` (nasazeno $kdy).
+          Testovací verze má vlastní data, oddělená od vydané verze. Skutečná data si do ní můžeš zkopírovat v Nastavení → Verze aplikace → Zkopírovat data z vydané verze. Přes menu Chromu ⋮ → Přidat na plochu ji jde nainstalovat jako samostatnou appku (oranžová ikona TEST).
+
+          Po každé další změně v PR se testovací verze sama aktualizuje (trvá to 1–3 minuty)."
+          else
+            body="**Testovací verze tohoto PR se nenasadila:** větev ještě nemá změny z F0-04 (chybí \`js/verze.js\`). Po sloučení aktuálního \`main\` do větve se nasadí sama."
+          fi
+          body="<!-- testovaci-verze -->
+          $body"
+          id=$(gh api "repos/$REPO/issues/$N/comments" --paginate --jq '.[] | select(.body | startswith("<!-- testovaci-verze -->")) | .id' | head -n1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -f body="$body" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$N/comments" -f body="$body" > /dev/null
+          fi
