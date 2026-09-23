@@ -15,7 +15,10 @@
 "use strict";
 if(!("serviceWorker" in navigator))return;
 const loadedAt=Date.now();
-const hadController=!!navigator.serviceWorker.controller; // false = úplně první spuštění, nic nenačítat znovu
+// false = úplně první spuštění, nic nenačítat znovu. Cizí service worker se nepočítá: testovací
+// verzi PR (…/pr-12/) při prvním otevření řídí worker vydané verze, pak ho převezme vlastní.
+const ctl=navigator.serviceWorker.controller;
+const hadController=!!ctl&&ctl.scriptURL===new URL("sw.js",location.href).href;
 let pending=false,reloading=false,manual=false;
 function reload(){if(reloading)return;reloading=true;location.reload()}
 navigator.serviceWorker.addEventListener("controllerchange",()=>{
