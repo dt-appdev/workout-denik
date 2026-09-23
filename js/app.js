@@ -29,17 +29,56 @@ const IC={
    nastavením stylu na obalu, ne přestavbou SVG. */
 /* ATLAS (anatomické SVG) je v js/atlas.js */
 const MUSCLE_MAP=(function(){
-  const NAMES={neck:"Krk",chest:"Hrudník",delt_f:"Přední ramena",delt_s:"Boční ramena",delt_r:"Zadní ramena",traps:"Trapézy",upperback:"Horní záda",lats:"Široký sval zádový",lowback:"Spodní záda",biceps:"Biceps",triceps:"Triceps",forearm:"Předloktí",abs:"Přímý sval břišní",oblique:"Šikmé svaly",glutes:"Hýždě",quads:"Kvadricepsy",adductor:"Přitahovače",hams:"Hamstringy",calves:"Lýtka"};
+  const NAMES={neck:"Krk",chest:"Hrudník",delts:"Ramena",traps:"Trapézy",upperback:"Horní záda",lats:"Široký sval zádový",lowback:"Spodní záda",biceps:"Biceps",triceps:"Triceps",forearm:"Předloktí",abs:"Přímý sval břišní",oblique:"Šikmé svaly",glutes:"Hýždě",quads:"Kvadricepsy",adductor:"Přitahovače",hams:"Hamstringy",calves:"Lýtka"};
   const KEYS=Object.keys(NAMES);
   function svg(view,fillOf,label){
-    const st=KEYS.map(k=>"--f-"+k+":"+fillOf(k)).join(";");
+    // ramena jsou jedna partie, v atlasu ale tři vrstvy (přední, boční, zadní)
+    const st=KEYS.map(k=>{const f=fillOf(k);return (k==="delts"?["delt_f","delt_s","delt_r"]:[k]).map(v=>"--f-"+v+":"+f).join(";")}).join(";");
     return '<div class="fig" style="'+st+'">'+ATLAS[view].replace("__L__",esc(label||""))+'</div>';
   }
   function exSvg(view,pri,sec,label){return svg(view,k=>pri.indexOf(k)>=0?"var(--m-pri)":sec.indexOf(k)>=0?"var(--m-sec)":"var(--m-idle)",label)}
   return {svg,exSvg,NAMES};
 })();
 const MKEYS=Object.keys(MUSCLE_MAP.NAMES);
-const GROUP_OF={neck:"neck",chest:"chest",delt_f:"shoulders",delt_s:"shoulders",delt_r:"shoulders",traps:"back",upperback:"back",lats:"back",lowback:"lowback",biceps:"biceps",triceps:"triceps",forearm:"forearms",abs:"abs",oblique:"abs",glutes:"glutes",quads:"quads",adductor:"adductors",hams:"hams",calves:"calves"};
+const GROUP_OF={neck:"neck",chest:"chest",delts:"shoulders",traps:"back",upperback:"back",lats:"back",lowback:"lowback",biceps:"biceps",triceps:"triceps",forearm:"forearms",abs:"abs",oblique:"abs",glutes:"glutes",quads:"quads",adductor:"adductors",hams:"hams",calves:"calves"};
+/* Databáze cviků = výchozí EX_DB (js/cviky.js) + odchylky uložené v config/exercises.
+   V config/exercises je {v:2, items:{id: jen změněná pole | celý vlastní cvik}}.
+   Starší data (bez v:2) obsahují celé kopie cviků; při načtení se z nich nechá jen to,
+   co se liší od výchozí databáze. Původní partie (EX_DB_OLD) se nahradí novými,
+   ručně změněné partie zůstanou.
+   partial = položky už jsou jen odchylky (načtené z config/exercises v:2), jinak celé cviky. */
+const EX_V=2, DELT={delt_f:"delts",delt_s:"delts",delt_r:"delts"};
+const mNorm=a=>Array.isArray(a)?a.map(k=>DELT[k]||k).filter((k,i,x)=>x.indexOf(k)===i):[];
+const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+function exPack(items,legacy,partial){
+  const out={};
+  for(const id in items||{}){
+    const it=items[id],b=EX_DB[id];if(!it||typeof it!=="object")continue;
+    if(!b){const o=Object.assign({},it);if(o.pri)o.pri=mNorm(o.pri);if(o.sec)o.sec=mNorm(o.sec);out[id]=o;continue}
+    const o={},old=legacy&&EX_DB_OLD[id],oldMus=old&&same(it.pri,old[0])&&same(it.sec,old[1]);
+    for(const k in it){
+      if(k==="muscle"||k==="custom")continue;
+      if((k==="pri"||k==="sec")&&oldMus)continue;
+      const v=k==="pri"||k==="sec"?mNorm(it[k]):it[k];
+      if(!v&&!b[k])continue;
+      if(!same(v,b[k]))o[k]=v;
+    }
+    // smazaný text (český název, popis, odkaz) u výchozího cviku se uloží jako prázdný
+    if(!partial)for(const k of ["cz","desc","url"])if(b[k]&&!(k in it))o[k]="";
+    if(Object.keys(o).length)out[id]=o;
+  }
+  return out;
+}
+function exMerge(packed){
+  const out={};
+  for(const id in EX_DB){const o=Object.assign({},EX_DB[id],packed[id]);o.muscle=GROUP_OF[(o.pri||[])[0]]||"other";out[id]=o}
+  for(const id in packed)if(!EX_DB[id])out[id]=Object.assign({},packed[id]);
+  for(const id in out){const o=out[id];if(o.pri&&o.sec)o.sec=o.sec.filter(k=>!o.pri.includes(k))}
+  return out;
+}
+const exLoad=(items,legacy,partial)=>exMerge(exPack(items,legacy,partial));
+function putEx(items){put("config/exercises",{v:EX_V,items:exPack(items,false)})}
+const exChanged=id=>!!(EX_DB[id]&&exPack({[id]:S.exLib[id]},false)[id]);
 const exOf=id=>S.exLib[id]||{name:id};
 const exGroup=e=>(e.pri&&e.pri.length?GROUP_OF[e.pri[0]]:e.muscle)||"other";
 const exPri=e=>e.pri&&e.pri.length?e.pri:(e.muscle?Object.keys(GROUP_OF).filter(k=>GROUP_OF[k]===e.muscle).slice(0,1):[]);
@@ -229,7 +268,7 @@ const Store={
 /* ---------- state ---------- */
 const S={
   cfg:{gyms:[],defaultGymId:null,restSec:120},
-  exLib:{}, templates:{}, months:{}, body:{},
+  exLib:exLoad({}), exV:0, exLegacy:null, templates:{}, months:{}, body:{},
   bk:{last:null,points:[]}, // config/backup: datum poslední zálohy do souboru + body obnovy
   active:Store.loadActive(),
   editDraft:null,
@@ -245,16 +284,16 @@ let downloads=null, pointsApi=null;
 (function loadCache(){
   const c=Store.loadCache();
   if(!c)return;
-  S.cfg=c.cfg||S.cfg;S.exLib=c.exLib||{};S.templates=c.templates||{};S.months=c.months||{};S.body=c.body||{};if(c.bk)S.bk=c.bk;
+  S.cfg=c.cfg||S.cfg;S.exLib=exLoad(c.exLib,c.exV!==EX_V);S.templates=c.templates||{};S.months=c.months||{};S.body=c.body||{};if(c.bk)S.bk=c.bk;
 })();
-const snapshot=()=>({cfg:S.cfg,exLib:S.exLib,templates:S.templates,months:S.months,body:S.body,bk:S.bk});
+const snapshot=()=>({cfg:S.cfg,exLib:S.exLib,exV:EX_V,templates:S.templates,months:S.months,body:S.body,bk:S.bk});
 function saveCache(){Store.saveCache(snapshot)}
 
 function applyDoc(path,data){
   const [col,id]=path.split("/");
   if(col==="config"){
     if(id==="main")S.cfg=Object.assign({gyms:[],defaultGymId:null,restSec:120},data||{});
-    else if(id==="exercises")S.exLib=(data&&data.items)||{};
+    else if(id==="exercises"){const items=(data&&data.items)||{};S.exV=data&&data.v||0;S.exLegacy=S.exV!==EX_V&&Object.keys(items).length?items:null;S.exLib=exLoad(items,S.exV!==EX_V,S.exV===EX_V)}
     else if(id==="templates")S.templates=(data&&data.items)||{};
     else if(id==="backup")S.bk=Object.assign({last:null,points:[]},data||{});
   }else if(col==="workouts"){
@@ -1097,7 +1136,7 @@ function renderExEdit(e){
     '<label class="f">Odkaz (Hevy nebo video)<input class="inp" id="x-url" inputmode="url" value="'+esc(url)+'" placeholder="prázdné = vyhledat video podle názvu"></label>';
   const id=exEd.id;
   const sb=document.querySelector(".sheet-b");const st=sb?sb.scrollTop:null;
-  openSheet(id?"Upravit cvik":"Nový cvik",b,(id?'<button class="btn danger" data-act="archEx" data-v="'+esc(id)+'">'+(e.archived?"Zobrazit":"Skrýt")+'</button>':'')+'<button class="btn grow" data-act="backPicker">Zpět</button><button class="btn primary grow" data-act="saveEx" data-v="'+esc(id||"")+'">Uložit</button>');
+  openSheet(id?"Upravit cvik":"Nový cvik",b,(id?'<button class="btn danger" data-act="archEx" data-v="'+esc(id)+'">'+(e.archived?"Zobrazit":"Skrýt")+'</button>':'')+'<button class="btn grow" data-act="backPicker">Zpět</button>'+(id&&exChanged(id)?'<button class="btn" data-act="resetEx" data-v="'+esc(id)+'">Výchozí</button>':'')+'<button class="btn primary grow" data-act="saveEx" data-v="'+esc(id||"")+'">Uložit</button>');
   if(st!==null){const sh=document.querySelector(".sheet");if(sh)sh.classList.add("noanim");const nb=document.querySelector(".sheet-b");if(nb)nb.scrollTop=st}
 }
 
@@ -1271,12 +1310,15 @@ document.addEventListener("click",ev=>{
       const o=Object.assign({},items[id]||{custom:true},{name,cz:document.getElementById("x-cz").value.trim(),pri:exEd.pri.slice(),sec:exEd.sec.slice(),muscle:GROUP_OF[exEd.pri[0]],equip:document.getElementById("x-equip").value,kind:document.getElementById("x-kind").value,gymDep:document.getElementById("x-gd").checked,desc:document.getElementById("x-desc").value.trim()});
       const url=document.getElementById("x-url").value.trim();if(url)o.url=url;else delete o.url;
       if(!o.cz)delete o.cz;if(!o.desc)delete o.desc;
-      items[id]=o;put("config/exercises",{items});
+      items[id]=o;putEx(items);
       if(exEd.from==="detail"){closeSheet();toast("Cvik uložen");break}
       if(exEd.from==="info"){exEd=null;renderPicker(true);toast("Cvik uložen");break}
       if(!v&&pick.mode!=="manage"){if(pick.mode==="replace")pick.sel=[id];else pick.sel.push(id)}
       pick.q="";renderPicker();toast("Cvik uložen");break}
-    case "archEx":{const items=Object.assign({},S.exLib);const was=!!items[v].archived;items[v]=Object.assign({},items[v]);if(was)delete items[v].archived;else items[v].archived=true;put("config/exercises",{items});if(exEd&&exEd.from==="detail")closeSheet();else renderPicker();toast(was?"Cvik je znovu ve výběru":"Cvik skrytý z výběru");break}
+    case "resetEx":{const items=Object.assign({},S.exLib),a=items[v].archived;items[v]=Object.assign({},EX_DB[v]);if(a)items[v].archived=true;putEx(items);
+      if(exEd.from==="detail"){closeSheet();toast("Cvik vrácen na výchozí");break}
+      exEd=null;renderPicker(true);toast("Cvik vrácen na výchozí");break}
+    case "archEx":{const items=Object.assign({},S.exLib);const was=!!items[v].archived;items[v]=Object.assign({},items[v]);if(was)delete items[v].archived;else items[v].archived=true;putEx(items);if(exEd&&exEd.from==="detail")closeSheet();else renderPicker();toast(was?"Cvik je znovu ve výběru":"Cvik skrytý z výběru");break}
     case "xMus":{const k=v;const P=exEd.pri,Sx=exEd.sec;if(P.includes(k)){P.splice(P.indexOf(k),1);Sx.push(k)}else if(Sx.includes(k)){Sx.splice(Sx.indexOf(k),1)}else P.push(k);renderExEdit({});break}
     case "editExDetail":sheetExEdit(v,"detail");break;
     case "editExInfo":sheetExEdit(v,"info");break;
@@ -1343,7 +1385,7 @@ document.addEventListener("click",ev=>{
     case "detailRange":S.detailRange=v;scheduleRender();break;
     case "detailGym":S.detailGym=v;scheduleRender();break;
     case "exHistMore":S.exHistLimit+=25;scheduleRender();break;
-    case "toggleGymDep":{const items=Object.assign({},S.exLib);items[S.exDetail]=Object.assign({},items[S.exDetail],{gymDep:t.checked});put("config/exercises",{items});break}
+    case "toggleGymDep":{const items=Object.assign({},S.exLib);items[S.exDetail]=Object.assign({},items[S.exDetail],{gymDep:t.checked});putEx(items);break}
     case "bodyMetric":S.bodyMetric=v;scheduleRender();break;
     case "bodyRange":S.bodyRange=v;scheduleRender();break;
     case "bodyMore":S.bodyLimit=(S.bodyLimit||30)+30;scheduleRender();break;
@@ -1409,7 +1451,7 @@ document.addEventListener("change",ev=>{
    Formát souboru: version 2 = version 1 + pole "photos" (zatím prázdné, pro F2-05).
    Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše". */
 const BK_VERSION=2, BK_REMIND_DAYS=7, BK_AUTO_DAYS=7, BK_MAX_POINTS=8;
-const BK_REASON={auto:"Automatický (týdenní)",pre:"Před obnovou ze zálohy",manual:"Ručně vytvořený"};
+const BK_REASON={auto:"Automatický (týdenní)",pre:"Před obnovou ze zálohy",exdb:"Před aktualizací databáze cviků",manual:"Ručně vytvořený"};
 const countW=months=>Object.values(months||{}).reduce((a,m)=>a+Object.keys(m||{}).length,0);
 const daysAgo=t=>Math.floor((Date.now()-t)/DAY);
 const agoLabel=t=>{const n=daysAgo(t);return n<=0?"dnes":n===1?"včera":"před "+n+" "+plural(n,"dnem","dny","dny")};
@@ -1418,7 +1460,7 @@ function snapshotAll(){
   return {
     app:"workout-denik",version:BK_VERSION,exported:new Date().toISOString(),
     includes:{photos:false},
-    cfg:S.cfg,exercises:S.exLib,templates:S.templates,months:S.months,body:S.body,
+    cfg:S.cfg,exercises:S.exLegacy||S.exLib,exDb:S.exLegacy?undefined:EX_V,templates:S.templates,months:S.months,body:S.body,
     photos:{} // F2-05: {photoId:{exId,gymId,mime,data(base64)}} — zatím prázdné
   };
 }
@@ -1487,7 +1529,7 @@ function normBackup(o){
   const months={};for(const mk in obj(o.months)){if(/^\d{4}-\d{2}$/.test(mk))months[mk]=obj(o.months[mk])}
   const cfg=Object.assign({gyms:[],defaultGymId:null,restSec:120},obj(o.cfg));
   if(!Array.isArray(cfg.gyms))cfg.gyms=[];
-  return {exported:o.exported,cfg,exercises:obj(o.exercises),templates:obj(o.templates),months,body:obj(o.body),photos:obj(o.photos)};
+  return {exported:o.exported,cfg,exercises:exLoad(obj(o.exercises),o.exDb!==EX_V),templates:obj(o.templates),months,body:obj(o.body),photos:obj(o.photos)};
 }
 let importData=null;
 function readImport(inp){
@@ -1526,7 +1568,7 @@ async function doImport(v){
   else{const r=applyMerge(o);importData=null;closeSheet();toast(r.w||r.other?"Doplněno: "+r.w+" "+plural(r.w,"trénink","tréninky","tréninků")+(r.other?", "+r.other+" dalších položek":""):"Nic nechybělo, vše už v appce je.")}
 }
 function applyReplace(o){
-  put("config/main",o.cfg);put("config/exercises",{items:o.exercises});put("config/templates",{items:o.templates});put("body/all",{items:o.body});
+  put("config/main",o.cfg);putEx(o.exercises);put("config/templates",{items:o.templates});put("body/all",{items:o.body});
   for(const mk in S.months)if(!(mk in o.months))put("workouts/"+mk,null);
   for(const mk in o.months)put("workouts/"+mk,{items:o.months[mk]});
 }
@@ -1537,12 +1579,19 @@ function applyMerge(o){
     const [items,n]=addMissing(S.months[mk]||{},o.months[mk]);
     if(n){put("workouts/"+mk,{items});r.w+=n}
   }
-  let [ex,ne]=addMissing(S.exLib,o.exercises);if(ne){put("config/exercises",{items:ex});r.other+=ne}
+  let [ex,ne]=addMissing(S.exLib,o.exercises);if(ne){putEx(ex);r.other+=ne}
   let [tp,nt]=addMissing(S.templates,o.templates);if(nt){put("config/templates",{items:tp});r.other+=nt}
   let [bd,nb]=addMissing(S.body,o.body);if(nb){put("body/all",{items:bd});r.other+=nb}
   const have=new Set(S.cfg.gyms.map(g=>g.id)),add=o.cfg.gyms.filter(g=>g&&g.id&&!have.has(g.id));
   if(add.length){put("config/main",Object.assign({},S.cfg,{gyms:S.cfg.gyms.concat(add)}));r.other+=add.length}
   return r;
+}
+
+/* převod cviků na výchozí databázi (F0-02): jednou, s bodem obnovy předem */
+async function migrateEx(){
+  if(!S.exLegacy||!pointsApi||Store.state!=="ok"||migrateEx.busy)return;
+  migrateEx.busy=true;
+  try{await makePoint("exdb");if(S.exLegacy){S.exLegacy=null;putEx(S.exLib);scheduleRender()}}finally{migrateEx.busy=false}
 }
 
 /* body obnovy (IndexedDB) */
@@ -1608,8 +1657,8 @@ render();
   downloads=LocalDownloads;
   // požádat Chrome, ať data appky nikdy sám nemaže (u nainstalované PWA obvykle povolí bez dotazu)
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-  const ok=await Store.init(IndexedDbBackend(),applyDoc,()=>{updSync();scheduleRender();autoPoint()});
-  if(ok){pointsApi=LocalPoints;scheduleRender();autoPoint()}
+  const ok=await Store.init(IndexedDbBackend(),applyDoc,()=>{updSync();scheduleRender();autoPoint();migrateEx()});
+  if(ok){pointsApi=LocalPoints;scheduleRender();autoPoint();migrateEx()}
   if(ok&&!S.active){const a=await Store.fetchActive();if(a){S.active=a;Local.set("active",a);scheduleRender()}}
 })();
 })();
