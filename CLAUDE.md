@@ -137,8 +137,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`both`/`sound`/`vib`), `restOver` (přečas), `restNotify`. Oznámení na pozadí ukazuje
   service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
   na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
-  Záznam událostí oznámení (cache `wdlog-main` / `wdlog-prN`, píše `sw.js` i appka)
-  ukazuje Nastavení → Záznam oznámení (`sheetRestLog`).
+  Záznam událostí oznámení (cache `wdlog-prN`, píše `sw.js` i appka) je vývojový nástroj:
+  vede se jen v testovací verzi a lokálně (`DEV`), tlačítko v Nastavení → Verze aplikace
+  (`sheetRestLog`). Ve vydané verzi nic takového být nemá (přání uživatele).
   Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
   vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,

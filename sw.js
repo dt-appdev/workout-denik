@@ -91,11 +91,13 @@ self.addEventListener("fetch", event => {
    bez "end" = zrušit. Web neumí naplánovat oznámení do systému, proto worker čeká sám:
    waitUntil ho drží vzhůru, Chrome to dovolí nejvýš asi 5 minut (každá nová zpráva lhůtu obnoví).
    Když je appka zrovna na očích (viditelná a aktivní), oznámení se neukáže (pípne appka sama),
-   kromě zkoušky (always). Průběh se zapisuje do záznamu (cache "wdlog-…"), appka ho ukáže
-   v Nastavení → Odpočinek → Záznam oznámení (hledání, proč oznámení nepřišlo). */
+   kromě zkoušky (always). V testovací verzi PR (a lokálně) se průběh zapisuje
+   do záznamu (cache "wdlog-…"), appka ho ukáže v Nastavení → Verze aplikace. */
 const restTimers = new Map();   // tag → {t: časovač, done: ukončí waitUntil}
 const LOG = "wdlog-" + (PR ? "pr" + PR : "main");
+const DEV = !!PR || B.kanal === "lokal";   // záznam jen v testovací verzi PR a lokálně, ve vydané ne
 async function restLog(txt) {
+  if (!DEV) return;
   try {
     const c = await caches.open(LOG), r = await c.match("log");
     const a = r ? await r.json() : [];

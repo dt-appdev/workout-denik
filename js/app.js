@@ -1362,8 +1362,7 @@ function restSettings(){
     else if(ns==="denied")h+='<div class="xs muted">Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).</div>';
     else if(ns==="default")h+='<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
     else h+='<div class="row"><span class="grow xs muted">Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.</span><button class="btn sm" data-act="notifTest">Vyzkoušet</button></div>';
-    if(ns!=="none")h+='<button class="btn block" data-act="restLog">Záznam oznámení</button>';
-  }
+    }
   return h+'</div></section>';
 }
 
@@ -1405,10 +1404,12 @@ function restPost(){
   const msg=on?{type:"rest",end:S.restEnd,tag:REST_TAG,title:"Odpočinek skončil",body:restNext(),vib:S.cfg.restAlert!=="sound"?REST_VIB:null}:{type:"rest",tag:REST_TAG};
   navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage(msg)).catch(()=>{});
 }
-/* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo, kdy byla appka skrytá */
+/* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo, kdy byla appka skrytá.
+   Jen pro vývoj: vede se a ukazuje (Nastavení → Verze aplikace) jen v testovací verzi PR a lokálně, ve vydané ne. */
+const DEV=!!TEST_PR||BUILD.kanal==="lokal";
 const REST_LOG="wdlog-"+(TEST_PR?"pr"+TEST_PR:"main");
 async function restLogRead(){try{const r=await (await caches.open(REST_LOG)).match("log");return r?await r.json():[]}catch(e){return []}}
-async function restLog(txt){if(!window.caches)return;try{const a=await restLogRead();a.unshift({at:Date.now(),txt});await (await caches.open(REST_LOG)).put("log",new Response(JSON.stringify(a.slice(0,12))))}catch(e){}}
+async function restLog(txt){if(!DEV||!window.caches)return;try{const a=await restLogRead();a.unshift({at:Date.now(),txt});await (await caches.open(REST_LOG)).put("log",new Response(JSON.stringify(a.slice(0,12))))}catch(e){}}
 async function sheetRestLog(){
   const a=await restLogRead();
   openSheet("Záznam oznámení",'<div class="xs muted" style="margin-bottom:8px">Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.</div>'+(a.length?'<div class="stack" style="gap:4px">'+a.map(x=>'<div class="small"><b class="num">'+esc(new Date(x.at).toLocaleTimeString("cs-CZ"))+'</b> '+esc(x.txt)+'</div>').join("")+'</div>':'<div class="muted small">Zatím nic.</div>'),'<button class="btn grow" data-act="restLogClear">Smazat záznam</button><button class="btn primary grow" data-act="closeSheet">Zavřít</button>');
@@ -2059,6 +2060,7 @@ function versionSettings(){
     h+='<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="'+esc(MAIN_URL)+'">Otevřít vydanou verzi</a>';
   }else if(S.testData===undefined)scanTestData();
   else if(S.testData.n)h+='<div class="row"><span class="small grow">Data testovacích verzí v telefonu: '+S.testData.n+' '+plural(S.testData.n,"verze","verze","verzí")+' (≈ '+fmtSize(S.testData.bytes)+')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
+  if(DEV&&window.caches)h+='<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>'; // jen pro vývoj (F1-04)
   return h+'</div></section>';
 }
 async function checkUpdate(){
