@@ -49,7 +49,7 @@ flowchart LR
 
 ### Převod na PWA
 
-- [ ] **PWA-01** Převod z artefaktu na PWA na GitHub Pages: IndexedDbBackend místo databáze artefaktu, stahování zálohy a body obnovy bez API artefaktu, manifest, service worker, ikony, CLAUDE.md.
+- [x] **PWA-01** Převod z artefaktu na PWA na GitHub Pages: IndexedDbBackend místo databáze artefaktu, stahování zálohy a body obnovy bez API artefaktu, manifest, service worker, ikony, CLAUDE.md.
 
 ### Fáze 0 – Data a základ
 
@@ -137,6 +137,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 23. 9. 2026 | PWA-01 | Appka převedena na PWA (GitHub Pages): data v IndexedDB, body obnovy v IndexedDB, stahování zálohy přes Chrome, písma a ikony v repu, service worker s verzovanou cache a automatickou aktualizací, CLAUDE.md a README. Vzhled a funkce beze změny. Zbývá: převést data z artefaktu (záloha → obnova) a otestovat na telefonu. |
 | 23. 9. 2026 | – | Rozhodnuto o přechodu z artefaktu na PWA hostovanou na GitHub Pages. Plán převeden do repa. Další na řadě: PWA-01, pak F0-02. |
 | 23. 9. 2026 | F0-01 | Záloha hotová (verze 9 artefaktu): pruh s připomínkou po 7 dnech bez zálohy, po stažení návod na Disk, obnova „sloučit" nebo „nahradit vše", body obnovy v appce (týdně, před obnovou, ručně; drží se 8), formát zálohy v2 s místem pro fotky. Otestováno na simulovaných datech, zbývá ověřit v Chromu na telefonu. |
 | 23. 9. 2026 | – | Brainstorming dokončen, plán a priority sepsány. |
