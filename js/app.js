@@ -115,18 +115,26 @@ function exTags(e){
      config/main, config/exercises, config/templates, config/backup,
      workouts/RRRR-MM, body/all, state/active
    ===================================================================== */
+/* Verze a kanál appky (F0-04). BUILD doplní při nasazení GitHub Actions do js/verze.js.
+   Testovací verze PR běží na adrese …/pr-12/ a má VLASTNÍ data: jiný prefix
+   v localStorage a jinou databázi IndexedDB. Vydaná verze se jí tak nedotkne.
+   Proto data ukládat vždy jen přes Local / Idb / Store, nikdy přímo. */
+const BUILD=Object.assign({kanal:"lokal",pr:0,nazev:"",vetev:"",commit:"",cas:""},window.APP_BUILD||{});
+const TEST_PR=(location.pathname.match(/\/pr-(\d+)\//)||[])[1]||"";
+const MAIN_P="zd1:", MAIN_DB="workout-denik";
+const FILE_P="workout-denik"+(TEST_PR?"-test-pr"+TEST_PR:""); // začátek názvu staženého souboru
 const Local={ // drobnosti v zařízení (cache, fronta, nastavení zobrazení)
-  P:"zd1:",
+  P:TEST_PR?"zd1-pr"+TEST_PR+":":MAIN_P,
   get(k,d){try{const v=localStorage.getItem(this.P+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{if(v===undefined||v===null)localStorage.removeItem(this.P+k);else localStorage.setItem(this.P+k,JSON.stringify(v))}catch(e){}}
 };
 const lsGet=(k,d)=>Local.get(k,d), lsSet=(k,v)=>Local.set(k,v);
 
-/* IndexedDB "workout-denik":
+/* IndexedDB "workout-denik" (testovací verze PR 12: "workout-denik-pr12"):
      docs   – dokumenty appky, klíč = cesta ("config/main", "workouts/2026-09", …)
      points – body obnovy, klíč = id, hodnota {id, at, data (JSON text zálohy)} */
 const Idb={
-  NAME:"workout-denik", VER:1, db:null,
+  NAME:TEST_PR?MAIN_DB+"-pr"+TEST_PR:MAIN_DB, VER:1, db:null,
   open(){
     if(this.db)return Promise.resolve(this.db);
     return new Promise((res,rej)=>{
@@ -155,16 +163,28 @@ const Idb={
   get(store,key){return this.run(store,"readonly",s=>s.get(key))},
   put(store,key,val){return this.run(store,"readwrite",s=>s.put(val,key))},
   del(store,key){return this.run(store,"readwrite",s=>s.delete(key))},
-  async all(store){
-    const db=await this.open();
-    return new Promise((res,rej)=>{
-      const out=[],tx=db.transaction(store,"readonly"),rq=tx.objectStore(store).openCursor();
-      rq.onsuccess=()=>{const c=rq.result;if(c){out.push([c.key,c.value]);c.continue()}};
-      tx.oncomplete=()=>res(out);
-      tx.onerror=()=>rej(tx.error);
-    });
-  }
+  async all(store){return idbAll(await this.open(),store)}
 };
+// všechny položky úložiště jako [[klíč, hodnota], …]
+function idbAll(db,store){
+  return new Promise((res,rej)=>{
+    if(!db.objectStoreNames.contains(store)){res([]);return}
+    const out=[],tx=db.transaction(store,"readonly"),rq=tx.objectStore(store).openCursor();
+    rq.onsuccess=()=>{const c=rq.result;if(c){out.push([c.key,c.value]);c.continue()}};
+    tx.oncomplete=()=>res(out);
+    tx.onerror=()=>rej(tx.error);
+  });
+}
+// otevře cizí existující databázi (vydaná / testovací verze); neexistující nevytváří
+function idbOpenExisting(name){
+  return new Promise((res,rej)=>{
+    const rq=indexedDB.open(name);
+    rq.onupgradeneeded=()=>rq.transaction.abort();
+    rq.onsuccess=()=>res(rq.result);
+    rq.onerror=()=>rej(rq.error||new Error("Databáze neexistuje."));
+    rq.onblocked=()=>rej(new Error("blocked"));
+  });
+}
 
 function IndexedDbBackend(){
   return {
@@ -580,7 +600,7 @@ function renderTabs(){
   document.getElementById("tabs").innerHTML=t.map(([k,l])=>'<button data-act="tab" data-v="'+k+'" aria-current="'+(cur===k)+'">'+IC[k]+(k==="train"&&S.active&&S.route!=="train"?'<span class="dot"></span>':'')+l+'</button>').join("");
 }
 function topbar(title,sub,left,subCls){
-  return '<header class="top">'+(left||"")+'<h1'+(String(title).length>18?' class="long"':'')+'>'+esc(title)+(sub?'<small'+(subCls?' class="'+subCls+'"':'')+'>'+esc(sub)+'</small>':'')+'</h1><span class="sync" id="sync"></span></header>';
+  return testBar()+'<header class="top">'+(left||"")+'<h1'+(String(title).length>18?' class="long"':'')+'>'+esc(title)+(sub?'<small'+(subCls?' class="'+subCls+'"':'')+'>'+esc(sub)+'</small>':'')+'</h1><span class="sync" id="sync"></span></header>';
 }
 function render(){
   const app=document.getElementById("app");
@@ -1085,6 +1105,7 @@ function vSettings(){
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card row"><span class="grow">Výchozí časovač</span><div class="seg">'+[60,90,120,150,180].map(s=>'<button data-act="restSec" data-v="'+s+'" aria-pressed="'+(S.cfg.restSec===s)+'">'+fmtClock(s)+'</button>').join("")+'</div></div></section>';
+  h+=versionSettings();
   h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
   h+=backupSettings();
   return h;
@@ -1470,6 +1491,11 @@ document.addEventListener("click",ev=>{
     case "bkSave":savePoint(v);break;
     case "bkNoHelp":lsSet("bkHelpOff",true);closeSheet();break;
     case "bkHelp":showBackupHelp(true);break;
+    case "updCheck":checkUpdate();break;
+    case "copyMain":confirmSheet("Zkopírovat data z vydané verze?","Data této testovací verze se nahradí kopií dat z vydané verze v tomto telefonu. Vydaná verze se nijak nezmění.","Zkopírovat","copyMainOk");break;
+    case "copyMainOk":closeSheet();copyFromMain();break;
+    case "testDel":confirmSheet("Smazat data testovacích verzí?","Smažou se tréninky a nastavení ze všech testovacích verzí v tomto telefonu. Data vydané verze zůstanou.","Smazat","testDelOk");break;
+    case "testDelOk":closeSheet();deleteTestData();break;
   }
 });
 document.addEventListener("input",ev=>{
@@ -1557,7 +1583,7 @@ function backupSettings(){
 /* stažení souboru */
 async function doExport(){
   const data=JSON.stringify(snapshotAll());
-  const name="workout-denik-"+toDateInput(Date.now())+".json";
+  const name=FILE_P+"-"+toDateInput(Date.now())+".json";
   if(!downloads){toast("Stahování tady není dostupné.");return}
   try{
     await downloads.save({filename:name,data});
@@ -1688,9 +1714,94 @@ async function savePoint(id){
   if(!downloads){toast("Stahování tady není dostupné.");return}
   try{
     const data=await fetchPoint(id);
-    await downloads.save({filename:"workout-denik-bod-obnovy-"+toDateInput(p?p.at:Date.now())+".json",data});
+    await downloads.save({filename:FILE_P+"-bod-obnovy-"+toDateInput(p?p.at:Date.now())+".json",data});
     toast("Bod obnovy stažen");
   }catch(e){if(!(e&&e.code==="declined"))toast(e.message||"Stažení se nepovedlo.")}
+}
+
+/* ---------- verze appky (F0-04) ----------
+   Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik/pr-12/.
+   Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA). */
+const fmtSize=b=>b<1048576?Math.max(1,Math.round(b/1024))+" kB":(b/1048576).toLocaleString("cs-CZ",{maximumFractionDigits:1})+" MB";
+function testBar(){
+  if(!TEST_PR)return "";
+  return '<div class="testbar"><b>TEST · PR #'+esc(TEST_PR)+'</b><span class="grow">'+esc(BUILD.nazev)+'</span><a href="../">Vydaná verze ›</a></div>';
+}
+function versionSettings(){
+  const t=Date.parse(BUILD.cas);
+  let h='<section class="sec"><div class="sec-h"><h2>Verze aplikace</h2></div><div class="card stack">';
+  h+='<div class="row"><b class="grow">'+(TEST_PR?"Testovací verze · PR #"+esc(TEST_PR):BUILD.kanal==="main"?"Vydaná verze":"Lokální spuštění")+'</b>'+(TEST_PR?'<span class="pill test">TEST</span>':'')+'</div>';
+  if(TEST_PR&&BUILD.nazev)h+='<div class="small">'+esc(BUILD.nazev)+(BUILD.vetev?'<div class="xs muted">Větev '+esc(BUILD.vetev)+'</div>':'')+'</div>';
+  h+='<div class="small muted">'+(BUILD.commit&&isFinite(t)?'Nasazeno '+fmtDate(t)+' '+fmtTime(t)+' · kód změny '+esc(BUILD.commit):'Bez údajů o nasazení (spuštěno mimo GitHub Pages).')+'</div>';
+  h+='<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
+  if(TEST_PR){
+    h+='<div class="small muted">Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se vydané verze netýká.</div>';
+    h+='<div class="row wrap-r"><button class="btn grow" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn grow" href="../">Otevřít vydanou verzi</a></div>';
+  }else if(S.testData===undefined)scanTestData();
+  else if(S.testData.n)h+='<div class="row"><span class="small grow">Data testovacích verzí v telefonu: '+S.testData.n+' '+plural(S.testData.n,"verze","verze","verzí")+' (≈ '+fmtSize(S.testData.bytes)+')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
+  return h+'</div></section>';
+}
+async function checkUpdate(){
+  if(!window.PWA){toast("Aktualizace tady nejde zkontrolovat.");return}
+  toast("Kontroluji…");
+  const r=await window.PWA.check();
+  toast(r==="new"?"Stahuji novou verzi, appka se hned znovu načte.":r==="same"?"Máš nejnovější verzi.":r==="offline"?"Nepodařilo se spojit se serverem. Jsi online?":"Aktualizace tady nejde zkontrolovat.");
+}
+/* data testovacích verzí v tomto telefonu (jen pro vydanou verzi): databáze workout-denik-prN a klíče zd1-prN: */
+const testKeys=()=>{const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^zd1-pr\d+:/.test(k||""))out.push(k)}}catch(e){}return out};
+async function testDbs(){try{return indexedDB.databases?(await indexedDB.databases()).map(d=>d.name).filter(n=>/^workout-denik-pr\d+$/.test(n||"")):[]}catch(e){return []}}
+async function scanTestData(){
+  if(scanTestData.busy)return;
+  scanTestData.busy=true;
+  const prs={};let bytes=0;
+  for(const k of testKeys()){prs[k.match(/\d+/)[0]]=1;bytes+=k.length+(localStorage.getItem(k)||"").length}
+  for(const n of await testDbs()){
+    prs[n.match(/\d+$/)[0]]=1;
+    try{const db=await idbOpenExisting(n);for(const st of ["docs","points"])for(const [k,v] of await idbAll(db,st))bytes+=String(k).length+JSON.stringify(v).length;db.close()}catch(e){}
+  }
+  S.testData={n:Object.keys(prs).length,bytes};scanTestData.busy=false;scheduleRender();
+}
+async function deleteTestData(){
+  toast("Mažu…");
+  try{
+    for(const k of testKeys())localStorage.removeItem(k);
+    for(const n of await testDbs())await new Promise(r=>{const q=indexedDB.deleteDatabase(n);q.onsuccess=q.onerror=q.onblocked=()=>r()});
+    if(window.caches)for(const k of await caches.keys())if(/^wd-pr\d+-/.test(k))await caches.delete(k);
+    if(navigator.serviceWorker)for(const r of await navigator.serviceWorker.getRegistrations())if(/\/pr-\d+\/$/.test(new URL(r.scope).pathname))await r.unregister();
+    toast("Data testovacích verzí smazána");
+  }catch(e){toast("Nepodařilo se smazat všechno.")}
+  S.testData=undefined;scheduleRender();
+}
+/* testovací verze: nahradí svá data kopií dat vydané verze (vydaná verze se jen čte) */
+async function copyFromMain(){
+  let src=null,stopped=false;
+  try{
+    const names=indexedDB.databases?(await indexedDB.databases()).map(d=>d.name):[MAIN_DB];
+    if(!names.includes(MAIN_DB)){toast("Vydaná verze v tomto telefonu zatím nemá žádná data.");return}
+    toast("Kopíruji data…");
+    src=await idbOpenExisting(MAIN_DB);
+    const docs=await idbAll(src,"docs"),pts=await idbAll(src,"points");
+    src.close();src=null;
+    // zastavit ukládání této verze, ať kopii nic nepřepíše; po kopii se appka znovu načte
+    Store.backend=null;clearTimeout(Store._ct);clearTimeout(Store._at);stopped=true;
+    const db=await Idb.open();
+    await new Promise((res,rej)=>{
+      const tx=db.transaction(["docs","points"],"readwrite"),d=tx.objectStore("docs"),p=tx.objectStore("points");
+      d.clear();p.clear();
+      for(const [k,v] of docs)d.put(v,k);
+      for(const [k,v] of pts)p.put(v,k);
+      tx.oncomplete=()=>res();tx.onerror=tx.onabort=()=>rej(Idb.err(tx.error));
+    });
+    // drobnosti z localStorage: fronta zápisů, rozdělaný trénink, nastavení zobrazení
+    const ks=[];for(let i=0;i<localStorage.length;i++)ks.push(localStorage.key(i));
+    for(const k of ks)if(k&&k.startsWith(Local.P))localStorage.removeItem(k);
+    for(const k of ks)if(k&&k.startsWith(MAIN_P))localStorage.setItem(Local.P+k.slice(MAIN_P.length),localStorage.getItem(k));
+    location.reload();
+  }catch(e){
+    if(src)src.close();
+    toast("Kopírování se nepovedlo: "+(e&&e.message||"chyba"));
+    if(stopped)setTimeout(()=>location.reload(),2500);
+  }
 }
 
 /* ---------- vzhled ---------- */
@@ -1701,8 +1812,9 @@ function setTheme(v){
   if(v==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",v);
   // PWA: barva stavového řádku Androidu podle pozadí appky
   const m=document.querySelector("meta[name=theme-color]");
-  if(m)m.content=getComputedStyle(r).getPropertyValue("--bg").trim()||"#0e1013";
+  if(m)m.content=TEST_PR?"#f59f00":getComputedStyle(r).getPropertyValue("--bg").trim()||"#0e1013";
 }
+if(TEST_PR)document.title="TEST #"+TEST_PR+" · Workout deník";
 setTheme(themePref());
 
 /* ---------- boot ---------- */
