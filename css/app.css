@@ -230,6 +230,9 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 .infob{flex:none;width:44px;border:1px solid var(--line-2);background:var(--surface);border-radius:10px;font-family:var(--display);font-weight:700;font-size:19px;color:var(--ink-2)}
 .infob:active{background:var(--surface-2)}
 .pick .chk svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:3}
+/* hláška „Stiskni Zpět ještě jednou…“ (F0-06) se schová sama i bez JavaScriptového časovače */
+.toast.exit{animation:toastHide 0s linear 2.6s forwards}
+@keyframes toastHide{to{visibility:hidden;opacity:0}}
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-weight:600;font-size:14px;z-index:60;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
 .switch{display:flex;align-items:center;gap:10px;font-size:14px}
 .switch input{width:20px;height:20px;accent-color:var(--accent)}

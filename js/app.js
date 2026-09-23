@@ -299,6 +299,7 @@ const S={
   active:Store.loadActive(),
   editDraft:null,
   route:lsGet("route","train"),
+  nav:[], // kam se vrátit ze stránky cviku / úpravy (F0-06), viz navBack
   exDetail:null, exPart:"info",
   exlQ:"", exlM:lsGet("exlM","all"), exlEq:lsGet("exlEq","all"), exlSort:lsGet("exlSort","last"), exlHid:false,
   histGym:"all", statsGym:"all", statsMetric:"count", statsRange:lsGet("statsRange","30d"), sumPeriod:"month", exSearch:"", exMuscle:"all",
@@ -603,7 +604,7 @@ function restoreChipScroll(root){
 }
 let rq=false;
 function scheduleRender(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
-function toast(msg){const r=document.getElementById("toastRoot");r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",2600)}
+function toast(msg,cls){const r=document.getElementById("toastRoot");r.innerHTML='<div class="toast'+(cls?" "+cls:"")+'" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",2600)}
 
 function renderTabs(){
   const t=[["train","Trénink"],["hist","Historie"],["ex","Cviky"],["stats","Statistiky"],["body","Tělo"],["set","Nastavení"]];
@@ -634,9 +635,11 @@ function render(){
   renderTabs();updSync();drawCharts();renderRest();restoreChipScroll(app);
   if(focusId){const f=document.getElementById(focusId);if(f&&f.tagName==="INPUT"&&f.type!=="checkbox"){f.focus();try{const l=f.value.length;f.setSelectionRange(l,l)}catch(e){}}}
   if(render.keepScroll)window.scrollTo(0,y);
+  if(render.restoreY!=null){window.scrollTo(0,render.restoreY);render.restoreY=null}
   render.keepScroll=true;
+  navEnsure();
 }
-function go(route){S.route=route;const base=r=>r==="edit"||r==="exd"?"train":r;lsSet("route",route==="exd"?base(S.prevRoute||"ex"):base(route));render.keepScroll=false;scheduleRender();window.scrollTo(0,0)}
+function go(route){if(route!=="exd"&&route!=="edit")S.nav=[];S.route=route;const base=r=>r==="edit"||r==="exd"?"train":r;lsSet("route",route==="exd"?base(S.prevRoute||"ex"):base(route));render.keepScroll=false;scheduleRender();window.scrollTo(0,0)}
 
 /* ---------- HOME ---------- */
 function curGym(){return S.selGym||S.cfg.defaultGymId||(S.cfg.gyms[0]&&S.cfg.gyms[0].id)||null}
@@ -1173,7 +1176,7 @@ function renderPicker(keep){
   const sb=document.querySelector(".sheet-b");const st=keep&&sb?sb.scrollTop:0;
   saveChipScroll(sb||undefined);
   const f='<button class="btn primary grow" data-act="pickDone" '+(pick.sel.length?"":"disabled")+'>'+(pick.mode==="replace"?"Nahradit":"Přidat"+(pick.sel.length?" ("+pick.sel.length+")":""))+'</button>';
-  openSheet(pick.mode==="replace"?"Nahradit cvik":"Přidat cviky",pickerBody(),f,keep);
+  openSheet(pick.mode==="replace"?"Nahradit cvik":"Přidat cviky",pickerBody(),f,keep,{re:()=>renderPicker(true)});
   const nb=document.querySelector(".sheet-b");if(nb&&st)nb.scrollTop=st;
   restoreChipScroll(nb||undefined);
 }
@@ -1194,7 +1197,7 @@ function sheetExInfo(id){
     b+='<div class="small">Minule: <span class="num">'+esc(setsStr(list[0].e.sets,true,kindOf(id)))+'</span> <span class="muted">('+esc(gymName(list[0].w.gymId))+')</span></div>';
     if(rl.length)b+='<div class="reclist">'+rl.map(r=>'<div class="rec"><span class="md">🏅</span><div class="grow">'+esc(REC[r.type])+': <b>'+esc(recFmt(r.type,r.v,r.set))+'</b> <span class="muted">· '+fmtDate(r.w.start)+'</span></div></div>').join("")+'</div>';
   }else b+='<div class="small muted">S tímto cvikem zatím nemáš žádný záznam.</div>';
-  openSheet(e.name,b,'<button class="btn grow" data-act="backPicker">Zpět na výběr</button><button class="btn" data-act="editExInfo" data-v="'+esc(id)+'">Upravit</button><button class="btn primary" data-act="openEx" data-v="'+esc(id)+'" data-p="info">Stránka cviku</button>',true);
+  openSheet(e.name,b,'<button class="btn grow" data-act="backPicker">Zpět na výběr</button><button class="btn" data-act="editExInfo" data-v="'+esc(id)+'">Upravit</button><button class="btn primary" data-act="openEx" data-v="'+esc(id)+'" data-p="info">Stránka cviku</button>',true,{lv:2,back:()=>renderPicker(true),re:()=>sheetExInfo(id)});
 }
 let exEd=null;
 const exEdOut=()=>exEd&&(exEd.from==="detail"||exEd.from==="list"); // úprava otevřená mimo výběr cviků
@@ -1219,8 +1222,10 @@ function renderExEdit(e){
     '<label class="f">Popis provedení<textarea class="inp" id="x-desc" rows="4">'+esc(desc)+'</textarea></label>'+
     '<label class="f">Odkaz (Hevy nebo video)<input class="inp" id="x-url" inputmode="url" value="'+esc(url)+'" placeholder="prázdné = vyhledat video podle názvu"></label>';
   const id=exEd.id;
+  // Zpět o úroveň: do výsledků online databáze, do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
+  const nav=fx&&fs?{lv:fsLv()+1,back:()=>{exEd=null;renderFs()}}:exEdOut()?{}:exEd.from==="info"?{lv:3,back:()=>sheetExInfo(id)}:{lv:2,back:()=>{exEd=null;renderPicker(true)}};
   const sb=document.querySelector(".sheet-b");const st=sb?sb.scrollTop:null;
-  openSheet(id?"Upravit cvik":"Nový cvik",b,(id?'<button class="btn danger" data-act="archEx" data-v="'+esc(id)+'">'+(e.archived?"Zobrazit":"Skrýt")+'</button>':'')+'<button class="btn grow" data-act="backPicker">Zpět</button>'+(id&&exChanged(id)?'<button class="btn" data-act="resetEx" data-v="'+esc(id)+'">Výchozí</button>':'')+'<button class="btn primary grow" data-act="saveEx" data-v="'+esc(id||"")+'">Uložit</button>');
+  openSheet(id?"Upravit cvik":"Nový cvik",b,(id?'<button class="btn danger" data-act="archEx" data-v="'+esc(id)+'">'+(e.archived?"Zobrazit":"Skrýt")+'</button>':'')+'<button class="btn grow" data-act="backPicker">Zpět</button>'+(id&&exChanged(id)?'<button class="btn" data-act="resetEx" data-v="'+esc(id)+'">Výchozí</button>':'')+'<button class="btn primary grow" data-act="saveEx" data-v="'+esc(id||"")+'">Uložit</button>',false,nav);
   if(st!==null){const sh=document.querySelector(".sheet");if(sh)sh.classList.add("noanim");const nb=document.querySelector(".sheet-b");if(nb)nb.scrollTop=st}
 }
 
@@ -1259,11 +1264,14 @@ function renderFs(){
     '<div class="row wrap-r" id="fsBar" style="gap:8px"></div>'+
     '<div class="stack" id="fsList" style="gap:6px"></div>'+
     '<p class="xs muted" style="margin:2px 0 0">Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před uložením je zkontroluj.</p>';
-  openSheet("Online databáze cviků",b,'<button class="btn grow" data-act="fsBack">Zpět</button>');
+  openSheet("Online databáze cviků",b,'<button class="btn grow" data-act="fsBack">Zpět</button>',false,{lv:fsLv(),back:fsBack,re:renderFs});
   refreshFs();
   if(typeof FEDB==="undefined")fedbLoad().then(()=>{if(fs)refreshFs()}).catch(()=>{const el=document.getElementById("fsList");if(el)el.innerHTML='<div class="empty">Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i offline.<br><button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button></div>'});
   const inp=document.getElementById("fsQ");if(inp&&!fs.q)inp.focus();
 }
+// tlačítko Zpět (F0-06): hledání je o úroveň pod výběrem cviků, resp. pod formulářem Nový cvik
+const fsLv=()=>(fs.from==="picker"?2:1)+(fs.form?1:0);
+function fsBack(){if(fs.form){sheetExEdit(null,fs.from);return}if(fs.from==="picker")renderPicker(true);else closeSheet()}
 function refreshFs(){
   const el=document.getElementById("fsList"),bar=document.getElementById("fsBar");if(!el||!bar)return;
   if(typeof FEDB==="undefined"){bar.innerHTML="";el.innerHTML='<div class="empty">Načítám databázi cviků…</div>';return}
@@ -1284,11 +1292,15 @@ function refreshFs(){
 }
 
 /* ---------- sheet ---------- */
-function openSheet(title,body,foot,noanim){
+// sheetNav: otevřený panel pro tlačítko Zpět – lv = kolik stisků Zpět ho zavře (panel v panelu má víc),
+// back = jeden krok zpět, re = znovu otevřít (návrat ze stránky cviku nebo z úpravy tréninku)
+let sheetNav=null;
+function openSheet(title,body,foot,noanim,nav){
   document.getElementById("sheetRoot").innerHTML='<div class="scrim" data-act="scrim"><div class="sheet'+(noanim?" noanim":"")+'" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="sheet-h"><h2>'+esc(title)+'</h2><button class="iconbtn" data-act="closeSheet" aria-label="Zavřít">'+IC.close+'</button></div><div class="sheet-b">'+body+'</div>'+(foot?'<div class="sheet-f">'+foot+'</div>':'')+'</div></div>';
   document.body.style.overflow="hidden";
+  sheetNav=Object.assign({lv:1,back:closeSheet,re:()=>openSheet(title,body,foot,true,nav)},nav);
 }
-function closeSheet(){document.getElementById("sheetRoot").innerHTML="";document.body.style.overflow=""}
+function closeSheet(){document.getElementById("sheetRoot").innerHTML="";document.body.style.overflow="";sheetNav=null}
 function confirmSheet(title,text,btn,act,v){openSheet(title,'<p style="margin:0">'+text+'</p>','<button class="btn grow" data-act="closeSheet">Zrušit</button><button class="btn primary grow" data-act="'+act+'" data-v="'+esc(v||"")+'">'+esc(btn)+'</button>')}
 
 /* ---------- rest timer ---------- */
@@ -1405,8 +1417,8 @@ document.addEventListener("click",ev=>{
     case "selGym":S.selGym=v;scheduleRender();break;
     case "startEmpty":if(S.active){go("train");break}startWorkout(null);break;
     case "startTpl":if(S.active){toast("Nejdřív dokonči rozdělaný trénink.");go("train");break}startWorkout(v);break;
-    case "newTpl":S.editDraft={mode:"template",id:null,title:"Nová šablona",ex:[]};go("edit");break;
-    case "editTpl":{const t=S.templates[v];S.editDraft={mode:"template",id:v,title:t.name,gymId:curGym(),ex:(t.items||[]).map(it=>({k:uid("e"),exId:it.exId,note:"",sets:(it.sets||[]).map(s=>({t:s.t,kg:s.kg?String(s.kg):"",reps:s.reps?String(s.reps):""}))}))};go("edit");break}
+    case "newTpl":S.editDraft={mode:"template",id:null,title:"Nová šablona",ex:[]};goEdit();break;
+    case "editTpl":{const t=S.templates[v];S.editDraft={mode:"template",id:v,title:t.name,gymId:curGym(),ex:(t.items||[]).map(it=>({k:uid("e"),exId:it.exId,note:"",sets:(it.sets||[]).map(s=>({t:s.t,kg:s.kg?String(s.kg):"",reps:s.reps?String(s.reps):""}))}))};goEdit();break}
     case "cycType":{const s=d.ex[i].sets[j];s.t=TYPES[(TYPES.indexOf(s.t)+1)%TYPES.length];touchDraft();scheduleRender();break}
     case "done":{const s=d.ex[i].sets[j];
       const kind=kindOf(d.ex[i].exId);
@@ -1443,18 +1455,18 @@ document.addEventListener("click",ev=>{
       else for(const id of pick.sel)dd.ex.push(dd.mode==="template"?{k:uid("e"),exId:id,note:"",sets:[newSetFrom(null),newSetFrom(null),newSetFrom(null)]}:exEntryFor(id,dd.gymId));
       touchDraft();closeSheet();scheduleRender();break}
     case "newEx":sheetExEdit(null);break;
-    case "backPicker":if(exEd&&exEd.fx&&fs){exEd=null;renderFs();break}if(exEdOut()){closeSheet();break}exEd=null;renderPicker(true);break;
+    case "backPicker":navBack();break;
     case "fedbOpen":{ // v = odkud: picker (výběr cviků), list (záložka Cviky), form (formulář Nový cvik)
       if(v==="form"){const n=document.getElementById("x-name");fedbOpen(exEd?exEd.from:"picker",n?n.value.trim():"",true)}
       else fedbOpen(v,v==="list"?S.exlQ:pick.q);break}
-    case "fsBack":if(fs.form){sheetExEdit(null,fs.from);break}if(fs.from==="picker")renderPicker(true);else closeSheet();break;
+    case "fsBack":navBack();break;
     case "fsAll":fs.all=!fs.all;fs.limit=0;refreshFs();break;
     case "fsMore":fs.limit=(fs.limit||40)+40;refreshFs();break;
     case "fsRetry":renderFs();break;
     case "fsPick":{const x=typeof FEDB!=="undefined"&&FEDB.find(o=>o.id===v);if(x)sheetExEdit(null,fs.from,x);break}
     case "fsHave":
       if(fs.from==="picker"){if(pick.mode==="replace")pick.sel=[v];else if(!pick.sel.includes(v))pick.sel.push(v);renderPicker();toast("Vybráno: "+exOf(v).name);break}
-      closeSheet();S.exPart="info";S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(S.route!=="exd")S.prevRoute=S.route;go("exd");break;
+      {const f=S.route!=="exd"?navFrame():null;closeSheet();S.exPart="info";S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(f){S.prevRoute=S.route;S.nav.push(f)}go("exd");break}
     case "saveEx":{
       const name=document.getElementById("x-name").value.trim();if(!name){toast("Zadej název cviku.");break}
       const id=v||("c-"+name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").slice(0,40)+"-"+Date.now().toString(36).slice(-4));
@@ -1467,7 +1479,7 @@ document.addEventListener("click",ev=>{
       items[id]=o;putEx(items);
       if(exEd.from==="detail"){closeSheet();toast("Cvik uložen");break}
       if(exEd.from==="info"){exEd=null;renderPicker(true);toast("Cvik uložen");break}
-      if(exEd.from==="list"){closeSheet();if(!v){S.exDetail=id;S.exPart="info";S.detailGym="all";S.exHistLimit=25;S.prevRoute="ex";go("exd")}toast("Cvik uložen");break}
+      if(exEd.from==="list"){closeSheet();if(!v){S.nav.push(navFrame());S.exDetail=id;S.exPart="info";S.detailGym="all";S.exHistLimit=25;S.prevRoute="ex";go("exd")}toast("Cvik uložen");break}
       if(!v){if(pick.mode==="replace")pick.sel=[id];else pick.sel.push(id)}
       pick.q="";renderPicker();toast("Cvik uložen");break}
     case "resetEx":{const items=Object.assign({},S.exLib),a=items[v].archived;items[v]=Object.assign({},EX_DB[v]);if(a)items[v].archived=true;putEx(items);
@@ -1506,7 +1518,8 @@ document.addEventListener("click",ev=>{
       break}
     case "discard":confirmSheet("Zahodit trénink?","Rozdělaný trénink se smaže a neuloží.","Zahodit","discardOk");break;
     case "discardOk":S.active=null;S.restEnd=null;saveActive();closeSheet();go("train");break;
-    case "edCancel":S.editDraft=null;go(d&&d.mode==="template"?"train":"hist");break;
+    case "edCancel":navBack();break;
+    case "edDiscard":closeSheet();navBack(true);break;
     case "saveEdit":{
       const ex=draftToWorkout(d,false);if(!ex.length){toast("Trénink je prázdný.");break}
       const old=(S.months[d.mk]||{})[d.id]||{};
@@ -1527,15 +1540,15 @@ document.addEventListener("click",ev=>{
     case "histGym":S.histGym=v;S.histLimit=40;scheduleRender();break;
     case "histMore":S.histLimit=(S.histLimit||40)+40;scheduleRender();break;
     case "openW":{const w=Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]);sheetWorkout(w);break}
-    case "editW":{const w=Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]);S.editDraft=workoutToDraft(w,"edit");closeSheet();go("edit");break}
+    case "editW":{const w=Object.assign({id:v,mk:t.dataset.m},S.months[t.dataset.m][v]);S.editDraft=workoutToDraft(w,"edit");goEdit();break}
     case "wToTpl":{const w=S.months[t.dataset.m][v];const items=Object.assign({},S.templates);const id=uid("t");items[id]={name:w.title,order:Object.keys(items).length,items:(w.ex||[]).map(e=>({exId:e.exId,sets:e.sets.map(s=>({t:s.t,kg:s.kg,reps:s.reps}))}))};put("config/templates",{items});closeSheet();toast("Šablona „"+w.title+"“ vytvořena");break}
     case "statsGym":S.statsGym=v;scheduleRender();break;
     case "statsMetric":S.statsMetric=v;scheduleRender();break;
     case "exMuscle":S.exMuscle=v;scheduleRender();break;
     case "exMore":S.exLimit=(S.exLimit||60)+60;scheduleRender();break;
     // ze záložky Cviky a z výběru se otevře Popis, odjinud (trénink, historie, statistiky) Statistiky
-    case "openEx":closeSheet();S.exPart=t.dataset.p||(S.route==="ex"?"info":"stats");S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(S.route!=="exd")S.prevRoute=S.route;go("exd");break;
-    case "exBack":go(S.prevRoute&&S.prevRoute!=="exd"?S.prevRoute:"ex");break;
+    case "openEx":{const f=S.route!=="exd"?navFrame():null;closeSheet();S.exPart=t.dataset.p||(S.route==="ex"?"info":"stats");S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(f){S.prevRoute=S.route;S.nav.push(f)}go("exd");break}
+    case "exBack":navBack();break;
     case "exPart":S.exPart=v;render.keepScroll=false;scheduleRender();window.scrollTo(0,0);break;
     case "exlM":S.exlM=v;lsSet("exlM",v);S.exlLimit=0;scheduleRender();break;
     case "exlEq":S.exlEq=v;lsSet("exlEq",v);S.exlLimit=0;scheduleRender();break;
@@ -1611,6 +1624,68 @@ document.addEventListener("change",ev=>{
   if(f==="date"||f==="time"){const ds=document.getElementById("ed-date").value,ts=document.getElementById("ed-time").value;const dur=(d.end||d.start)-d.start;const n=new Date(ds+"T"+(ts||"12:00")).getTime();if(isFinite(n)){d.start=n;d.end=n+dur}}
   if(f==="dur"){const m=num(t.value);if(isFinite(m))d.end=d.start+m*60000}
 });
+
+/* ---------- tlačítko Zpět (F0-06) ----------
+   Každý stisk systémového Zpět (i gesto) = jeden krok navBack() podle toho, co je na obrazovce:
+   panel → o úroveň / zavřít, stránka cviku a úprava → tam, odkud se přišlo, jiná záložka → Trénink.
+   Na hlavní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
+   Historie prohlížeče jen „počítá kroky“: drží se v ní aspoň tolik záznamů, kolik kroků zbývá
+   na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
+   přidané bez klepnutí může při Zpět přeskočit. Po hlášce na hlavní obrazovce zůstanou kroky
+   „dopředu“ v historii; dotyk (klepnutí i swipe) pojistku obnoví krokem vpřed (history.forward),
+   ten klepnutí nepotřebuje. Rozdělaný trénink Zpět nikdy neukončí. */
+// pos = kde v historii appky jsme, top = nejvyšší existující záznam, wait = čeká se na krok vpřed
+const Nav={pos:0,top:0,ignore:false,exit:false,wait:false};
+(function(){const st=history.state;Nav.pos=Nav.top=st&&typeof st.zd==="number"?st.zd:0;try{history.replaceState({zd:Nav.pos},"")}catch(e){}})();
+// kolik stisků Zpět zbývá na hlavní obrazovku Tréninku
+function navDepth(){
+  const r=S.route,top=S.nav[S.nav.length-1];
+  return (sheetNav?sheetNav.lv:0)+(r==="exd"||r==="edit"?1+(top?top.d:1):r==="train"?0:1);
+}
+// místo, kam se vrátit ze stránky cviku nebo z úpravy (i s otevřeným panelem a posunem stránky)
+function navFrame(){return {route:S.route,re:sheetNav&&sheetNav.re,y:window.scrollY,d:navDepth()}}
+function goEdit(){const f=navFrame();closeSheet();S.nav.push(f);S.editOrig=JSON.stringify(S.editDraft);go("edit")}
+function navBack(force){
+  if(sheetNav){sheetNav.back();return true}
+  const r=S.route;
+  if(r==="edit"&&S.editDraft&&!force&&JSON.stringify(S.editDraft)!==S.editOrig){confirmSheet("Zahodit změny?","Neuložené změny se ztratí.","Zahodit","edDiscard");return true}
+  if(r==="exd"||r==="edit"){
+    const d=S.editDraft;if(r==="edit")S.editDraft=null;
+    const f=S.nav.pop();
+    if(!f){go(r==="edit"?(d&&d.mode==="template"?"train":"hist"):S.prevRoute&&S.prevRoute!=="exd"&&S.prevRoute!=="edit"?S.prevRoute:"ex");return true}
+    go(f.route);render.restoreY=f.y;if(f.re)f.re();
+    return true;
+  }
+  if(r!=="train"){go("train");return true}
+  return false;
+}
+function navEnsure(){
+  if(Nav.exit||Nav.wait||(navigator.userActivation&&!navigator.userActivation.isActive))return;
+  const need=navDepth()+1;
+  while(Nav.pos<need){Nav.pos++;Nav.top=Nav.pos;history.pushState({zd:Nav.pos},"")}
+}
+window.addEventListener("popstate",ev=>{
+  const p=ev.state&&typeof ev.state.zd==="number"?ev.state.zd:0;
+  const fwd=p>Nav.pos;Nav.pos=p;if(p>Nav.top)Nav.top=p;
+  if(fwd){Nav.wait=false;navEnsure();return}
+  if(Nav.ignore){Nav.ignore=false;return}
+  saveChipScroll();
+  if(navBack())return;
+  // hlavní obrazovka Tréninku: zahodit zbylé kroky, další Zpět appku zavře
+  if(p>0){Nav.ignore=true;history.go(-p)}
+  Nav.exit=true;toast("Stiskni Zpět ještě jednou pro zavření","exit");
+});
+// dotyk do appky (klepnutí i swipe) po hlášce: schovat ji a obnovit pojistku proti zavření
+function navRearm(){
+  if(!Nav.exit)return;Nav.exit=false;
+  const t=document.querySelector(".toast.exit");if(t)t.remove();
+  if(Nav.top>Nav.pos){Nav.wait=true;history.forward();setTimeout(()=>{if(Nav.wait){Nav.wait=false;navEnsure()}},800)}
+}
+document.addEventListener("pointerdown",navRearm,true);
+document.addEventListener("touchstart",navRearm,{capture:true,passive:true});
+document.addEventListener("click",navRearm,true);
+// po klepnutí doplnit kroky (otevřený panel, stránka)
+document.addEventListener("click",()=>navEnsure());
 
 /* ---------- backup (F0-01) ----------
    Dvě vrstvy ochrany:
