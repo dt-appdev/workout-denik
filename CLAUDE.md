@@ -74,6 +74,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `putEx(items)`, který uloží jen rozdíly. Partie jsou klíče `MUSCLE_MAP.NAMES`,
   ramena jsou jedna partie `delts` (staré `delt_f/s/r` se převádějí). Záloha
   obsahuje celé cviky a značku `exDb:2`.
+- Záložka Cviky (F0-05): route `ex` (`vExList`), filtry `S.exlM`/`S.exlEq`/`S.exlSort`
+  v `localStorage`. Stránka cviku (route `exd`, `vExDetail`) má části Popis
+  a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
+  (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).

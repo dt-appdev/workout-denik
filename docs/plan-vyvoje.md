@@ -59,7 +59,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-02** Databáze cviků: ke každému cviku primární a sekundární svalové partie.
 - [ ] **F0-03** Přidání cviku vyhledáním v otevřené databázi (free-exercise-db, případně wger): napíšu název, appka nabídne cviky a předvyplní partie, vybavení, popis a návrh českého názvu. Stačí online.
 - [ ] **F0-04** Verze appky v Nastavení: zobrazit, jakou verzi právě používám – vydaná verze (z `main`), nebo testovací verze před merge (s názvem větve / PR) – a datum a čas verze. Pomůže při testování PR na telefonu poznat, že se appka opravdu aktualizovala.
-- [ ] **F0-05** Záložka Cviky: nová záložka ve spodní liště vedle Trénink, Historie, Statistiky, Tělo a Nastavení s databází cviků. Procházení, hledání a filtr podle partie, otevření detailu cviku a úprava (název CZ/EN, partie, popis…) bez nutnosti chodit přes přidání cviku do tréninku nebo přes statistiky. Nahradí tlačítko „Spravovat" v Nastavení → Databáze cviků.
+- [x] **F0-05** Záložka Cviky: nová záložka ve spodní liště vedle Trénink, Historie, Statistiky, Tělo a Nastavení s databází cviků. Procházení, hledání a filtr podle partie, otevření detailu cviku a úprava (název CZ/EN, partie, popis…) bez nutnosti chodit přes přidání cviku do tréninku nebo přes statistiky. Nahradí tlačítko „Spravovat" v Nastavení → Databáze cviků.
 
 ### Fáze 1 – Ovládání při tréninku
 
@@ -70,7 +70,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [ ] **F1-03** Velká tlačítka +/− pro váhu a opakování, ovládání jednou rukou.
 - [ ] **F1-04** Časovač počítaný z času startu (nevypadne na pozadí) a vibrace na konci pauzy.
 - [ ] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče.
-- [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu.
+- [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05).
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
 
 ### Fáze 2 – Šablony a historie
@@ -128,7 +128,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 |---|---|---|
 | F0-02 | Obsahuje databáze cviků už svalové partie, nebo je doplníme? | Vyřešeno 23. 9.: partie všech 388 cviků zkontrolované a schválené, výchozí databáze je součástí appky. |
 | F0-04 | Jak dostat testovací verzi (před merge) do telefonu? GitHub Pages teď nasazuje jen `main`. | Zdarma přes GitHub Actions: nasadit i větve PR do podsložky (např. `…/workout-denik/pr-12/`) s vlastními daty, verzi a čas doplnit automaticky při nasazení |
-| F0-05 | Bude spodní lišta se 6 záložkami na telefonu ještě pohodlná? | Ano, zkrátit popisky nebo nechat jen ikony s krátkým textem; když ne, přesunout Tělo do Statistik |
+| F0-05 | Bude spodní lišta se 6 záložkami na telefonu ještě pohodlná? | Vyřešeno 23. 9.: 6 záložek s popisky, menší písmo; Cviky mají ikonu otevřené knihy (činka zůstává Tréninku). |
 | F2-01 | „Cvičit znovu" z tréninku v jiném fitku: spustit v aktuálním, nebo původním fitku? | Aktuální fitko |
 | F2-02 | Mají mít šablony různé výchozí váhy pro každé fitko? | Ne, stačí F1-01 |
 | F2-05 | Zahrnout fotky do zálohy (F0-01)? Záloha tím naroste o jednotky až desítky MB. | Přepínač „s fotkami / bez fotek" (formát zálohy v2 už má připravené pole pro fotky) |
@@ -142,6 +142,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 23. 9. 2026 | F0-05 | Nová záložka Cviky (6. ve spodní liště, ikona kniha): všechny cviky, nahoře cvičené; řazení Naposledy / A–Z; filtr partie a vybavení (pamatuje se), filtr Skryté; + Nový cvik. Hledání všude bez ohledu na diakritiku. Stránka cviku rozdělená na Popis a Statistiky: ze záložky Cviky a z výběru cviku se otevře Popis, ze Statistik, Historie a tréninku Statistiky. „Spravovat“ z Nastavení odstraněno. Data ani formát zálohy beze změny. |
 | 23. 9. 2026 | – | Do plánu přidány úlohy F0-04 (verze appky v Nastavení) a F0-05 (záložka Cviky). |
 | 23. 9. 2026 | F0-02 | Výchozí databáze 388 cviků je součástí appky (`js/cviky.js`), v telefonu se ukládají jen vlastní úpravy, skryté a vlastní cviky. Partie zkontrolované podle free-exercise-db a wger a schválené: ramena jako jedna partie, nejvýš 3 pomocné partie, jen svaly, které opravdu pracují (32 úprav, 120× jen sloučení ramen). Převod dat v telefonu jednou automaticky, předtím bod obnovy. V úpravě cviku tlačítko „Výchozí". Vyhledávání v otevřených databázích přesunuto do nové úlohy F0-03. |
 | 23. 9. 2026 | PWA-01 | Appka převedena na PWA (GitHub Pages): data v IndexedDB, body obnovy v IndexedDB, stahování zálohy přes Chrome, písma a ikony v repu, service worker s verzovanou cache a automatickou aktualizací, CLAUDE.md a README. Vzhled a funkce beze změny. Zbývá: převést data z artefaktu (záloha → obnova) a otestovat na telefonu. |
