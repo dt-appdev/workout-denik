@@ -12,6 +12,7 @@ const DAY=86400000;
 const IC={
   train:'<svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
   hist:'<svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
+  ex:'<svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5zM12 6.5v13"/></svg>',
   stats:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   body:'<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M5 9h14M12 9v6M12 15l-3.5 6M12 15l3.5 6"/></svg>',
   set:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
@@ -83,7 +84,9 @@ const exOf=id=>S.exLib[id]||{name:id};
 const exGroup=e=>(e.pri&&e.pri.length?GROUP_OF[e.pri[0]]:e.muscle)||"other";
 const exPri=e=>e.pri&&e.pri.length?e.pri:(e.muscle?Object.keys(GROUP_OF).filter(k=>GROUP_OF[k]===e.muscle).slice(0,1):[]);
 const exLink=e=>e.url||("https://www.youtube.com/results?search_query="+encodeURIComponent(e.name+" exercise form"));
-const exMatch=(e,q)=>{if(!q)return true;q=q.toLowerCase();return e.name.toLowerCase().includes(q)||(e.cz||"").toLowerCase().includes(q)};
+// hledání bez ohledu na velikost písmen a diakritiku („tlak" najde „Tlak", „stehna" i „stehná")
+const fold=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const exMatch=(e,q)=>{if(!q)return true;q=fold(q).trim();return fold(e.name).includes(q)||fold(e.cz).includes(q)};
 const isAssisted=id=>/assisted/.test(id);
 const isBodyweight=id=>{const e=S.exLib[id];return !!(e&&e.equip==="bodyweight")};
 function exFigures(e,small){
@@ -273,7 +276,8 @@ const S={
   active:Store.loadActive(),
   editDraft:null,
   route:lsGet("route","train"),
-  exDetail:null,
+  exDetail:null, exPart:"info",
+  exlQ:"", exlM:lsGet("exlM","all"), exlEq:lsGet("exlEq","all"), exlSort:lsGet("exlSort","last"), exlHid:false,
   histGym:"all", statsGym:"all", statsMetric:"count", statsRange:lsGet("statsRange","30d"), sumPeriod:"month", exSearch:"", exMuscle:"all",
   detailMetric:"e1rm", detailRange:"1y", detailGym:"all",
   bodyMetric:"weight", bodyRange:"all",
@@ -570,8 +574,10 @@ function scheduleRender(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=fal
 function toast(msg){const r=document.getElementById("toastRoot");r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",2600)}
 
 function renderTabs(){
-  const t=[["train","Trénink"],["hist","Historie"],["stats","Statistiky"],["body","Tělo"],["set","Nastavení"]];
-  document.getElementById("tabs").innerHTML=t.map(([k,l])=>'<button data-act="tab" data-v="'+k+'" aria-current="'+(S.route===k||(k==="stats"&&S.route==="exd"))+'">'+IC[k]+(k==="train"&&S.active&&S.route!=="train"?'<span class="dot"></span>':'')+l+'</button>').join("");
+  const t=[["train","Trénink"],["hist","Historie"],["ex","Cviky"],["stats","Statistiky"],["body","Tělo"],["set","Nastavení"]];
+  // stránka cviku patří pod Statistiky, jen když se na ni přišlo odtamtud, jinak pod Cviky
+  const cur=S.route==="exd"?(S.prevRoute==="stats"?"stats":"ex"):S.route;
+  document.getElementById("tabs").innerHTML=t.map(([k,l])=>'<button data-act="tab" data-v="'+k+'" aria-current="'+(cur===k)+'">'+IC[k]+(k==="train"&&S.active&&S.route!=="train"?'<span class="dot"></span>':'')+l+'</button>').join("");
 }
 function topbar(title,sub,left,subCls){
   return '<header class="top">'+(left||"")+'<h1'+(String(title).length>18?' class="long"':'')+'>'+esc(title)+(sub?'<small'+(subCls?' class="'+subCls+'"':'')+'>'+esc(sub)+'</small>':'')+'</h1><span class="sync" id="sync"></span></header>';
@@ -584,6 +590,7 @@ function render(){
     if(S.route==="edit"&&S.editDraft)h=vEditor(S.editDraft);
     else if(S.route==="train")h=S.active?vEditor(S.active):vHome();
     else if(S.route==="hist")h=vHist();
+    else if(S.route==="ex")h=vExList();
     else if(S.route==="stats")h=vStats();
     else if(S.route==="exd")h=vExDetail();
     else if(S.route==="body")h=vBody();
@@ -597,7 +604,7 @@ function render(){
   if(render.keepScroll)window.scrollTo(0,y);
   render.keepScroll=true;
 }
-function go(route){S.route=route;lsSet("route",route==="edit"||route==="exd"?"train":route);render.keepScroll=false;scheduleRender();window.scrollTo(0,0)}
+function go(route){S.route=route;const base=r=>r==="edit"||r==="exd"?"train":r;lsSet("route",route==="exd"?base(S.prevRoute||"ex"):base(route));render.keepScroll=false;scheduleRender();window.scrollTo(0,0)}
 
 /* ---------- HOME ---------- */
 function curGym(){return S.selGym||S.cfg.defaultGymId||(S.cfg.gyms[0]&&S.cfg.gyms[0].id)||null}
@@ -911,17 +918,57 @@ function vStats(){
   return h;
 }
 
+/* ---------- ZÁLOŽKA CVIKY (F0-05) ---------- */
+function vExList(){
+  const {byEx}=derive();
+  const all=Object.entries(S.exLib);
+  const nHid=all.filter(([,e])=>e.archived).length;
+  if(!nHid)S.exlHid=false;
+  const rows=all.filter(([,e])=>
+    // skrytých je málo, filtry partie a vybavení se na ně nepoužijí (jen hledání)
+    (S.exlHid?!!e.archived:!e.archived&&(S.exlM==="all"||exGroup(e)===S.exlM)&&(S.exlEq==="all"||e.equip===S.exlEq))&&
+    exMatch(e,S.exlQ)).map(([id,e])=>{const l=byEx[id];return {id,e,n:l?l.length:0,last:l?l[0].w.start:0}});
+  // Naposledy: cvičené nahoře od posledního, pod nimi ostatní podle abecedy; A–Z: všechny podle abecedy
+  const az=(a,b)=>a.e.name.localeCompare(b.e.name,"cs");
+  rows.sort(S.exlSort==="az"?az:(a,b)=>b.last-a.last||az(a,b));
+  const lim=S.exlLimit||100;
+  let h=topbar("Cviky",all.length+" "+plural(all.length,"cvik","cviky","cviků")+" v databázi");
+  h+='<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…" value="'+esc(S.exlQ)+'" autocomplete="off">';
+  h+='<div class="chips" data-ck="exlM" style="margin-top:8px"><button class="chip" data-act="exlM" data-v="all" aria-pressed="'+(S.exlM==="all")+'">Všechny partie</button>'+Object.entries(MUSCLES).filter(([k])=>k!=="other").map(([k,l])=>'<button class="chip" data-act="exlM" data-v="'+k+'" aria-pressed="'+(S.exlM===k)+'">'+l+'</button>').join("")+'</div>';
+  h+='<div class="chips" data-ck="exlEq" style="margin-top:6px"><button class="chip" data-act="exlEq" data-v="all" aria-pressed="'+(S.exlEq==="all")+'">Všechno vybavení</button>'+Object.entries(EQUIP).map(([k,l])=>'<button class="chip" data-act="exlEq" data-v="'+k+'" aria-pressed="'+(S.exlEq===k)+'">'+l+'</button>').join("")+'</div>';
+  h+='<div class="row wrap-r" style="margin-top:8px;gap:8px"><div class="seg">'+[["last","Naposledy"],["az","A–Z"]].map(([k,l])=>'<button data-act="exlSort" data-v="'+k+'" aria-pressed="'+(S.exlSort===k)+'">'+l+'</button>').join("")+'</div>'+(nHid?'<button class="chip" data-act="exlHid" aria-pressed="'+S.exlHid+'">Skryté ('+nHid+')</button>':'')+'<span class="grow"></span><button class="btn sm" data-act="exlNew">+ Nový cvik</button></div>';
+  h+='<section class="sec"><div class="sec-h"><h2>'+(S.exlHid?"Skryté cviky":"Seznam")+'</h2><span class="xs muted">'+rows.length+'</span></div>';
+  if(S.exlHid)h+='<p class="xs muted" style="margin:0 0 8px">Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš je přes Upravit → Zobrazit.</p>';
+  if(!rows.length)h+='<div class="empty">Nic neodpovídá hledání nebo filtru.</div>';
+  h+='<div class="stack" style="gap:6px">';
+  for(const r of rows.slice(0,lim)){
+    const e=r.e;
+    h+='<button class="exrow" data-act="openEx" data-v="'+esc(r.id)+'"><div class="grow"><div class="n">'+esc(e.name)+(e.custom?' <span class="xs muted">(vlastní)</span>':'')+'</div>'+(e.cz?'<div class="cz">'+esc(e.cz)+'</div>':'')+'<div class="m">'+esc(exPri(e).map(k=>MUSCLE_MAP.NAMES[k]).join(", ")||MUSCLES[e.muscle]||"")+' · '+esc(EQUIP[e.equip]||"")+(r.n?' · '+r.n+'× · naposledy '+fmtDateS(r.last):'')+'</div></div></button>';
+  }
+  if(rows.length>lim)h+='<button class="btn block" data-act="exlMore">Další cviky ('+(rows.length-lim)+')</button>';
+  h+='</div></section>';
+  return h;
+}
+
 /* ---------- STRÁNKA CVIKU ---------- */
 function vExDetail(){
   const id=S.exDetail;const ex=exOf(id);
   const list=(derive().byEx[id]||[]);
   let h=topbar(ex.name,ex.cz||"",'<button class="iconbtn" data-act="exBack" aria-label="Zpět">'+IC.back+'</button>',"czsub");
+  h+='<div class="seg seg-wide" style="margin-bottom:10px">'+[["info","Popis"],["stats","Statistiky"+(list.length?" ("+list.length+"×)":"")]].map(([k,l])=>'<button data-act="exPart" data-v="'+k+'" aria-pressed="'+(S.exPart===k)+'">'+l+'</button>').join("")+'</div>';
+  if(S.exPart!=="stats"){
   // popis
   h+='<div class="card exinfo">'+exFigures(ex)+exTags(ex)+(ex.desc?'<p class="desc">'+esc(ex.desc)+'</p>':'<p class="desc muted">Popis provedení zatím chybí.</p>')+
     '<div class="row wrap-r" style="justify-content:space-between"><a class="link" href="'+esc(exLink(ex))+'" target="_blank" rel="noopener">'+(ex.url?"Otevřít na Hevy ↗":"Hledat video ↗")+'</a><span class="xs muted">'+esc(EQUIP[ex.equip]||"")+'</span></div>'+
     '<div class="row wrap-r" style="margin-top:10px;gap:8px"><button class="btn sm" data-act="editExDetail" data-v="'+esc(id)+'">Upravit cvik</button></div></div>';
   h+='<div class="card" style="margin-top:10px"><label class="switch"><input type="checkbox" id="gymDepToggle" data-act="toggleGymDep" '+(ex.gymDep?"checked":"")+'><span><b>Vázáno na fitko</b><br><span class="xs muted">'+(ex.gymDep?"Každé fitko má vlastní progres, grafy i rekordy.":"Data ze všech fitek se sčítají dohromady.")+'</span></span></label></div>';
+  if(ex.archived)h+='<div class="card small" style="margin-top:10px"><b>Skrytý cvik.</b> <span class="muted">Nenabízí se při přidávání do tréninku. Vrátíš ho přes Upravit cvik → Zobrazit.</span></div>';
+  h+='<p class="small muted" style="margin-top:12px">'+(list.length?'Cvičeno '+list.length+'× · naposledy '+fmtDate(list[0].w.start)+' <button class="linkbtn" data-act="exPart" data-v="stats" style="color:var(--accent-2);font-weight:600">Statistiky →</button>':'S tímto cvikem zatím nemáš žádný záznam.')+'</p>';
+  return h;
+  }
+  // statistiky
   if(!list.length)return h+'<div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>';
+  h+='<p class="xs muted" style="margin:0 0 8px">'+(ex.gymDep?'Vázáno na fitko: počítá se zvlášť pro každé fitko.':'Nevázáno na fitko: data ze všech fitek se sčítají.')+' Změníš v Popisu.</p>';
   const gymsWith=[...new Set(list.map(s=>s.w.gymId))];
   if(ex.gymDep&&gymsWith.length>1){
     h+='<div class="sec"><div class="chips" data-ck="detailGym"><button class="chip" data-act="detailGym" data-v="all" aria-pressed="'+(S.detailGym==="all")+'">Všechna (zvlášť)</button>'+gymsWith.map(g=>'<button class="chip" data-act="detailGym" data-v="'+g+'" aria-pressed="'+(S.detailGym===g)+'"><span class="sw" style="background:'+gymColor(g)+'"></span>'+esc(gymName(g))+'</button>').join("")+'</div></div>';
@@ -1028,7 +1075,7 @@ function sheetBody(id){
 
 /* ---------- SETTINGS ---------- */
 function vSettings(){
-  let h=topbar("Nastavení","Fitka, cviky, záloha");
+  let h=topbar("Nastavení","Fitka, vzhled, záloha");
   const counts={};for(const w of derive().all)counts[w.gymId]=(counts[w.gymId]||0)+1;
   h+='<section class="sec"><div class="sec-h"><h2>Fitka</h2><button class="btn sm" data-act="addGym">+ Přidat</button></div><div class="stack" style="gap:6px">';
   for(const g of S.cfg.gyms){
@@ -1038,8 +1085,6 @@ function vSettings(){
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card row"><span class="grow">Výchozí časovač</span><div class="seg">'+[60,90,120,150,180].map(s=>'<button data-act="restSec" data-v="'+s+'" aria-pressed="'+(S.cfg.restSec===s)+'">'+fmtClock(s)+'</button>').join("")+'</div></div></section>';
-  const n=Object.keys(S.exLib).length,nc=Object.values(S.exLib).filter(e=>e.gymDep).length;
-  h+='<section class="sec"><div class="sec-h"><h2>Databáze cviků</h2></div><div class="card row"><div class="grow"><b>'+n+' cviků</b><div class="xs muted">'+nc+' vázaných na fitko</div></div><button class="btn sm" data-act="manageEx">Spravovat</button></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
   h+=backupSettings();
   return h;
@@ -1060,7 +1105,7 @@ function pickerRows(){
   const recent={};
   for(const w of derive().all.slice(0,60))for(const e of w.ex||[])recent[e.exId]=(recent[e.exId]||0)+1;
   let arr=Object.entries(S.exLib).filter(([id,e])=>
-    (pick.mode==="manage"||!e.archived)&&
+    !e.archived&&
     (pick.m==="all"||exGroup(e)===pick.m)&&
     (pick.eq==="all"||e.equip===pick.eq)&&
     (!pick.hist||byEx[id])&&
@@ -1075,7 +1120,7 @@ function pickerList(){
   let h='';
   for(const [id,e] of arr.slice(0,pick.limit||120)){
     const on=pick.sel.includes(id);const n=byEx[id]?byEx[id].length:0;
-    h+='<div class="pickrow"><button class="pick" data-act="pickToggle" data-v="'+esc(id)+'" aria-pressed="'+on+'">'+(pick.mode!=="manage"?'<span class="chk">'+(on?IC.check:"")+'</span>':'')+'<div class="grow"><div style="font-weight:600">'+esc(e.name)+(e.archived?' <span class="muted xs">(skrytý)</span>':'')+'</div>'+(e.cz?'<div class="cz">'+esc(e.cz)+'</div>':'')+'<div class="xs muted">'+esc(exPri(e).map(k=>MUSCLE_MAP.NAMES[k]).join(", ")||MUSCLES[e.muscle]||"")+' · '+esc(EQUIP[e.equip]||"")+(n?' · '+n+'× v historii':'')+(e.gymDep?' · vázáno na fitko':'')+'</div></div></button><button class="infob" data-act="exInfo" data-v="'+esc(id)+'" aria-label="Info o cviku '+esc(e.name)+'" title="Popis a statistiky">i</button></div>';
+    h+='<div class="pickrow"><button class="pick" data-act="pickToggle" data-v="'+esc(id)+'" aria-pressed="'+on+'"><span class="chk">'+(on?IC.check:"")+'</span><div class="grow"><div style="font-weight:600">'+esc(e.name)+'</div>'+(e.cz?'<div class="cz">'+esc(e.cz)+'</div>':'')+'<div class="xs muted">'+esc(exPri(e).map(k=>MUSCLE_MAP.NAMES[k]).join(", ")||MUSCLES[e.muscle]||"")+' · '+esc(EQUIP[e.equip]||"")+(n?' · '+n+'× v historii':'')+(e.gymDep?' · vázáno na fitko':'')+'</div></div></button><button class="infob" data-act="exInfo" data-v="'+esc(id)+'" aria-label="Info o cviku '+esc(e.name)+'" title="Popis a statistiky">i</button></div>';
   }
   if(arr.length>(pick.limit||120))h+='<button class="btn block" data-act="pickMore">Další cviky ('+(arr.length-(pick.limit||120))+')</button>';
   return h;
@@ -1092,8 +1137,8 @@ function pickerBody(){
 function renderPicker(keep){
   const sb=document.querySelector(".sheet-b");const st=keep&&sb?sb.scrollTop:0;
   saveChipScroll(sb||undefined);
-  const f=pick.mode==="manage"?'<button class="btn grow" data-act="closeSheet">Hotovo</button>':'<button class="btn primary grow" data-act="pickDone" '+(pick.sel.length?"":"disabled")+'>'+(pick.mode==="replace"?"Nahradit":"Přidat"+(pick.sel.length?" ("+pick.sel.length+")":""))+'</button>';
-  openSheet(pick.mode==="manage"?"Databáze cviků":pick.mode==="replace"?"Nahradit cvik":"Přidat cviky",pickerBody(),f,keep);
+  const f='<button class="btn primary grow" data-act="pickDone" '+(pick.sel.length?"":"disabled")+'>'+(pick.mode==="replace"?"Nahradit":"Přidat"+(pick.sel.length?" ("+pick.sel.length+")":""))+'</button>';
+  openSheet(pick.mode==="replace"?"Nahradit cvik":"Přidat cviky",pickerBody(),f,keep);
   const nb=document.querySelector(".sheet-b");if(nb&&st)nb.scrollTop=st;
   restoreChipScroll(nb||undefined);
 }
@@ -1114,11 +1159,12 @@ function sheetExInfo(id){
     b+='<div class="small">Minule: <span class="num">'+esc(setsStr(list[0].e.sets,true,kindOf(id)))+'</span> <span class="muted">('+esc(gymName(list[0].w.gymId))+')</span></div>';
     if(rl.length)b+='<div class="reclist">'+rl.map(r=>'<div class="rec"><span class="md">🏅</span><div class="grow">'+esc(REC[r.type])+': <b>'+esc(recFmt(r.type,r.v,r.set))+'</b> <span class="muted">· '+fmtDate(r.w.start)+'</span></div></div>').join("")+'</div>';
   }else b+='<div class="small muted">S tímto cvikem zatím nemáš žádný záznam.</div>';
-  openSheet(e.name,b,'<button class="btn grow" data-act="backPicker">Zpět na výběr</button><button class="btn" data-act="editExInfo" data-v="'+esc(id)+'">Upravit</button><button class="btn primary" data-act="openEx" data-v="'+esc(id)+'">Stránka cviku</button>',true);
+  openSheet(e.name,b,'<button class="btn grow" data-act="backPicker">Zpět na výběr</button><button class="btn" data-act="editExInfo" data-v="'+esc(id)+'">Upravit</button><button class="btn primary" data-act="openEx" data-v="'+esc(id)+'" data-p="info">Stránka cviku</button>',true);
 }
 let exEd=null;
+const exEdOut=()=>exEd&&(exEd.from==="detail"||exEd.from==="list"); // úprava otevřená mimo výběr cviků
 function sheetExEdit(id,from){
-  const e=id?S.exLib[id]:{name:pick.q||"",equip:"machine",gymDep:true,pri:[],sec:[]};
+  const e=id?S.exLib[id]:{name:(from==="list"?S.exlQ:pick.q)||"",equip:"machine",gymDep:true,pri:[],sec:[]};
   exEd={id,from:from||"picker",pri:exPri(e).slice(),sec:(e.sec||[]).slice()};
   renderExEdit(e);
 }
@@ -1258,7 +1304,7 @@ document.addEventListener("click",ev=>{
   if(act==="scrim"){if(ev.target===t)closeSheet();return}
   const d=curDraft();
   switch(act){
-    case "tab":S.exDetail=null;if(S.route==="edit")S.editDraft=null;go(v);break;
+    case "tab":S.exDetail=null;if(S.route==="edit")S.editDraft=null;if(v==="ex"&&S.route!=="ex"&&S.route!=="exd"){S.exlQ="";S.exlLimit=0}go(v);break;
     case "selGym":S.selGym=v;scheduleRender();break;
     case "startEmpty":if(S.active){go("train");break}startWorkout(null);break;
     case "startTpl":if(S.active){toast("Nejdřív dokonči rozdělaný trénink.");go("train");break}startWorkout(v);break;
@@ -1287,7 +1333,6 @@ document.addEventListener("click",ev=>{
     case "exReplace":openPicker("replace",i);break;
     case "addEx":openPicker("add");break;
     case "pickToggle":
-      if(pick.mode==="manage"){sheetExEdit(v);break}
       if(pick.mode==="replace")pick.sel=[v];else{const k=pick.sel.indexOf(v);k<0?pick.sel.push(v):pick.sel.splice(k,1)}
       renderPicker(true);break;
     case "pickM":pick.m=v;pick.limit=0;renderPicker(true);break;
@@ -1301,7 +1346,7 @@ document.addEventListener("click",ev=>{
       else for(const id of pick.sel)dd.ex.push(dd.mode==="template"?{k:uid("e"),exId:id,note:"",sets:[newSetFrom(null),newSetFrom(null),newSetFrom(null)]}:exEntryFor(id,dd.gymId));
       touchDraft();closeSheet();scheduleRender();break}
     case "newEx":sheetExEdit(null);break;
-    case "backPicker":if(exEd&&exEd.from==="detail"){closeSheet();break}exEd=null;renderPicker(true);break;
+    case "backPicker":if(exEdOut()){closeSheet();break}exEd=null;renderPicker(true);break;
     case "saveEx":{
       const name=document.getElementById("x-name").value.trim();if(!name){toast("Zadej název cviku.");break}
       const id=v||("c-"+name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").slice(0,40)+"-"+Date.now().toString(36).slice(-4));
@@ -1313,18 +1358,18 @@ document.addEventListener("click",ev=>{
       items[id]=o;putEx(items);
       if(exEd.from==="detail"){closeSheet();toast("Cvik uložen");break}
       if(exEd.from==="info"){exEd=null;renderPicker(true);toast("Cvik uložen");break}
-      if(!v&&pick.mode!=="manage"){if(pick.mode==="replace")pick.sel=[id];else pick.sel.push(id)}
+      if(exEd.from==="list"){closeSheet();if(!v){S.exDetail=id;S.exPart="info";S.detailGym="all";S.exHistLimit=25;S.prevRoute="ex";go("exd")}toast("Cvik uložen");break}
+      if(!v){if(pick.mode==="replace")pick.sel=[id];else pick.sel.push(id)}
       pick.q="";renderPicker();toast("Cvik uložen");break}
     case "resetEx":{const items=Object.assign({},S.exLib),a=items[v].archived;items[v]=Object.assign({},EX_DB[v]);if(a)items[v].archived=true;putEx(items);
-      if(exEd.from==="detail"){closeSheet();toast("Cvik vrácen na výchozí");break}
+      if(exEdOut()){closeSheet();toast("Cvik vrácen na výchozí");break}
       exEd=null;renderPicker(true);toast("Cvik vrácen na výchozí");break}
-    case "archEx":{const items=Object.assign({},S.exLib);const was=!!items[v].archived;items[v]=Object.assign({},items[v]);if(was)delete items[v].archived;else items[v].archived=true;putEx(items);if(exEd&&exEd.from==="detail")closeSheet();else renderPicker();toast(was?"Cvik je znovu ve výběru":"Cvik skrytý z výběru");break}
+    case "archEx":{const items=Object.assign({},S.exLib);const was=!!items[v].archived;items[v]=Object.assign({},items[v]);if(was)delete items[v].archived;else items[v].archived=true;putEx(items);if(!exEd||exEdOut())closeSheet();else renderPicker();toast(was?"Cvik je znovu ve výběru":"Cvik skrytý z výběru");break}
     case "xMus":{const k=v;const P=exEd.pri,Sx=exEd.sec;if(P.includes(k)){P.splice(P.indexOf(k),1);Sx.push(k)}else if(Sx.includes(k)){Sx.splice(Sx.indexOf(k),1)}else P.push(k);renderExEdit({});break}
     case "editExDetail":sheetExEdit(v,"detail");break;
     case "editExInfo":sheetExEdit(v,"info");break;
     case "statsRange":S.statsRange=v;lsSet("statsRange",v);scheduleRender();break;
     case "sumPeriod":S.sumPeriod=v;scheduleRender();break;
-    case "manageEx":openPicker("manage");break;
     case "closeSheet":closeSheet();break;
     case "restAdj":S.restEnd+=(+v)*1000;S.restTotal=Math.max(S.restTotal,(S.restEnd-Date.now())/1000);renderRest();break;
     case "restSkip":S.restEnd=null;renderRest();break;
@@ -1379,8 +1424,16 @@ document.addEventListener("click",ev=>{
     case "statsMetric":S.statsMetric=v;scheduleRender();break;
     case "exMuscle":S.exMuscle=v;scheduleRender();break;
     case "exMore":S.exLimit=(S.exLimit||60)+60;scheduleRender();break;
-    case "openEx":closeSheet();S.exDetail=v;S.detailGym="all";S.exHistLimit=25;S.prevRoute=S.route;go("exd");break;
-    case "exBack":go(S.prevRoute&&S.prevRoute!=="exd"?S.prevRoute:"stats");break;
+    // ze záložky Cviky a z výběru se otevře Popis, odjinud (trénink, historie, statistiky) Statistiky
+    case "openEx":closeSheet();S.exPart=t.dataset.p||(S.route==="ex"?"info":"stats");S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(S.route!=="exd")S.prevRoute=S.route;go("exd");break;
+    case "exBack":go(S.prevRoute&&S.prevRoute!=="exd"?S.prevRoute:"ex");break;
+    case "exPart":S.exPart=v;render.keepScroll=false;scheduleRender();window.scrollTo(0,0);break;
+    case "exlM":S.exlM=v;lsSet("exlM",v);S.exlLimit=0;scheduleRender();break;
+    case "exlEq":S.exlEq=v;lsSet("exlEq",v);S.exlLimit=0;scheduleRender();break;
+    case "exlSort":S.exlSort=v;lsSet("exlSort",v);S.exlLimit=0;scheduleRender();break;
+    case "exlHid":S.exlHid=!S.exlHid;S.exlLimit=0;scheduleRender();break;
+    case "exlMore":S.exlLimit=(S.exlLimit||100)+100;scheduleRender();break;
+    case "exlNew":sheetExEdit(null,"list");break;
     case "detailMetric":S.detailMetric=v;scheduleRender();break;
     case "detailRange":S.detailRange=v;scheduleRender();break;
     case "detailGym":S.detailGym=v;scheduleRender();break;
@@ -1428,6 +1481,7 @@ document.addEventListener("input",ev=>{
   if(f==="finEnd"){const a=S.active;if(a){const e=finEndValue(a);const inf=document.getElementById("fin-info");if(e&&inf)inf.innerHTML=finInfo(a,e,lastSetAt(a))}return}
   if(f==="bodyWeight"){const n=num(t.value);if(isFinite(n)&&n>20&&n<300){clearTimeout(S._bwT);S._bwT=setTimeout(()=>put("config/main",Object.assign({},S.cfg,{bodyWeight:n})),700)}return}
   if(f==="exSearch"){S.exSearch=t.value;scheduleRender();return}
+  if(f==="exlQ"){S.exlQ=t.value;S.exlLimit=0;scheduleRender();return}
   if(f==="pickQ"){pick.q=t.value;pick.limit=0;refreshPickList();return}
 });
 document.addEventListener("change",ev=>{
