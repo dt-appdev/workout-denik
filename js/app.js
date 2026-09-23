@@ -604,7 +604,7 @@ function restoreChipScroll(root){
 }
 let rq=false;
 function scheduleRender(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
-function toast(msg){const r=document.getElementById("toastRoot");r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",2600)}
+function toast(msg,cls){const r=document.getElementById("toastRoot");r.innerHTML='<div class="toast'+(cls?" "+cls:"")+'" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",2600)}
 
 function renderTabs(){
   const t=[["train","Trénink"],["hist","Historie"],["ex","Cviky"],["stats","Statistiky"],["body","Tělo"],["set","Nastavení"]];
@@ -1670,10 +1670,10 @@ window.addEventListener("popstate",ev=>{
   if(navBack())return;
   // hlavní obrazovka Tréninku: zahodit zbylé kroky, další Zpět appku zavře
   if(p>0){Nav.ignore=true;history.go(-p)}
-  Nav.exit=true;toast("Stiskni Zpět ještě jednou pro zavření");
+  Nav.exit=true;toast("Stiskni Zpět ještě jednou pro zavření","exit");
 });
-// klepnutí do appky obnoví pojistku proti zavření (a doplní kroky po otevření panelu či stránky)
-document.addEventListener("click",()=>{Nav.exit=false},true);
+// klepnutí do appky obnoví pojistku proti zavření a schová hlášku (a doplní kroky po otevření panelu či stránky)
+document.addEventListener("click",()=>{if(!Nav.exit)return;Nav.exit=false;const t=document.querySelector(".toast.exit");if(t)t.remove()},true);
 document.addEventListener("click",()=>navEnsure());
 
 /* ---------- backup (F0-01) ----------
