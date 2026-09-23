@@ -91,9 +91,9 @@ Předpoklad: F0-02 (svalové partie).
 
 - [ ] **F3-01** Barva a ikona fitka, tmavý režim, barvy svalových partií. Víc barev pro fitka než dnešních 6 (rozhodnuto u F0-07: 6 je málo); barva je už uložená u fitka jako číslo barvy z palety (`g.col`), stačí paletu rozšířit a přidat výběr v okně Upravit fitko.
 - [ ] **F3-02** Osobní rekordy (max váha, max opakování, odhad 1RM podle Epleyho) s oznámením při překonání.
-- [ ] **F3-03** Souhrn po tréninku: čas, objem, série, rekordy, rozdíl proti minulému běhu stejné šablony.
+- [x] **F3-03** Souhrn po tréninku: čas, objem, série, rekordy, rozdíl proti minulému běhu stejné šablony.
 - [ ] **F3-04** Radar svalových partií ve statistikách: aktuální vs předchozí období, filtr fitka, karty s rozdíly (tréninky, čas, objem, série), klepnutí na osu ukáže cviky.
-- [ ] **F3-05** Radar v souhrnu po tréninku.
+- [ ] **F3-05** Radar v souhrnu po tréninku: volitelné, přepínatelné doplnění ke schématu postavy (F3-03), ne jeho náhrada.
 - [ ] **F3-06** Kalendář (měsíc): kolečko v barvě fitka, pod ním název šablony, týdenní streak, počet volných dnů, klepnutí otevře detail, ikona u dne s měřením.
 - [ ] **F3-07** Roční heatmapa tréninků (barva podle počtu sérií).
 
@@ -121,7 +121,7 @@ Předpoklad: F0-02 (svalové partie).
 Odloženo (vrátit se, až bude fáze 3 hotová):
 
 - Automatická volba fitka podle GPS: ruční volba stačí, GPS vyžaduje oprávnění a baterii.
-- Silueta postavy obarvená podle zatížení: radar (F3-04) pokryje totéž jednodušeji.
+- Silueta postavy obarvená podle zatížení ve Statistikách: radar (F3-04) pokryje totéž jednodušeji. (V souhrnu po tréninku je postava od F3-03.)
 - Jemnější dělení partií (biceps/triceps, kvadricepsy/hamstringy/hýždě): podle odpovědi na otevřenou otázku.
 
 ## Otevřené otázky
@@ -141,6 +141,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F2-01 | „Cvičit znovu" z tréninku v jiném fitku: spustit v aktuálním, nebo původním fitku? | Vyřešeno 23. 9.: před startem okno s volbou fitka (předvybrané aktuální); počet a druh sérií z vybraného tréninku, hodnoty šedě z minula ve zvoleném fitku (F1-01); vazba na šablonu zůstává, „Aktualizovat šablonu“ nezaškrtnuté; poznámky ke cvikům jen ve stejném fitku; tlačítko jen v detailu tréninku. |
 | F2-02 | Mají mít šablony různé výchozí váhy pro každé fitko? | Ne, stačí F1-01 |
 | F2-05 | Zahrnout fotky do zálohy (F0-01)? Záloha tím naroste o jednotky až desítky MB. | Přepínač „s fotkami / bez fotek" (formát zálohy v2 už má připravené pole pro fotky) |
+| F3-03 | Porovnat s minulým během šablony v jakémkoli fitku, nebo ve stejném? Rozdíl u cviku proti čemu? | Vyřešeno 23. 9.: minulý běh šablony přednostně ve stejném fitku (jinak odjinud s poznámkou „jiné fitko“), shoda podle šablony, jinak podle názvu (ne automatického) nebo zdroje „Cvičit znovu“; u cviku poslední výskyt cviku i z jiné šablony (vázaný cvik jen ve stejném fitku); postava s procvičenými partiemi bez čísel a legendy; souhrn i u starších tréninků v Historii. |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
 | F3-04 | 6 hlavních partií, nebo jemnější dělení? | 6 partií |
 | vše | Co z původního zadání už appka umí (tmavý režim, časovač, měření)? | Ověřeno 23. 9.: tmavý režim, časovač se zvukem a ±15 s i tělesná měření appka už umí |
@@ -151,6 +152,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 23. 9. 2026 | F3-03 | Souhrn po tréninku v panelu tréninku (po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem proti minulému běhu stejné šablony (přednostně ve stejném fitku), řádek „Porovnáno s …“ (klepnutím otevře minulý trénink, Zpět vrátí) a „Minule navíc“ s cviky, které tentokrát chyběly. Nová část „Procvičené partie“: postava zepředu/zezadu obarvená podle počtu sérií a pruhy s poměrem partií. U každého cviku nejlepší série a objem (u cviků na čas celkový čas, u vzdálenosti km) proti poslednímu výskytu cviku, i z jiného tréninku; štítek „Poprvé“. „Cvičit znovu“ si nově pamatuje původní trénink (`againOf`), aby šel porovnat i trénink bez šablony. Formát zálohy beze změny. |
 | 23. 9. 2026 | F1-04 | Záznam oznámení jen pro vývoj: vede se a je vidět (Nastavení → Verze aplikace) jen v testovací verzi PR a lokálně, ve vydané verzi není. |
 | 23. 9. 2026 | F1-04 | Záznam z telefonu ukázal, že se zamčeným displejem Android uspí procesor a oznámení se někdy zpozdí o desítky sekund (2 ze 4 pokusů), při přepnutí do jiné aplikace chodí včas. Webová appka neumí telefon probudit v přesný čas (to umí jen nativní aplikace). Pokus s neslyšitelným tónem, který by telefon držel vzhůru, zamítnut, omezení se přijímá: po odemčení appka hned ukáže přečas. Záznam oznámení v Nastavení zůstává. |
 | 23. 9. 2026 | F1-04 | Oprava po testu na telefonu (se zamčeným displejem oznámení nepřišlo): oznámení se vynechá, jen když je appka viditelná a zároveň aktivní (dřív stačilo „viditelná“). Nový Záznam oznámení v Nastavení (kdy se oznámení naplánovalo, zobrazilo, se zpožděním, nebo vůbec, a kdy šla appka na pozadí) pro hledání příčiny. |
