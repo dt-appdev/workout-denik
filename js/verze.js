@@ -3,4 +3,4 @@
    přepíše skutečnými údaji. Ručně needitovat.
    Načítá ho stránka (index.html) i service worker (sw.js): změna tohoto
    souboru při nasazení = nová verze appky, telefon si ji sám stáhne. */
-self.APP_BUILD={"kanal":"lokal","pr":0,"nazev":"","vetev":"","commit":"","cas":""};
+self.APP_BUILD={"kanal":"lokal","pr":0,"nazev":"","vetev":"","commit":"","cas":"","vydana":""};

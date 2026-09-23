@@ -129,7 +129,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | Úloha | Otázka | Návrh |
 |---|---|---|
 | F0-02 | Obsahuje databáze cviků už svalové partie, nebo je doplníme? | Vyřešeno 23. 9.: partie všech 388 cviků zkontrolované a schválené, výchozí databáze je součástí appky. |
-| F0-04 | Jak dostat testovací verzi (před merge) do telefonu? GitHub Pages teď nasazuje jen `main`. | Vyřešeno 23. 9.: GitHub Actions nasadí každý otevřený PR do `…/workout-denik/pr-N/` s vlastními daty (kopie z vydané verze tlačítkem), oranžovým pruhem a ikonou TEST; verze a čas se doplní automaticky. |
+| F0-04 | Jak dostat testovací verzi (před merge) do telefonu? GitHub Pages teď nasazuje jen `main`. | Vyřešeno 23. 9.: GitHub Actions nasadí každý otevřený PR do `…/workout-denik-test/pr-N/` (samostatné repo, aby šla testovací verze nainstalovat) s vlastními daty (kopie z vydané verze tlačítkem), oranžovým pruhem a ikonou TEST; verze a čas se doplní automaticky. |
 | F0-05 | Bude spodní lišta se 6 záložkami na telefonu ještě pohodlná? | Vyřešeno 23. 9.: 6 záložek s popisky, menší písmo; Cviky mají ikonu otevřené knihy (činka zůstává Tréninku). |
 | F0-06 | Co má Zpět udělat na hlavní obrazovce Tréninku? | Zavřít appku až po druhém stisku do 2 s, první stisk ukáže hlášku |
 | F0-07 | Ruční pořadí, nebo automaticky podle počtu návštěv? | Ruční (šipky ↑/↓); automatické řazení by pořadí měnilo samo a zmátlo by |
@@ -146,6 +146,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 23. 9. 2026 | F0-04 | Oprava: testovací verze nešla v Androidu nainstalovat („aplikace už je nainstalována“), protože adresa `…/workout-denik/pr-N/` patří nainstalované vydané appce. Testovací verze se proto nasazují do samostatného repa `workout-denik-test` (`…/workout-denik-test/pr-N/`, rozcestník v kořeni), nahrávají se tokenem v secretu `TEST_REPO_TOKEN`. Vydaná verze se nasazuje jen při změně v `main`. Komentář s odkazem se aktualizuje u všech nasazených PR. Data testovacích verzí zůstávají oddělená (stejná doména). |
 | 23. 9. 2026 | F0-04 | Nasazení přes GitHub Actions: `main` = vydaná verze, každý otevřený PR = testovací verze v `…/pr-N/` (odkaz v komentáři PR, po zavření PR zmizí). Testovací verze má vlastní data (IndexedDB `workout-denik-prN`, prefix `zd1-prN:`), tlačítko „Zkopírovat data z vydané verze“, oranžový pruh nahoře, oranžový stavový řádek a vlastní ikonu TEST (jde nainstalovat zvlášť). Nastavení → Verze aplikace: vydaná / testovací verze, čas nasazení, kód změny, „Zkontrolovat aktualizaci“; ve vydané verzi úklid dat testovacích verzí. Verze appky se doplňuje automaticky (`js/verze.js`), ruční zvyšování `VERSION` v `sw.js` zrušeno. Service worker maže jen své cache a neobsluhuje adresy `pr-N`. Formát dat ani zálohy beze změny. Před sloučením nutné přepnout Settings → Pages → Source na GitHub Actions. |
 | 23. 9. 2026 | – | Do CLAUDE.md přidáno pravidlo pro souběžnou práci na víc úlohách: před dokončením PR sloučit aktuální `main` do větve a vyřešit konflikty (vyšší `VERSION`, v logu nechat řádky z obou větví). |
 | 23. 9. 2026 | – | Do plánu přidány úlohy F0-06 (systémové tlačítko Zpět) a F0-07 (měnitelné pořadí fitek). |

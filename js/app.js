@@ -116,7 +116,7 @@ function exTags(e){
      workouts/RRRR-MM, body/all, state/active
    ===================================================================== */
 /* Verze a kanál appky (F0-04). BUILD doplní při nasazení GitHub Actions do js/verze.js.
-   Testovací verze PR běží na adrese …/pr-12/ a má VLASTNÍ data: jiný prefix
+   Testovací verze PR běží na adrese …/workout-denik-test/pr-12/ a má VLASTNÍ data: jiný prefix
    v localStorage a jinou databázi IndexedDB. Vydaná verze se jí tak nedotkne.
    Proto data ukládat vždy jen přes Local / Idb / Store, nikdy přímo. */
 const BUILD=Object.assign({kanal:"lokal",pr:0,nazev:"",vetev:"",commit:"",cas:""},window.APP_BUILD||{});
@@ -1720,12 +1720,14 @@ async function savePoint(id){
 }
 
 /* ---------- verze appky (F0-04) ----------
-   Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik/pr-12/.
+   Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
+   (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
    Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA). */
+const MAIN_URL=BUILD.vydana||"../"; // adresa vydané verze (z testovací verze)
 const fmtSize=b=>b<1048576?Math.max(1,Math.round(b/1024))+" kB":(b/1048576).toLocaleString("cs-CZ",{maximumFractionDigits:1})+" MB";
 function testBar(){
   if(!TEST_PR)return "";
-  return '<div class="testbar"><b>TEST · PR #'+esc(TEST_PR)+'</b><span class="grow">'+esc(BUILD.nazev)+'</span><a href="../">Vydaná verze ›</a></div>';
+  return '<div class="testbar"><b>TEST · PR #'+esc(TEST_PR)+'</b><span class="grow">'+esc(BUILD.nazev)+'</span><a href="'+esc(MAIN_URL)+'">Vydaná verze ›</a></div>';
 }
 function versionSettings(){
   const t=Date.parse(BUILD.cas);
@@ -1736,7 +1738,7 @@ function versionSettings(){
   h+='<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
   if(TEST_PR){
     h+='<div class="small muted">Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se vydané verze netýká.</div>';
-    h+='<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="../">Otevřít vydanou verzi</a>';
+    h+='<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="'+esc(MAIN_URL)+'">Otevřít vydanou verzi</a>';
   }else if(S.testData===undefined)scanTestData();
   else if(S.testData.n)h+='<div class="row"><span class="small grow">Data testovacích verzí v telefonu: '+S.testData.n+' '+plural(S.testData.n,"verze","verze","verzí")+' (≈ '+fmtSize(S.testData.bytes)+')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
   return h+'</div></section>';
