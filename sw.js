@@ -3,7 +3,7 @@
    PRAVIDLO: při KAŽDÉ změně kteréhokoli souboru appky zvyš VERSION.
    Jen tak Chrome pozná, že je nová verze, stáhne ji a staré soubory smaže.
    Nový soubor appky přidej i do FILES, jinak nebude fungovat offline. */
-const VERSION = "2026-09-23.3";
+const VERSION = "2026-09-23.4";
 const CACHE = "workout-denik-" + VERSION;
 const FILES = [
   "./",
@@ -65,6 +65,11 @@ self.addEventListener("fetch", event => {
       if (page) return page;
     }
     const hit = await cache.match(req, { ignoreSearch: true });
-    return hit || fetch(req);
+    if (hit) return hit;
+    const res = await fetch(req);
+    // databáze cviků pro hledání (js/fedb.js, F0-03) není ve FILES, aby nezdržovala instalaci;
+    // uloží se do cache až při prvním hledání a pak funguje i offline
+    if (res.ok && new URL(req.url).pathname.endsWith("/js/fedb.js")) await cache.put(req, res.clone());
+    return res;
   })());
 });

@@ -936,10 +936,10 @@ function vExList(){
   h+='<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…" value="'+esc(S.exlQ)+'" autocomplete="off">';
   h+='<div class="chips" data-ck="exlM" style="margin-top:8px"><button class="chip" data-act="exlM" data-v="all" aria-pressed="'+(S.exlM==="all")+'">Všechny partie</button>'+Object.entries(MUSCLES).filter(([k])=>k!=="other").map(([k,l])=>'<button class="chip" data-act="exlM" data-v="'+k+'" aria-pressed="'+(S.exlM===k)+'">'+l+'</button>').join("")+'</div>';
   h+='<div class="chips" data-ck="exlEq" style="margin-top:6px"><button class="chip" data-act="exlEq" data-v="all" aria-pressed="'+(S.exlEq==="all")+'">Všechno vybavení</button>'+Object.entries(EQUIP).map(([k,l])=>'<button class="chip" data-act="exlEq" data-v="'+k+'" aria-pressed="'+(S.exlEq===k)+'">'+l+'</button>').join("")+'</div>';
-  h+='<div class="row wrap-r" style="margin-top:8px;gap:8px"><div class="seg">'+[["last","Naposledy"],["az","A–Z"]].map(([k,l])=>'<button data-act="exlSort" data-v="'+k+'" aria-pressed="'+(S.exlSort===k)+'">'+l+'</button>').join("")+'</div>'+(nHid?'<button class="chip" data-act="exlHid" aria-pressed="'+S.exlHid+'">Skryté ('+nHid+')</button>':'')+'<span class="grow"></span><button class="btn sm" data-act="exlNew">+ Nový cvik</button></div>';
+  h+='<div class="row wrap-r" style="margin-top:8px;gap:8px"><div class="seg">'+[["last","Naposledy"],["az","A–Z"]].map(([k,l])=>'<button data-act="exlSort" data-v="'+k+'" aria-pressed="'+(S.exlSort===k)+'">'+l+'</button>').join("")+'</div>'+(nHid?'<button class="chip" data-act="exlHid" aria-pressed="'+S.exlHid+'">Skryté ('+nHid+')</button>':'')+'<span class="grow"></span><button class="btn sm" data-act="fedbOpen" data-v="list">Hledat online</button><button class="btn sm" data-act="exlNew">+ Nový cvik</button></div>';
   h+='<section class="sec"><div class="sec-h"><h2>'+(S.exlHid?"Skryté cviky":"Seznam")+'</h2><span class="xs muted">'+rows.length+'</span></div>';
   if(S.exlHid)h+='<p class="xs muted" style="margin:0 0 8px">Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš je přes Upravit → Zobrazit.</p>';
-  if(!rows.length)h+='<div class="empty">Nic neodpovídá hledání nebo filtru.</div>';
+  if(!rows.length)h+='<div class="empty">Nic neodpovídá hledání nebo filtru.'+(S.exlQ.trim()&&!S.exlHid?'<br><button class="btn sm" data-act="fedbOpen" data-v="list" style="margin-top:10px">Hledat „'+esc(S.exlQ.trim())+'“ online</button>':'')+'</div>';
   h+='<div class="stack" style="gap:6px">';
   for(const r of rows.slice(0,lim)){
     const e=r.e;
@@ -1116,7 +1116,7 @@ function pickerRows(){
 function pickerList(){
   const {byEx}=derive();
   const arr=pickerRows();
-  if(!arr.length)return '<div class="empty">Nic neodpovídá filtru.</div>';
+  if(!arr.length)return '<div class="empty">Nic neodpovídá filtru.'+(pick.q.trim()?'<br><button class="btn sm" data-act="fedbOpen" data-v="picker" style="margin-top:10px">Hledat „'+esc(pick.q.trim())+'“ online</button>':'')+'</div>';
   let h='';
   for(const [id,e] of arr.slice(0,pick.limit||120)){
     const on=pick.sel.includes(id);const n=byEx[id]?byEx[id].length:0;
@@ -1131,7 +1131,7 @@ function pickerBody(){
     '<div class="chips" data-ck="pickM"><button class="chip" data-act="pickM" data-v="all" aria-pressed="'+(pick.m==="all")+'">Všechny partie</button>'+Object.entries(MUSCLES).filter(([k])=>k!=="other").map(([k,l])=>'<button class="chip" data-act="pickM" data-v="'+k+'" aria-pressed="'+(pick.m===k)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="chips" data-ck="pickEq"><button class="chip" data-act="pickEq" data-v="all" aria-pressed="'+(pick.eq==="all")+'">Vše</button>'+Object.entries(EQUIP).map(([k,l])=>'<button class="chip" data-act="pickEq" data-v="'+k+'" aria-pressed="'+(pick.eq===k)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="row wrap-r" style="justify-content:space-between"><button class="chip" data-act="pickHist" aria-pressed="'+pick.hist+'">Jen cviky z historie</button><span class="xs muted">'+n+' '+plural(n,"cvik","cviky","cviků")+'</span></div>'+
-    '<button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button>'+
+    '<div class="row wrap-r" style="gap:8px"><button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button><button class="btn sm" data-act="fedbOpen" data-v="picker">Hledat v online databázi</button></div>'+
     '<div class="stack" id="pickList" style="gap:6px">'+pickerList()+'</div>';
 }
 function renderPicker(keep){
@@ -1163,15 +1163,18 @@ function sheetExInfo(id){
 }
 let exEd=null;
 const exEdOut=()=>exEd&&(exEd.from==="detail"||exEd.from==="list"); // úprava otevřená mimo výběr cviků
-function sheetExEdit(id,from){
-  const e=id?S.exLib[id]:{name:(from==="list"?S.exlQ:pick.q)||"",equip:"machine",gymDep:true,pri:[],sec:[]};
-  exEd={id,from:from||"picker",pri:exPri(e).slice(),sec:(e.sec||[]).slice()};
+// fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
+function sheetExEdit(id,from,fx){
+  const e=id?S.exLib[id]:fx?{name:fx.n,cz:fx.cz,equip:fx.e,kind:fx.k,gymDep:!!GYMDEP_EQUIP[fx.e],pri:fx.p,sec:fx.s,desc:fx.d.join("\n")}:{name:(from==="list"?S.exlQ:pick.q)||"",equip:"machine",gymDep:true,pri:[],sec:[]};
+  exEd={id,from:from||"picker",pri:exPri(e).slice(),sec:(e.sec||[]).slice(),fx:fx||null};
   renderExEdit(e);
 }
 function renderExEdit(e){
   const v=k=>{const el=document.getElementById(k);return el?el.value:null};
   const name=v("x-name")!=null?v("x-name"):e.name, cz=v("x-cz")!=null?v("x-cz"):(e.cz||""), desc=v("x-desc")!=null?v("x-desc"):(e.desc||""), url=v("x-url")!=null?v("x-url"):(e.url||""), equip=v("x-equip")||e.equip, kind=v("x-kind")||(KIND[e.kind]?e.kind:"wr"), gd=document.getElementById("x-gd")?document.getElementById("x-gd").checked:!!e.gymDep;
-  const b='<label class="f">Název (anglicky, jako v Hevy)<input class="inp" id="x-name" value="'+esc(name)+'"></label>'+
+  const fx=exEd.fx,have=fx&&fedbHave(fx);
+  const b=(exEd.id?'':fx?'<div class="banner" style="margin-top:0">Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český název je jen návrh.'+(have?'<br><b>Podobný cvik už máš: '+esc(exOf(have).cz||exOf(have).name)+'</b>':'')+'</div>':'<button class="btn sm" data-act="fedbOpen" data-v="form">Předvyplnit z online databáze</button>')+
+    '<label class="f">Název (anglicky, jako v Hevy)<input class="inp" id="x-name" value="'+esc(name)+'"></label>'+
     '<label class="f">Český název<input class="inp" id="x-cz" value="'+esc(cz)+'"></label>'+
     '<div><div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div><div class="mpick">'+MKEYS.map(k=>'<button type="button" class="'+(exEd.pri.includes(k)?"p":exEd.sec.includes(k)?"s":"")+'" data-act="xMus" data-v="'+k+'">'+esc(MUSCLE_MAP.NAMES[k])+'</button>').join("")+'</div></div>'+
     exFigures({pri:exEd.pri,sec:exEd.sec},true)+
@@ -1184,6 +1187,65 @@ function renderExEdit(e){
   const sb=document.querySelector(".sheet-b");const st=sb?sb.scrollTop:null;
   openSheet(id?"Upravit cvik":"Nový cvik",b,(id?'<button class="btn danger" data-act="archEx" data-v="'+esc(id)+'">'+(e.archived?"Zobrazit":"Skrýt")+'</button>':'')+'<button class="btn grow" data-act="backPicker">Zpět</button>'+(id&&exChanged(id)?'<button class="btn" data-act="resetEx" data-v="'+esc(id)+'">Výchozí</button>':'')+'<button class="btn primary grow" data-act="saveEx" data-v="'+esc(id||"")+'">Uložit</button>');
   if(st!==null){const sh=document.querySelector(".sheet");if(sh)sh.classList.add("noanim");const nb=document.querySelector(".sheet-b");if(nb)nb.scrollTop=st}
+}
+
+/* ---------- hledání v databázi free-exercise-db (F0-03) ----------
+   Data jsou v js/fedb.js (FEDB, vytváří tools/fedb/build.py). Načtou se až při prvním
+   hledání: poprvé je potřeba internet, pak soubor drží service worker v cache.
+   Vybraný cvik předvyplní formulář Nový cvik a uloží se jako vlastní cvik se značkou
+   src:"fedb:<id>". Fotky se jen ukazují ve výsledcích (online), nic se neukládá. */
+let fs=null,fedbP=null;
+function fedbLoad(){
+  if(typeof FEDB!=="undefined")return Promise.resolve();
+  if(!fedbP)fedbP=new Promise((ok,ko)=>{const s=document.createElement("script");s.src="js/fedb.js";s.onload=()=>typeof FEDB!=="undefined"?ok():ko();s.onerror=()=>{s.remove();ko()};document.head.appendChild(s)}).catch(()=>{fedbP=null;throw new Error("fedb")});
+  return fedbP;
+}
+const FEDB_CAT={S:"",W:"silový trojboj",O:"vzpírání",M:"strongman",P:"plyometrie",T:"protahování",C:"kardio"};
+const fedbStrength=x=>"SWOM".includes(x.c);
+// cvik, který už mám: stejný cvik ve výchozí databázi (h) nebo vlastní cvik převzatý z tohoto záznamu
+function fedbHave(x){
+  if(x.h&&S.exLib[x.h])return x.h;
+  for(const id in S.exLib)if(S.exLib[id].src==="fedb:"+x.id)return id;
+  return null;
+}
+// hledá se v anglickém i českém názvu, bez diakritiky, slova v libovolném pořadí;
+// konce slov se useknou, aby „lavice“ našla „lavici“ a „rows“ i „row“
+function fedbRows(){
+  const words=fold(fs.q).split(/[^a-z0-9]+/).filter(Boolean).map(w=>w.length>=7?w.slice(0,-3):w.length>=5||/s$/.test(w)&&w.length===4?w.slice(0,-1):w);
+  if(!words.length)return [];
+  const hay=x=>{if(!x._f){const h=fold(x.n+" "+x.cz).replace(/[^a-z0-9]+/g," ").replace(/\bdb\b/g,"dumbbell");x._f=h+"|"+h.replace(/ /g,"")}return x._f};
+  const r=FEDB.filter(x=>words.every(w=>hay(x).includes(w)));
+  const st=x=>fold(x.n).startsWith(words[0])||fold(x.cz).startsWith(words[0])?0:1;
+  return r.sort((a,b)=>fedbStrength(b)-fedbStrength(a)||st(a)-st(b)||a.n.length-b.n.length);
+}
+function fedbOpen(from,q,form){fs={from,q:q||"",all:false,limit:0,form:!!form};renderFs()}
+function renderFs(){
+  const b='<input class="inp" id="fsQ" data-f="fsQ" placeholder="Název anglicky i česky, např. bench press, dřep…" value="'+esc(fs.q)+'" autocomplete="off">'+
+    '<div class="row wrap-r" id="fsBar" style="gap:8px"></div>'+
+    '<div class="stack" id="fsList" style="gap:6px"></div>'+
+    '<p class="xs muted" style="margin:2px 0 0">Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před uložením je zkontroluj.</p>';
+  openSheet("Online databáze cviků",b,'<button class="btn grow" data-act="fsBack">Zpět</button>');
+  refreshFs();
+  if(typeof FEDB==="undefined")fedbLoad().then(()=>{if(fs)refreshFs()}).catch(()=>{const el=document.getElementById("fsList");if(el)el.innerHTML='<div class="empty">Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i offline.<br><button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button></div>'});
+  const inp=document.getElementById("fsQ");if(inp&&!fs.q)inp.focus();
+}
+function refreshFs(){
+  const el=document.getElementById("fsList"),bar=document.getElementById("fsBar");if(!el||!bar)return;
+  if(typeof FEDB==="undefined"){bar.innerHTML="";el.innerHTML='<div class="empty">Načítám databázi cviků…</div>';return}
+  const q=fs.q.trim(),all=q?fedbRows():[],str=all.filter(fedbStrength),rows=fs.all?all:str,hid=all.length-str.length;
+  bar.innerHTML='<button class="chip" data-act="fsAll" aria-pressed="'+fs.all+'">I protahování, kardio a plyometrie'+(hid?' ('+hid+')':'')+'</button><span class="grow"></span><span class="xs muted">'+(q?rows.length+' '+plural(rows.length,"cvik","cviky","cviků"):FEDB.length+' cviků v databázi')+'</span>';
+  if(!q){el.innerHTML='<div class="empty">Napiš název cviku anglicky nebo česky.</div>';return}
+  if(!rows.length){el.innerHTML='<div class="empty">Nic nenalezeno.'+(hid?' Zapni „I protahování, kardio a plyometrie“.':' Zkus jiné slovo, třeba anglicky.')+'</div>';return}
+  const lim=fs.limit||40;let h="";
+  for(const x of rows.slice(0,lim)){
+    const have=fedbHave(x),he=have&&S.exLib[have];
+    h+='<div class="pickrow"><button class="pick" data-act="fsPick" data-v="'+esc(x.id)+'">'+(x.ni?'<span class="fsimg"></span>':'<img class="fsimg" src="'+esc(FEDB_IMG+x.id+"/0.jpg")+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">')+
+      '<div class="grow"><div style="font-weight:600">'+esc(x.n)+'</div><div class="cz">'+esc(x.cz)+'</div><div class="xs muted">'+esc(x.p.map(k=>MUSCLE_MAP.NAMES[k]).join(", "))+' · '+esc(EQUIP[x.e]||"")+(FEDB_CAT[x.c]?' · '+FEDB_CAT[x.c]:'')+'</div>'+
+      (he?'<div class="xs have">Už máš: '+esc(he.cz||he.name)+(he.archived?' (skrytý)':'')+'</div>':'')+'</div></button>'+
+      (he?'<button class="btn sm fshave" data-act="fsHave" data-v="'+esc(have)+'">'+(fs.from==="picker"?"Vybrat":"Otevřít")+'</button>':'')+'</div>';
+  }
+  if(rows.length>lim)h+='<button class="btn block" data-act="fsMore">Další cviky ('+(rows.length-lim)+')</button>';
+  el.innerHTML=h;
 }
 
 /* ---------- sheet ---------- */
@@ -1346,13 +1408,25 @@ document.addEventListener("click",ev=>{
       else for(const id of pick.sel)dd.ex.push(dd.mode==="template"?{k:uid("e"),exId:id,note:"",sets:[newSetFrom(null),newSetFrom(null),newSetFrom(null)]}:exEntryFor(id,dd.gymId));
       touchDraft();closeSheet();scheduleRender();break}
     case "newEx":sheetExEdit(null);break;
-    case "backPicker":if(exEdOut()){closeSheet();break}exEd=null;renderPicker(true);break;
+    case "backPicker":if(exEd&&exEd.fx&&fs){exEd=null;renderFs();break}if(exEdOut()){closeSheet();break}exEd=null;renderPicker(true);break;
+    case "fedbOpen":{ // v = odkud: picker (výběr cviků), list (záložka Cviky), form (formulář Nový cvik)
+      if(v==="form"){const n=document.getElementById("x-name");fedbOpen(exEd?exEd.from:"picker",n?n.value.trim():"",true)}
+      else fedbOpen(v,v==="list"?S.exlQ:pick.q);break}
+    case "fsBack":if(fs.form){sheetExEdit(null,fs.from);break}if(fs.from==="picker")renderPicker(true);else closeSheet();break;
+    case "fsAll":fs.all=!fs.all;fs.limit=0;refreshFs();break;
+    case "fsMore":fs.limit=(fs.limit||40)+40;refreshFs();break;
+    case "fsRetry":renderFs();break;
+    case "fsPick":{const x=typeof FEDB!=="undefined"&&FEDB.find(o=>o.id===v);if(x)sheetExEdit(null,fs.from,x);break}
+    case "fsHave":
+      if(fs.from==="picker"){if(pick.mode==="replace")pick.sel=[v];else if(!pick.sel.includes(v))pick.sel.push(v);renderPicker();toast("Vybráno: "+exOf(v).name);break}
+      closeSheet();S.exPart="info";S.exDetail=v;S.detailGym="all";S.exHistLimit=25;if(S.route!=="exd")S.prevRoute=S.route;go("exd");break;
     case "saveEx":{
       const name=document.getElementById("x-name").value.trim();if(!name){toast("Zadej název cviku.");break}
       const id=v||("c-"+name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").slice(0,40)+"-"+Date.now().toString(36).slice(-4));
       if(!exEd.pri.length){toast("Vyber aspoň jednu hlavní partii.");break}
       const items=Object.assign({},S.exLib);
       const o=Object.assign({},items[id]||{custom:true},{name,cz:document.getElementById("x-cz").value.trim(),pri:exEd.pri.slice(),sec:exEd.sec.slice(),muscle:GROUP_OF[exEd.pri[0]],equip:document.getElementById("x-equip").value,kind:document.getElementById("x-kind").value,gymDep:document.getElementById("x-gd").checked,desc:document.getElementById("x-desc").value.trim()});
+      if(!v&&exEd.fx)o.src="fedb:"+exEd.fx.id; // F0-03: cvik převzatý z free-exercise-db
       const url=document.getElementById("x-url").value.trim();if(url)o.url=url;else delete o.url;
       if(!o.cz)delete o.cz;if(!o.desc)delete o.desc;
       items[id]=o;putEx(items);
@@ -1483,6 +1557,7 @@ document.addEventListener("input",ev=>{
   if(f==="exSearch"){S.exSearch=t.value;scheduleRender();return}
   if(f==="exlQ"){S.exlQ=t.value;S.exlLimit=0;scheduleRender();return}
   if(f==="pickQ"){pick.q=t.value;pick.limit=0;refreshPickList();return}
+  if(f==="fsQ"){fs.q=t.value;fs.limit=0;refreshFs();return}
 });
 document.addEventListener("change",ev=>{
   const t=ev.target;const f=t.dataset&&t.dataset.f;const d=curDraft();
