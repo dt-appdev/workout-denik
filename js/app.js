@@ -2845,10 +2845,10 @@
   }
   /* ---------- ŠABLONY PODLE FITKA (F2-02) ----------
      Šablona má t.gyms = seznam fitek, kam patří ([] = do všech fitek, i u starších šablon). Na úvodní
-     obrazovce nahoře šablony vybraného fitka (curGym) a šablony bez fitka, pod nimi „Ostatní šablony“
-     sbalené (tplOther, po otevření appky vždy sbalené). Smazané fitko se ze šablon odebere (delGym),
+     obrazovce nahoře šablony vybraného fitka (curGym) a šablony bez fitka, ostatní až po tlačítku
+     „Zobrazit další“ jako v Historii (tplOther, po otevření appky a změně fitka znovu skryté). Smazané fitko se ze šablon odebere (delGym),
      fitka, která už neexistují, se navíc nikdy nepočítají (tplGyms). */
-  let tplOther = false; // rozbalené „Ostatní šablony“
+  let tplOther = false; // ukázané ostatní šablony (klepnutí na „Zobrazit další“)
   // doplní šablonám seznam fitek (starší šablony ho nemají); items = {id: šablona}
   function tplNorm(items) {
     const out = {};
@@ -2866,7 +2866,7 @@
     const gyms = tplGyms(t);
     return !gyms.length || gyms.includes(gymId);
   }
-  // seznam šablon na úvodní obrazovce: šablony vybraného fitka, pod nimi sbalené ostatní
+  // seznam šablon na úvodní obrazovce: šablony vybraného fitka, pod nimi ostatní po „Zobrazit další“
   function vHomeTpls(all) {
     const gymId = curGym();
     const tpls = Object.entries(S.templates).sort(
@@ -2888,26 +2888,15 @@
     for (const [id, t] of here) {
       h += tplCard(id, t, all, gymId);
     }
-    h += "</div></section>";
-    if (!other.length) return h;
-    // bez šablon pro toto fitko jsou ostatní vidět hned (bez sbalení)
-    const open = tplOther || !here.length;
-    h += '<section class="sec">';
-    if (here.length) {
-      h += `<button class="tpl-other" data-act="tplOther" aria-expanded="${open}">
-          <span class="grow">Ostatní šablony (${other.length})</span>${open ? IC.up : IC.down}
-        </button>`;
-    } else {
-      h += `<div class="sec-h"><h2>Ostatní šablony</h2></div>`;
-    }
-    if (open) {
-      h += '<div class="stack">';
+    // ostatní šablony až po „Zobrazit další“ (jako v Historii), bez šablon pro toto fitko hned
+    if (other.length && (tplOther || !here.length)) {
       for (const [id, t] of other) {
         h += tplCard(id, t, all, null);
       }
-      h += "</div>";
+    } else if (other.length) {
+      h += '<button class="btn block" data-act="tplOther">Zobrazit další</button>';
     }
-    h += "</section>";
+    h += "</div></section>";
     return h;
   }
   // výběr fitek v úpravě šablony (víc najednou, žádné = všechna fitka)
@@ -7836,6 +7825,7 @@
         break;
       case "selGym":
         S.selGym = v;
+        tplOther = false;
         scheduleRender();
         break;
       case "startEmpty":
@@ -8654,7 +8644,7 @@
         break;
       }
       case "tplOther":
-        tplOther = !tplOther;
+        tplOther = true;
         scheduleRender();
         break;
       case "delTpl":

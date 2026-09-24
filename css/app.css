@@ -746,41 +746,12 @@ select.inp {
   font-size: var(--fs-sm);
   line-height: 1.35;
 }
-/* F2-02: fitka u ostatních šablon a sbalený řádek „Ostatní šablony“ */
+/* F2-02: fitka u ostatních šablon */
 .tpl p.tpl-gyms {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 6px;
-}
-.tpl-other {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 0.75em 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--ink-2);
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: var(--fs-base);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  text-align: left;
-}
-.tpl-other[aria-expanded="false"] {
-  margin-bottom: 0;
-}
-.tpl-other svg {
-  width: 1.3em;
-  height: 1.3em;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2;
-  flex: none;
 }
 .kpis {
   display: grid;
