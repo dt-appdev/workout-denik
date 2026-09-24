@@ -729,6 +729,10 @@ select.inp {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
+/* F1-11: mezera mezi připomínkou zálohy (nebo jiným pruhem) a kartami čísel na úvodní obrazovce */
+.banner + .kpis {
+  margin-top: 8px;
+}
 .kpi {
   background: var(--surface);
   border: 1px solid var(--line);
