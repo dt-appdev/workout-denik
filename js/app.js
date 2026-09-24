@@ -982,9 +982,12 @@
     const m = Math.max(0, Math.round(ms / 60000));
     return m >= 60 ? Math.floor(m / 60) + ":" + d2(m % 60) + " h" : m + " min";
   };
+  // odpočet a délka tréninku: 5:07, od hodiny 1:07:39 (F1-11)
   const fmtClock = (s) => {
     s = Math.max(0, Math.round(s));
-    return Math.floor(s / 60) + ":" + d2(s % 60);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor(s / 60) % 60;
+    return (h ? h + ":" + d2(m) : m) + ":" + d2(s % 60);
   };
   const monthKey = (t) => {
     const d = new Date(t);
@@ -2670,6 +2673,14 @@
     if (render.restoreY != null) {
       window.scrollTo(0, render.restoreY);
       render.restoreY = null;
+      render.toEx = false;
+    }
+    // F1-11: návrat do rozdělaného tréninku z jiné záložky = na naposledy změněný cvik
+    if (render.toEx && (S.route !== "train" || S.active)) {
+      render.toEx = false;
+      if (S.route === "train" && S.active) {
+        edScroll(S.active);
+      }
     }
     render.keepScroll = true;
     navEnsure();
@@ -2677,6 +2688,9 @@
   function go(route) {
     if (route !== "exd" && route !== "edit") {
       S.nav = [];
+    }
+    if (route === "train" && S.route !== "train") {
+      render.toEx = true;
     }
     S.route = route;
     const base = (r) => (r === "edit" || r === "exd" ? "train" : r);
@@ -3008,6 +3022,24 @@
     }
   } // restPost: aktuální „Další:“ v oznámení
 
+  /* ---------- NÁVRAT DO TRÉNINKU (F1-11) ----------
+     Poslední změněný cvik rozdělaného tréninku (klíč e.k v Local "edLast"). Po návratu z jiné záložky
+     (i po znovuotevření appky) se stránka posune tak, aby karta cviku začínala hned pod horní lištou. */
+  function edMark(d, e) {
+    if (d && d.mode === "active" && e && e.k) {
+      lsSet("edLast", e.k);
+    }
+  }
+  function edScroll(d) {
+    const i = d.ex.findIndex((e) => e.k === lsGet("edLast", ""));
+    if (i < 0) return;
+    const card = document.querySelector(`article.exc[data-i="${i}"]`);
+    if (!card) return;
+    const bar = document.querySelector("header.top");
+    const under = bar ? bar.offsetHeight + (parseFloat(getComputedStyle(bar).top) || 0) : 0;
+    window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - under - 8);
+  }
+
   function vEditor(d) {
     const mode = d.mode;
     let h = "";
@@ -3114,7 +3146,9 @@
     let h = `<article class="exc" data-i="${i}">
       <div class="exc-h">
         <div class="grow">
-          <h3><button data-act="openEx" data-v="${esc(e.exId)}">${esc(ex.name)}</button></h3>
+          <h3>
+            <button data-act="openEx" data-v="${esc(e.exId)}" data-p="info">${esc(ex.name)}</button>
+          </h3>
           ${ex.cz ? `<div class="cz">${esc(ex.cz)}</div>` : ""}`;
     h +=
       `<div class="row wrap-r" style="margin-top:4px;gap:6px">
@@ -3134,6 +3168,10 @@
           : ""
       }` +
       `</div></div>
+      <button class="iconbtn" data-act="openEx" data-v="${esc(e.exId)}" data-p="stats"
+          aria-label="Statistiky cviku">
+        ${IC.stats}
+      </button>
       <button class="iconbtn" data-act="exMenu" data-i="${i}" aria-label="Možnosti cviku">
         ${IC.more}
       </button>
@@ -6713,6 +6751,9 @@
       return;
     }
     const d = curDraft();
+    if (d && t.dataset.i !== undefined) {
+      edMark(d, d.ex[i]);
+    } // F1-11: klepnutí v kartě cviku (série, ✓, krokovač, menu cviku)
     switch (act) {
       // přepnutí záložky z rozdělané úpravy (i ze stránky cviku otevřené z úpravy) se zeptá jako Zpět
       case "tab":
@@ -6941,6 +6982,7 @@
         if (pick.mode === "replace") {
           const e = exEntryFor(pick.sel[0], dd.gymId);
           dd.ex[pick.replaceI] = e;
+          edMark(dd, e);
         } else {
           for (const id of pick.sel) {
             dd.ex.push(
@@ -6954,6 +6996,7 @@
                 : exEntryFor(id, dd.gymId),
             );
           }
+          edMark(dd, dd.ex[dd.ex.length - 1]);
         }
         touchDraft();
         closeSheet();
@@ -7828,6 +7871,15 @@
         break;
     }
   });
+  /* F1-11: Enter (✓ na klávesnici) v jednořádkovém textovém poli (hledání, názvy, poznámka u měření) schová
+     klávesnici, napsaný text zůstane; číselná políčka (data-num), datum a čas beze změny */
+  document.addEventListener("keydown", (ev) => {
+    const t = ev.target;
+    if (ev.key !== "Enter" || t.tagName !== "INPUT" || (t.dataset && t.dataset.num)) return;
+    if (!["text", "search", "url", "email"].includes(t.type)) return;
+    ev.preventDefault();
+    t.blur();
+  });
   document.addEventListener("input", (ev) => {
     const t = ev.target;
     if (t.dataset && t.dataset.num) {
@@ -7841,6 +7893,9 @@
     const d = curDraft();
     const i = +t.dataset.i,
       j = +t.dataset.j;
+    if (d && t.dataset.i !== undefined) {
+      edMark(d, d.ex[i]);
+    } // F1-11: psaní v kartě cviku
     if (f === "kg" || f === "reps" || f === "sec" || f === "km") {
       const set = d.ex[i].sets[j];
       set[f] = t.value;
@@ -8913,6 +8968,7 @@
   setTheme(themePref());
 
   /* ---------- start appky ---------- */
+  render.toEx = true; // F1-11: otevřená appka s rozdělaným tréninkem ukáže naposledy změněný cvik
   render();
   (async function boot() {
     downloads = LocalDownloads;

@@ -805,6 +805,10 @@ select.inp {
   gap: 8px;
   padding: 12px 8px 6px 14px;
 }
+/* F1-11: ikona statistik a ••• vedle sebe bez mezery */
+.exc-h .iconbtn + .iconbtn {
+  margin-left: -8px;
+}
 .exc-h h3 {
   margin: 0;
   font-size: 17px;
@@ -918,6 +922,17 @@ select.inp {
   background: var(--surface);
   outline: none;
 }
+/* F1-11: textové pole při psaní zvýrazní vlastní okraj (rámeček kolem by přečníval pod lištu a přes okraj) */
+.inp:focus-visible,
+.exc-note:focus-visible {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  outline: none;
+}
+.ed-title:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
 tr.done .cell {
   background: transparent;
 }
@@ -928,6 +943,9 @@ tr.done .cell {
   border-color: var(--fail);
   background: var(--fail-bg);
   color: var(--fail);
+}
+.inp.bad:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--fail);
 }
 /* F0-09: co je špatně na hodnotě, pod polem ve formuláři (label.f) */
 .fmsg {

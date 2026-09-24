@@ -94,6 +94,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [ ] **F1-08** U warm-up série tlačitko "60%", které přednastaví váhu v sérii na 60% maxima z minula, následna editace je zachována
 - [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04).
 - [x] **F1-10** Políčka pro čísla přijmou jen čísla (priorita: brzy). Dnes jde do kg, opakování, času, km i měření zapsat cokoli (např. „**5;8-;“) a ✓ sérii přijme. Povolit jen číslice a desetinnou čárku/tečku (u času i dvojtečku), nesmysl nepřijmout a políčko zvýraznit. Ověřit i uložení a starší data. Navíc upozornění na podezřele velký skok proti minulé sérii (překlep 150 místo 50).
+- [x] **F1-11** Opravy z používání při tréninku: návrat do rozdělaného tréninku z jiné záložky ukáže naposledy změněný cvik (ne začátek stránky), rámeček textového pole při psaní nepřečnívá, Enter v hledání schová klávesnici, v kartě cviku název = Popis a ikona grafu = Statistiky, čas tréninku s hodinami.
 
 ### Fáze 2 – Šablony a historie
 
@@ -171,6 +172,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 
 | Úloha | Otázka | Návrh |
 |---|---|---|
+| 24. 9. 2026 | F1-11 | Opravy z používání: po návratu do rozdělaného tréninku z jiné záložky (i po znovuotevření appky) je vidět naposledy změněný cvik (zapsané číslo, ✓, +/−, přidaná série, poznámka, přidaný nebo nahrazený cvik), dřív začátek stránky; klepnutí na Trénink v tréninku dál skočí nahoru. Rámeček textového pole při psaní je na okraji pole (dřív 4 px vně, nahoře zajel pod lištu a boky přečnívaly). Enter (✓ na klávesnici) v jednořádkovém textovém poli (hledání cviků, online hledání, názvy, poznámka u měření) schová klávesnici, text zůstane; číselná políčka beze změny. Karta cviku v tréninku, úpravě tréninku i šabloně: název otevře Popis, nová ikona grafu vedle ••• Statistiky (souhrn a Historie beze změny, název dál Statistiky). Čas tréninku a pauzy od hodiny jako 1:07:39 (dřív 67:39). Data ani formát zálohy beze změny. |
 | F0-02 | Obsahuje databáze cviků už svalové partie, nebo je doplníme? | Vyřešeno 23. 9.: partie všech 388 cviků zkontrolované a schválené, výchozí databáze je součástí appky. |
 | F0-03 | Zdroj, český název, popis, fotky? | Vyřešeno 23. 9.: jen free-exercise-db (kopie v repu, volné dílo), wger odloženo. Hotové české názvy všech 876 cviků, popis anglicky, hledání česky i anglicky, u stejného cviku upozornění „už máš“, fotky jen náhled (ukládání až F2-05). |
 | F0-04 | Jak dostat testovací verzi (před merge) do telefonu? GitHub Pages teď nasazuje jen `main`. | Vyřešeno 23. 9.: GitHub Actions nasadí každý otevřený PR do `…/workout-denik-test/pr-N/` (samostatné repo, aby šla testovací verze nainstalovat) s vlastními daty (kopie z vydané verze tlačítkem), oranžovým pruhem a ikonou TEST; verze a čas se doplní automaticky. |
