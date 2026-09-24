@@ -391,7 +391,8 @@ textarea.inp{min-height:84px;resize:vertical;line-height:1.4}
 .cel-c{position:relative;width:100%;max-width:340px;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--surface);color:var(--ink);border-radius:16px;padding:38px 16px 14px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);overflow:hidden;animation:celRise .45s ease-out .35s both}
 .cel-c h2{margin:0;flex:none;font-family:var(--display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;letter-spacing:.02em;color:var(--hd)}
 .cel-ex{flex:none;margin-top:4px;font-weight:700;font-size:16px}
-.cel-l{flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin-top:10px;padding-bottom:4px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.cel-l{flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin-top:10px;padding-bottom:4px;display:flex;flex-direction:column;gap:6px;text-align:left;scrollbar-width:none}
+.cel-l::-webkit-scrollbar{display:none} /* posuvník by šel přes hodnoty, posun ukazuje rozmazání a „Posuň pro další“ */
 .cel-l.more{-webkit-mask:linear-gradient(#000 calc(100% - 44px),transparent);mask:linear-gradient(#000 calc(100% - 44px),transparent)}
 .cel-g{font-weight:700;font-size:14px;margin-top:4px}
 .cel-r{display:grid;grid-template-columns:14px 1fr auto;gap:0 8px;align-items:baseline;font-size:14px}
