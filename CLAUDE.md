@@ -222,6 +222,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   jinak od šedého předvyplnění (`kkBase`), meze z `NUM_RULES`. Kroky `STEPS` (kg, sec, km; opakování 1) se pamatují
   v `Local` `kkStep` pro cvik (vázaný i pro fitko). „Napsat“ = `kkKeyboard` (políčko `kkKbd` bez readonly do opuštění),
   „Série hotová“ = `toggleSetDone`. `focusInput` u políčka s krokovačem otevře panel místo klávesnice.
+- Návrat do tréninku (F1-11, sekce „NÁVRAT DO TRÉNINKU“): `edMark(d, e)` zapíše klíč `e.k` naposledy změněného cviku
+  rozdělaného tréninku (`Local` `edLast`; volá se z posluchačů `click`/`input` pro prvky s `data-i` a po přidání cviku),
+  `go("train")` z jiné záložky a start appky nastaví `render.toEx` a `render` posune na kartu přes `edScroll`
+  (`render.restoreY` má přednost). Nový způsob změny cviku mimo `data-i` (např. F2-03 swipe) má volat `edMark`.
+  Enter v jednořádkovém textovém poli (ne `data-num`) schová klávesnici (globální `keydown`).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
