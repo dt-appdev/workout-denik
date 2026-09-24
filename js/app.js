@@ -311,7 +311,7 @@ const Store={
 
 /* ---------- state ---------- */
 const S={
-  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCel:true,recSnd:"fanfara"},
+  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCelEx:true,recCelW:true,recSnd:"fanfara"},
   exLib:exLoad({}), exV:0, exLegacy:null, templates:{}, months:{}, body:{},
   bk:{last:null,points:[]}, // config/backup: datum poslední zálohy do souboru + body obnovy
   active:Store.loadActive(),
@@ -381,7 +381,7 @@ const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
 const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
 /* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
 function cfgNorm(c){
-  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCel:true,recSnd:"fanfara"},c&&typeof c==="object"?c:{});
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCelEx:true,recCelW:true,recSnd:"fanfara"},c&&typeof c==="object"?c:{});
   c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
   return c;
 }
@@ -634,12 +634,11 @@ const plural=(n,a,b,c)=>n===1?a:(n>=2&&n<=4?b:c);
    série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Zlatá = aspoň jeden velký rekord
    (REC_BIG), jinak stříbrná; v seznamu jsou vždy všechny. Co už se oslavilo, si pamatuje cvik v rozdělaném
    tréninku (e.cel = {typ: hodnota}, do uloženého tréninku se nedostane); znovu se slaví jen vyšší hodnota
-   nebo nový typ. Nastavení v config/main: recCel (zapnuto; vypnuto = jen hláška po sérii jako dřív),
-   recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio, žádné soubory.
-   Zavření: klepnutí (ne do seznamu, ten se posouvá), Zpět (navBack), během tréninku samo po CEL_AUTO. */
+   nebo nový typ. Nastavení v config/main: recCelEx (po cviku; vypnuto = jen hláška po sérii jako dřív),
+   recCelW (po tréninku), recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio.
+   Zavření jen na přání (aby šlo vše v klidu přečíst): tlačítko Pokračovat, klepnutí mimo kartu, Zpět (navBack). */
 const REC_BIG={maxKg:1,e1rm:1,reps:1,maxSec:1,maxKm:1,speed:1};
-const CEL_AUTO=5000;
-let celEl=null,celT=0;
+let celEl=null;
 const exDone=e=>{const w=e.sets.filter(s=>isWork(s.t));return w.length>0&&w.every(s=>s.done)};
 // po odškrtnutí série: dokončený cvik s novým (ještě neoslaveným) rekordem
 function celExercise(e,lr){
@@ -647,7 +646,7 @@ function celExercise(e,lr){
   const c=e.cel||{},nw=lr.ex.filter(t=>!(c[t]!=null&&lr.v[t].v<=c[t]+EPS));
   if(!nw.length)return;
   e.cel=Object.assign({},c);for(const t of nw)e.cel[t]=lr.v[t].v;
-  celebrate(nw.map(t=>Object.assign({exId:e.exId,type:t},lr.v[t])),exName(e.exId),CEL_AUTO);
+  celebrate(nw.map(t=>Object.assign({exId:e.exId,type:t},lr.v[t])),exName(e.exId));
 }
 function celMedal(k){
   const m=k==="gold"?{a:"#fff4b8",b:"#f5c542",c:"#d99a0b",d:"#9c6400",r:"#cf3a31",r2:"#9e2a23"}:{a:"#ffffff",b:"#dde2e8",c:"#aab2bc",d:"#66707b",r:"#2a78d6",r2:"#1d5aa3"};
@@ -664,7 +663,7 @@ function celMedal(k){
     '<g transform="translate(100 152) scale(3.3) translate(-12 -12)" fill="none" stroke-linecap="round"><path d="'+bar+'" stroke="'+m.a+'" stroke-width="3.1" transform="translate(.35 .45)"/><path d="'+bar+'" stroke="'+m.d+'" stroke-width="2.3"/></g>'+
     '<g clip-path="url(#'+id+'c)"><rect class="cel-shine" x="0" y="60" width="26" height="200" fill="#fff" opacity=".55" transform="rotate(20 100 152)"/></g></g></svg>';
 }
-function celebrate(R,sub,auto){
+function celebrate(R,sub){
   celClose(true);
   const gold=R.some(r=>REC_BIG[r.type]),k=gold?"gold":"silver",rank=t=>(REC_BIG[t]?0:100)+REC_ORDER.indexOf(t);
   const g={};for(const r of R)(g[r.exId]=g[r.exId]||[]).push(r);
@@ -675,23 +674,21 @@ function celebrate(R,sub,auto){
   const el=document.createElement("div");
   el.className="cel "+k;el.setAttribute("role","dialog");el.setAttribute("aria-label","Nový rekord");
   el.innerHTML='<div class="cel-m"><div class="cel-glow"></div><div class="cel-rays"></div>'+sp+celMedal(k)+'</div>'+
-    '<div class="cel-c"'+(auto?' style="--dur:'+auto+'ms"':'')+'><h2>Nový rekord!</h2><div class="cel-ex">'+esc(sub)+'</div><div class="cel-l">'+list+'</div><div class="cel-more" hidden>↓ Posuň pro další</div>'+
-    (auto?'<div class="cel-t">Zmizí samo, nebo klepni kamkoli</div><div class="cel-p"></div>':'<button class="btn cel-ok">Pokračovat</button>')+'</div>';
+    '<div class="cel-c"><h2>Nový rekord!</h2><div class="cel-ex">'+esc(sub)+'</div><div class="cel-l">'+list+'</div><div class="cel-more" hidden>↓ Posuň pro další</div>'+
+    '<button class="btn cel-ok">Pokračovat</button></div>';
   const t0=Date.now();
-  el.addEventListener("click",ev=>{ // do seznamu klepnutí nezavírá (posouvání), po tréninku jen tlačítko nebo mimo kartu
-    if(Date.now()-t0<400||ev.target.closest(".cel-l"))return;
-    if(!auto&&ev.target.closest(".cel-c")&&!ev.target.closest(".cel-ok"))return;
+  el.addEventListener("click",ev=>{ // zavře tlačítko nebo klepnutí mimo kartu (v kartě se posouvá seznam)
+    if(Date.now()-t0<400||ev.target.closest(".cel-c")&&!ev.target.closest(".cel-ok"))return;
     celClose();
   });
   document.body.appendChild(el);celEl=el;
   const L=el.querySelector(".cel-l"),M=el.querySelector(".cel-more");
   const more=()=>{const m=L.scrollHeight-L.scrollTop-L.clientHeight>4;L.classList.toggle("more",m);M.hidden=!m};
   L.addEventListener("scroll",more);requestAnimationFrame(more);setTimeout(more,500);
-  if(auto)celT=setTimeout(()=>{if(celEl===el)celClose()},auto+350);
   if(S.cfg.recSnd!=="off")celSound(gold);
 }
 function celClose(now){
-  const el=celEl;if(!el)return;celEl=null;clearTimeout(celT);
+  const el=celEl;if(!el)return;celEl=null;
   if(now||matchMedia("(prefers-reduced-motion:reduce)").matches)el.remove();else{el.classList.add("out");setTimeout(()=>el.remove(),250)}
 }
 // zvuky oslavy: plná podoba pro zlatou, kratší a tišší pro stříbrnou
@@ -738,8 +735,10 @@ function celSound(gold,id){
 function recSettings(){
   const c=S.cfg;
   let h='<section class="sec"><div class="sec-h"><h2>Rekordy</h2></div><div class="card stack">';
-  h+='<label class="switch"><input type="checkbox" data-act="recCel" '+(c.recCel?"checked":"")+'><span><b>Oslava rekordu</b><br><span class="xs muted">Po dokončení cviku a po uložení tréninku vyskočí medaile. Zlatá za max. zátěž, odhad 1RM, opakování, výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.</span></span></label>';
-  if(c.recCel){
+  h+='<div class="xs muted">Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování, výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.</div>';
+  h+='<label class="switch"><input type="checkbox" data-act="recCelEx" '+(c.recCelEx?"checked":"")+'><span><b>Oslava po dokončení cviku</b><br><span class="xs muted">Po odškrtnutí poslední pracovní série cviku. Když ji vypneš, ukáže se po sérii s rekordem jen krátká hláška nahoře.</span></span></label>';
+  h+='<label class="switch"><input type="checkbox" data-act="recCelW" '+(c.recCelW?"checked":"")+'><span><b>Oslava po uložení tréninku</b><br><span class="xs muted">Nad souhrnem tréninku, se všemi rekordy po cvicích.</span></span></label>';
+  if(c.recCelEx||c.recCelW){
     h+='<div class="stack" style="gap:6px"><span>Zvuk oslavy <span class="xs muted">· hraje přes hlasitost médií</span></span><div class="spick">'+
       [["off","Vypnuto"]].concat(CEL_SOUNDS.map(x=>[x.id,x.name])).map(([id,l])=>'<div class="spr"><button class="spr-l" data-act="recSnd" data-v="'+id+'" aria-pressed="'+(c.recSnd===id)+'"><span class="rad"></span>'+l+'</button>'+(id==="off"?'':'<button class="spr-p" data-act="recSndPlay" data-v="'+id+'" aria-label="Přehrát zvuk '+l+'">▶</button>')+'</div>').join("")+'</div></div>';
     h+='<button class="btn block" data-act="recTry">Vyzkoušet</button>';
@@ -1898,7 +1897,7 @@ document.addEventListener("click",ev=>{
         if(kind==="dist"&&!(num(s.km)>0)){toast("Zadej vzdálenost.");break}
         s.done=true;s.at=Date.now();if(d===S.active)restStart(); // v úpravě staršího tréninku bez časovače
         {const lr=liveRecords(d,i);const t=lr.sets[j];
-          if(S.cfg.recCel&&d===S.active)celExercise(d.ex[i],lr); // oslava až po dokončení cviku (F3-02)
+          if(S.cfg.recCelEx&&d===S.active)celExercise(d.ex[i],lr); // oslava až po dokončení cviku (F3-02)
           else if(t&&t.length)toast("🏅 Nový rekord: "+t.map(recLow).join(", "))}
       }else{s.done=false;delete s.at}
       touchDraft();scheduleRender();break}
@@ -1986,7 +1985,7 @@ document.addEventListener("click",ev=>{
       S.active=null;saveActive();restStop();closeSheet();
       toast("Trénink uložen");go("hist");
       sheetWorkout(Object.assign({id,mk:monthKey(w.start)},w),true);
-      if(S.cfg.recCel){const R=wRecs({id});if(R.length)celebrate(R,w.title+" · "+R.length+" "+plural(R.length,"rekord","rekordy","rekordů"),0)}
+      if(S.cfg.recCelW){const R=wRecs({id});if(R.length)celebrate(R,w.title+" · "+R.length+" "+plural(R.length,"rekord","rekordy","rekordů"))}
       break}
     case "discard":confirmSheet("Zahodit trénink?","Rozdělaný trénink se smaže a neuloží.","Zahodit","discardOk");break;
     case "discardOk":S.active=null;saveActive();restStop();closeSheet();go("train");break;
@@ -2074,10 +2073,10 @@ document.addEventListener("click",ev=>{
     case "restOver":put("config/main",Object.assign({},S.cfg,{restOver:t.checked}));break;
     case "restNotify":put("config/main",Object.assign({},S.cfg,{restNotify:t.checked}));if(t.checked)notifAsk();restPost();break;
     case "notifAsk":notifAsk();break;
-    case "recCel":put("config/main",Object.assign({},S.cfg,{recCel:t.checked}));break;
+    case "recCelEx":case "recCelW":put("config/main",Object.assign({},S.cfg,{[act]:t.checked}));break;
     case "recSnd":put("config/main",Object.assign({},S.cfg,{recSnd:v}));if(v!=="off")celSound(true,v);break;
     case "recSndPlay":celSound(true,v);break;
-    case "recTry":celebrate([{exId:"",type:"e1rm",v:100,prev:95}],"Ukázka",CEL_AUTO);break;
+    case "recTry":celebrate([{exId:"",type:"e1rm",v:100,prev:95}],"Ukázka");break;
     case "notifTest":restTest();break;
     case "restLog":sheetRestLog();break;
     case "restLogClear":if(window.caches)caches.delete(REST_LOG).then(sheetRestLog);break;

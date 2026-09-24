@@ -164,8 +164,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (element `.cel` v `body`, stav `celEl`; `navBack`/`navDepth` s ní počítají). V rozdělaném tréninku ji spouští
   `celExercise` po odškrtnutí, když jsou hotové všechny pracovní série cviku (`exDone`) a `liveRecords` hlásí rekord
   ještě neoslavený (`e.cel` = {typ: hodnota} v rozdělaném tréninku, `draftToWorkout` ho neukládá); po uložení tréninku
-  `wRecs`. Zlatá, když je v seznamu velký rekord (`REC_BIG`). Nastavení v `config/main`: `recCel` (vypnuto = hláška po
-  sérii jako dřív), `recSnd` (id z `CEL_SOUNDS`, `"off"`). Zvuky se skládají přes Web Audio (`celTone`), žádné soubory.
+  `wRecs`. Zlatá, když je v seznamu velký rekord (`REC_BIG`). Nastavení v `config/main`: `recCelEx` (po cviku; vypnuto =
+  hláška po sérii jako dřív), `recCelW` (po tréninku), `recSnd` (id z `CEL_SOUNDS`, `"off"`). Medaile se zavírá jen
+  klepnutím (Pokračovat, mimo kartu) nebo Zpět, sama nezmizí. Zvuky se skládají přes Web Audio (`celTone`), žádné soubory.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
