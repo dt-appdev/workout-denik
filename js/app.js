@@ -33,6 +33,8 @@
   const GYM_COLORS = 12; // počet barev fitek (--s1 … --s12 v css/app.css, F3-01)
   const TYPES = ["n", "w", "d", "f"]; // cycle order
   const TYPE_NAME = { n: "Pracovní", w: "Zahřívací", d: "Drop set", f: "Do selhání" };
+  // procenta u tlačítka zahřívací série v krokovači (F1-08): výchozí, rozsah a krok posuvníku v Nastavení
+  const WARM_PCT = { def: 60, min: 10, max: 90, step: 10 };
   const MONTHS = ["led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"];
   const MONTHS_FULL = [
     "leden",
@@ -826,6 +828,7 @@
       recCelW: true,
       recSnd: "fanfara",
       stepper: true,
+      warmPct: WARM_PCT.def,
     },
     exLib: exLoad({}),
     exV: 0,
@@ -1032,9 +1035,12 @@
         recCelW: true,
         recSnd: "fanfara",
         stepper: true,
+        warmPct: WARM_PCT.def,
       },
       c && typeof c === "object" ? c : {},
     );
+    const pct = Math.round(+c.warmPct / WARM_PCT.step) * WARM_PCT.step;
+    c.warmPct = pct >= WARM_PCT.min && pct <= WARM_PCT.max ? pct : WARM_PCT.def;
     c.gyms = (Array.isArray(c.gyms) ? c.gyms : [])
       .filter((g) => g && g.id)
       .map((g, i) =>
@@ -1738,9 +1744,16 @@
       )
       .join("");
     const prevText = prev ? `minule <b class="num">${esc(setStr(kind, prev))}</b>` : "bez záznamu z minula";
+    const warm = warmInfo(d, i, j);
     let body = `<div class="kk-sub">
       <span class="grow">${esc(label)} · ${prevText}</span>
       ${steps}
+      ${
+        warm
+          ? `<button class="btn sm" id="kk-warm" data-act="kkWarm"
+              aria-label="Nastavit ${warm.pct} % nejtěžší série z minula">${warmLabel(warm)}</button>`
+          : ""
+      }
     </div>`;
     for (const fld of flds) {
       const rule = setRule(fld);
@@ -1804,11 +1817,17 @@
     const d = S.active;
     if (!kk || !d || !d.ex[kk.i] || !d.ex[kk.i].sets[kk.j]) return;
     const e = d.ex[kk.i];
-    const s = e.sets[kk.j];
     const rule = btn.dataset.kf;
     const step = rule === "reps" ? 1 : kkStep(d, e, rule);
     let value = kkBase(d, kk.i, kk.j, rule) + +btn.dataset.kk * step;
     value = Math.min(NUM_RULES[rule].max, Math.max(0, value));
+    kkSet(rule, value);
+  }
+  // zapíše hodnotu do pole série v otevřeném krokovači a ukáže ji v panelu i v tabulce (bez překreslení)
+  function kkSet(rule, value) {
+    const d = S.active;
+    const e = d.ex[kk.i];
+    const s = e.sets[kk.j];
     value = Math.round(value * 100) / 100; // bez chyb zaokrouhlení (0,1 + 0,2)
     s[rule] = kkText(rule, value);
     delete s.jumpOk; // změněná hodnota = znovu zkontrolovat velký skok
@@ -1876,18 +1895,71 @@
     }
   });
 
+  /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
+     V krokovači u zahřívací série cviku „Váha a opakování“ je tlačítko „60 % → 50 kg“. Nastaví váhu
+     na S.cfg.warmPct procent (posuvník v Nastavení → Trénink) nejtěžší série z minula bez zahřívacích
+     („minule“ jako F1-01: draftLast, cvik vázaný na fitko jen z tohoto fitka), zaokrouhleno na krok
+     krokovače cviku. Hodnota se zapíše stejně jako napsaná, další úpravy zůstanou a tlačítko jde použít
+     znovu. Bez záznamu z minula se tlačítko neukáže. Nic nového se neukládá do dat tréninku.
+     Výpočet (warmKg) může převzít generátor rozcvičkových sérií (F4-02). */
+
+  // nejtěžší série cviku e z minula bez zahřívacích (0 = bez záznamu)
+  function warmMax(d, e) {
+    const last = draftLast(d, e.exId);
+    if (!last) return 0;
+    let max = 0;
+    for (const q of last.e.sets) {
+      if (q.t !== "w" && +q.kg > max) {
+        max = +q.kg;
+      }
+    }
+    return max;
+  }
+  // pct procent z max, zaokrouhleno na krok (aspoň jeden krok, nejvýš max)
+  function warmKg(max, pct, step) {
+    let kg = Math.round((max * pct) / 100 / step) * step;
+    kg = Math.min(max, Math.max(step, kg));
+    return Math.round(kg * 100) / 100;
+  }
+  // tlačítko pro sérii j cviku i v rozdělaném tréninku d: {pct, kg}, nebo null (tlačítko se neukáže)
+  function warmInfo(d, i, j) {
+    const e = d.ex[i];
+    const s = e && e.sets[j];
+    if (!s || s.t !== "w" || kindOf(e.exId) !== "wr") return null;
+    const max = warmMax(d, e);
+    if (!max) return null;
+    const pct = S.cfg.warmPct;
+    return { pct, kg: warmKg(max, pct, kkStep(d, e, "kg")) };
+  }
+  const warmLabel = (warm) => `${warm.pct} % <span>→</span> ${esc(numStr(warm.kg))} kg`;
+
   /* Nastavení → Trénink → Zadávání čísel v tréninku */
   function stepperSettings() {
+    const on = S.cfg.stepper !== false;
     return `<section class="sec">
       <div class="sec-h"><h2>Zadávání čísel v tréninku</h2></div>
       <div class="card stack">
         <label class="switch">
-          <input type="checkbox" data-act="stepper" ${S.cfg.stepper !== false ? "checked" : ""}>
+          <input type="checkbox" data-act="stepper" ${on ? "checked" : ""}>
           <span><b>Tlačítka +/−</b><br><span class="xs muted">Klepnutí na kg, opakování, čas nebo km
               v rozdělaném tréninku otevře dole panel s tlačítky + a −, ovladatelný jednou rukou.
               Klávesnice je v panelu pod tlačítkem Napsat. Vypnuto = klepnutí rovnou otevře
               klávesnici.</span></span>
         </label>
+        <div class="warm-set${on ? "" : " off"}">
+          <div class="row">
+            <b class="grow">Zahřívací série</b>
+            <b class="num" id="warmPctV">${S.cfg.warmPct} %</b>
+          </div>
+          <input type="range" class="range" id="warmPct" min="${WARM_PCT.min}" max="${WARM_PCT.max}"
+              step="${WARM_PCT.step}" value="${S.cfg.warmPct}" aria-label="Zahřívací série v procentech"
+              ${on ? "" : "disabled"}>
+          <div class="xs muted">
+            V panelu s tlačítky +/− u zahřívací série tlačítko, které nastaví váhu na tolik procent
+            nejtěžší série z minula (zaokrouhleno na krok, např. 60 % z 82,5 kg = 50 kg).
+            ${on ? "" : "Funguje jen se zapnutými tlačítky +/−."}
+          </div>
+        </div>
       </div>
     </section>`;
   }
@@ -7719,6 +7791,20 @@
         if (!kk || !a) break;
         const step = kkStepNext(a, a.ex[kk.i], v);
         t.innerHTML = `<span>krok</span> ${esc(kkStepStr(v, step))}`;
+        // tlačítko zahřívací série (F1-08) zaokrouhluje na krok kg
+        const warmBtn = document.getElementById("kk-warm");
+        const warm = warmBtn && v === "kg" ? warmInfo(a, kk.i, kk.j) : null;
+        if (warm) {
+          warmBtn.innerHTML = warmLabel(warm);
+        }
+        break;
+      }
+      case "kkWarm": {
+        const a = S.active;
+        const warm = kk && a ? warmInfo(a, kk.i, kk.j) : null;
+        if (warm) {
+          kkSet("kg", warm.kg);
+        }
         break;
       }
       case "kkKbd":
@@ -8908,6 +8994,10 @@
   });
   document.addEventListener("input", (ev) => {
     const t = ev.target;
+    if (t.id === "warmPct") {
+      document.getElementById("warmPctV").textContent = t.value + " %";
+      return;
+    } // F1-08: posuvník ukazuje procenta hned, uloží se po puštění (change)
     if (t.dataset && t.dataset.num) {
       numInput(t);
     } // F1-10: jen povolené znaky, červený rámeček
@@ -9009,6 +9099,10 @@
     }
     if (t.id === "impFile") {
       readImport(t);
+      return;
+    }
+    if (t.id === "warmPct") {
+      put("config/main", Object.assign({}, S.cfg, { warmPct: +t.value }));
       return;
     }
     if (t.id === "phCamIn" || t.id === "phPickIn") {

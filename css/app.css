@@ -1051,6 +1051,20 @@ tr.done .okb {
   color: var(--ink-3);
   font-weight: 500;
 }
+/* nastavení zahřívací série (F1-08): posuvník, bez tlačítek +/− šedě */
+.warm-set {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.warm-set.off {
+  opacity: 0.5;
+}
+.range {
+  width: 100%;
+  margin: 4px 0;
+  accent-color: var(--accent);
+}
 .kk-row {
   display: grid;
   grid-template-columns: 72px 1fr 72px;
