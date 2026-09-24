@@ -446,6 +446,7 @@
      viz puvodni/workout-denik.html. Cesty dokumentů zůstávají stejné:
        config/main, config/exercises, config/templates, config/backup,
        workouts/RRRR-MM, body/all, state/active
+     Fotky u cviků (F2-05) jdou mimo Store rovnou do IndexedDB (úložiště photos).
      ===================================================================== */
   /* Verze a kanál appky (F0-04). BUILD doplní při nasazení GitHub Actions do js/verze.js.
      Testovací verze PR běží na adrese …/workout-denik-test/pr-12/ a má VLASTNÍ data: jiný prefix
@@ -485,12 +486,13 @@
 
   /* IndexedDB "workout-denik" (testovací verze PR 12: "workout-denik-pr12"):
        docs   – dokumenty appky, klíč = cesta ("config/main", "workouts/2026-09", …)
-       points – body obnovy, klíč = id, hodnota {id, at, data (JSON text zálohy)} */
+       points – body obnovy, klíč = id, hodnota {id, at, data (JSON text zálohy)}
+       photos – fotky u cviků (F2-05, od verze databáze 2), klíč = id, viz sekce „FOTKY U CVIKU“ */
   const Idb = {
     NAME: TEST_PR ? MAIN_DB + "-pr" + TEST_PR : MAIN_DB,
-    VER: 1,
+    VER: 2,
     db: null,
-    // otevře databázi (poprvé ji založí s úložišti docs a points); otevřenou drží v this.db
+    // otevře databázi (poprvé ji založí, starší verzi doplní chybějící úložiště); otevřenou drží v this.db
     open() {
       if (this.db) return Promise.resolve(this.db);
       return new Promise((res, rej) => {
@@ -508,6 +510,9 @@
           }
           if (!db.objectStoreNames.contains("points")) {
             db.createObjectStore("points");
+          }
+          if (!db.objectStoreNames.contains("photos")) {
+            db.createObjectStore("photos");
           }
         };
         rq.onsuccess = () => {
@@ -829,6 +834,8 @@
     months: {},
     body: {},
     bk: { last: null, points: [] }, // config/backup: datum poslední zálohy do souboru + body obnovy
+    photos: {}, // fotky u cviků (F2-05): popisy bez obrázku, klíč = id fotky
+    photosOn: false, // úložiště fotek je dostupné (načtené z IndexedDB)
     active: Store.loadActive(),
     editDraft: null,
     route: lsGet("route", "train"),
@@ -2654,6 +2661,7 @@
     drawCharts();
     renderRest();
     restoreChipScroll(app);
+    galRestore(app);
     if (focusId) {
       const f = document.getElementById(focusId);
       if (f && f.tagName === "INPUT" && f.type !== "checkbox") {
@@ -2678,6 +2686,9 @@
     if (route !== "exd" && route !== "edit") {
       S.nav = [];
     }
+    if (route === "exd") {
+      galReset();
+    } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
     const base = (r) => (r === "edit" || r === "exd" ? "train" : r);
     lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
@@ -4601,7 +4612,7 @@
       // popis
       h +=
         `<div class="card exinfo">
-        ${exFigures(ex)}${exTags(ex)}` +
+        ${photoGallery(ex, id)}${photoAddRow(id)}${exTags(ex)}` +
         `${
           ex.desc
             ? `<p class="desc">${esc(ex.desc)}</p>`
@@ -4884,6 +4895,845 @@
     }
     h += "</div></section>";
     return h;
+  }
+
+  /* ---------- FOTKY U CVIKU (F2-05) ----------
+     Vlastní fotky (stroj, nastavení) a vybrané fotky z free-exercise-db. Jsou v IndexedDB v úložišti
+     "photos" (klíč = id), ne v dokumentech Store: fronta zápisů v localStorage by je neunesla.
+     Záznam: {id, exId, gymId (null = bez fitka), at, first, w, h, mime, size, src, blob},
+     src = "fedb:<id>/<n>" u fotky z online databáze. S.photos = popisy bez obrázku, phBlob = obrázky
+     (Blob z IndexedDB, v paměti je jen odkaz), zobrazují se přes blob: adresy (CSP img-src blob:).
+     Galerie (stránka cviku a info o cviku ve výběru): postava, fotka „první“ (jen jedna u cviku, platí
+     ve všech fitkách), fotky aktuálního fitka (photoGym), bez fitka, jiných fitek; ve skupině od nejstarší.
+     Před uložením se fotka zmenší (PH_MAX px, JPEG), tím zmizí i údaje z fotoaparátu (poloha GPS).
+     Záloha: fotky jen v souboru s přepínačem „Zálohovat i fotky“, body obnovy je nemají; obnova fotky
+     jen přidává (Nahradit vše přepíše jen fotky se stejným id), maže se jen ručně. */
+  const PH_MAX = 1280,
+    PH_Q = 0.82;
+  const phBlob = new Map(), // id fotky → Blob
+    phUrl = new Map(); // id fotky → blob: adresa
+  const galPos = {}; // kolikátý snímek galerie je vidět (klíč = id cviku), 0 = postava
+  let phAdd = null, // přidání fotek z telefonu: {exId, items: [{blob, w, h, url}], gym, first}
+    pv = null, // fotka přes celou obrazovku: {exId, id, from ("exd" / "info"), gymOpen}
+    fp = null; // fotky z online databáze: {exId, x (záznam FEDB), q, search, sel, gym, first}
+
+  // popisy fotek při startu (obrázky zůstávají v IndexedDB, v paměti je jen odkaz na ně)
+  async function photosLoad() {
+    try {
+      const rows = await Idb.all("photos");
+      for (const [id, rec] of rows) {
+        photoKeep(id, rec);
+      }
+      photoInputs();
+      S.photosOn = true;
+      scheduleRender();
+    } catch (e) {
+      console.warn("fotky", e);
+    }
+  }
+  // záznam fotky → S.photos (popis) a phBlob (obrázek)
+  function photoKeep(id, rec) {
+    const meta = Object.assign({}, rec, { id });
+    delete meta.blob;
+    S.photos[id] = meta;
+    if (phBlob.get(id) !== rec.blob) {
+      photoUrlDrop(id);
+      phBlob.set(id, rec.blob);
+    }
+  }
+  function photoUrlDrop(id) {
+    const u = phUrl.get(id);
+    if (u) {
+      URL.revokeObjectURL(u);
+      phUrl.delete(id);
+    }
+  }
+  // blob: adresa obrázku (vytvoří se při prvním zobrazení)
+  function photoUrl(id) {
+    let u = phUrl.get(id);
+    if (!u && phBlob.get(id)) {
+      u = URL.createObjectURL(phBlob.get(id));
+      phUrl.set(id, u);
+    }
+    return u || "";
+  }
+  const photoId = () => "ph" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const photoErr = (e) =>
+    e && e.code === "quota_exceeded"
+      ? "Úložiště v telefonu je plné, fotka se neuložila."
+      : "Fotku se nepodařilo uložit.";
+  // uloží celý záznam fotky (i s obrázkem)
+  async function photoSave(rec) {
+    await Idb.put("photos", rec.id, rec);
+    photoKeep(rec.id, rec);
+  }
+  async function photoDel(id) {
+    await Idb.del("photos", id);
+    delete S.photos[id];
+    photoUrlDrop(id);
+    phBlob.delete(id);
+  }
+  // změna popisu fotky (fitko, první); „první“ může být jen jedna fotka cviku, ostatním se vypne
+  async function photoUpdate(id, change) {
+    const p = S.photos[id];
+    if (!p) return;
+    if (change.first) {
+      for (const o of Object.values(S.photos)) {
+        if (o.exId === p.exId && o.first && o.id !== id) {
+          await photoSave(Object.assign({}, o, { first: false, blob: phBlob.get(o.id) }));
+        }
+      }
+    }
+    await photoSave(Object.assign({}, p, change, { blob: phBlob.get(id) }));
+  }
+  // fitko, podle kterého se řadí fotky: rozdělaný nebo upravovaný trénink, jinak vybrané fitko
+  function photoGym() {
+    const fromEdit = S.route === "edit" || (S.route === "exd" && S.prevRoute === "edit");
+    const d = fromEdit ? S.editDraft : S.active;
+    return (d && d.gymId) || curGym();
+  }
+  // fotky cviku v pořadí galerie
+  function photosOf(exId) {
+    const gym = photoGym();
+    const rank = (p) => (p.first ? 0 : p.gymId && p.gymId === gym ? 1 : !p.gymId ? 2 : 3);
+    return Object.values(S.photos)
+      .filter((p) => p.exId === exId)
+      .sort(
+        (a, b) => rank(a) - rank(b) || (rank(a) === 3 ? gymIdx(a.gymId) - gymIdx(b.gymId) : 0) || a.at - b.at,
+      );
+  }
+  const gymExists = (id) => S.cfg.gyms.some((g) => g.id === id);
+  // štítek fitka na fotce (fitko, které už neexistuje = „Smazané fitko“)
+  function photoTag(p) {
+    if (!p.gymId) return '<span class="gal-tag">Bez fitka</span>';
+    if (!gymExists(p.gymId)) return '<span class="gal-tag">Smazané fitko</span>';
+    return `<span class="gal-tag">
+      <span class="sw" style="background:${gymColor(p.gymId)}"></span>${esc(gymName(p.gymId))}
+    </span>`;
+  }
+  const galDots = (n, cur) =>
+    `<div class="gal-dots" aria-hidden="true">` +
+    `${Array.from({ length: n }, (_, i) => `<i${i === cur ? ' class="on"' : ""}></i>`).join("")}</div>`;
+  // galerie: první snímek je postava, pak fotky, pod nimi tečky; cvik bez fotek má jen postavu jako dřív
+  function photoGallery(ex, exId) {
+    const list = photosOf(exId);
+    if (!list.length) return exFigures(ex);
+    const cur = Math.min(galPos[exId] || 0, list.length);
+    return `<div class="gal">
+      <div class="gal-track" data-gal="${esc(exId)}">
+        <button type="button" class="gal-s fig" data-act="phView" data-v="${PV_FIG}" data-ex="${esc(exId)}"
+            aria-label="Postava přes celou obrazovku">${exFigures(ex)}</button>
+        ${list
+          .map(
+            (p, i) =>
+              `<button type="button" class="gal-s" data-act="phView" data-v="${esc(p.id)}"
+                  aria-label="Fotka ${i + 1} z ${list.length}">
+                <img src="${photoUrl(p.id)}" alt="">
+                ${photoTag(p)}${p.first ? '<span class="gal-pin">★ První</span>' : ""}
+              </button>`,
+          )
+          .join("")}
+      </div>
+      ${galDots(list.length + 1, cur)}
+    </div>`;
+  }
+  // tlačítka pro přidání fotek na stránce cviku (Vyfotit = rovnou fotoaparát)
+  function photoAddRow(exId) {
+    if (!S.photosOn) return "";
+    return `<div class="gal-add">
+      <label class="btn sm" for="phCamIn">Vyfotit</label>
+      <label class="btn sm" for="phPickIn">Z galerie</label>
+      <button class="btn sm" data-act="phFedb" data-v="${esc(exId)}">Z online databáze</button>
+    </div>`;
+  }
+  /* políčka pro výběr souboru jsou mimo #app: překreslení stránky, zatímco je otevřený fotoaparát
+     nebo galerie, by je jinak nahradilo a vybraná fotka by se ztratila */
+  function photoInputs() {
+    if (document.getElementById("phCamIn")) return;
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `<input type="file" id="phCamIn" accept="image/*" capture="environment" hidden>
+      <input type="file" id="phPickIn" accept="image/*" multiple hidden>`,
+    );
+  }
+  // index snímku, na kterém galerie stojí (snímky jsou široké jako galerie + mezera)
+  function galIndex(el) {
+    const a = el.children[0],
+      b = el.children[1];
+    const step = b ? b.offsetLeft - a.offsetLeft : el.clientWidth;
+    return Math.max(0, Math.min(el.children.length - 1, Math.round(el.scrollLeft / (step || 1))));
+  }
+  function galScrollTo(el, i) {
+    const s = el.children[i];
+    if (s) {
+      el.scrollLeft = s.offsetLeft - el.children[0].offsetLeft;
+    }
+  }
+  // po vykreslení nastaví galerie na naposledy viděný snímek
+  function galRestore(root) {
+    (root || document).querySelectorAll(".gal-track[data-gal]").forEach((el) => {
+      galScrollTo(el, galPos[el.dataset.gal] || 0);
+    });
+  }
+  function galReset() {
+    for (const k in galPos) {
+      delete galPos[k];
+    }
+  }
+  // posun galerie prstem: tečky, zapamatovaná pozice, u fotky přes celou obrazovku popisky
+  document.addEventListener(
+    "scroll",
+    (ev) => {
+      const el = ev.target;
+      if (!el.classList || !el.classList.contains("gal-track")) return;
+      const i = galIndex(el);
+      const dots = el.parentNode.querySelector(".gal-dots");
+      if (dots) {
+        dots.querySelectorAll("i").forEach((d, k) => d.classList.toggle("on", k === i));
+      }
+      if (el.dataset.gal) {
+        galPos[el.dataset.gal] = i;
+      }
+      if (el.dataset.pv && pv) {
+        const id = el.children[i] && el.children[i].dataset.id;
+        if (id && id !== pv.id) {
+          pv.id = id;
+          pv.gymOpen = false;
+          pvChrome();
+        }
+      }
+    },
+    true,
+  );
+
+  /* zmenší obrázek (soubor z telefonu nebo načtený <img>) na nejvýš PH_MAX px a uloží jako JPEG;
+     orientaci podle fotoaparátu (EXIF) otočí prohlížeč, ostatní údaje z fotky se nepřenesou */
+  async function photoShrink(src) {
+    let bmp;
+    try {
+      bmp = await createImageBitmap(src, { imageOrientation: "from-image" });
+    } catch (e) {
+      bmp = await createImageBitmap(src);
+    }
+    const k = Math.min(1, PH_MAX / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * k)),
+      h = Math.max(1, Math.round(bmp.height * k));
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff"; // průhledné PNG na bílém pozadí
+    ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) {
+      bmp.close();
+    }
+    const blob = await new Promise((ok, ko) => {
+      c.toBlob((b) => (b ? ok(b) : ko(new Error("toBlob"))), "image/jpeg", PH_Q);
+    });
+    return { blob, w, h };
+  }
+  // nový záznam fotky ze zmenšeného obrázku
+  const photoRec = (exId, it, gymId, at, src) =>
+    Object.assign(
+      {
+        id: photoId(),
+        exId,
+        gymId: gymId || null,
+        at,
+        first: false,
+        w: it.w,
+        h: it.h,
+        mime: it.blob.type || "image/jpeg",
+        size: it.blob.size,
+        blob: it.blob,
+      },
+      src ? { src } : {},
+    );
+
+  /* přidání fotek z telefonu: soubory z Vyfotit / Z galerie → zmenšit → okno s volbou fitka */
+  async function photoFiles(inp) {
+    const files = [...(inp.files || [])];
+    inp.value = "";
+    if (!files.length || !S.exDetail) return;
+    const exId = S.exDetail;
+    toast(files.length > 1 ? "Zpracovávám fotky…" : "Zpracovávám fotku…");
+    const items = [];
+    for (const f of files) {
+      try {
+        const it = await photoShrink(f);
+        it.url = URL.createObjectURL(it.blob);
+        items.push(it);
+      } catch (e) {
+        console.warn("fotka", e);
+      }
+    }
+    if (!items.length) {
+      toast(files.length > 1 ? "Fotky se nepodařilo načíst." : "Fotku se nepodařilo načíst.");
+      return;
+    }
+    if (items.length < files.length) {
+      toast("Některé fotky se nepodařilo načíst.");
+    }
+    phAdd = { exId, items, gym: exOf(exId).gymDep ? photoGym() : null, first: false };
+    renderPhAdd();
+  }
+  // výběr fitka pro fotku (chips, v = id fitka, "" = bez fitka)
+  function phGymChips(act, cur) {
+    return `<div class="chips" data-ck="${act}">
+      <button class="chip" data-act="${act}" data-v="" aria-pressed="${!cur}">Bez fitka</button>
+      ${S.cfg.gyms
+        .map(
+          (g) =>
+            `<button class="chip" data-act="${act}" data-v="${g.id}" aria-pressed="${cur === g.id}">` +
+            `<span class="sw" style="background:${gymColor(g.id)}"></span>${esc(g.name)}</button>`,
+        )
+        .join("")}
+    </div>`;
+  }
+  const photosWord = (n) => (n > 1 ? n + " " + plural(n, "fotku", "fotky", "fotek") : "fotku");
+  function renderPhAdd(noanim) {
+    const a = phAdd,
+      n = a.items.length,
+      size = a.items.reduce((s, it) => s + it.blob.size, 0);
+    const b =
+      `<div class="thumbs">
+        ${a.items.map((it) => `<div class="th"><img src="${it.url}" alt=""></div>`).join("")}
+      </div>
+      <div class="small" style="font-weight:600">Fitko</div>
+      ${phGymChips("phAddGym", a.gym)}
+      <div class="xs muted">
+        ${exOf(a.exId).gymDep ? "Cvik je vázaný na fitko, předvybrané je fitko, kde teď cvičíš. " : ""}` +
+      `„Bez fitka“ = fotka se ukáže stejně ve všech fitkách.
+      </div>
+      <label class="switch">
+        <input type="checkbox" data-act="phAddFirst" ${a.first ? "checked" : ""}>
+        <span><b>Nastavit jako první</b><br><span class="xs muted">
+          ${n > 1 ? "První z přidaných fotek bude" : "Fotka bude"} hned za postavou, s předností i před
+          fotkami aktuálního fitka.</span></span>
+      </label>
+      <div class="xs muted">
+        Po zmenšení ${n > 1 ? "mají fotky" : "má fotka"} ${fmtSize(size)} a uloží se jen v tomto
+        telefonu.
+      </div>`;
+    openSheet(
+      n > 1 ? "Přidat fotky (" + n + ")" : "Přidat fotku",
+      b,
+      `<button class="btn grow" data-act="closeSheet">Zrušit</button>
+      <button class="btn primary grow" data-act="phAddSave">Uložit ${photosWord(n)}</button>`,
+      noanim,
+    );
+  }
+  async function phAddSave() {
+    const a = phAdd;
+    if (!a) return;
+    phAdd = null;
+    const ids = [];
+    try {
+      const at = Date.now();
+      for (let k = 0; k < a.items.length; k++) {
+        const rec = photoRec(a.exId, a.items[k], a.gym, at + k);
+        await photoSave(rec);
+        ids.push(rec.id);
+      }
+      if (a.first && ids.length) {
+        await photoUpdate(ids[0], { first: true });
+      }
+      toast(ids.length > 1 ? "Fotky uloženy" : "Fotka uložena");
+    } catch (e) {
+      toast(photoErr(e));
+    }
+    for (const it of a.items) {
+      URL.revokeObjectURL(it.url);
+    }
+    closeSheet();
+    galShow(a.exId, ids[0]);
+  }
+  // galerie cviku ukáže danou fotku (po přidání, po návratu z celé obrazovky)
+  function galShow(exId, id) {
+    const i = photosOf(exId).findIndex((p) => p.id === id);
+    if (i >= 0) {
+      galPos[exId] = i + 1;
+    }
+    scheduleRender();
+  }
+
+  /* fotka přes celou obrazovku: stejné snímky jako galerie (postava, pak fotky), posun prstem, fitko,
+     „první“, smazání; Zpět nebo tah dolů ji zavře. pv.id = id fotky, nebo PV_FIG = postava */
+  const PV_FIG = "fig",
+    PV_CLOSE_DY = 110; // o kolik px táhnout dolů, aby se zavřela
+  function openViewer(id, from, exId) {
+    const p = S.photos[id];
+    exId = p ? p.exId : exId;
+    if (!exId || (!p && id !== PV_FIG)) return;
+    pv = { exId, id, from, gymOpen: false };
+    renderViewer();
+  }
+  // snímky přes celou obrazovku v pořadí galerie: postava, pak id fotek
+  const pvIds = (exId) => [PV_FIG].concat(photosOf(exId).map((p) => p.id));
+  function renderViewer() {
+    const list = photosOf(pv.exId),
+      ids = pvIds(pv.exId);
+    if (!list.length) {
+      pvClose();
+      return;
+    }
+    if (!ids.includes(pv.id)) {
+      pv.id = ids[1];
+    }
+    kkEnd();
+    const root = document.getElementById("sheetRoot");
+    root.innerHTML = `<div class="pv" role="dialog" aria-modal="true" aria-label="Fotky cviku">
+      <div class="pv-h">
+        <button class="iconbtn" data-act="pvBack" aria-label="Zpět">${IC.back}</button>
+        <b id="pvCount"></b>
+        <span class="pv-name">${esc(exOf(pv.exId).name)}</span>
+      </div>
+      <div class="gal-track pv-track" data-pv="1">
+        <div class="pv-s pv-fig" data-id="${PV_FIG}">${exFigures(exOf(pv.exId))}</div>
+        ${list
+          .map((p) => `<div class="pv-s" data-id="${esc(p.id)}"><img src="${photoUrl(p.id)}" alt=""></div>`)
+          .join("")}
+      </div>
+      <div class="pv-f" id="pvFoot"></div>
+    </div>`;
+    document.body.style.overflow = "hidden";
+    sheetNav = { lv: pv.from === "info" ? 3 : 1, back: pvClose, re: renderViewer };
+    galScrollTo(root.querySelector(".pv-track"), ids.indexOf(pv.id));
+    pvChrome();
+  }
+  /* popisky přes celou obrazovku: kolikátá fotka, tečky (stejně jako galerie), fitko, smazat, první;
+     u postavy jsou ovládací prvky jen neviditelné, aby se výška fotek při posunu neměnila */
+  function pvChrome() {
+    const list = photosOf(pv.exId),
+      ids = pvIds(pv.exId),
+      fig = pv.id === PV_FIG,
+      i = list.findIndex((p) => p.id === pv.id),
+      p = fig ? list[0] : list[i];
+    const cnt = document.getElementById("pvCount"),
+      foot = document.getElementById("pvFoot");
+    if (!p || !cnt || !foot) return;
+    cnt.textContent = fig ? "Postava" : `Fotka ${i + 1} / ${list.length}`;
+    const gymTxt = !p.gymId ? "bez fitka" : gymExists(p.gymId) ? gymName(p.gymId) : "smazané fitko",
+      gymSw =
+        p.gymId && gymExists(p.gymId)
+          ? `<span class="sw" style="background:${gymColor(p.gymId)}"></span>`
+          : "";
+    foot.innerHTML = `${galDots(ids.length, ids.indexOf(pv.id))}
+      <div class="stack${fig ? " pv-off" : ""}" style="gap:12px"${fig ? ' aria-hidden="true"' : ""}>
+      <div class="row" style="gap:8px">
+        <button class="btn grow pv-gym" data-act="pvGym" aria-expanded="${pv.gymOpen}">
+          ${gymSw}
+          <span class="grow">Fitko: ${esc(gymTxt)}</span>${pv.gymOpen ? "▴" : "▾"}
+        </button>
+        <button class="btn danger" data-act="pvDel">Smazat</button>
+      </div>
+      ${pv.gymOpen ? phGymChips("pvSetGym", p.gymId) : ""}
+      <label class="switch">
+        <input type="checkbox" data-act="pvFirst" ${p.first ? "checked" : ""}>
+        <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, s předností před
+            ostatními fotkami cviku.</span></span>
+      </label>
+      </div>`;
+    restoreChipScroll(foot);
+  }
+  // zavřít fotku: zpět na stránku cviku (na stejnou fotku) nebo do info o cviku
+  function pvClose() {
+    const v = pv;
+    pv = null;
+    if (!v) {
+      closeSheet();
+      return;
+    }
+    const i = pvIds(v.exId).indexOf(v.id);
+    galPos[v.exId] = Math.max(0, i); // galerie zůstane na stejném snímku (i na postavě)
+    if (v.from === "info") {
+      sheetExInfo(v.exId);
+    } else {
+      closeSheet();
+      scheduleRender();
+    }
+  }
+  function pvDelAsk() {
+    if (pv.id === PV_FIG) return;
+    openSheet(
+      "Smazat fotku?",
+      `<p style="margin:0">Fotka se smaže z telefonu. Smazání nejde vrátit (fotky nejsou v bodech
+        obnovy, jen v záloze do souboru s fotkami).</p>`,
+      `<button class="btn grow" data-act="pvDelNo">Zrušit</button>
+      <button class="btn danger grow" data-act="pvDelOk">Smazat</button>`,
+      false,
+      { lv: (pv.from === "info" ? 3 : 1) + 1, back: renderViewer, re: renderViewer },
+    );
+  }
+  // smaže zobrazenou fotku a ukáže tu, která byla za ní (poslední → ta před ní)
+  async function pvDelOk() {
+    if (!pv || pv.id === PV_FIG) return;
+    const idx = pvIds(pv.exId).indexOf(pv.id);
+    try {
+      await photoDel(pv.id);
+      toast("Fotka smazána");
+      const ids = pvIds(pv.exId);
+      pv.id = ids[Math.max(1, Math.min(idx, ids.length - 1))];
+    } catch (e) {
+      toast("Fotku se nepodařilo smazat.");
+    }
+    renderViewer();
+  }
+  // změna fotky zobrazené přes celou obrazovku (fitko, první), pak znovu vykreslit (pořadí se může změnit)
+  function pvUpdate(change) {
+    if (!pv || pv.id === PV_FIG) return;
+    photoUpdate(pv.id, change)
+      .catch((e) => toast(photoErr(e)))
+      .then(() => {
+        if (pv) {
+          pv.gymOpen = false;
+          renderViewer();
+        }
+      });
+  }
+
+  // tah dolů přes celou obrazovku ji zavře (jako galerie v telefonu); tah do strany = další snímek
+  let pvDrag = null;
+  document.addEventListener(
+    "touchstart",
+    (ev) => {
+      const tr = ev.target.closest && ev.target.closest(".pv-track");
+      pvDrag =
+        tr && ev.touches.length === 1
+          ? { tr, x: ev.touches[0].clientX, y: ev.touches[0].clientY, dy: 0, on: false }
+          : null;
+    },
+    { passive: true },
+  );
+  document.addEventListener(
+    "touchmove",
+    (ev) => {
+      if (!pvDrag) return;
+      const dx = ev.touches[0].clientX - pvDrag.x,
+        dy = ev.touches[0].clientY - pvDrag.y;
+      if (!pvDrag.on) {
+        if (Math.abs(dx) > 10 && Math.abs(dx) >= Math.abs(dy)) {
+          pvDrag = null; // posun do strany
+          return;
+        }
+        if (dy < 10) return;
+        pvDrag.on = true;
+        pvDrag.tr.style.transition = "none";
+      }
+      pvDrag.dy = Math.max(0, dy);
+      pvDrag.tr.style.transform = `translateY(${pvDrag.dy}px)`;
+      pvDrag.tr.style.opacity = String(Math.max(0.3, 1 - pvDrag.dy / 400));
+    },
+    { passive: true },
+  );
+  function pvDragEnd() {
+    const d = pvDrag;
+    pvDrag = null;
+    if (!d || !d.on) return;
+    if (d.dy > PV_CLOSE_DY && pv) {
+      navBack();
+      return;
+    }
+    d.tr.style.transition = "transform 0.15s, opacity 0.15s";
+    d.tr.style.transform = "";
+    d.tr.style.opacity = "";
+  }
+  document.addEventListener("touchend", pvDragEnd);
+  document.addEventListener("touchcancel", pvDragEnd);
+
+  /* fotky z online databáze free-exercise-db: u cviku se shodou rovnou jeho fotky, jinak hledání;
+     stáhnou se jen vybrané (přes <img> s CORS a canvas, bez fetch, v CSP stačí img-src) */
+  function fedbPhotos(exId) {
+    fp = { exId, x: null, q: exOf(exId).name, search: false, sel: [], gym: null, first: false };
+    renderFp();
+  }
+  // stejný cvik v online databázi: shoda s výchozí databází (h) nebo cvik převzatý z ní (src)
+  function fedbMatch(exId) {
+    const ex = exOf(exId);
+    const src = ex.src && ex.src.startsWith("fedb:") ? ex.src.slice(5) : null;
+    return FEDB.find((x) => !x.ni && (x.h === exId || x.id === src)) || null;
+  }
+  const fedbSrc = (x, n) => FEDB_IMG + x.id + "/" + n + ".jpg";
+  // fotka z online databáze už je u cviku uložená
+  const fedbSaved = (exId, x, n) =>
+    Object.values(S.photos).some((p) => p.exId === exId && p.src === "fedb:" + x.id + "/" + n);
+  function renderFp(noanim) {
+    const title = "Fotky z online databáze";
+    const sub = !!(fp.x && fp.search);
+    const nav = {
+      lv: sub ? 2 : 1,
+      back: sub ? fpBack : closeSheet,
+      re: () => renderFp(true),
+    };
+    if (typeof FEDB === "undefined") {
+      openSheet(
+        title,
+        '<div class="empty" id="fpLoad">Načítám online databázi…</div>',
+        '<button class="btn grow" data-act="closeSheet">Zrušit</button>',
+        noanim,
+        nav,
+      );
+      fedbLoad()
+        .then(() => {
+          if (fp) {
+            renderFp(true);
+          }
+        })
+        .catch(() => {
+          const el = document.getElementById("fpLoad");
+          if (el) {
+            el.innerHTML = `Online databázi se nepodařilo načíst. Poprvé je potřeba internet, potom
+              funguje i offline.<br>
+              <button class="btn sm" data-act="fpRetry" style="margin-top:10px">Zkusit znovu</button>`;
+          }
+        });
+      return;
+    }
+    if (!fp.x && !fp.search) {
+      fp.x = fedbMatch(fp.exId);
+      fp.search = !fp.x;
+    }
+    if (!fp.x) {
+      const direct = fedbMatch(fp.exId);
+      const b = `<p class="small" style="margin:0">
+          ${
+            direct
+              ? "Najdi cvik v online databázi a vyber jeho fotky."
+              : `Cvik <b>${esc(exOf(fp.exId).name)}</b> v online databázi nemá přímou shodu. Najdi
+                podobný a vyber jeho fotky.`
+          }
+        </p>
+        <input class="inp" id="fpQ" data-f="fpQ" value="${esc(fp.q)}" autocomplete="off"
+            placeholder="Název anglicky i česky">
+        <div class="stack" id="fpList" style="gap:6px"></div>`;
+      openSheet(title, b, '<button class="btn grow" data-act="closeSheet">Zrušit</button>', noanim, nav);
+      refreshFp();
+      return;
+    }
+    const x = fp.x,
+      n = fp.sel.length;
+    const b = `<p class="small" style="margin:0">
+        Fotky cviku <b>${esc(x.n)}</b>${x.cz ? ` (${esc(x.cz)})` : ""} z databáze free-exercise-db
+        (volné dílo). Klepnutím vyber, které uložit do telefonu.
+      </p>
+      <div class="thumbs big">
+        ${[0, 1]
+          .map((k) => {
+            const saved = fedbSaved(fp.exId, x, k),
+              on = fp.sel.includes(k);
+            return `<button type="button" class="th${on ? " sel" : ""}${saved ? " saved" : ""}"
+                data-act="fpSel" data-v="${k}" aria-pressed="${on}"${saved ? " disabled" : ""}>
+              <img crossorigin="anonymous" src="${esc(fedbSrc(x, k))}" alt="">
+              <span class="ck">${on ? "✓" : ""}</span>
+              ${saved ? '<span class="gal-tag">Už uložená</span>' : ""}
+            </button>`;
+          })
+          .join("")}
+      </div>
+      <div class="small" style="font-weight:600">Fitko</div>
+      ${phGymChips("fpGym", fp.gym)}
+      <label class="switch">
+        <input type="checkbox" data-act="fpFirst" ${fp.first ? "checked" : ""}>
+        <span><b>Nastavit jako první</b></span>
+      </label>
+      <div class="xs muted">Stažení potřebuje internet, uložené fotky pak fungují i offline.</div>
+      ${
+        sub
+          ? ""
+          : `<button class="linkbtn small" data-act="fpSearch" style="color:var(--accent-2);font-weight:600">
+              Vybrat fotky jiného cviku z databáze
+            </button>`
+      }`;
+    openSheet(
+      title,
+      b,
+      `<button class="btn grow" data-act="${sub ? "fpBack" : "closeSheet"}">${sub ? "Zpět" : "Zrušit"}</button>
+      <button class="btn primary grow" data-act="fpSave"${n ? "" : " disabled"}>
+        ${n ? "Uložit " + photosWord(n) : "Vyber fotky"}
+      </button>`,
+      noanim,
+      nav,
+    );
+  }
+  function fpBack() {
+    fp.x = null;
+    fp.sel = [];
+    renderFp(true);
+  }
+  // výsledky hledání (jen cviky s fotkami)
+  function refreshFp() {
+    const el = document.getElementById("fpList");
+    if (!el || !fp) return;
+    const q = fp.q.trim();
+    const rows = q ? fedbRows(q).filter((x) => !x.ni) : [];
+    if (!q) {
+      el.innerHTML = '<div class="empty">Napiš název cviku anglicky nebo česky.</div>';
+      return;
+    }
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty">Nic nenalezeno. Zkus jiné slovo, třeba anglicky.</div>';
+      return;
+    }
+    el.innerHTML = rows
+      .slice(0, 30)
+      .map(
+        (x) =>
+          `<div class="pickrow">
+            <button class="pick" data-act="fpPick" data-v="${esc(x.id)}">
+              <img class="fsimg" crossorigin="anonymous" src="${esc(fedbSrc(x, 0))}" alt="" loading="lazy">
+              <div class="grow">
+                <div style="font-weight:600">${esc(x.n)}</div>
+                <div class="cz">${esc(x.cz)}</div>
+              </div>
+            </button>
+          </div>`,
+      )
+      .join("");
+  }
+  // načte obrázek z free-exercise-db tak, aby šel zmenšit (CORS, jinak by canvas nešel uložit)
+  function fedbImg(url) {
+    return new Promise((ok, ko) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.addEventListener("load", () => ok(img));
+      img.addEventListener("error", () => ko(new Error("img")));
+      img.src = url;
+    });
+  }
+  // stáhne vybrané fotky z online databáze a uloží je k cviku; vrací id první uložené
+  async function photosFromFedb(exId, x, sel, gym, first) {
+    const at = Date.now();
+    let firstId = null;
+    for (let k = 0; k < sel.length; k++) {
+      const it = await photoShrink(await fedbImg(fedbSrc(x, sel[k])));
+      const rec = photoRec(exId, it, gym, at + k, "fedb:" + x.id + "/" + sel[k]);
+      await photoSave(rec);
+      if (!firstId) {
+        firstId = rec.id;
+      }
+    }
+    if (first && firstId) {
+      await photoUpdate(firstId, { first: true });
+    }
+    return firstId;
+  }
+  const fedbPhotoErr = (e) =>
+    e && e.message === "img" ? "Fotky se nepodařilo stáhnout. Jsi připojený k internetu?" : photoErr(e);
+  async function fpSave() {
+    const f = fp;
+    if (!f || !f.x || !f.sel.length) return;
+    toast("Stahuji fotky…");
+    try {
+      const id = await photosFromFedb(
+        f.exId,
+        f.x,
+        f.sel.slice().sort((a, b) => a - b),
+        f.gym,
+        f.first,
+      );
+      fp = null;
+      closeSheet();
+      toast(f.sel.length > 1 ? "Fotky uloženy" : "Fotka uložena");
+      galShow(f.exId, id);
+    } catch (e) {
+      toast(fedbPhotoErr(e));
+      scheduleRender();
+    }
+  }
+
+  /* záloha fotek (F0-01 formát v2, pole photos): {id: {exId, gymId, at, first, w, h, mime, size, src,
+     data (base64)}}; jen do souboru, když je zapnuté „Zálohovat i fotky“ (Local bkPhotos) */
+  function photoStats() {
+    const list = Object.values(S.photos);
+    return { n: list.length, size: list.reduce((a, p) => a + (p.size || 0), 0) };
+  }
+  const blobB64 = (b) =>
+    new Promise((ok, ko) => {
+      const r = new FileReader();
+      r.addEventListener("load", () => ok(String(r.result).split(",")[1] || ""));
+      r.addEventListener("error", () => ko(r.error));
+      r.readAsDataURL(b);
+    });
+  function b64Blob(data, mime) {
+    const bin = atob(data),
+      u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      u[i] = bin.charCodeAt(i);
+    }
+    return new Blob([u], { type: mime });
+  }
+  async function photosExport() {
+    const out = {};
+    for (const id in S.photos) {
+      const b = phBlob.get(id);
+      if (!b) continue;
+      const meta = Object.assign({}, S.photos[id]);
+      delete meta.id;
+      out[id] = Object.assign(meta, { data: await blobB64(b) });
+    }
+    return out;
+  }
+  // fotky ze souboru zálohy: jen platné záznamy (normBackup)
+  function photosClean(src) {
+    const out = {};
+    for (const id in src) {
+      const p = src[id];
+      const ok =
+        /^[\w-]{1,60}$/.test(id) &&
+        p &&
+        typeof p.data === "string" &&
+        typeof p.exId === "string" &&
+        /^image\/(jpeg|png|webp)$/.test(p.mime || "");
+      if (!ok) continue;
+      out[id] = {
+        exId: p.exId,
+        gymId: typeof p.gymId === "string" && p.gymId ? p.gymId : null,
+        at: +p.at || 0,
+        first: !!p.first,
+        w: +p.w || 0,
+        h: +p.h || 0,
+        mime: p.mime,
+        data: p.data,
+      };
+      if (typeof p.src === "string") {
+        out[id].src = p.src;
+      }
+    }
+    return out;
+  }
+  /* uloží fotky ze zálohy: overwrite = přepsat i fotky se stejným id (Nahradit vše), jinak jen chybějící;
+     žádná fotka se nesmaže. Vrací počet uložených. */
+  async function photosImport(photos, overwrite) {
+    let n = 0;
+    for (const id in photos || {}) {
+      if (!overwrite && S.photos[id]) continue;
+      const p = Object.assign({}, photos[id]);
+      let blob;
+      try {
+        blob = b64Blob(p.data, p.mime);
+      } catch (e) {
+        continue;
+      }
+      delete p.data;
+      await photoSave(Object.assign(p, { id, size: blob.size, blob }));
+      n++;
+    }
+    // u každého cviku nejvýš jedna „první“ (nechá se ta naposledy přidaná)
+    const firsts = {};
+    for (const p of Object.values(S.photos)) {
+      if (p.first) {
+        (firsts[p.exId] = firsts[p.exId] || []).push(p);
+      }
+    }
+    for (const exId in firsts) {
+      const list = firsts[exId].sort((a, b) => b.at - a.at);
+      for (const p of list.slice(1)) {
+        await photoSave(Object.assign({}, p, { first: false, blob: phBlob.get(p.id) }));
+      }
+    }
+    return n;
   }
 
   /* ---------- TĚLO (měření) ---------- */
@@ -5438,7 +6288,7 @@
     const rl = (R.byEx[id] || []).slice(-3).reverse();
     let b =
       `${
-        exFigures(e) +
+        photoGallery(e, id) +
         exTags(e) +
         (e.desc
           ? `<p class="desc">${esc(e.desc)}</p>`
@@ -5501,6 +6351,7 @@
       true,
       { lv: 2, back: () => renderPicker(true), re: () => sheetExInfo(id) },
     );
+    galRestore(document.getElementById("sheetRoot"));
   }
   let exEd = null;
   // úprava otevřená mimo výběr cviků
@@ -5527,8 +6378,36 @@
             pri: [],
             sec: [],
           };
-    exEd = { id, from: from || "picker", pri: exPri(e).slice(), sec: (e.sec || []).slice(), fx: fx || null };
+    exEd = {
+      id,
+      from: from || "picker",
+      pri: exPri(e).slice(),
+      sec: (e.sec || []).slice(),
+      fx: fx || null,
+      fxPh: [], // vybrané fotky z online databáze (F2-05), stáhnou se po uložení cviku
+    };
     renderExEdit(e);
+  }
+  // výběr fotek z online databáze ve formuláři Nový cvik (F2-05); nic není předvybrané
+  function exEdPhotos(fx) {
+    return `<div class="stack" style="gap:6px">
+      <div class="f lbl-f">Fotky z databáze · klepnutím vyber, které uložit</div>
+      <div class="thumbs">
+        ${[0, 1]
+          .map((k) => {
+            const on = exEd.fxPh.includes(k);
+            return `<button type="button" class="th${on ? " sel" : ""}" data-act="xPh" data-v="${k}"
+                aria-pressed="${on}">
+              <img crossorigin="anonymous" src="${esc(fedbSrc(fx, k))}" alt="">
+              <span class="ck">${on ? "✓" : ""}</span>
+            </button>`;
+          })
+          .join("")}
+      </div>
+      <div class="xs muted">
+        Vybrané se po uložení cviku stáhnou a uloží k němu jako fotky bez fitka. Nevybrané se nestáhnou.
+      </div>
+    </div>`;
   }
   function renderExEdit(e) {
     const v = (k) => {
@@ -5556,7 +6435,7 @@
           : `<button class="btn sm" data-act="fedbOpen" data-v="form">
               Předvyplnit z online databáze
             </button>`
-    }
+    }${fx && !exEd.id && !fx.ni ? exEdPhotos(fx) : ""}
       <label class="f">
         Název (anglicky, jako v Hevy)
         <input class="inp" id="x-name" value="${esc(name)}">
@@ -5668,7 +6547,8 @@
      Data jsou v js/fedb.js (FEDB, vytváří tools/fedb/build.py). Načtou se až při prvním
      hledání: poprvé je potřeba internet, pak soubor drží service worker v cache.
      Vybraný cvik předvyplní formulář Nový cvik a uloží se jako vlastní cvik se značkou
-     src:"fedb:<id>". Fotky se jen ukazují ve výsledcích (online), nic se neukládá. */
+     src:"fedb:<id>". Fotky se ve výsledcích jen ukazují (online); uložit k cviku jdou jen ty, které
+     uživatel vybere (formulář Nový cvik, stránka cviku → Z online databáze, sekce „FOTKY U CVIKU“). */
   let fs = null,
     fedbP = null;
   function fedbLoad() {
@@ -5710,8 +6590,8 @@
   }
   // hledá se v anglickém i českém názvu, bez diakritiky, slova v libovolném pořadí;
   // konce slov se useknou, aby „lavice“ našla „lavici“ a „rows“ i „row“
-  function fedbRows() {
-    const words = fold(fs.q)
+  function fedbRows(q) {
+    const words = fold(q === undefined ? fs.q : q)
       .split(/[^a-z0-9]+/)
       .filter(Boolean)
       .map((w) =>
@@ -6930,6 +7810,7 @@
         refreshPickList();
         break;
       case "exInfo":
+        galReset();
         sheetExInfo(v);
         break;
       case "pickDone": {
@@ -7080,6 +7961,28 @@
         }
         items[id] = o;
         putEx(items);
+        if (!v && exEd.fx && exEd.fxPh.length && S.photosOn) {
+          // F2-05: vybrané fotky z online databáze se stáhnou až teď, k uloženému cviku
+          photosFromFedb(
+            id,
+            exEd.fx,
+            exEd.fxPh.slice().sort((a, b) => a - b),
+            null,
+            false,
+          )
+            .then(() => {
+              toast("Cvik uložen i s fotkami");
+              scheduleRender();
+            })
+            .catch((e) => {
+              toast(
+                e && e.message === "img"
+                  ? "Cvik je uložený, fotky se nepodařilo stáhnout. Přidáš je na stránce cviku."
+                  : photoErr(e),
+              );
+              scheduleRender();
+            });
+        }
         if (exEd.from === "detail") {
           closeSheet();
           toast("Cvik uložen");
@@ -7153,6 +8056,111 @@
         toast(was ? "Cvik je znovu ve výběru" : "Cvik skrytý z výběru");
         break;
       }
+      // fotky u cviku (F2-05)
+      case "xPh": {
+        const k = +v;
+        const sel = exEd.fxPh;
+        if (sel.includes(k)) {
+          sel.splice(sel.indexOf(k), 1);
+        } else {
+          sel.push(k);
+        }
+        renderExEdit(S.exLib[exEd.id] || {});
+        break;
+      }
+      case "phView":
+        openViewer(v, t.closest("#sheetRoot") ? "info" : "exd", t.dataset.ex);
+        break;
+      case "phAddGym":
+        if (phAdd) {
+          phAdd.gym = v || null;
+          renderPhAdd(true);
+        }
+        break;
+      case "phAddFirst":
+        if (phAdd) {
+          phAdd.first = t.checked;
+        }
+        break;
+      case "phAddSave":
+        phAddSave();
+        break;
+      case "pvBack":
+      case "fpBack":
+        navBack();
+        break;
+      case "pvGym":
+        if (pv) {
+          pv.gymOpen = !pv.gymOpen;
+          pvChrome();
+        }
+        break;
+      case "pvSetGym":
+        pvUpdate({ gymId: v || null });
+        break;
+      case "pvFirst":
+        pvUpdate({ first: t.checked });
+        break;
+      case "pvDel":
+        pvDelAsk();
+        break;
+      case "pvDelNo":
+        renderViewer();
+        break;
+      case "pvDelOk":
+        pvDelOk();
+        break;
+      case "phFedb":
+        fedbPhotos(v);
+        break;
+      case "fpRetry":
+        renderFp(true);
+        break;
+      case "fpPick": {
+        const x = typeof FEDB !== "undefined" && FEDB.find((o) => o.id === v);
+        if (fp && x) {
+          fp.x = x;
+          fp.sel = [];
+          renderFp();
+        }
+        break;
+      }
+      case "fpSel": {
+        const k = +v;
+        if (!fp) break;
+        if (fp.sel.includes(k)) {
+          fp.sel.splice(fp.sel.indexOf(k), 1);
+        } else {
+          fp.sel.push(k);
+        }
+        renderFp(true);
+        break;
+      }
+      case "fpGym":
+        if (fp) {
+          fp.gym = v || null;
+          renderFp(true);
+        }
+        break;
+      case "fpFirst":
+        if (fp) {
+          fp.first = t.checked;
+        }
+        break;
+      case "fpSearch":
+        if (fp) {
+          fp.search = true;
+          fp.x = null;
+          fp.sel = [];
+          renderFp();
+        }
+        break;
+      case "fpSave":
+        fpSave();
+        break;
+      case "bkPhotos":
+        lsSet("bkPhotos", t.checked);
+        break;
       case "xMus": {
         const k = v;
         const P = exEd.pri,
@@ -7900,6 +8908,11 @@
       refreshFs();
       return;
     }
+    if (f === "fpQ" && fp) {
+      fp.q = t.value;
+      refreshFp();
+      return;
+    }
   });
   document.addEventListener("change", (ev) => {
     const t = ev.target;
@@ -7923,6 +8936,10 @@
     }
     if (t.id === "impFile") {
       readImport(t);
+      return;
+    }
+    if (t.id === "phCamIn" || t.id === "phPickIn") {
+      photoFiles(t);
       return;
     }
     if (t.id === "x-url") {
@@ -7968,7 +8985,7 @@
 
   /* ---------- pravidla zabezpečení (F0-08) ----------
      Content-Security-Policy v index.html: kód a data jen z vlastních souborů, obrázky navíc
-     z raw.githubusercontent.com. Kód zapsaný přímo v HTML (onclick=, onerror= …) prohlížeč
+     z raw.githubusercontent.com a blob: (fotky u cviků z IndexedDB, F2-05). Kód zapsaný přímo v HTML (onclick=, onerror= …) prohlížeč
      nespustí, proto se události řeší tady posluchači. */
 
   // náhled fotky z free-exercise-db, který se nenačetl (offline, chybí), se schová
@@ -7976,7 +8993,7 @@
     "error",
     (ev) => {
       const t = ev.target;
-      if (t && t.tagName === "IMG" && t.classList.contains("fsimg")) {
+      if (t && t.tagName === "IMG" && (t.classList.contains("fsimg") || t.closest(".thumbs"))) {
         t.style.visibility = "hidden";
       }
     },
@@ -8174,8 +9191,9 @@
         Po 7 dnech bez zálohy ukáže úvodní obrazovka pruh s připomínkou.
      2) Body obnovy uvnitř appky (IndexedDB, úložiště "points"): automaticky jednou za 7 dní,
         vždy před obnovou ze zálohy a ručně. Drží se posledních BK_MAX_POINTS.
-     Formát souboru: version 2 = version 1 + pole "photos" (zatím prázdné, pro F2-05).
-     Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše". */
+     Formát souboru: version 2 = version 1 + pole "photos" (fotky u cviků F2-05, jen v souboru
+     s přepínačem „Zálohovat i fotky“; body obnovy mají photos prázdné, includes.photos = false).
+     Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše" (fotky jen přidá). */
   const BK_VERSION = 2,
     BK_REMIND_DAYS = 14,
     BK_AUTO_DAYS = 7,
@@ -8194,7 +9212,7 @@
     return n <= 0 ? "dnes" : n === 1 ? "včera" : "před " + n + " " + plural(n, "dnem", "dny", "dny");
   };
 
-  // celá záloha jako objekt (formát v2); stejný obsah má i bod obnovy
+  // celá záloha jako objekt (formát v2) bez fotek; stejný obsah má i bod obnovy
   function snapshotAll() {
     return {
       app: "workout-denik",
@@ -8207,7 +9225,7 @@
       templates: S.templates,
       months: S.months,
       body: S.body,
-      photos: {}, // F2-05: {photoId:{exId,gymId,mime,data(base64)}} — zatím prázdné
+      photos: {}, // F2-05: fotky doplní doExport (photosExport), formát viz sekce „FOTKY U CVIKU“
     };
   }
   // čas poslední zálohy do souboru (z databáze nebo z Local, novější z nich), jinak null
@@ -8254,6 +9272,15 @@
       Záloha je jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo
       telefon, třeba na Google Disk.
     </div>`;
+    const ps = photoStats();
+    if (ps.n) {
+      h += `<label class="switch">
+        <input type="checkbox" data-act="bkPhotos" ${lsGet("bkPhotos", true) ? "checked" : ""}>
+        <span><b>Zálohovat i fotky</b><br><span class="xs muted">Fotky u cviků: ${fmtInt(ps.n)}
+            ${plural(ps.n, "fotka", "fotky", "fotek")} · ${fmtSize(ps.size)}, záloha s nimi bude asi o
+            ${fmtSize((ps.size * 4) / 3)} větší. Fotky ochrání jen záloha s fotkami.</span></span>
+      </label>`;
+    }
     h += `<div class="row wrap-r">
       <button class="btn primary grow" data-act="export">Stáhnout zálohu</button>
       <label class="btn grow" for="impFile">Obnovit ze souboru</label>
@@ -8282,7 +9309,7 @@
         `<div class="small muted" style="margin-bottom:6px">
         Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy. Chrání před
         chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. Drží se posledních ` +
-        `${BK_MAX_POINTS}.
+        `${BK_MAX_POINTS}.${ps.n ? " Fotky u cviků v bodech obnovy nejsou (zabraly by moc místa)." : ""}
       </div>`;
       const pts = S.bk.points || [];
       if (!pts.length) {
@@ -8309,12 +9336,24 @@
 
   /* stažení souboru */
   async function doExport() {
-    const data = JSON.stringify(snapshotAll());
+    const o = snapshotAll();
     const name = FILE_P + "-" + toDateInput(Date.now()) + ".json";
     if (!downloads) {
       toast("Stahování tady není dostupné.");
       return;
     }
+    if (lsGet("bkPhotos", true) && photoStats().n) {
+      // F2-05: fotky jako base64 (soubor naroste asi o třetinu víc, než fotky zabírají)
+      toast("Připravuji zálohu s fotkami…");
+      try {
+        o.photos = await photosExport();
+        o.includes.photos = true;
+      } catch (e) {
+        toast("Fotky se nepodařilo přidat do zálohy.");
+        return;
+      }
+    }
+    const data = JSON.stringify(o);
     try {
       await downloads.save({ filename: name, data });
       markBackup(Date.now());
@@ -8383,7 +9422,7 @@
       templates: obj(o.templates),
       months,
       body: obj(o.body),
-      photos: obj(o.photos),
+      photos: photosClean(obj(o.photos)),
     };
   }
   let importData = null;
@@ -8426,6 +9465,13 @@
       ${esc(label)}${o.exported ? ` z <b>${esc(fmtDate(Date.parse(o.exported)))}</b>` : ""}: ` +
       `${fmtInt(nb)} ${plural(nb, "trénink", "tréninky", "tréninků")}. V appce je teď ${fmtInt(nc)}.
     </p>`;
+    const np = Object.keys(o.photos).length;
+    if (np) {
+      b += `<p class="small muted" style="margin:0">
+        Záloha obsahuje i ${fmtInt(np)} ${plural(np, "fotku", "fotky", "fotek")} u cviků. Sloučit doplní
+        chybějící, Nahradit vše je přidá. Fotky, které v appce máš, se nesmažou.
+      </p>`;
+    }
     b += `<div class="card stack" style="gap:6px">
       <b>Sloučit</b>
       <div class="small muted">
@@ -8436,7 +9482,9 @@
     </div>`;
     b += `<div class="card stack" style="gap:6px">
       <b>Nahradit vše</b>
-      <div class="small muted">Současná data se smažou a nahradí obsahem zálohy.</div>
+      <div class="small muted">
+        Současná data se smažou a nahradí obsahem zálohy. Fotky u cviků zůstanou.
+      </div>
       <button class="btn danger" data-act="importGo" data-v="replace">Nahradit vše</button>
     </div>`;
     if (pointsApi) {
@@ -8481,13 +9529,24 @@
         return;
       }
     }
+    // F2-05: fotky ze zálohy (do IndexedDB mimo Store); žádná se nesmaže
+    let np = 0;
+    if (S.photosOn && Object.keys(o.photos).length) {
+      toast("Obnovuji fotky…");
+      try {
+        np = await photosImport(o.photos, mode === "replace");
+      } catch (e) {
+        toast("Některé fotky se nepodařilo obnovit (" + photoErr(e) + ")");
+      }
+    }
     if (mode === "replace") {
       applyReplace(o);
       importData = null;
       closeSheet();
-      toast("Data nahrazena zálohou");
+      toast("Data nahrazena zálohou" + (np ? ", fotky: " + np : ""));
     } else {
       const r = applyMerge(o);
+      r.other += np;
       importData = null;
       closeSheet();
       toast(
@@ -8838,7 +9897,8 @@
       toast("Kopíruji data…");
       src = await idbOpenExisting(MAIN_DB);
       const docs = await idbAll(src, "docs"),
-        pts = await idbAll(src, "points");
+        pts = await idbAll(src, "points"),
+        phs = await idbAll(src, "photos"); // fotky u cviků (F2-05); starší databáze je nemá = []
       src.close();
       src = null;
       // zastavit ukládání této verze, ať kopii nic nepřepíše; po kopii se appka znovu načte
@@ -8848,11 +9908,16 @@
       stopped = true;
       const db = await Idb.open();
       await new Promise((res, rej) => {
-        const tx = db.transaction(["docs", "points"], "readwrite"),
+        const tx = db.transaction(["docs", "points", "photos"], "readwrite"),
           d = tx.objectStore("docs"),
-          p = tx.objectStore("points");
+          p = tx.objectStore("points"),
+          ph = tx.objectStore("photos");
         d.clear();
         p.clear();
+        ph.clear();
+        for (const [k, v] of phs) {
+          ph.put(v, k);
+        }
         for (const [k, v] of docs) {
           d.put(v, k);
         }
@@ -8928,6 +9993,7 @@
     });
     if (ok) {
       pointsApi = LocalPoints;
+      photosLoad();
       scheduleRender();
       autoPoint();
       migrateEx();

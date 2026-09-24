@@ -87,7 +87,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   a service worker jen z vlastních souborů, obrázky navíc z `https://raw.githubusercontent.com`, styly i přímo
   u prvků (`style="…"`). Nikdy kód přímo v HTML (`onclick=`, `onerror=`, `javascript:`…), jen posluchače
   (sekce „pravidla zabezpečení" v `js/app.js`); úloha „kontrola" v GitHub Actions takový PR odmítne.
-  Nový vnější zdroj nebo `blob:`/`data:` obrázky (F2-05, F4-08) přidat do CSP v `index.html`. Co pravidla
+  Obrázky `blob:` jsou povolené (fotky u cviků, F2-05). Nový vnější zdroj nebo `data:` obrázky (F4-08)
+  přidat do CSP v `index.html`. Co pravidla
   zablokují, ukáže testovací verze hláškou (`securitypolicyviolation`).
 - Odkaz u cviku (F0-09, sekce „odkaz u cviku" v `js/app.js`): jen `http(s)` s doménou, `URL_MAX` znaků.
   `urlNormalize` (doplní `https://`), `urlProblem` (text hlášky, `""` = v pořádku), `urlSafe` (otevírat jen tohle),
@@ -125,7 +126,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
     `config/templates`, `config/backup` (datum zálohy,
     seznam bodů obnovy), `workouts/RRRR-MM` (tréninky po měsících),
     `body/all` (měření), `state/active` (rozdělaný trénink),
-  - úložiště `points` – body obnovy (celá záloha jako JSON text).
+  - úložiště `points` – body obnovy (celá záloha jako JSON text),
+  - úložiště `photos` – fotky u cviků (F2-05, databáze verze 2; `Idb.VER`), mimo `Store`.
 - Při startu se volá `navigator.storage.persist()`, aby Chrome data nemazal.
 - Verze (F0-04): `BUILD` (z `js/verze.js`), `TEST_PR` (číslo PR z adresy, jinak
   `""`). Nastavení → O aplikaci → Verze aplikace: `versionSettings`, kontrola aktualizace
@@ -223,6 +225,17 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
+- Fotky u cviku (F2-05, sekce „FOTKY U CVIKU“): záznamy v IndexedDB `photos` zapisuje jen `photoSave` / `photoDel` /
+  `photoUpdate` (ne přes `put`, fronta v `localStorage` by je neunesla). `S.photos` = popisy bez obrázku
+  (`{id, exId, gymId, at, first, w, h, mime, size, src}`), obrázky `phBlob`, zobrazení přes `photoUrl` (blob:).
+  Fotka se zmenší `photoShrink` (`PH_MAX` 1280 px, JPEG). Galerie `photoGallery` (postava = první snímek, pak
+  `photosOf`: `first` → fitko `photoGym` → bez fitka → jiná fitka), pozice `galPos` (`galRestore` po vykreslení,
+  `galReset` při otevření stránky cviku). Celá obrazovka `openViewer` / `pv` (panel v `sheetRoot`, Zpět přes `sheetNav`) má stejné snímky jako galerie
+  (`pvIds`: `PV_FIG` = postava, pak fotky), tah dolů zavře (`pvDrag`, `PV_CLOSE_DY`).
+  „První“ může mít jen jedna fotka cviku (`photoUpdate`). Z online databáze `fedbPhotos` / `fp` (shoda `fedbMatch`,
+  jinak hledání), ve formuláři Nový cvik `exEd.fxPh`; stahuje se přes `<img crossorigin>` a canvas (`fedbImg`), ne
+  fetch. Záloha: fotky jen do souboru (`photosExport`, přepínač `Local` `bkPhotos`), body obnovy je nemají, obnova
+  `photosImport` fotky nikdy nemaže (Nahradit vše přepíše jen stejné id). `copyFromMain` kopíruje i `photos`.
 
 ## Testování
 
