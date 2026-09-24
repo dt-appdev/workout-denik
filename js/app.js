@@ -79,6 +79,25 @@
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
     up: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
     down: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+    next: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
+    // skupiny Nastavení (F3-09)
+    gym: `<svg viewBox="0 0 24 24">
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/>
+      <circle cx="12" cy="10" r="2.3"/>
+    </svg>`,
+    medal: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="15" r="5"/>
+      <path d="M8.5 3l2.2 7.3M15.5 3l-2.2 7.3"/>
+    </svg>`,
+    theme: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8"/>
+      <path class="fill" d="M12 4a8 8 0 010 16z"/>
+    </svg>`,
+    backup: '<svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5M4 17v3h16v-3"/></svg>',
+    info: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 11v6M12 7.5v.5"/>
+    </svg>`,
   };
 
   /* ---------- svalová mapa ----------
@@ -813,6 +832,7 @@
     active: Store.loadActive(),
     editDraft: null,
     route: lsGet("route", "train"),
+    setPage: lsGet("setPage", ""), // otevřená podstránka Nastavení, "" = rozcestník (F3-09)
     nav: [], // kam se vrátit ze stránky cviku / úpravy (F0-06), viz navBack
     exDetail: null,
     exPart: "info",
@@ -1846,7 +1866,7 @@
     }
   });
 
-  /* Nastavení → Zadávání čísel v tréninku */
+  /* Nastavení → Trénink → Zadávání čísel v tréninku */
   function stepperSettings() {
     return `<section class="sec">
       <div class="sec-h"><h2>Zadávání čísel v tréninku</h2></div>
@@ -2478,9 +2498,10 @@
       x.play(audioCtx.currentTime + 0.05, gold);
     } catch (e) {}
   }
+  /* Nastavení → Rekordy */
   function recSettings() {
     const c = S.cfg;
-    let h = '<section class="sec"><div class="sec-h"><h2>Rekordy</h2></div><div class="card stack">';
+    let h = '<section class="sec"><div class="sec-h"><h2>Oslava rekordu</h2></div><div class="card stack">';
     h += `<div class="xs muted">
       Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování,
       výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.
@@ -5051,16 +5072,70 @@
     );
   }
 
-  /* ---------- NASTAVENÍ ---------- */
+  /* ---------- NASTAVENÍ (F3-09) ----------
+     Rozcestník se skupinami, každá skupina na vlastní podstránce (S.setPage, "" = rozcestník).
+     Otevřená podstránka se pamatuje v Local "setPage" (vrátí se po aktualizaci nebo zavření appky),
+     klepnutí na záložku Nastavení vrátí rozcestník (goTab). Zpět z podstránky = rozcestník
+     (navBack, navDepth). Nová volba patří do některé skupiny, ne na rozcestník. */
+  const SET_PAGES = [
+    { id: "gyms", name: "Fitka", icon: "gym", body: () => gymSettings() },
+    {
+      id: "train",
+      name: "Trénink",
+      icon: "train",
+      body: () => stepperSettings() + restSettings() + bodyWeightSettings(),
+    },
+    { id: "rec", name: "Rekordy", icon: "medal", body: () => recSettings() },
+    { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
+    { id: "data", name: "Data a záloha", icon: "backup", body: () => backupSettings() },
+    { id: "about", name: "O aplikaci", icon: "info", body: () => versionSettings() + aboutSettings() },
+  ];
+  // otevře podstránku Nastavení ("" = rozcestník)
+  function setPageOpen(id) {
+    S.setPage = id;
+    lsSet("setPage", id);
+    go("set");
+  }
   function vSettings() {
-    let h = topbar("Nastavení", "Fitka, vzhled, záloha");
+    const page = SET_PAGES.find((p) => p.id === S.setPage);
+    if (!page) {
+      S.setPage = ""; // neznámá podstránka (např. z jiné verze appky) = rozcestník
+      return vSettingsHub();
+    }
+    const back = `<button class="iconbtn" data-act="setBack" aria-label="Zpět">${IC.back}</button>`;
+    return topbar(page.name, "Nastavení", back) + page.body();
+  }
+  // rozcestník: jen názvy skupin, u zálohy upozornění, když je čas zálohovat (jako na úvodní obrazovce)
+  function vSettingsHub() {
+    let h = topbar("Nastavení");
+    h += '<section class="sec"><div class="card setlist">';
+    for (const page of SET_PAGES) {
+      const warn = page.id === "data" && backupDue();
+      let note = "";
+      if (warn) {
+        const last = lastBackupAt();
+        note = last ? "Poslední záloha " + agoLabel(last) : "Zatím žádná záloha";
+      }
+      h += `<button class="setrow${warn ? " warn" : ""}" data-act="setOpen" data-v="${page.id}">
+        <span class="setrow-ic">${IC[page.icon]}</span>
+        <span class="grow">
+          <b>${esc(page.name)}</b>${note ? `<span class="xs">${esc(note)}</span>` : ""}
+        </span>
+        <span class="setrow-go">${IC.next}</span>
+      </button>`;
+    }
+    h += "</div></section>";
+    return h;
+  }
+  /* Nastavení → Fitka */
+  function gymSettings() {
     const counts = {};
     for (const w of derive().all) {
       counts[w.gymId] = (counts[w.gymId] || 0) + 1;
     }
-    h += `<section class="sec">
+    let h = `<section class="sec">
         <div class="sec-h">
-          <h2>Fitka</h2>
+          <h2>Moje fitka</h2>
           <button class="btn sm" data-act="addGym">+ Přidat</button>
         </div>
         <div class="stack" style="gap:6px">`;
@@ -5091,11 +5166,14 @@
       </div>`;
     });
     h += "</div></section>";
-    h += `<section class="sec">
-      <div class="sec-h"><h2>Vzhled</h2></div>
-      <div class="card row">
-        <span class="grow">Motiv</span>
-        <div class="seg">
+    return h;
+  }
+  /* Nastavení → Vzhled */
+  function themeSettings() {
+    return `<section class="sec">
+      <div class="sec-h"><h2>Motiv</h2></div>
+      <div class="card">
+        <div class="seg seg-wide">
           ${[
             ["dark", "Tmavý"],
             ["light", "Světlý"],
@@ -5110,7 +5188,10 @@
         </div>
       </div>
     </section>`;
-    h += `<section class="sec">
+  }
+  /* Nastavení → Trénink → Tělesná hmotnost */
+  function bodyWeightSettings() {
+    return `<section class="sec">
       <div class="sec-h"><h2>Tělesná hmotnost</h2></div>
       <div class="card stack">
         <div class="row">
@@ -5131,22 +5212,20 @@
         </div>
       </div>
     </section>`;
-    h += stepperSettings();
-    h += restSettings();
-    h += recSettings();
-    h += versionSettings();
-    h +=
+  }
+  /* Nastavení → O aplikaci → Zdroje */
+  function aboutSettings() {
+    return (
       `<section class="sec">
-        <div class="sec-h"><h2>O aplikaci</h2></div>
+        <div class="sec-h"><h2>Zdroje</h2></div>
         <div class="card small muted">
           Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí ` +
       `<a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank"
               rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na
           hevyapp.com.
         </div>
-      </section>`;
-    h += backupSettings();
-    return h;
+      </section>`
+    );
   }
   function sheetGym(id) {
     const g = id ? S.cfg.gyms.find((x) => x.id === id) : { name: "" };
@@ -5830,7 +5909,7 @@
     );
   }
 
-  /* Nastavení → Odpočinek mezi sériemi */
+  /* Nastavení → Trénink → Odpočinek mezi sériemi */
   function restSettings() {
     const c = S.cfg,
       ns = notifState();
@@ -6008,7 +6087,7 @@
     navigator.serviceWorker.ready.then((r) => r.active && r.active.postMessage(msg)).catch(() => {});
   }
   /* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo,
-     kdy byla appka skrytá. Jen pro vývoj: vede se a ukazuje (Nastavení → Verze aplikace) jen v testovací
+     kdy byla appka skrytá. Jen pro vývoj: vede se a ukazuje (Nastavení → O aplikaci) jen v testovací
      verzi PR a lokálně, ve vydané ne. */
   const DEV = !!TEST_PR || BUILD.kanal === "lokal";
   const REST_LOG = "wdlog-" + (TEST_PR ? "pr" + TEST_PR : "main");
@@ -6370,7 +6449,7 @@
       .catch(() => {});
   }
 
-  /* Nastavení → vypínače pod Odpočinkem */
+  /* Nastavení → Trénink → vypínače pod Odpočinkem */
   function wakeSettings() {
     const c = S.cfg;
     let h = `<label class="switch">
@@ -7453,6 +7532,12 @@
       case "exBack":
         navBack();
         break;
+      case "setOpen":
+        setPageOpen(v);
+        break;
+      case "setBack":
+        navBack();
+        break;
       case "exPart":
         S.exPart = v;
         render.keepScroll = false;
@@ -7927,11 +8012,15 @@
   function navDepth() {
     const r = S.route,
       top = S.nav[S.nav.length - 1];
-    return (
-      (celEl ? 1 : 0) +
-      (sheetNav ? sheetNav.lv : 0) +
-      (r === "exd" || r === "edit" ? 1 + (top ? top.d : 1) : r === "train" ? 0 : 1)
-    );
+    let page = 1; // jiná záložka: jeden krok na Trénink
+    if (r === "exd" || r === "edit") {
+      page = 1 + (top ? top.d : 1);
+    } else if (r === "train") {
+      page = 0;
+    } else if (r === "set" && S.setPage) {
+      page = 2; // podstránka Nastavení → rozcestník → Trénink
+    }
+    return (celEl ? 1 : 0) + (sheetNav ? sheetNav.lv : 0) + page;
   }
   // místo, kam se vrátit ze stránky cviku nebo z úpravy (i s otevřeným panelem a posunem stránky)
   function navFrame() {
@@ -7939,7 +8028,8 @@
   }
   // úprava tréninku/šablony má neuložené změny
   const edChanged = () => !!S.editDraft && JSON.stringify(S.editDraft) !== S.editOrig;
-  // přepnutí záložky dole (zavře stránku cviku i úpravu; Historie vždy na aktuálním měsíci)
+  // přepnutí záložky dole (zavře stránku cviku i úpravu; Historie vždy na aktuálním měsíci,
+  // Nastavení na rozcestníku)
   function goTab(v) {
     S.exDetail = null;
     S.editDraft = null;
@@ -7949,6 +8039,10 @@
     if (v === "ex" && S.route !== "ex" && S.route !== "exd") {
       S.exlQ = "";
       S.exlLimit = 0;
+    }
+    if (v === "set") {
+      setPageOpen("");
+      return;
     }
     go(v);
   }
@@ -7960,7 +8054,8 @@
     S.editOrig = JSON.stringify(S.editDraft);
     go("edit");
   }
-  /* jeden krok zpět: medaile, panel, stránka cviku / úprava (tam, odkud se přišlo), jiná záložka → Trénink;
+  /* jeden krok zpět: medaile, panel, stránka cviku / úprava (tam, odkud se přišlo), podstránka Nastavení →
+     rozcestník, jiná záložka → Trénink;
      force = zahodit neuložené změny bez ptaní; false = už není kam (hlavní obrazovka Tréninku) */
   function navBack(force) {
     if (celEl) {
@@ -7999,6 +8094,10 @@
       if (f.re) {
         f.re();
       }
+      return true;
+    }
+    if (r === "set" && S.setPage) {
+      setPageOpen("");
       return true;
     }
     if (r !== "train") {
@@ -8078,7 +8177,7 @@
      Formát souboru: version 2 = version 1 + pole "photos" (zatím prázdné, pro F2-05).
      Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše". */
   const BK_VERSION = 2,
-    BK_REMIND_DAYS = 7,
+    BK_REMIND_DAYS = 14,
     BK_AUTO_DAYS = 7,
     BK_MAX_POINTS = 8;
   const BK_REASON = {
@@ -8124,23 +8223,30 @@
     put("config/backup", Object.assign({}, S.bk, { last: ts }));
   }
 
-  /* připomínka na úvodní obrazovce */
-  function backupBanner() {
-    if (!countW(S.months)) return "";
+  // je čas zálohovat: máš tréninky a poslední záloha do souboru je starší než BK_REMIND_DAYS (nebo žádná)
+  function backupDue() {
+    if (!countW(S.months)) return false;
     const last = lastBackupAt();
-    if (last && daysAgo(last) < BK_REMIND_DAYS) return "";
+    return !last || daysAgo(last) >= BK_REMIND_DAYS;
+  }
+  /* připomínka na úvodní obrazovce (a oranžový řádek Data a záloha v Nastavení);
+     klepnutí na pruh otevře Nastavení → Data a záloha, tlačítko Zálohovat rovnou stáhne zálohu */
+  function backupBanner() {
+    if (!backupDue()) return "";
+    const last = lastBackupAt();
     const txt = last
       ? "Poslední záloha do souboru " + agoLabel(last) + "."
       : "Zatím nemáš žádnou zálohu v souboru.";
     return (
-      `<div class="banner act"><span class="grow">${txt}</span>` +
+      `<div class="banner act" data-act="setOpen" data-v="data" role="button">` +
+      `<span class="grow">${txt}</span>` +
       `<button class="btn" data-act="export">
         Zálohovat
       </button></div>`
     );
   }
 
-  /* sekce v Nastavení */
+  /* Nastavení → Data a záloha */
   function backupSettings() {
     const last = lastBackupAt();
     let h = '<section class="sec"><div class="sec-h"><h2>Záloha</h2></div><div class="card stack">';
@@ -8245,7 +8351,7 @@
       <li>Vyber <b>Disk</b> → Uložit (nebo Gmail a pošli si ho).</li>
     </ol>`;
     b += `<p class="xs muted" style="margin:0">
-      Obnova: Nastavení → Záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).
+      Obnova: Nastavení → Data a záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).
     </p>`;
     const foot = force
       ? '<button class="btn primary grow" data-act="closeSheet">Rozumím</button>'
@@ -8571,6 +8677,7 @@
         ${esc(BUILD.nazev)}
       </span><a href="${esc(MAIN_URL)}">Vydaná verze ›</a></div>`;
   }
+  /* Nastavení → O aplikaci → Verze aplikace */
   function versionSettings() {
     const t = Date.parse(BUILD.cas);
     let h = `<section class="sec">
