@@ -5021,7 +5021,8 @@
     const cur = Math.min(galPos[exId] || 0, list.length);
     return `<div class="gal">
       <div class="gal-track" data-gal="${esc(exId)}">
-        <div class="gal-s fig">${exFigures(ex)}</div>
+        <button type="button" class="gal-s fig" data-act="phView" data-v="${PV_FIG}" data-ex="${esc(exId)}"
+            aria-label="Postava přes celou obrazovku">${exFigures(ex)}</button>
         ${list
           .map(
             (p, i) =>
@@ -5258,21 +5259,28 @@
     scheduleRender();
   }
 
-  /* fotka přes celou obrazovku: posun prstem, fitko, „první“, smazání; Zpět ji zavře */
-  function openViewer(id, from) {
+  /* fotka přes celou obrazovku: stejné snímky jako galerie (postava, pak fotky), posun prstem, fitko,
+     „první“, smazání; Zpět nebo tah dolů ji zavře. pv.id = id fotky, nebo PV_FIG = postava */
+  const PV_FIG = "fig",
+    PV_CLOSE_DY = 110; // o kolik px táhnout dolů, aby se zavřela
+  function openViewer(id, from, exId) {
     const p = S.photos[id];
-    if (!p) return;
-    pv = { exId: p.exId, id, from, gymOpen: false };
+    exId = p ? p.exId : exId;
+    if (!exId || (!p && id !== PV_FIG)) return;
+    pv = { exId, id, from, gymOpen: false };
     renderViewer();
   }
+  // snímky přes celou obrazovku v pořadí galerie: postava, pak id fotek
+  const pvIds = (exId) => [PV_FIG].concat(photosOf(exId).map((p) => p.id));
   function renderViewer() {
-    const list = photosOf(pv.exId);
+    const list = photosOf(pv.exId),
+      ids = pvIds(pv.exId);
     if (!list.length) {
       pvClose();
       return;
     }
-    if (!list.some((p) => p.id === pv.id)) {
-      pv.id = list[0].id;
+    if (!ids.includes(pv.id)) {
+      pv.id = ids[1];
     }
     kkEnd();
     const root = document.getElementById("sheetRoot");
@@ -5283,6 +5291,7 @@
         <span class="pv-name">${esc(exOf(pv.exId).name)}</span>
       </div>
       <div class="gal-track pv-track" data-pv="1">
+        <div class="pv-s pv-fig" data-id="${PV_FIG}">${exFigures(exOf(pv.exId))}</div>
         ${list
           .map((p) => `<div class="pv-s" data-id="${esc(p.id)}"><img src="${photoUrl(p.id)}" alt=""></div>`)
           .join("")}
@@ -5291,27 +5300,28 @@
     </div>`;
     document.body.style.overflow = "hidden";
     sheetNav = { lv: pv.from === "info" ? 3 : 1, back: pvClose, re: renderViewer };
-    galScrollTo(
-      root.querySelector(".pv-track"),
-      list.findIndex((p) => p.id === pv.id),
-    );
+    galScrollTo(root.querySelector(".pv-track"), ids.indexOf(pv.id));
     pvChrome();
   }
-  // popisky fotky přes celou obrazovku: kolikátá, tečky, fitko, smazat, první
+  /* popisky přes celou obrazovku: kolikátá fotka, tečky (stejně jako galerie), fitko, smazat, první;
+     u postavy jsou ovládací prvky jen neviditelné, aby se výška fotek při posunu neměnila */
   function pvChrome() {
     const list = photosOf(pv.exId),
+      ids = pvIds(pv.exId),
+      fig = pv.id === PV_FIG,
       i = list.findIndex((p) => p.id === pv.id),
-      p = list[i];
+      p = fig ? list[0] : list[i];
     const cnt = document.getElementById("pvCount"),
       foot = document.getElementById("pvFoot");
     if (!p || !cnt || !foot) return;
-    cnt.textContent = `Fotka ${i + 1} / ${list.length}`;
+    cnt.textContent = fig ? "Postava" : `Fotka ${i + 1} / ${list.length}`;
     const gymTxt = !p.gymId ? "bez fitka" : gymExists(p.gymId) ? gymName(p.gymId) : "smazané fitko",
       gymSw =
         p.gymId && gymExists(p.gymId)
           ? `<span class="sw" style="background:${gymColor(p.gymId)}"></span>`
           : "";
-    foot.innerHTML = `${galDots(list.length, i)}
+    foot.innerHTML = `${galDots(ids.length, ids.indexOf(pv.id))}
+      <div class="stack${fig ? " pv-off" : ""}" style="gap:12px"${fig ? ' aria-hidden="true"' : ""}>
       <div class="row" style="gap:8px">
         <button class="btn grow pv-gym" data-act="pvGym" aria-expanded="${pv.gymOpen}">
           ${gymSw}
@@ -5324,7 +5334,8 @@
         <input type="checkbox" data-act="pvFirst" ${p.first ? "checked" : ""}>
         <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, s předností před
             ostatními fotkami cviku.</span></span>
-      </label>`;
+      </label>
+      </div>`;
     restoreChipScroll(foot);
   }
   // zavřít fotku: zpět na stránku cviku (na stejnou fotku) nebo do info o cviku
@@ -5335,8 +5346,8 @@
       closeSheet();
       return;
     }
-    const i = photosOf(v.exId).findIndex((p) => p.id === v.id);
-    galPos[v.exId] = i >= 0 ? i + 1 : 0;
+    const i = pvIds(v.exId).indexOf(v.id);
+    galPos[v.exId] = Math.max(0, i); // galerie zůstane na stejném snímku (i na postavě)
     if (v.from === "info") {
       sheetExInfo(v.exId);
     } else {
@@ -5345,6 +5356,7 @@
     }
   }
   function pvDelAsk() {
+    if (pv.id === PV_FIG) return;
     openSheet(
       "Smazat fotku?",
       `<p style="margin:0">Fotka se smaže z telefonu. Smazání nejde vrátit (fotky nejsou v bodech
@@ -5355,11 +5367,15 @@
       { lv: (pv.from === "info" ? 3 : 1) + 1, back: renderViewer, re: renderViewer },
     );
   }
+  // smaže zobrazenou fotku a ukáže tu, která byla za ní (poslední → ta před ní)
   async function pvDelOk() {
-    if (!pv) return;
+    if (!pv || pv.id === PV_FIG) return;
+    const idx = pvIds(pv.exId).indexOf(pv.id);
     try {
       await photoDel(pv.id);
       toast("Fotka smazána");
+      const ids = pvIds(pv.exId);
+      pv.id = ids[Math.max(1, Math.min(idx, ids.length - 1))];
     } catch (e) {
       toast("Fotku se nepodařilo smazat.");
     }
@@ -5367,7 +5383,7 @@
   }
   // změna fotky zobrazené přes celou obrazovku (fitko, první), pak znovu vykreslit (pořadí se může změnit)
   function pvUpdate(change) {
-    if (!pv) return;
+    if (!pv || pv.id === PV_FIG) return;
     photoUpdate(pv.id, change)
       .catch((e) => toast(photoErr(e)))
       .then(() => {
@@ -5377,6 +5393,55 @@
         }
       });
   }
+
+  // tah dolů přes celou obrazovku ji zavře (jako galerie v telefonu); tah do strany = další snímek
+  let pvDrag = null;
+  document.addEventListener(
+    "touchstart",
+    (ev) => {
+      const tr = ev.target.closest && ev.target.closest(".pv-track");
+      pvDrag =
+        tr && ev.touches.length === 1
+          ? { tr, x: ev.touches[0].clientX, y: ev.touches[0].clientY, dy: 0, on: false }
+          : null;
+    },
+    { passive: true },
+  );
+  document.addEventListener(
+    "touchmove",
+    (ev) => {
+      if (!pvDrag) return;
+      const dx = ev.touches[0].clientX - pvDrag.x,
+        dy = ev.touches[0].clientY - pvDrag.y;
+      if (!pvDrag.on) {
+        if (Math.abs(dx) > 10 && Math.abs(dx) >= Math.abs(dy)) {
+          pvDrag = null; // posun do strany
+          return;
+        }
+        if (dy < 10) return;
+        pvDrag.on = true;
+        pvDrag.tr.style.transition = "none";
+      }
+      pvDrag.dy = Math.max(0, dy);
+      pvDrag.tr.style.transform = `translateY(${pvDrag.dy}px)`;
+      pvDrag.tr.style.opacity = String(Math.max(0.3, 1 - pvDrag.dy / 400));
+    },
+    { passive: true },
+  );
+  function pvDragEnd() {
+    const d = pvDrag;
+    pvDrag = null;
+    if (!d || !d.on) return;
+    if (d.dy > PV_CLOSE_DY && pv) {
+      navBack();
+      return;
+    }
+    d.tr.style.transition = "transform 0.15s, opacity 0.15s";
+    d.tr.style.transform = "";
+    d.tr.style.opacity = "";
+  }
+  document.addEventListener("touchend", pvDragEnd);
+  document.addEventListener("touchcancel", pvDragEnd);
 
   /* fotky z online databáze free-exercise-db: u cviku se shodou rovnou jeho fotky, jinak hledání;
      stáhnou se jen vybrané (přes <img> s CORS a canvas, bez fetch, v CSP stačí img-src) */
@@ -8004,7 +8069,7 @@
         break;
       }
       case "phView":
-        openViewer(v, t.closest("#sheetRoot") ? "info" : "exd");
+        openViewer(v, t.closest("#sheetRoot") ? "info" : "exd", t.dataset.ex);
         break;
       case "phAddGym":
         if (phAdd) {

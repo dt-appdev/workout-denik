@@ -1907,6 +1907,21 @@ tr.done .okb {
 .pv-track {
   flex: 1;
   min-height: 0;
+  touch-action: pan-x; /* svislý tah řeší appka (tah dolů zavře) */
+}
+.pv-fig .figs {
+  width: 100%;
+  margin: 0;
+  gap: 4%;
+}
+.pv-fig .figs figure {
+  width: 44%;
+}
+.pv-fig .figs .fig {
+  width: 100%;
+}
+.pv-off {
+  visibility: hidden;
 }
 .pv-s {
   flex: 0 0 100%;

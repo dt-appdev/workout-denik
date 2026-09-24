@@ -230,7 +230,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`{id, exId, gymId, at, first, w, h, mime, size, src}`), obrázky `phBlob`, zobrazení přes `photoUrl` (blob:).
   Fotka se zmenší `photoShrink` (`PH_MAX` 1280 px, JPEG). Galerie `photoGallery` (postava = první snímek, pak
   `photosOf`: `first` → fitko `photoGym` → bez fitka → jiná fitka), pozice `galPos` (`galRestore` po vykreslení,
-  `galReset` při otevření stránky cviku). Celá obrazovka `openViewer` / `pv` (panel v `sheetRoot`, Zpět přes `sheetNav`).
+  `galReset` při otevření stránky cviku). Celá obrazovka `openViewer` / `pv` (panel v `sheetRoot`, Zpět přes `sheetNav`) má stejné snímky jako galerie
+  (`pvIds`: `PV_FIG` = postava, pak fotky), tah dolů zavře (`pvDrag`, `PV_CLOSE_DY`).
   „První“ může mít jen jedna fotka cviku (`photoUpdate`). Z online databáze `fedbPhotos` / `fp` (shoda `fedbMatch`,
   jinak hledání), ve formuláři Nový cvik `exEd.fxPh`; stahuje se přes `<img crossorigin>` a canvas (`fedbImg`), ne
   fetch. Záloha: fotky jen do souboru (`photosExport`, přepínač `Local` `bkPhotos`), body obnovy je nemají, obnova
