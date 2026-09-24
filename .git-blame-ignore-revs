@@ -1,0 +1,8 @@
+# Commity, které jen přeformátovaly kód (F0-10). GitHub je v historii řádků (Blame) přeskočí,
+# lokálně: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# F0-10: přeformátování nástrojem (Prettier) a složené závorky
+e55a5b2e601ff78625bd504d92b5bc1fea737dba
+# F0-10: HTML šablony místo sčítání řetězců, rozložené podle struktury HTML
+77be2daf0d70a16faa3739b29773bb45ff3e2049
+# F0-10: české nadpisy sekcí, komentáře a ruční doladění dlouhých řádků
+4282fc13f4cc0f1bb21e8d0c3ef910dece7ab00b

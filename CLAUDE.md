@@ -65,14 +65,15 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `docs/plan-vyvoje.md` | Plán vývoje, otevřené otázky, log. |
 | `puvodni/workout-denik.html` | Poslední verze artefaktu (verze 9). Jen pro referenci, needitovat. |
 | `.nojekyll` | GitHub Pages servíruje soubory tak, jak jsou (bez Jekyllu). |
+| `.git-blame-ignore-revs` | Commity, které jen přeformátovaly kód (F0-10); GitHub je v historii řádků přeskočí. |
 
 ## Konvence
 
 - **Verze a cache (F0-04):** verzi určuje `js/verze.js`, který se přepíše při
   každém nasazení (commit + čas), takže se appka v telefonu aktualizuje sama.
   `VERSION` v `sw.js` ručně neměnit. Nový soubor přidej do `FILES` v `sw.js`,
-  jinak nepojede offline. Soubory `.github/`, `docs/`, `puvodni/`, `tools/` a `*.md`
-  se na web nekopírují.
+  jinak nepojede offline. Soubory `.github/`, `docs/`, `puvodni/`, `tools/`, `*.md`
+  a `.git-blame-ignore-revs` se na web nekopírují.
 - **Testovací verze PR:** běží na stejné doméně jako vydaná verze, proto má
   vlastní data (`localStorage` prefix `zd1-prN:`, IndexedDB `workout-denik-prN`,
   cache `wd-prN-…`). Data proto ukládej vždy jen přes `Local` / `Idb` / `Store`,
@@ -91,8 +92,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   - srozumitelné názvy proměnných a funkcí (ne jednopísmenné, kromě krátkých smyček),
   - krátký český komentář nad každou funkcí, která není zřejmá z názvu, a nad každou
     sekcí souboru,
-  - starší kompaktní kód (víc příkazů na řádku) se převede v úloze F0-10; do té doby
-    nový kód psát už takto a starý přeformátovat jen tam, kde se stejně mění.
+  - formát odpovídá Prettieru (`--print-width 110 --quote-props preserve`, jen při vývoji,
+    do repa se nepřidává); zlom řádku uvnitř HTML šablony jen tam, kde přidaná mezera
+    nemůže změnit vzhled (mezi atributy, vedle blokového prvku, mezi prvky flex/grid),
+    jinak šablonu rozdělit na dvě spojené přes `+` (F0-10).
 - Kliknutí se řeší delegací přes `data-act` / `data-v` (jeden velký `switch`).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
