@@ -474,13 +474,14 @@ const NUM_RULES={
 };
 // pravidlo pro pole série (kg, +kg a −kg se ukládají do s.kg)
 const setRule=f=>f==="plus"||f==="minus"?"kg":f;
-// uložené číslo jako text do políčka, nejvýš na 2 desetinná místa (starší data z Hevy mohou mít víc)
+// uložené číslo jako text do políčka: nejvýš 2 desetinná místa (starší data z Hevy mohou mít víc), čárka
 function numStr(v){
   const n=+String(v).replace(",",".");
   if(!isFinite(n))return String(v);
-  return String(Math.round(n*100)/100);
+  return String(Math.round(n*100)/100).replace(".",",");
 }
-// nechá jen povolené znaky: číslice, u desetinných čísel jednu čárku/tečku, u času nejvýš 2 dvojtečky
+// nechá jen povolené znaky: číslice, u desetinných čísel jednu čárku/tečku, u času nejvýš 2 dvojtečky;
+// čárka nebo dvojtečka na začátku dostane před sebe nulu („,5“ → „0,5“)
 function numFilter(rule,text){
   const r=NUM_RULES[rule];
   let out="";
@@ -491,15 +492,36 @@ function numFilter(rule,text){
       continue;
     }
     const isSep=ch===":"||ch===","||ch===".";
+    const zero=out===""?"0":"";
     if(r.time&&isSep&&seps<2){
-      out+=":";
+      out+=zero+":";
       seps++;
     }else if(!r.time&&r.dec>0&&ch!==":"&&isSep&&seps===0){
-      out+=ch;
+      out+=zero+ch;
       seps++;
     }
   }
   return out;
+}
+// vejde se text do políčka? Nejvýš tolik číslic před čárkou, kolik má hranice (999 → 3), a dec desetinných míst;
+// u času nejvýš 5 číslic na začátku a 2 za každou dvojtečkou
+function numFits(rule,text){
+  const r=NUM_RULES[rule];
+  if(r.time){
+    const parts=text.split(":");
+    return parts[0].length<=5&&parts.slice(1).every(p=>p.length<=2);
+  }
+  const [whole,decimals=""]=text.split(/[.,]/);
+  return whole.length<=String(r.max).length&&decimals.length<=r.dec;
+}
+// jednotná podoba po opuštění políčka a při ✓: čas „85“ → „1:25“, „1:5“ → „1:05“; číslo „5,“ → „5“,
+// „082“ → „82“, „82.5“ → „82,5“. Prázdnou nebo neplatnou hodnotu nechá, jak je.
+function numNormalize(rule,value){
+  const text=String(value==null?"":value).trim();
+  const res=numCheck(rule,text);
+  if(text===""||!res.ok)return text;
+  if(NUM_RULES[rule].time)return fmtSec(res.v);
+  return String(res.v).replace(".",",");
 }
 // je hodnota platná? {ok, v: číslo (NaN u prázdné), msg: co je špatně}
 function numCheck(rule,value){
@@ -522,7 +544,8 @@ function numCheck(rule,value){
 }
 function timeCheck(r,text){
   text=text.replace(/[.,]/g,":");
-  if(!/^\d+(:\d{1,2}){0,2}$/.test(text))return {ok:false,msg:"zapiš jako 45, 1:30 nebo 1:02:30"};
+  // „1:“ během psaní ještě není chyba (= 1:00)
+  if(!/^\d+(:\d{0,2}){0,2}$/.test(text))return {ok:false,msg:"zapiš jako 45, 1:30 nebo 1:02:30"};
   if(text.split(":").slice(1).some(p=>+p>59))return {ok:false,msg:"minuty a sekundy nejvýš 59"};
   const v=parseSec(text);
   if(v>r.max)return {ok:false,msg:"nejvýš 23:59:59"};
@@ -530,14 +553,21 @@ function timeCheck(r,text){
 }
 // třída pro vykreslení políčka: " bad", když uložená hodnota neprojde kontrolou
 const numCls=(rule,value)=>numCheck(rule,value).ok?"":" bad";
-// při psaní: vyhodí nepovolené znaky (kurzor zůstane na místě) a obnoví červený rámeček
+// při psaní: vyhodí nepovolené znaky a číslici navíc (3. desetinné místo, 4. číslice u 999) vůbec nepřijme,
+// kurzor zůstane na místě; obnoví červený rámeček. input.numLast = poslední přijatá hodnota.
 function numInput(input){
   const rule=input.dataset.num;
   const text=input.value;
-  const clean=numFilter(rule,text);
+  const last=input.numLast!=null?input.numLast:input.defaultValue;
+  let clean=numFilter(rule,text);
+  const caret=input.selectionStart==null?text.length:input.selectionStart;
+  let pos=numFilter(rule,text.slice(0,caret)).length;
+  if(!numFits(rule,clean)&&numFits(rule,last)){
+    pos=Math.max(0,pos-(clean.length-last.length));
+    clean=last;
+  }
+  input.numLast=clean;
   if(clean!==text){
-    const caret=input.selectionStart==null?text.length:input.selectionStart;
-    const pos=numFilter(rule,text.slice(0,caret)).length;
     input.value=clean;
     try{
       input.setSelectionRange(pos,pos);
@@ -740,6 +770,10 @@ function toggleSetDone(d,i,j){
     if(s.reps===""&&hint.reps)s.reps=String(hint.reps);
     if(!s.sec&&hint.sec)s.sec=fmtSec(hint.sec);
     if(!s.km&&hint.km)s.km=numStr(hint.km);
+  }
+  for(const f of kFields(kind)){
+    const rule=setRule(f);
+    s[rule]=numNormalize(rule,s[rule]); // „85“ → „1:25“, „5,“ → „5“
   }
   const problem=setProblem(kind,s,true);
   if(problem){
@@ -2391,8 +2425,18 @@ document.addEventListener("input",ev=>{
 document.addEventListener("change",ev=>{
   const t=ev.target;const f=t.dataset&&t.dataset.f;const d=curDraft();
   if(t.dataset&&t.dataset.num){
+    // po opuštění políčka jednotná podoba („85“ → „1:25“), u série i v rozdělaném tréninku
+    const norm=numNormalize(t.dataset.num,t.value);
+    if(norm!==t.value){
+      t.value=norm;
+      t.numLast=norm;
+      if(d&&(f==="kg"||f==="reps"||f==="sec"||f==="km")){
+        d.ex[+t.dataset.i].sets[+t.dataset.j][f]=norm;
+        touchDraft();
+      }
+    }
     const msg=numMsg(t);
-    if(msg)toast(msg); // po opuštění políčka s červeným rámečkem krátká nápověda
+    if(msg)toast(msg); // u políčka s červeným rámečkem krátká nápověda
   }
   if(t.id==="impFile"){readImport(t);return}
   if(f==="xEquip"){const gd=document.getElementById("x-gd");if(gd)gd.checked=!!GYMDEP_EQUIP[t.value];return}

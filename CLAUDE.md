@@ -184,7 +184,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   klepnutím (Pokračovat, mimo kartu) nebo Zpět, sama nezmizí. Zvuky se skládají přes Web Audio (`celTone`), žádné soubory.
 - Kontrola čísel (F1-10, sekce „KONTROLA ČÍSEL“ a „UPOZORNĚNÍ NA VELKÝ SKOK“): každé číselné políčko má
   `data-num="<pravidlo>"` (`NUM_RULES`: `kg`, `reps`, `sec`, `km`, `min`, `body`, `pct`, `kcal`, `bw`), při vykreslení
-  třídu `numCls(pravidlo, hodnota)`. Znaky filtruje `numInput` (globální posluchač `input`), platnost `numCheck`.
+  třídu `numCls(pravidlo, hodnota)`. Znaky filtruje `numInput` (globální posluchač `input`; číslici navíc podle
+  `numFits` nepřijme, „,5“ → „0,5“), platnost `numCheck`, jednotnou podobu po opuštění políčka a při ✓ `numNormalize`
+  (čas „85“ → „1:25“, „1:5“ → „1:05“, „82.5“ → „82,5“).
   Před uložením `setProblem` / `draftProblem` (série) a `inputProblem(id)` (políčka ve formulářích). Nové číselné pole
   (např. F1-03, F1-08, F4-04) vždy přes stejná pravidla. Uložené číslo do políčka přes `numStr` (nejvýš 2 desetinná
   místa). ✓ série = `toggleSetDone`; velký nárůst proti minulé sérii (`JUMP`, `setJump`) se ptá přes `sheetJump`,
