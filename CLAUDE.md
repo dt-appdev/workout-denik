@@ -63,6 +63,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `icons/` | Ikony appky (PNG 192/512, maskable 512, apple-touch, SVG). `icons/test/` = oranžové ikony TEST pro testovací verze. |
 | `fonts/` | Písma Barlow a Barlow Condensed (OFL), lokálně kvůli offline. |
 | `docs/plan-vyvoje.md` | Plán vývoje, otevřené otázky, log. |
+| `docs/navrhy/` | Odložené návrhy: diskuse, rozhodnutí a náhledy úloh, ke kterým se možná vrátíme (např. `F3-07-heatmapa.md`). Při znovuotevření úlohy nejdřív přečíst. |
 | `puvodni/workout-denik.html` | Poslední verze artefaktu (verze 9). Jen pro referenci, needitovat. |
 | `.nojekyll` | GitHub Pages servíruje soubory tak, jak jsou (bez Jekyllu). |
 | `.git-blame-ignore-revs` | Commity, které jen přeformátovaly kód (F0-10); GitHub je v historii řádků přeskočí. |
