@@ -935,7 +935,7 @@ tr.done .okb {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 20px;
+  font-size: 15px; /* jako běžný text appky (body) */
   color: var(--ink-3);
 }
 .kk-sub b {
