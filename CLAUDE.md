@@ -108,6 +108,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
     nemůže změnit vzhled (mezi atributy, vedle blokového prvku, mezi prvky flex/grid),
     jinak šablonu rozdělit na dvě spojené přes `+` (F0-10).
 - Kliknutí se řeší delegací přes `data-act` / `data-v` (jeden velký `switch`).
+- Tlačítka (F2-07): akce v nadpisu sekce (`.sec-h`) jen jako ikona v rámečku malého tlačítka `icoBtn(act, ikona,
+  popis, v)` (ikony v `IC`, popis pro čtečku). Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách
+  a panelech. Krátký formulář (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu
+  cviků (trénink, šablona) = stránka se šipkou ← a dotazem „Zahodit změny?“ (Nový / Upravit cvik přejde na stránku
+  v F3-14).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu

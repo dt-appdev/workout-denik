@@ -91,6 +91,11 @@
     order: `<svg viewBox="0 0 24 24">
       <path d="M8 4v16M4.5 7.5L8 4l3.5 3.5M16 20V4M12.5 16.5L16 20l3.5-3.5"/>
     </svg>`,
+    // hledání v online databázi cviků (zeměkoule, lupa patří hledání v seznamu)
+    globe: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5"/>
+      <path d="M3.5 12h17M12 3.5c2.4 2.5 3.6 5.3 3.6 8.5s-1.2 6-3.6 8.5c-2.4-2.5-3.6-5.3-3.6-8.5s1.2-6 3.6-8.5z"/>
+    </svg>`,
     next: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
     // skupiny Nastavení (F3-09)
     gym: `<svg viewBox="0 0 24 24">
@@ -2700,6 +2705,12 @@
       )
       .join("");
   }
+  /* akce v nadpisu sekce: ikona v rámečku malého tlačítka, bez textu (label = popis pro čtečku obrazovky);
+     v = data-v */
+  function icoBtn(act, icon, label, v) {
+    return `<button class="btn sm ico" data-act="${act}"${v ? ` data-v="${esc(v)}"` : ""}
+        aria-label="${esc(label)}">${IC[icon]}</button>`;
+  }
   function topbar(title, sub, left, subCls) {
     return `${testBar()}
     <header class="top">
@@ -2897,14 +2908,8 @@
         <div class="sec-h">
           <h2>Šablony${gymId && S.cfg.gyms.length > 1 ? " · " + esc(gymName(gymId)) : ""}</h2>
           <div class="sec-btns">
-            ${
-              tpls.length > 1
-                ? `<button class="iconbtn" data-act="tplOrder" aria-label="Změnit pořadí šablon">
-                  ${IC.order}
-                </button>`
-                : ""
-            }
-            <button class="btn sm" data-act="newTpl">+ Nová šablona</button>
+            ${tpls.length > 1 ? icoBtn("tplOrder", "order", "Změnit pořadí šablon") : ""}
+            ${icoBtn("newTpl", "plus", "Nová šablona")}
           </div>
         </div>
         <div class="stack">`;
@@ -4760,8 +4765,8 @@
           : ""
       }
       <span class="grow"></span>
-      <button class="btn sm" data-act="fedbOpen" data-v="list">Hledat online</button>
-      <button class="btn sm" data-act="exlNew">+ Nový cvik</button>
+      ${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "list")}
+      ${icoBtn("exlNew", "plus", "Nový cvik")}
     </div>`;
     h += `<section class="sec">
     <div class="sec-h">
@@ -6219,7 +6224,7 @@
     let h = `<section class="sec">
         <div class="sec-h">
           <h2>Moje fitka</h2>
-          <button class="btn sm" data-act="addGym">+ Přidat</button>
+          ${icoBtn("addGym", "plus", "Přidat fitko")}
         </div>
         <div class="stack dnd-list" data-dnd="gyms" style="gap:6px">`;
     const many = S.cfg.gyms.length > 1;
@@ -7193,7 +7198,7 @@
         return `<div class="card dnd-it dnd-row">
             <div class="grow">
               <b>${esc(name)}</b>
-              <div class="xs muted">${n} ${n >= 1 && n <= 4 ? "série" : "sérií"}</div>
+              <div class="xs muted">${n} ${plural(n, "série", "série", "sérií")}</div>
             </div>
             ${dndGrip(name)}
           </div>`;
@@ -9836,7 +9841,7 @@
     h += `<section class="sec">
       <div class="sec-h">
         <h2>Body obnovy</h2>
-        ${pointsApi ? '<button class="btn sm" data-act="bkNow">+ Vytvořit teď</button>' : ""}
+        ${pointsApi ? icoBtn("bkNow", "plus", "Vytvořit bod obnovy teď") : ""}
       </div>
       <div class="card">`;
     if (!pointsApi) {
