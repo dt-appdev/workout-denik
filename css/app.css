@@ -387,12 +387,6 @@ a.btn {
   border-color: var(--accent);
   color: var(--accent-ink);
 }
-/* zelené tlačítko pro dokončení (souhrn po uložení tréninku, F3-12) */
-.btn.good {
-  background: var(--good);
-  border-color: var(--good);
-  color: var(--surface);
-}
 .btn.ghost {
   border-color: transparent;
   background: transparent;

@@ -3473,7 +3473,7 @@
      proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
      (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
      (prevEx: i z jiné šablony, cvik vázaný na fitko jen ze stejného fitka). Vše se počítá z uložených dat.
-     Dole po uložení zelené Dokončit (zavře panel, F3-12), z Historie Cvičit znovu. */
+     Dole po uložení červené Dokončit (zavře panel, F3-12), z Historie Cvičit znovu. */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
@@ -3797,7 +3797,7 @@
       b,
       `${
         justSaved
-          ? '<button class="btn good full" data-act="closeSheet">Dokončit</button>'
+          ? '<button class="btn primary full" data-act="closeSheet">Dokončit</button>'
           : `<button class="btn primary full" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
             Cvičit znovu
           </button>`
