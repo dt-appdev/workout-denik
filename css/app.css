@@ -9,11 +9,13 @@ img{max-width:100%}
 :root{
   color-scheme:light;
   --bg:#eceef2; --surface:#ffffff; --surface-2:#f5f6f8; --line:#dce0e6; --line-2:#c9ced6;
-  --ink:#13161b; --ink-2:#4f5663; --ink-3:#7f8792;
+  --ink:#13161b; --ink-2:#3a404b; --ink-3:#545b66;
   --accent:#cf3a31; --accent-2:#b0302a; --accent-ink:#ffffff; --accent-soft:#fbe7e5;
   --warm:#a86a00; --warm-bg:#fcefd4; --drop:#5646bd; --drop-bg:#ebe8fb; --fail:#c0322b; --fail-bg:#fbe4e2;
   --good:#1b7a48; --good-bg:#def3e7;
+  /* barvy fitek 1–12 (F0-07, F3-01), --chart = obecné grafy, které nepatří žádnému fitku */
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+  --s7:#7a2fb5; --s8:#8a8a14; --s9:#1590b0; --s10:#b86fcc; --s11:#8a3b2e; --s12:#424a9c; --chart:#5f6b7a;
   --shadow:0 1px 2px rgba(19,22,27,.06),0 4px 16px rgba(19,22,27,.06);
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -22,22 +24,24 @@ img{max-width:100%}
   :root:not([data-theme="light"]){
     color-scheme:dark;
     --bg:#0e1013; --surface:#171a1f; --surface-2:#1f232a; --line:#2a2f37; --line-2:#3a404a;
-    --ink:#eceef1; --ink-2:#aab0ba; --ink-3:#7c838e;
+    --ink:#eceef1; --ink-2:#ccd1d8; --ink-3:#b0b6bf;
     --accent:#ee5b51; --accent-2:#ff7166; --accent-ink:#1a0806; --accent-soft:#3a1715;
     --warm:#f0b44a; --warm-bg:#352810; --drop:#a197f2; --drop-bg:#26223f; --fail:#f0736a; --fail-bg:#3a1a18;
     --good:#52c48d; --good-bg:#12301f;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+    --s7:#9a5fd6; --s8:#8f9a1c; --s9:#1ba0c4; --s10:#bb7fd0; --s11:#a3503f; --s12:#5a5fb0; --chart:#98a2b0;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#0e1013; --surface:#171a1f; --surface-2:#1f232a; --line:#2a2f37; --line-2:#3a404a;
-  --ink:#eceef1; --ink-2:#aab0ba; --ink-3:#7c838e;
+  --ink:#eceef1; --ink-2:#ccd1d8; --ink-3:#b0b6bf;
   --accent:#ee5b51; --accent-2:#ff7166; --accent-ink:#1a0806; --accent-soft:#3a1715;
   --warm:#f0b44a; --warm-bg:#352810; --drop:#a197f2; --drop-bg:#26223f; --fail:#f0736a; --fail-bg:#3a1a18;
   --good:#52c48d; --good-bg:#12301f;
   --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+  --s7:#9a5fd6; --s8:#8f9a1c; --s9:#1ba0c4; --s10:#bb7fd0; --s11:#a3503f; --s12:#5a5fb0; --chart:#98a2b0;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
 }
 *{box-sizing:border-box}
@@ -96,6 +100,12 @@ a.btn{color:var(--ink);text-decoration:none}
 .iconbtn:disabled{opacity:.3}
 .gymmv{display:flex;flex:none}
 .gymmv .iconbtn{width:34px}
+/* výběr barvy fitka (F3-01): pod obsazenou barvou název fitka */
+.cpick{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 8px}
+.cpick button{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.cpick i{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-weight:700;font-size:15px;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.cpick button[aria-checked=true] i{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
+.cpick small{font-size:11px;line-height:1.1;color:var(--ink-3);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;white-space:nowrap;min-height:34px;display:inline-flex;align-items:center;gap:6px}
@@ -197,7 +207,7 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 .legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
 .hbars{display:flex;flex-direction:column;gap:7px}
 .hbar{display:grid;grid-template-columns:104px 1fr 34px;gap:8px;align-items:center;font-size:13px}
-.hbar .t{height:10px;border-radius:0 4px 4px 0;background:var(--s1)}
+.hbar .t{height:10px;border-radius:0 4px 4px 0;background:var(--chart)}
 .hbar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:600}
 .exrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .exrow .n{font-weight:600;font-size:15px}
@@ -243,6 +253,16 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 :root{--sil:#dfe3e9;--m-idle:#b9c0c9;--m-sec:#f0a49b;--m-pri:#cf3a31;--m-line:#ffffff}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sil:#2b313a;--m-idle:#4a525e;--m-sec:#9c443c;--m-pri:#ee5b51;--m-line:#1b1f25}}
 :root[data-theme="dark"]{--sil:#2b313a;--m-idle:#4a525e;--m-sec:#9c443c;--m-pri:#ee5b51;--m-line:#1b1f25}
+/* barvy 6 skupin partií (F3-01, MGRP v js/app.js): postava a pruhy ve Statistikách a v souhrnu */
+:root{--g-chest:#e34948;--g-back:#2a78d6;--g-sh:#eda100;--g-arms:#4a3aa7;--g-legs:#1baf7a;--g-core:#e87ba4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--g-chest:#e66767;--g-back:#3987e5;--g-sh:#c98500;--g-arms:#9085e9;--g-legs:#199e70;--g-core:#e87ba4}}
+:root[data-theme="dark"]{--g-chest:#e66767;--g-back:#3987e5;--g-sh:#c98500;--g-arms:#9085e9;--g-legs:#199e70;--g-core:#e87ba4}
+.gstack{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px;margin:4px 0 8px}
+.gstack i{min-width:4px}
+.glegend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;margin-bottom:12px;color:var(--ink-2)}
+.glegend span{display:inline-flex;align-items:center;gap:5px}
+.glegend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.glegend b{color:var(--ink);font-weight:600}
 .figs{display:flex;justify-content:center;gap:10px;margin:4px 0 10px}
 .figs figure{margin:0;text-align:center}
 .figs figcaption{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-top:2px}

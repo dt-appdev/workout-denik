@@ -4,7 +4,7 @@
 const MUSCLES={chest:"Hrudník",back:"Záda",shoulders:"Ramena",biceps:"Biceps",triceps:"Triceps",forearms:"Předloktí",quads:"Kvadricepsy",hams:"Hamstringy",glutes:"Hýždě",adductors:"Přitahovače",calves:"Lýtka",abs:"Břicho",lowback:"Spodní záda",neck:"Krk",other:"Ostatní"};
 const EQUIP={barbell:"Velká činka",dumbbell:"Jednoručky",machine:"Stroj",cable:"Kladka",smith:"Multipress",bodyweight:"Vlastní váha",band:"Guma",kettlebell:"Kettlebell",other:"Jiné"};
 const GYMDEP_EQUIP={machine:1,cable:1,smith:1};
-const GYM_COLORS=6; // počet barev fitek (--s1 … --s6 v css/app.css)
+const GYM_COLORS=12; // počet barev fitek (--s1 … --s12 v css/app.css, F3-01)
 const TYPES=["n","w","d","f"]; // cycle order
 const TYPE_NAME={n:"Pracovní",w:"Zahřívací",d:"Drop set",f:"Do selhání"};
 const MONTHS=["led","úno","bře","dub","kvě","čvn","čvc","srp","zář","říj","lis","pro"];
@@ -44,6 +44,10 @@ const MUSCLE_MAP=(function(){
   return {svg,exSvg,NAMES};
 })();
 const MKEYS=Object.keys(MUSCLE_MAP.NAMES);
+/* 6 skupin partií (F3-01, použije i radar F3-04): barva --g-<skupina> v css/app.css */
+const MGRP={chest:"Hrudník",back:"Záda",sh:"Ramena",arms:"Paže",legs:"Nohy",core:"Břicho"};
+const MGRP_OF={neck:"back",chest:"chest",delts:"sh",traps:"back",upperback:"back",lats:"back",lowback:"back",biceps:"arms",triceps:"arms",forearm:"arms",abs:"core",oblique:"core",glutes:"legs",quads:"legs",adductor:"legs",hams:"legs",calves:"legs"};
+const mgCol=k=>"var(--g-"+(MGRP_OF[k]||"back")+")";
 const GROUP_OF={neck:"neck",chest:"chest",delts:"shoulders",traps:"back",upperback:"back",lats:"back",lowback:"lowback",biceps:"biceps",triceps:"triceps",forearm:"forearms",abs:"abs",oblique:"abs",glutes:"glutes",quads:"quads",adductor:"adductors",hams:"hams",calves:"calves"};
 /* Databáze cviků = výchozí EX_DB (js/cviky.js) + odchylky uložené v config/exercises.
    V config/exercises je {v:2, items:{id: jen změněná pole | celý vlastní cvik}}.
@@ -96,11 +100,19 @@ function exFigures(e,small){
   const pri=exPri(e),sec=e.sec||[];
   return '<div class="figs'+(small?' sm':'')+'"><figure>'+MUSCLE_MAP.exSvg("front",pri,sec,"Zepředu")+'<figcaption>Zepředu</figcaption></figure><figure>'+MUSCLE_MAP.exSvg("back",pri,sec,"Zezadu")+'<figcaption>Zezadu</figcaption></figure></div>';
 }
-// postava zepředu a zezadu obarvená podle hodnot partií (m: {partie: počet}), sytější = víc
-function musFigs(m,small){
+// postava zepředu a zezadu obarvená podle hodnot partií (m: {partie: počet}), sytější = víc;
+// grp = barva podle skupiny partie (F3-01), jinak červená
+function musFigs(m,small,grp){
   const mx=Math.max(0,...Object.values(m))||1;
-  const heat=k=>{const v=m[k]||0;if(!v)return "var(--m-idle)";const a=0.25+0.75*v/mx;return "color-mix(in srgb, var(--m-pri) "+Math.round(a*100)+"%, var(--m-idle))"};
+  const heat=k=>{const v=m[k]||0;if(!v)return "var(--m-idle)";const a=grp?0.4+0.6*v/mx:0.25+0.75*v/mx;return "color-mix(in srgb, "+(grp?mgCol(k):"var(--m-pri)")+" "+Math.round(a*100)+"%, var(--m-idle))"};
   return '<div class="figs'+(small?' sm':'')+'"><figure>'+MUSCLE_MAP.svg("front",heat,"Zepředu")+'<figcaption>Zepředu</figcaption></figure><figure>'+MUSCLE_MAP.svg("back",heat,"Zezadu")+'<figcaption>Zezadu</figcaption></figure></div>';
+}
+// pruh s poměrem skupin partií a legenda v procentech (F3-01)
+function mgStack(m){
+  const g={};for(const k in m){const x=MGRP_OF[k];if(x)g[x]=(g[x]||0)+m[k]}
+  const tot=Object.values(g).reduce((a,b)=>a+b,0);if(!tot)return "";
+  const rows=Object.keys(MGRP).filter(x=>g[x]).sort((a,b)=>g[b]-g[a]);
+  return '<div class="gstack" aria-hidden="true">'+rows.map(x=>'<i style="flex:'+g[x]+';background:var(--g-'+x+')"></i>').join("")+'</div><div class="glegend">'+rows.map(x=>'<span><i style="background:var(--g-'+x+')"></i>'+MGRP[x]+' <b>'+Math.round(g[x]/tot*100)+' %</b></span>').join("")+'</div>';
 }
 function exTags(e){
   const pri=exPri(e),sec=e.sec||[];
@@ -958,7 +970,7 @@ function sumMuscles(w){
   const m=wMuscles(w),rows=Object.entries(m).sort((a,b)=>b[1]-a[1]);
   if(!rows.length)return "";
   const mx=rows[0][1];
-  return '<div class="card"><h3 class="sumh">Procvičené partie</h3>'+musFigs(m)+'<div class="mbars">'+rows.map(([k,v])=>'<div class="mbar"><span>'+esc(MUSCLE_MAP.NAMES[k])+'</span><div><i style="width:'+Math.max(4,v/mx*100)+'%"></i></div></div>').join("")+'</div></div>';
+  return '<div class="card"><h3 class="sumh">Procvičené partie</h3>'+musFigs(m,false,true)+mgStack(m)+'<div class="mbars">'+rows.map(([k,v])=>'<div class="mbar"><span>'+esc(MUSCLE_MAP.NAMES[k])+'</span><div><i style="width:'+Math.max(4,v/mx*100)+'%;background:'+mgCol(k)+'"></i></div></div>').join("")+'</div></div>';
 }
 function sumEx(w,exId){
   const kind=kindOf(exId),sets=exSetsIn(w,exId);
@@ -1163,7 +1175,7 @@ function vStats(){
   h+='<section class="sec"><div class="sec-h"><h2>Průběh</h2><div class="seg">'+Object.keys(lab).map(k=>'<button data-act="statsMetric" data-v="'+k+'" aria-pressed="'+(m===k)+'">'+({count:"Tréninky",sets:"Série",vol:"Objem",dur:"Čas"}[k])+'</button>').join("")+'</div></div><div class="card">'+chartPh({type:"bar",label:lab[m],unit:m==="vol"?" kg":m==="dur"?" min":"",bars:bars.map(b=>({x:b.x,label:b.label,tip:b.tip,v:b[m]}))},180)+'</div></section>';
   // partie
   const mv=Object.entries(s.mus).sort((a,b)=>b[1]-a[1]);
-  h+='<section class="sec"><div class="sec-h"><h2>Pracovní série podle partie</h2></div><div class="card">'+(mv.length?musFigs(s.mus,true)+hbarList(mv.map(([k,v])=>({label:MUSCLE_MAP.NAMES[k],v}))):'<div class="muted small">V tomto období nic.</div>')+'<p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p></div></section>';
+  h+='<section class="sec"><div class="sec-h"><h2>Pracovní série podle partie</h2></div><div class="card">'+(mv.length?musFigs(s.mus,true,true)+mgStack(s.mus)+hbarList(mv.map(([k,v])=>({label:MUSCLE_MAP.NAMES[k],v,sw:mgCol(k)}))):'<div class="muted small">V tomto období nic.</div>')+'<p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Nejčastější cviky</h2></div><div class="card">'+hbarList(topExRows(s,8),true)+'</div></section>';
   if(g==="all")h+='<section class="sec"><div class="sec-h"><h2>Podle fitek</h2></div><div class="card">'+hbarList(gymRows(s))+'</div></section>';
   // kalendářní souhrny
@@ -1266,7 +1278,7 @@ function vExDetail(){
     const by={};for(const s of sel){(by[s.w.gymId]=by[s.w.gymId]||[]).push(s)}
     series=Object.keys(by).sort((a,b)=>gymIdx(a)-gymIdx(b)).map(g=>({name:gymName(g),color:gymColor(g),pts:by[g].map(s=>({x:s.w.start,y:s[key],s})).filter(p=>p.y>0).reverse()}));
   }else{
-    series=[{name:"Všechna fitka",color:"var(--s1)",pts:sel.map(s=>({x:s.w.start,y:s[key],s})).filter(p=>p.y>0).reverse()}];
+    series=[{name:"Všechna fitka",color:"var(--chart)",pts:sel.map(s=>({x:s.w.start,y:s[key],s})).filter(p=>p.y>0).reverse()}];
   }
   h+='<section class="sec"><div class="seg" style="margin-bottom:10px">'+Object.keys(M).map(k=>'<button data-act="detailMetric" data-v="'+k+'" aria-pressed="'+(S.detailMetric===k)+'">'+M[k][0]+'</button>').join("")+'</div>';
   h+='<div class="card">'+chartPh({type:"line",label:M[S.detailMetric][0],unit:M[S.detailMetric][2],series},200)+(series.length>1?'<div class="legend">'+series.map(s=>'<span><i style="background:'+s.color+'"></i>'+esc(s.name)+'</span>').join("")+'</div>':'')+'</div></section>';
@@ -1325,9 +1337,9 @@ function vBody(){
     h+='<div class="card" style="margin-top:10px"><div class="row" style="align-items:flex-end;margin-bottom:6px"><div class="grow"><div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">'+esc(f[1])+'</div><div style="font-family:var(--display);font-size:34px;font-weight:600;line-height:1" class="num">'+fmtKg(lastV)+' <span style="font-size:18px">'+esc(f[2])+'</span></div>'+(avgNow!=null?'<div class="xs muted num">průměr 7 dní '+fmtKg(Math.round(avgNow*10)/10)+unit+'</div>':'')+'</div><div class="small muted num" style="text-align:right">'+(pts.length>1?(diff>0?"+":"")+fmtKg(Math.round(diff*10)/10)+unit+' od '+fmtDateS(pts[0].x)+'<div class="xs">průměr '+(dAvg>0?"+":"")+fmtKg(Math.round(dAvg*10)/10)+unit+'</div>':'')+'</div></div>'+
       chartPh({type:"line",label:f[1],unit:unit,series:[
         {name:"Měření",color:"var(--ink-3)",pts,noLine:true,dots:true},
-        {name:"Klouzavý průměr 7 dní",color:"var(--s1)",pts:avg,noDots:true,w:2.4}
+        {name:"Klouzavý průměr 7 dní",color:"var(--chart)",pts:avg,noDots:true,w:2.4}
       ]},190)+
-      '<div class="legend"><span><i style="background:var(--s1)"></i>Klouzavý průměr 7 dní</span><span><i style="background:var(--ink-3);height:7px;width:7px;border-radius:50%"></i>Jednotlivá měření</span></div>'+
+      '<div class="legend"><span><i style="background:var(--chart)"></i>Klouzavý průměr 7 dní</span><span><i style="background:var(--ink-3);height:7px;width:7px;border-radius:50%"></i>Jednotlivá měření</span></div>'+
       '<div class="xs muted" style="margin-top:6px">'+pts.length+' '+plural(pts.length,"den s měřením","dny s měřením","dnů s měřením")+' v období'+(all.length>pts.length?' z '+all.length+' měření celkem':'')+'</div></div>';
   }else h+='<div class="empty" style="margin-top:10px">Pro „'+esc(f[1])+'“ v tomto období žádné měření.</div>';
   h+='</section><section class="sec"><div class="sec-h"><h2>Měření</h2><span class="xs muted">'+items.length+'</span></div><div class="stack" style="gap:6px">';
@@ -1370,6 +1382,10 @@ function sheetGym(id){
   const g=id?S.cfg.gyms.find(x=>x.id===id):{name:""};
   const cnt=id?derive().all.filter(w=>w.gymId===id).length:0;
   let b='<label class="f">Název<input class="inp" id="g-name" value="'+esc(g.name)+'" placeholder="např. Fitness Brno-střed"></label><label class="switch"><input type="checkbox" id="g-def" '+(id&&S.cfg.defaultGymId===id?"checked":"")+'> Výchozí fitko</label>';
+  // barva (F3-01): předvybraná vlastní, u nového fitka první volná; pod obsazenou barvou název fitka
+  const cur=id&&g.col?g.col:freeGymCol(S.cfg.gyms);
+  b+='<div><div class="f lbl-f" style="margin-bottom:8px">Barva</div><div class="cpick" role="radiogroup" aria-label="Barva fitka">'+Array.from({length:GYM_COLORS},(_,i)=>i+1).map(c=>{const o=S.cfg.gyms.filter(x=>x.col===c&&x.id!==id).map(x=>x.name).join(", ");
+    return '<button type="button" role="radio" data-act="gymCol" data-v="'+c+'" aria-checked="'+(c===cur)+'" aria-label="Barva '+c+(o?', má ji '+esc(o):'')+'"><i style="background:var(--s'+c+')">'+(c===cur?'✓':'')+'</i><small>'+(o?esc(o):'&nbsp;')+'</small></button>'}).join("")+'</div></div>';
   if(id&&cnt)b+='<div class="small muted">Fitko má '+cnt+' tréninků, proto ho nelze smazat. Tréninky můžeš přesunout jinam v Historii → Upravit.</div>';
   openSheet(id?"Upravit fitko":"Nové fitko",b,(id&&!cnt&&S.cfg.gyms.length>1?'<button class="btn danger" data-act="delGym" data-v="'+id+'">Smazat</button>':'')+'<button class="btn primary grow" data-act="saveGym" data-v="'+(id||"")+'">Uložit</button>');
 }
@@ -1680,7 +1696,7 @@ function drawCharts(){
       sp.hit=[];
       sp.bars.forEach((b,i)=>{
         const x=padL+i*bw+1,w=Math.max(2,bw-2),y=Y(b.v),hh=padT+ih-y;
-        if(b.v>0){const r=Math.min(4,w/2,hh);svg+='<path fill="var(--s1)" d="M'+x+','+(padT+ih)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(padT+ih)+'Z"/>'}
+        if(b.v>0){const r=Math.min(4,w/2,hh);svg+='<path fill="var(--chart)" d="M'+x+','+(padT+ih)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(padT+ih)+'Z"/>'}
         if(b.tip!==undefined?b.label:(i%4===3||i===sp.bars.length-1&&sp.bars.length<5))svg+='<text x="'+(x+w/2)+'" y="'+(H-6)+'" text-anchor="middle">'+b.label+'</text>';
         sp.hit.push({x:x+w/2,y:Math.min(y,padT+ih-2),html:'<b>'+(b.v>=1000?fmtInt(b.v):fmtKg(Math.round(b.v)))+sp.unit+'</b><br>'+(b.tip||('týden od '+b.label))});
       });
@@ -1920,10 +1936,12 @@ document.addEventListener("click",ev=>{
     case "delBody":{const items=Object.assign({},S.body);delete items[v];put("body/all",{items});closeSheet();break}
     case "addGym":sheetGym(null);break;
     case "editGym":sheetGym(v);break;
+    case "gymCol":for(const x of document.querySelectorAll(".cpick button")){const on=x===t;x.setAttribute("aria-checked",on);x.querySelector("i").textContent=on?"✓":""}break;
     case "saveGym":{
       const name=document.getElementById("g-name").value.trim();if(!name){toast("Zadej název fitka.");break}
       const cfg=JSON.parse(JSON.stringify(S.cfg));let id=v;
-      if(id)cfg.gyms.find(g=>g.id===id).name=name;else{id=uid("g");cfg.gyms.push({id,name,col:freeGymCol(cfg.gyms)})}
+      const pk=document.querySelector(".cpick [aria-checked=true]"),col=pk?+pk.dataset.v:0;
+      if(id){const g=cfg.gyms.find(g=>g.id===id);g.name=name;if(col)g.col=col}else{id=uid("g");cfg.gyms.push({id,name,col:col||freeGymCol(cfg.gyms)})}
       if(document.getElementById("g-def").checked)cfg.defaultGymId=id;
       put("config/main",cfg);closeSheet();break}
     case "delGym":{const cfg=JSON.parse(JSON.stringify(S.cfg));cfg.gyms=cfg.gyms.filter(g=>g.id!==v);if(cfg.defaultGymId===v)cfg.defaultGymId=cfg.gyms[0].id;put("config/main",cfg);closeSheet();break}

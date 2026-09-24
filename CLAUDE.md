@@ -114,8 +114,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
   (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
 - Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (šipky v Nastavení, akce `gymMove`).
-  Barva je uložená v `g.col` (1–`GYM_COLORS`, CSS proměnná `--sN`), doplňuje ji
+  Barva je uložená v `g.col` (1–`GYM_COLORS` = 12, CSS proměnná `--sN`), doplňuje ji
   `cfgNorm` při načtení; nová barva přes `freeGymCol`. Barvu nikdy nepočítat z pořadí.
+  Výběr barvy v `sheetGym` (F3-01, akce `gymCol`). Grafy, které nepatří fitku, mají `var(--chart)`, ne `--s1`.
+- Barvy (F3-01): šedý text `--ink-2`/`--ink-3` je zesílený kvůli čitelnosti, drobný text nedělat světlejší.
+  Skupiny partií `MGRP` / `MGRP_OF` (6 skupin, i pro radar F3-04), barva `mgCol(k)` = `--g-<skupina>`.
+  `musFigs(m, small, grp)`: `grp` = postava v barvách skupin (Statistiky, souhrn), jinak červená; `mgStack` = pruh
+  s poměrem skupin. Stránka cviku (`exFigures`, `exTags`) zůstává červená.
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
   stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
