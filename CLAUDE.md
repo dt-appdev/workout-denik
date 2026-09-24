@@ -130,10 +130,16 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   - úložiště `photos` – fotky u cviků (F2-05, databáze verze 2; `Idb.VER`), mimo `Store`.
 - Při startu se volá `navigator.storage.persist()`, aby Chrome data nemazal.
 - Verze (F0-04): `BUILD` (z `js/verze.js`), `TEST_PR` (číslo PR z adresy, jinak
-  `""`). Nastavení → Verze aplikace: `versionSettings`, kontrola aktualizace
+  `""`). Nastavení → O aplikaci → Verze aplikace: `versionSettings`, kontrola aktualizace
   (`window.PWA.check()` z `js/pwa.js`), v testu `copyFromMain`, ve vydané verzi
   `scanTestData` / `deleteTestData`. Pruh `testBar()` je součástí `topbar()`.
 - Drobná nastavení zobrazení jsou v `localStorage` s prefixem `zd1:`.
+- Nastavení (F3-09, sekce „NASTAVENÍ“): rozcestník `vSettingsHub` se skupinami `SET_PAGES` (Fitka, Trénink, Rekordy,
+  Vzhled, Data a záloha, O aplikaci), každá na vlastní podstránce `S.setPage` (`""` = rozcestník, `Local` `setPage`,
+  po reloadu se vrátí; otevření jen přes `setPageOpen`). Záložka Nastavení vždy otevře rozcestník, Zpět z podstránky
+  vede na rozcestník (`navBack`, `navDepth`). Na rozcestníku jen názvy skupin, výjimka: oranžový řádek Data a záloha
+  s textem, když `backupDue()` (stejné pravidlo jako připomínka na úvodní obrazovce). Nová volba patří do existující
+  skupiny (funkce `…Settings()` v `body` skupiny), novou skupinu přidávat jen výjimečně.
 - Cviky (F0-02): `S.exLib` = `EX_DB` + odchylky (`exLoad`), zápis vždy přes
   `putEx(items)`, který uloží jen rozdíly. Partie jsou klíče `MUSCLE_MAP.NAMES`,
   ramena jsou jedna partie `delts` (staré `delt_f/s/r` se převádějí). Záloha
@@ -185,7 +191,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
   na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
   Záznam událostí oznámení (cache `wdlog-prN`, píše `sw.js` i appka) je vývojový nástroj:
-  vede se jen v testovací verzi a lokálně (`DEV`), tlačítko v Nastavení → Verze aplikace
+  vede se jen v testovací verzi a lokálně (`DEV`), tlačítko v Nastavení → O aplikaci
   (`sheetRestLog`). Ve vydané verzi nic takového být nemá (přání uživatele).
   Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
   vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
