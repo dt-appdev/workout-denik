@@ -734,6 +734,7 @@
       recCelEx: true,
       recCelW: true,
       recSnd: "fanfara",
+      stepper: true,
     },
     exLib: exLoad({}),
     exV: 0,
@@ -933,6 +934,7 @@
         recCelEx: true,
         recCelW: true,
         recSnd: "fanfara",
+        stepper: true,
       },
       c && typeof c === "object" ? c : {},
     );
@@ -1238,6 +1240,11 @@
     setTimeout(() => {
       const input = document.getElementById(id);
       if (!input) return;
+      if (input.dataset.act === "kk") {
+        // políčko série s krokovačem (F1-03): místo klávesnice panel s +/−
+        sheetStepper(+input.dataset.i, +input.dataset.j, input.dataset.v);
+        return;
+      }
       input.scrollIntoView({ block: "center" });
       input.focus();
     }, 80);
@@ -1525,6 +1532,267 @@
     }
     touchDraft();
     scheduleRender();
+  }
+
+  /* ---------- KROKOVAČ (F1-03) ----------
+     Velká tlačítka +/− pro ovládání jednou rukou. V rozdělaném tréninku (se zapnutým S.cfg.stepper)
+     jsou políčka série jen ke čtení, takže se neotevře klávesnice, a klepnutí na ně otevře spodní panel
+     s hodnotami série pod sebou. Tlačítko − / + mění hodnotu o krok, podržení ji mění dál.
+     Počáteční hodnota = hodnota v políčku, u prázdného políčka šedé předvyplnění z minula (F1-01).
+     Krok u kg (i +kg a −kg), času a km se mění jedním tlačítkem dokola (STEPS) a pamatuje se
+     v Local "kkStep" pro každý cvik (cvik vázaný na fitko zvlášť pro každé fitko). Opakování po 1.
+     „Napsat“ zavře panel a otevře klávesnici v políčku (kkKbd = id políčka, dokud ho uživatel neopustí).
+     „Série hotová“ zavře panel a odškrtne sérii přes toggleSetDone (kontrola čísel, velký skok, rekord,
+     pauza). Nic nového se neukládá do dat tréninku. */
+  const STEPS = {
+    kg: [0.5, 1, 1.25, 2.5, 5],
+    sec: [1, 5, 30],
+    km: [0.1, 0.5, 1],
+  };
+  const STEP_DEF = { kg: 2.5, sec: 5, km: 0.1 };
+  const STEP_UNIT = { kg: " kg", sec: " s", km: " km" };
+  const KK_REPEAT_DELAY = 450; // ms: podržení tlačítka − / +, než se hodnota začne měnit sama
+  const KK_REPEAT_EVERY = 90; // ms: další krok při podržení
+  let kk = null; // otevřený krokovač: {i, j, f} (cvik, série, pole, na které se klepnulo)
+  let kkKbd = null; // id políčka, do kterého se právě píše klávesnicí (přes „Napsat“)
+  let kkHold = null; // časovač podrženého tlačítka
+
+  // krokovač místo klávesnice? jen v rozdělaném tréninku a se zapnutým nastavením
+  const kkOn = (d) => d.mode === "active" && S.cfg.stepper !== false;
+  const kkInputId = (e, j, f) => "in-" + e.k + "-" + j + "-" + f;
+
+  // klíč uloženého kroku: cvik, u cviku vázaného na fitko i fitko, a pravidlo (kg, sec, km)
+  function kkStepKey(d, e, rule) {
+    const ex = S.exLib[e.exId];
+    const gym = ex && ex.gymDep ? d.gymId || "" : "";
+    return e.exId + "|" + gym + "|" + rule;
+  }
+  // aktuální krok pro pole série (opakování vždy 1)
+  function kkStep(d, e, rule) {
+    if (!STEPS[rule]) return 1;
+    const saved = Local.get("kkStep", {})[kkStepKey(d, e, rule)];
+    return STEPS[rule].includes(saved) ? saved : STEP_DEF[rule];
+  }
+  // další krok dokola (0,5 → 1 → 1,25 → 2,5 → 5 → 0,5 …) a uložení
+  function kkStepNext(d, e, rule) {
+    const list = STEPS[rule];
+    const next = list[(list.indexOf(kkStep(d, e, rule)) + 1) % list.length];
+    const all = Local.get("kkStep", {});
+    all[kkStepKey(d, e, rule)] = next;
+    Local.set("kkStep", all);
+    return next;
+  }
+  const kkStepStr = (rule, step) => numStr(step) + STEP_UNIT[rule];
+
+  // hodnota z minula (šedé předvyplnění) pro pole série, jinak NaN
+  function kkHint(d, i, j, rule) {
+    const e = d.ex[i];
+    const hint = exHints(e, draftLast(d, e.exId))[j].h;
+    return hint && +hint[rule] > 0 ? +hint[rule] : NaN;
+  }
+  // číslo, od kterého se krokuje: hodnota v políčku, jinak z minula, jinak 0
+  function kkBase(d, i, j, rule) {
+    const text = d.ex[i].sets[j][rule];
+    const res = numCheck(rule, text);
+    if (res.ok && isFinite(res.v)) return res.v;
+    const hint = kkHint(d, i, j, rule);
+    return isFinite(hint) ? hint : 0;
+  }
+  // číslo jako text do políčka: čas „1:05“, opakování celé číslo, kg a km s čárkou
+  function kkText(rule, value) {
+    if (rule === "sec") return fmtSec(value);
+    if (rule === "reps") return String(Math.round(value));
+    return numStr(value);
+  }
+  // hodnota v panelu: zapsaná normálně, z minula šedě, bez hodnoty „–“
+  function kkValue(d, i, j, rule) {
+    const text = d.ex[i].sets[j][rule];
+    if (text !== "") return `<b>${esc(text)}</b>`;
+    const hint = kkHint(d, i, j, rule);
+    if (isFinite(hint)) return `<b class="ph">${esc(kkText(rule, hint))}</b>`;
+    return '<b class="ph">–</b>';
+  }
+
+  // otevře krokovač pro sérii j cviku i (f = pole, na které se klepnulo: kg, plus, minus, reps, sec, km)
+  function sheetStepper(i, j, f) {
+    const d = S.active;
+    const e = d && d.ex[i];
+    const s = e && e.sets[j];
+    if (!s) return;
+    const kind = kindOf(e.exId);
+    const flds = kFields(kind);
+    if (document.activeElement) {
+      document.activeElement.blur();
+    }
+    // název série jako ve sloupci Série: pracovní se číslují, ostatní podle druhu
+    let label = TYPE_NAME[s.t];
+    if (s.t === "n") {
+      label = "Série " + e.sets.slice(0, j + 1).filter((x) => x.t === "n").length;
+    }
+    const prev = exHints(e, draftLast(d, e.exId))[j].p;
+    const steps = flds
+      .map(setRule)
+      .filter((rule) => STEPS[rule])
+      .map(
+        (rule) =>
+          `<button class="kk-step" data-act="kkStep" data-v="${rule}">
+            <span>krok</span> ${esc(kkStepStr(rule, kkStep(d, e, rule)))}
+          </button>`,
+      )
+      .join("");
+    const prevText = prev ? `minule <b class="num">${esc(setStr(kind, prev))}</b>` : "bez záznamu z minula";
+    let body = `<div class="kk-sub">
+      <span class="grow">${esc(label)} · ${prevText}</span>
+      ${steps}
+    </div>`;
+    for (const fld of flds) {
+      const rule = setRule(fld);
+      body += `<div class="kk-row">
+        <button class="kk-b" data-kk="-1" data-kf="${rule}" aria-label="Ubrat">−</button>
+        <div class="kk-v">
+          <span id="kk-${rule}">${kkValue(d, i, j, rule)}</span>
+          <small>${esc(FLD[fld].lab)}</small>
+        </div>
+        <button class="kk-b" data-kk="1" data-kf="${rule}" aria-label="Přidat">+</button>
+      </div>`;
+    }
+    const foot = `<button class="btn" data-act="kkKbd">⌨ Napsat</button>
+      ${
+        s.done
+          ? '<button class="btn primary grow" data-act="closeSheet">Hotovo</button>'
+          : '<button class="btn primary grow" data-act="kkDone">✓ Série hotová</button>'
+      }`;
+    openSheet(exName(e.exId), body, foot, false, {
+      cls: "kk",
+      re: () => sheetStepper(i, j, f),
+    });
+    kk = { i, j, f };
+    kkMark();
+    kkScroll();
+  }
+  // zvýrazní v tabulce řádek série, kterou krokovač upravuje (bez překreslení)
+  function kkMark() {
+    for (const row of document.querySelectorAll(".sets tr.kk-on")) {
+      row.classList.remove("kk-on");
+    }
+    const input = kk && S.active ? document.getElementById(kkInputId(S.active.ex[kk.i], kk.j, kk.f)) : null;
+    if (input) {
+      input.closest("tr").classList.add("kk-on");
+    }
+  }
+  // zavření krokovače (i když ho nahradí jiný panel): zrušit zvýraznění řádku
+  function kkEnd() {
+    if (!kk) return;
+    kk = null;
+    kkHoldStop();
+    kkMark();
+  }
+  // posune stránku, aby upravovaná série byla vidět nad panelem a pod horní lištou
+  function kkScroll() {
+    const row = document.querySelector(".sets tr.kk-on");
+    const sheet = document.querySelector("#sheetRoot .sheet");
+    if (!row || !sheet) return;
+    const box = row.getBoundingClientRect();
+    const top = document.querySelector("#app .top");
+    const minTop = (top ? top.getBoundingClientRect().bottom : 0) + 8;
+    const maxBottom = window.innerHeight - sheet.offsetHeight - 12;
+    if (box.bottom > maxBottom) {
+      window.scrollBy(0, box.bottom - maxBottom);
+    } else if (box.top < minTop) {
+      window.scrollBy(0, box.top - minTop);
+    }
+  }
+  // klepnutí na − / +: změní hodnotu o krok (nejméně 0, nejvýš hranice z NUM_RULES)
+  function kkPress(btn) {
+    const d = S.active;
+    if (!kk || !d || !d.ex[kk.i] || !d.ex[kk.i].sets[kk.j]) return;
+    const e = d.ex[kk.i];
+    const s = e.sets[kk.j];
+    const rule = btn.dataset.kf;
+    const step = rule === "reps" ? 1 : kkStep(d, e, rule);
+    let value = kkBase(d, kk.i, kk.j, rule) + +btn.dataset.kk * step;
+    value = Math.min(NUM_RULES[rule].max, Math.max(0, value));
+    value = Math.round(value * 100) / 100; // bez chyb zaokrouhlení (0,1 + 0,2)
+    s[rule] = kkText(rule, value);
+    delete s.jumpOk; // změněná hodnota = znovu zkontrolovat velký skok
+    touchDraft();
+    const shown = document.getElementById("kk-" + rule);
+    if (shown) {
+      shown.innerHTML = kkValue(d, kk.i, kk.j, rule);
+    }
+    // políčko v tabulce nad panelem ukazuje hodnotu hned
+    for (const fld of kFields(kindOf(e.exId))) {
+      if (setRule(fld) !== rule) continue;
+      const input = document.getElementById(kkInputId(e, kk.j, fld));
+      if (input) {
+        input.value = s[rule];
+        input.numLast = s[rule];
+        input.className = "cell" + numCls(rule, s[rule]);
+      }
+    }
+  }
+  function kkHoldStop() {
+    clearTimeout(kkHold);
+    clearInterval(kkHold);
+    kkHold = null;
+  }
+  // − / + reaguje hned na dotyk, podržením se hodnota mění dál
+  document.addEventListener("pointerdown", (ev) => {
+    const btn = ev.target.closest("[data-kk]");
+    if (!btn) return;
+    ev.preventDefault();
+    kkHoldStop();
+    kkPress(btn);
+    kkHold = setTimeout(() => {
+      kkHold = setInterval(() => kkPress(btn), KK_REPEAT_EVERY);
+    }, KK_REPEAT_DELAY);
+  });
+  for (const type of ["pointerup", "pointercancel", "pointerleave", "blur"]) {
+    window.addEventListener(type, kkHoldStop);
+  }
+  // podržení tlačítka nemá otevřít kontextovou nabídku
+  document.addEventListener("contextmenu", (ev) => {
+    if (ev.target.closest && ev.target.closest("[data-kk]")) {
+      ev.preventDefault();
+    }
+  });
+  // „Napsat“: zavře panel a otevře klávesnici v políčku (musí být ve stejném klepnutí, jinak Chrome
+  // klávesnici neukáže)
+  function kkKeyboard() {
+    const d = S.active;
+    if (!kk || !d || !d.ex[kk.i]) return;
+    const id = kkInputId(d.ex[kk.i], kk.j, kk.f);
+    closeSheet();
+    const input = document.getElementById(id);
+    if (!input) return;
+    kkKbd = id;
+    input.readOnly = false;
+    input.removeAttribute("data-act");
+    input.focus();
+    input.select();
+  }
+  // po opuštění políčka zase krokovač
+  document.addEventListener("focusout", (ev) => {
+    if (kkKbd && ev.target.id === kkKbd) {
+      kkKbd = null;
+      scheduleRender();
+    }
+  });
+
+  /* Nastavení → Zadávání čísel v tréninku */
+  function stepperSettings() {
+    return `<section class="sec">
+      <div class="sec-h"><h2>Zadávání čísel v tréninku</h2></div>
+      <div class="card stack">
+        <label class="switch">
+          <input type="checkbox" data-act="stepper" ${S.cfg.stepper !== false ? "checked" : ""}>
+          <span><b>Tlačítka +/−</b><br><span class="xs muted">Klepnutí na kg, opakování, čas nebo km
+              v rozdělaném tréninku otevře dole panel s tlačítky + a −, ovladatelný jednou rukou.
+              Klávesnice je v panelu pod tlačítkem Napsat. Vypnuto = klepnutí rovnou otevře
+              klávesnici.</span></span>
+        </label>
+      </div>
+    </section>`;
   }
 
   /* ---------- REKORDY ----------
@@ -2818,6 +3086,7 @@
       <tbody>`;
     let wn = 0;
     const hints = exHints(e, last);
+    const useStepper = kkOn(d);
     const fval = (s, f) =>
       f === "sec" ? s.sec || "" : f === "km" ? s.km || "" : f === "reps" ? s.reps || "" : s.kg || "";
     const phOf = (p, f) => {
@@ -2831,8 +3100,9 @@
       const lbl = s.t === "w" ? "W" : s.t === "d" ? "D" : s.t === "f" ? "F" : String(++wn);
       const p = hints[j].p,
         hn = hints[j].h;
+      const marked = kk && d === S.active && kk.i === i && kk.j === j;
       h +=
-        `<tr class="${s.done ? "done" : ""}">
+        `<tr class="${s.done ? "done" : ""}${marked ? " kk-on" : ""}">
         <td class="c-type">
           <button class="stype ${s.t}" data-act="cycType" data-i="${i}" data-j="${j}"
               title="${TYPE_NAME[s.t]} — klepnutím změníš">
@@ -2849,11 +3119,14 @@
       }
       for (const f of flds) {
         const fld = f === "plus" || f === "minus" ? "kg" : f;
+        const id = kkInputId(e, j, f);
+        // krokovač (F1-03): políčko jen ke čtení, klepnutí otevře panel s +/−
+        const stepper = useStepper && kkKbd !== id ? ` readonly data-act="kk" data-v="${f}"` : "";
         h += `<td class="c-in">
-          <input class="cell${numCls(fld, fval(s, fld))}" id="in-${e.k}-${j}-${f}"
+          <input class="cell${numCls(fld, fval(s, fld))}" id="${id}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
               value="${esc(fval(s, fld))}" placeholder="${esc(phOf(hn, fld))}"
-              aria-label="${FLD[f].lab}">
+              aria-label="${FLD[f].lab}"${stepper}>
         </td>`;
       }
       if (mode === "active") {
@@ -4791,6 +5064,7 @@
         </div>
       </div>
     </section>`;
+    h += stepperSettings();
     h += restSettings();
     h += recSettings();
     h += versionSettings();
@@ -5453,8 +5727,11 @@
   // sheetNav: otevřený panel pro tlačítko Zpět – lv = kolik stisků Zpět ho zavře (panel v panelu má víc),
   // back = jeden krok zpět, re = znovu otevřít (návrat ze stránky cviku nebo z úpravy tréninku)
   let sheetNav = null;
+  // nav.cls = třída navíc pro panel (např. krokovač "kk")
   function openSheet(title, body, foot, noanim, nav) {
-    document.getElementById("sheetRoot").innerHTML = `<div class="scrim" data-act="scrim">
+    kkEnd();
+    const cls = nav && nav.cls ? " " + nav.cls : "";
+    document.getElementById("sheetRoot").innerHTML = `<div class="scrim${cls}" data-act="scrim">
       <div class="sheet${noanim ? " noanim" : ""}" role="dialog" aria-modal="true"
           aria-label="${esc(title)}">
         <div class="sheet-h">
@@ -5472,6 +5749,7 @@
     );
   }
   function closeSheet() {
+    kkEnd();
     document.getElementById("sheetRoot").innerHTML = "";
     document.body.style.overflow = "";
     sheetNav = null;
@@ -6352,6 +6630,27 @@
       case "done":
         toggleSetDone(d, i, j);
         break;
+      case "kk":
+        sheetStepper(i, j, v);
+        break;
+      case "kkStep": {
+        const a = S.active;
+        if (!kk || !a) break;
+        const step = kkStepNext(a, a.ex[kk.i], v);
+        t.innerHTML = `<span>krok</span> ${esc(kkStepStr(v, step))}`;
+        break;
+      }
+      case "kkKbd":
+        kkKeyboard();
+        break;
+      case "kkDone": {
+        const at = kk;
+        closeSheet();
+        if (at && S.active) {
+          toggleSetDone(S.active, at.i, at.j);
+        }
+        break;
+      }
       case "jumpFix":
         closeSheet();
         focusInput("in-" + d.ex[i].k + "-" + j + "-" + v);
@@ -7260,6 +7559,9 @@
         break;
       case "restOver":
         put("config/main", Object.assign({}, S.cfg, { restOver: t.checked }));
+        break;
+      case "stepper":
+        put("config/main", Object.assign({}, S.cfg, { stepper: t.checked }));
         break;
       case "screenOn":
       case "screenDim":
