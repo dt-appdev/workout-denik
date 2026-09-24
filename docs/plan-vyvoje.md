@@ -1,7 +1,16 @@
- V Claude Code otevři repo a napiš ID úlohy, např. „Udělej F0-02 z docs/plan-vyvoje.md".
-2. Claude udělá změny ve vlastní větvi a otevře pull request.
-3. Otestuješ v telefonu, dáš Merge.
-4. Claude v rámci téhož PR zaškrtne úlohu a přidá řádek do logu na konci tohoto souboru.
+# Workout deník – plán vývoje
+
+*Převedeno z dokumentu na claude.ai 23. 9. 2026 při přechodu na PWA + GitHub.*
+
+## Jak s plánem pracovat
+
+Jedna session v Claude Code = jedna úloha z plánu, označená ID (např. F1-01). Tento soubor je jediný zdroj pravdy o tom, co je hotové a co je na řadě.
+
+1. V Claude Code otevři repo a napiš ID úlohy, např. „Udělej F0-02 z docs/plan-vyvoje.md".
+2. Claude nejdřív popíše, jak bude funkce fungovat a co se změní, výhody, nevýhody a dopady na další vývoj, a položí doplňující otázky. Implementovat začne až na výslovný pokyn.
+3. Claude udělá změny ve vlastní větvi a otevře pull request.
+4. Otestuješ v telefonu, dáš Merge.
+5. Claude v rámci téhož PR zaškrtne úlohu a přidá řádek do logu na konci tohoto souboru.
 
 Pravidla pro každou úpravu:
 
@@ -29,6 +38,16 @@ Původní zadání:
 ## Priority a pořadí
 
 Pořadí: nejdřív ochrana dat, pak pohodlí při samotném tréninku, pak šablony, statistiky a nakonec chytré funkce. Úlohy uvnitř fáze jsou seřazené podle priority, dělají se shora dolů.
+
+Aktuální pořadí dalších úloh (zhodnoceno 24. 9. 2026, má přednost před pořadím ve fázích):
+
+1. **F1-10** Políčka pro čísla – do historie se dnes ukládají přepočtené nesmysly, které pak kazí rekordy, statistiky i „Minule“.
+2. **F1-02** Displej nezhasne – pár řádků, pomůže při každém tréninku a obchází zpožděné oznámení pauzy se zamčeným displejem (F1-04). Vypínatelné kvůli baterii.
+3. **F0-10** Čitelný kód – čím později, tím víc konfliktů; dělat, když není otevřený jiný PR.
+4. **F1-03** Velká tlačítka +/− – nejužitečnější zbylá úloha fáze 1 (ovládání jednou rukou).
+5. **F0-08, F0-09** Zabezpečení – pojistky, nejpozději před F2-05 (vlastní fotky).
+6. **F3-09** Uklidit Nastavení – před fází 5, která přidá další volby.
+7. Dál podle fází: zbytek fáze 1 (F1-06, F1-07, F1-08), pak fáze 2, 3, 4 a 5.
 
 ```mermaid
 flowchart LR
@@ -67,12 +86,12 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [ ] **F1-02** Displej nezhasne během tréninku (Wake Lock).
 - [ ] **F1-03** Velká tlačítka +/− pro váhu a opakování, ovládání jednou rukou.
 - [x] **F1-04** Časovač počítaný z času startu (nevypadne na pozadí) a vibrace na konci pauzy.
-- [ ] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče.
+- [x] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče.
 - [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05).
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
 - [ ] **F1-08** U warm-up série tlačitko "60%", které přednastaví váhu v sérii na 60% maxima z minula, následna editace je zachována
 - [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04).
-- [ ] **F1-10** Políčka pro čísla přijmou jen čísla (priorita: brzy). Dnes jde do kg, opakování, času, km i měření zapsat cokoli (např. „**5;8-;“) a ✓ sérii přijme. Povolit jen číslice a desetinnou čárku/tečku (u času i dvojtečku), nesmysl nepřijmout a políčko zvýraznit. Ověřit i uložení a starší data.
+- [x] **F1-10** Políčka pro čísla přijmou jen čísla (priorita: brzy). Dnes jde do kg, opakování, času, km i měření zapsat cokoli (např. „**5;8-;“) a ✓ sérii přijme. Povolit jen číslice a desetinnou čárku/tečku (u času i dvojtečku), nesmysl nepřijmout a políčko zvýraznit. Ověřit i uložení a starší data. Navíc upozornění na podezřele velký skok proti minulé sérii (překlep 150 místo 50).
 
 ### Fáze 2 – Šablony a historie
 
@@ -157,6 +176,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F0-10 | Přeformátovat ručně, nebo nástrojem? Jak dlouhé řádky? | Jednorázově nástrojem (formátovač spuštěný jen při vývoji, do repa se nic nepřidá), pak ruční úprava HTML šablon; řádky do cca 110 znaků. |
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F1-01 | Šedé, nebo černé předvyplnění? Co v novém fitku? Hodnoty ze šablony? Víc sérií než minule? | Vyřešeno 23. 9.: šedé (✓ převezme); cvik vázaný na fitko bez záznamu v tomto fitku = prázdné, jen info „V jiném fitku (…)“; hodnoty ze šablony jen u nikdy necvičeného cviku; série bez záznamu z minula = „–“ ve sloupci Minule i v políčkách; „minule“ = poslední trénink s cvikem (ne běh šablony); sloupec Minule jen informace; univerzální cviky dál z kteréhokoli fitka. |
+| F1-10 | Jak přísně hlídat čísla? Hranice, desetinná místa, co s překlepem? | Vyřešeno 24. 9.: nepovolený znak se do políčka nedostane, nesmysl má červený rámeček a nejde uložit; hranice kg a km 999, opakování 999 (jen celá), čas 23:59:59, procenta 100, desetinná místa nejvýš 2 (další číslice ani číslice nad hranici nejdou napsat, „,5“ → „0,5“, čas „85“ → „1:25“ a „1:5“ → „1:05“ po opuštění políčka); 0 kg projde, 0 opakování ne; u podezřele velkého nárůstu proti minulé sérii (kg 1,5× a +20, opakování 2× a +10, čas a km 2×) dotaz „Opravdu…?“, jen při ✓ v rozdělaném tréninku; pokles se nehlídá. |
 | F1-04 | Jak upozornit na konec pauzy, když je appka na pozadí nebo displej zhasnutý? | Vyřešeno 23. 9.: systémové oznámení ze service workeru („Další: cvik · N. série“), vypínatelné v Nastavení; v appce na konci 2 dlouhé vibrace a pípnutí (volba zvuk / vibrace / obojí); přečas „+0:25“ vypínatelný; pauza po zahřívací sérii stejná; oznámení při startu pauzy ne; délka pauzy podle cviku odložena jako F1-09. Se zamčeným displejem může oznámení přijít pozdě (Android uspí procesor); udržování telefonu vzhůru neslyšitelným tónem zamítnuto. |
 | F2-01 | „Cvičit znovu" z tréninku v jiném fitku: spustit v aktuálním, nebo původním fitku? | Vyřešeno 23. 9.: před startem okno s volbou fitka (předvybrané aktuální); počet a druh sérií z vybraného tréninku, hodnoty šedě z minula ve zvoleném fitku (F1-01); vazba na šablonu zůstává, „Aktualizovat šablonu“ nezaškrtnuté; poznámky ke cvikům jen ve stejném fitku; tlačítko jen v detailu tréninku. |
 | F2-02 | Mají mít šablony různé výchozí váhy pro každé fitko? | Ne, stačí F1-01 |
@@ -178,6 +198,8 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 24. 9. 2026 | F1-10 | Po připomínkách: třetí desetinné místo ani číslici navíc (4. číslice u hranice 999) nejde napsat, políčko ji nepřijme (dřív zčervenalo); „,5“ se hned změní na „0,5“. Po opuštění políčka a při ✓ se hodnota sjednotí: čas „85“ → „1:25“, „1:5“ → „1:05“, váha „5,“ → „5“, „082“ → „82“, „82.5“ → „82,5“. Samotné číslo v čase dál znamená sekundy. |
+| 24. 9. 2026 | F1-10 | Políčka pro čísla (série, délka tréninku, měření, tělesná hmotnost v Nastavení) přijmou jen číslice, desetinnou čárku/tečku a u času dvojtečku (čárka a tečka se v čase mění na dvojtečku, klávesnice s čísly dvojtečku nemá). Nesmysl (moc desetinných míst, nad hranicí, 1:75) má červený rámeček, po opuštění políčka krátká nápověda a ✓, Dokončit, Uložit ani Uložit šablonu / měření ho nepustí (skočí do políčka). Při ✓ v rozdělaném tréninku dotaz „Opravdu 150 kg? Minule: 80 kg“ u velkého nárůstu (jen nárůst; Opravit / Ano, je to správně; potvrzení platí, dokud se hodnota nezmění). Starší data s víc desetinnými místy (např. převod z liber) se v políčku zaokrouhlí na 2. Formát dat ani zálohy beze změny. F1-05 (rozdělaný trénink po zavření prohlížeče) ověřeno na telefonu, fungovalo už dřív. Do plánu zapsané aktuální pořadí úloh a opravený začátek souboru. |
 | 24. 9. 2026 | – | Nová pravidla stylu kódu v CLAUDE.md (čitelnost pro člověka má přednost před stručností: jeden příkaz na řádek, víceřádkové HTML šablony, srozumitelné názvy, komentáře). Do plánu přidány úlohy F0-10 (přeformátovat stávající kód) a F0-11 (rozdělit `js/app.js` do víc souborů). |
 | 24. 9. 2026 | F3-02 | Po testu na telefonu: medaile po cviku už nezmizí sama po 5 s (nestačilo to na přečtení), zavře ji tlačítko Pokračovat, klepnutí mimo kartu nebo Zpět. Nastavení → Rekordy má dva vypínače: oslava po dokončení cviku a po uložení tréninku (`recCelEx`, `recCelW`). Dlouhý seznam rekordů na konci neposkočí (řádek „Posuň pro další“ drží místo) a nemá posuvník přes hodnoty; rozmazaný okraj je dole i nahoře, podle toho, kam se dá posunout. Nová úloha F1-10: políčka pro čísla přijímají i text. |
 | 24. 9. 2026 | F3-02 | Oslava rekordu: po odškrtnutí poslední pracovní série cviku s novým rekordem vyskočí medaile (zlatá za velký rekord, stříbrná jen za malý) s paprsky, jiskrami a odleskem, pod ní „Nový rekord!“, název cviku a všechny rekordy s hodnotou „dříve“. Zmizí po 5 s nebo klepnutím či Zpět, časovač pauzy běží dál. Po uložení tréninku medaile nad souhrnem se všemi rekordy po cvicích (tlačítko Pokračovat, dlouhý seznam se posouvá uvnitř karty). Nastavení → Rekordy: vypínač oslavy, výběr zvuku (Vypnuto, Fanfára, Ta-dá, Zvonkohra, Level up, Mince, Harfa) s přehráním, Vyzkoušet. S „Odstranit animace“ v Androidu bez pohybu. Nová úloha F3-09 (uklidit Nastavení). Formát zálohy beze změny, v nastavení přibyly `recCel` a `recSnd` s výchozí hodnotou. |
