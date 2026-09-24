@@ -108,6 +108,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
     nemůže změnit vzhled (mezi atributy, vedle blokového prvku, mezi prvky flex/grid),
     jinak šablonu rozdělit na dvě spojené přes `+` (F0-10).
 - Kliknutí se řeší delegací přes `data-act` / `data-v` (jeden velký `switch`).
+- Tlačítka (F2-07): akce v nadpisu sekce (`.sec-h`) jen jako ikona v rámečku malého tlačítka `icoBtn(act, ikona,
+  popis, v)` (ikony v `IC`, popis pro čtečku). Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách
+  a panelech. Krátký formulář (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu
+  cviků (trénink, šablona) = stránka se šipkou ← a dotazem „Zahodit změny?“ (Nový / Upravit cvik přejde na stránku
+  v F3-14).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
@@ -149,7 +154,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v `localStorage`. Stránka cviku (route `exd`, `vExDetail`) má části Popis
   a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
   (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
-- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (šipky v Nastavení, akce `gymMove`).
+- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (přetažením v Nastavení, F2-07).
   Barva je uložená v `g.col` (1–`GYM_COLORS` = 12, CSS proměnná `--sN`), doplňuje ji
   `cfgNorm` při načtení; nová barva přes `freeGymCol`. Barvu nikdy nepočítat z pořadí.
   Výběr barvy v `sheetGym` (F3-01, akce `gymCol`). Grafy, které nepatří fitku, mají `var(--chart)`, ne `--s1`.
@@ -246,6 +251,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
   série z minula bez zahřívacích (`warmMax`, přes `draftLast`), zaokrouhleno na krok `kkStep` (`warmKg`). Zápis přes
   `kkSet` (stejně jako − / +), bez záznamu z minula se tlačítko neukáže.
+- Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
+  Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
+  uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona
+  `tplNextOrder`). Vysoké položky (karty cviků) se netahají na stránce, ale v panelu s krátkým seznamem
+  (`sheetExOrder`, `sheetTplOrder`). V panelu se posouvá `.sheet-b`, jinak stránka (`dndView` bez lišt).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
