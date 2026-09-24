@@ -912,22 +912,30 @@ tr.done .okb {
   background: rgba(10, 12, 15, 0.28);
 }
 .kk .sheet-h {
-  padding-top: 8px;
-  padding-bottom: 4px;
+  padding-top: 12px;
+  padding-bottom: 6px;
+}
+.kk .sheet-h .iconbtn {
+  width: 54px;
+  height: 54px;
+}
+.kk .sheet-h .iconbtn svg {
+  width: 30px;
+  height: 30px;
 }
 .kk .sheet-h h2 {
-  font-size: 17px;
+  font-size: 26px;
 }
 .kk .sheet-b {
-  gap: 8px;
-  padding-top: 6px;
-  padding-bottom: 8px;
+  gap: 12px;
+  padding-top: 9px;
+  padding-bottom: 12px;
 }
 .kk-sub {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 12px;
+  font-size: 20px;
   color: var(--ink-3);
 }
 .kk-sub b {
@@ -938,10 +946,10 @@ tr.done .okb {
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
-  border-radius: 8px;
-  min-height: 34px;
-  padding: 4px 10px;
-  font-size: 13px;
+  border-radius: 12px;
+  min-height: 51px;
+  padding: 6px 15px;
+  font-size: 20px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -951,18 +959,18 @@ tr.done .okb {
 }
 .kk-row {
   display: grid;
-  grid-template-columns: 56px 1fr 56px;
+  grid-template-columns: 84px 1fr 84px;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 .kk-b {
-  height: 44px;
-  border-radius: 10px;
+  height: 66px;
+  border-radius: 15px;
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
   font-family: var(--display);
-  font-size: 26px;
+  font-size: 39px;
   font-weight: 700;
   line-height: 1;
   touch-action: manipulation;
@@ -977,11 +985,11 @@ tr.done .okb {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 6px;
+  gap: 9px;
 }
 .kk-v b {
   font-family: var(--display);
-  font-size: 28px;
+  font-size: 42px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -990,20 +998,20 @@ tr.done .okb {
   color: var(--ink-3);
 }
 .kk-v small {
-  font-size: 11px;
+  font-size: 16px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
 }
 .kk .sheet-f {
-  padding-top: 8px;
-  padding-bottom: 10px;
+  padding-top: 12px;
+  padding-bottom: 15px;
 }
 .kk .sheet-f .btn {
-  min-height: 40px;
-  padding: 6px 12px;
-  font-size: 14px;
+  min-height: 60px;
+  padding: 9px 18px;
+  font-size: 21px;
 }
 .exc-f {
   padding: 6px 10px 12px;

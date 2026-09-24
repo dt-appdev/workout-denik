@@ -1545,7 +1545,7 @@
      „Série hotová“ zavře panel a odškrtne sérii přes toggleSetDone (kontrola čísel, velký skok, rekord,
      pauza). Nic nového se neukládá do dat tréninku. */
   const STEPS = {
-    kg: [0.5, 1, 1.25, 2.5, 5],
+    kg: [0.5, 1, 1.25, 2.5, 5, 10],
     sec: [1, 5, 30],
     km: [0.1, 0.5, 1],
   };
@@ -1573,7 +1573,7 @@
     const saved = Local.get("kkStep", {})[kkStepKey(d, e, rule)];
     return STEPS[rule].includes(saved) ? saved : STEP_DEF[rule];
   }
-  // další krok dokola (0,5 → 1 → 1,25 → 2,5 → 5 → 0,5 …) a uložení
+  // další krok dokola (0,5 → 1 → 1,25 → 2,5 → 5 → 10 → 0,5 …) a uložení
   function kkStepNext(d, e, rule) {
     const list = STEPS[rule];
     const next = list[(list.indexOf(kkStep(d, e, rule)) + 1) % list.length];
