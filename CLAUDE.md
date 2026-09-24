@@ -175,6 +175,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`sheetRestLog`). Ve vydané verzi nic takového být nemá (přání uživatele).
   Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
   vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
+- Displej během pauzy (F1-02, sekce „displej během pauzy“): `S.cfg.screenOn` (výchozí vypnuto) = Screen Wake Lock jen
+  během pauzy (`S.restEnd`, i přečas) v rozdělaném tréninku, appka na očích. Vše řídí `wakeSync()` (volá ho `restSave`,
+  `visibilitychange`, baterie a interval s `restTick`). Pojistka `WAKE_IDLE` 10 min bez dotyku (`wakeTouch`), baterie pod
+  `WAKE_BATT` bez nabíječky (`batteryLow`, `navigator.getBattery`) = dočasně vypnuto s upozorněním v `wakeSettings`.
+  `S.cfg.screenDim`: po `WAKE_DIM` 30 s černá vrstva `.dim` s odpočtem (`dimEl`, jas měnit nejde), klepnutí ji jen schová.
 - Oslava rekordu (F3-02, sekce „OSLAVA REKORDU“): `celebrate(R, podtitul, auto)` = medaile přes celou obrazovku
   (element `.cel` v `body`, stav `celEl`; `navBack`/`navDepth` s ní počítají). V rozdělaném tréninku ji spouští
   `celExercise` po odškrtnutí, když jsou hotové všechny pracovní série cviku (`exDone`) a `liveRecords` hlásí rekord

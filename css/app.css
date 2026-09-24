@@ -182,6 +182,21 @@ tr.done .okb{background:var(--good);border-color:var(--good);color:var(--surface
 .rest-in span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;flex:1}
 .rest-in button{background:rgba(127,127,127,.22);border:0;color:inherit;border-radius:9px;min-height:38px;padding:0 11px;font-weight:700}
 .rest-in.over{background:var(--accent);color:var(--accent-ink)} /* přečas po konci pauzy (F1-04) */
+/* ztmavení během pauzy (F1-02): černá obrazovka jen s odpočtem, po konci pauzy světlejší */
+.dim{
+  position:fixed;inset:0;z-index:90;background:#000;color:rgba(255,255,255,.32);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:calc(16px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));
+  text-align:center;touch-action:none;user-select:none;animation:dimIn 1s ease-out both
+}
+.dim-clock{font-family:var(--display);font-size:88px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.dim-lab{font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.dim-next{font-size:15px;max-width:320px}
+.dim-hint{position:absolute;left:0;right:0;bottom:calc(28px + env(safe-area-inset-bottom,0px));font-size:12px;opacity:.7}
+.dim.over{color:rgba(255,255,255,.85)}
+.dim.over .dim-clock{color:#ee5b51}
+@keyframes dimIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.dim{animation:none}}
 
 /* history */
 .hw{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
