@@ -8177,7 +8177,7 @@
      Formát souboru: version 2 = version 1 + pole "photos" (zatím prázdné, pro F2-05).
      Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše". */
   const BK_VERSION = 2,
-    BK_REMIND_DAYS = 7,
+    BK_REMIND_DAYS = 14,
     BK_AUTO_DAYS = 7,
     BK_MAX_POINTS = 8;
   const BK_REASON = {
@@ -8229,7 +8229,8 @@
     const last = lastBackupAt();
     return !last || daysAgo(last) >= BK_REMIND_DAYS;
   }
-  /* připomínka na úvodní obrazovce (a oranžový řádek Data a záloha v Nastavení) */
+  /* připomínka na úvodní obrazovce (a oranžový řádek Data a záloha v Nastavení);
+     klepnutí na pruh otevře Nastavení → Data a záloha, tlačítko Zálohovat rovnou stáhne zálohu */
   function backupBanner() {
     if (!backupDue()) return "";
     const last = lastBackupAt();
@@ -8237,7 +8238,8 @@
       ? "Poslední záloha do souboru " + agoLabel(last) + "."
       : "Zatím nemáš žádnou zálohu v souboru.";
     return (
-      `<div class="banner act"><span class="grow">${txt}</span>` +
+      `<div class="banner act" data-act="setOpen" data-v="data" role="button">` +
+      `<span class="grow">${txt}</span>` +
       `<button class="btn" data-act="export">
         Zálohovat
       </button></div>`
