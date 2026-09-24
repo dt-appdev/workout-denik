@@ -1641,6 +1641,239 @@ tr.done .okb {
 .figs.sm .fig {
   width: 108px;
 }
+/* fotky u cviku (F2-05): galerie (postava + fotky, posun prstem, tečky) */
+.gal {
+  margin: 4px 0 10px;
+}
+.gal-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.gal-track::-webkit-scrollbar {
+  display: none;
+}
+.gal-s {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  position: relative;
+  min-height: 220px;
+  border: 0;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.gal-s.fig {
+  background: transparent;
+  border-radius: 0;
+}
+.gal-s.fig .figs {
+  margin: 0;
+}
+.gal-s img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gal-tag {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(10, 12, 15, 0.72);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gal-tag .sw {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.gal-pin {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.gal-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+.gal-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+.gal-dots i.on {
+  background: var(--ink);
+}
+.gal-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 12px;
+}
+/* náhledy fotek (přidání, výběr z online databáze) */
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.thumbs .th {
+  position: relative;
+  width: 96px;
+  height: 72px;
+  padding: 0;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 2px solid transparent;
+}
+.thumbs.big .th {
+  width: calc(50% - 4px);
+  height: 120px;
+}
+.thumbs .th img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.thumbs .th.sel {
+  border-color: var(--accent);
+}
+.thumbs .th.saved {
+  opacity: 0.6;
+}
+.thumbs .ck {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(10, 12, 15, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+.thumbs .th.sel .ck {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.thumbs .th.saved .ck {
+  display: none;
+}
+/* fotka přes celou obrazovku: vždy tmavá, fotka se celá vejde na displej */
+.pv {
+  color-scheme: dark;
+  --bg: #000;
+  --surface: #1b1e24;
+  --surface-2: #1f232a;
+  --line: #2a2f37;
+  --line-2: #3a404a;
+  --ink: #eceef1;
+  --ink-2: #ccd1d8;
+  --ink-3: #b0b6bf;
+  --fail: #f0736a;
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: #000;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+}
+.pv-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 6px;
+}
+.pv-h .iconbtn {
+  color: var(--ink);
+}
+.pv-h b {
+  flex: none;
+  font-size: 15px;
+}
+.pv-name {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 13px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pv-track {
+  flex: 1;
+  min-height: 0;
+}
+.pv-s {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pv-s img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.pv-f {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 14px 16px;
+  background: #0c0d10;
+}
+.pv-f .gal-dots {
+  margin-top: 0;
+}
+.pv-gym {
+  justify-content: flex-start;
+  text-align: left;
+}
+.pv-gym .sw {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
 .mus {
   display: flex;
   flex-wrap: wrap;
