@@ -1635,7 +1635,7 @@
       .filter((rule) => STEPS[rule])
       .map(
         (rule) =>
-          `<button class="kk-step" data-act="kkStep" data-v="${rule}">
+          `<button class="btn sm" data-act="kkStep" data-v="${rule}">
             <span>krok</span> ${esc(kkStepStr(rule, kkStep(d, e, rule)))}
           </button>`,
       )
@@ -1648,15 +1648,15 @@
     for (const fld of flds) {
       const rule = setRule(fld);
       body += `<div class="kk-row">
-        <button class="kk-b" data-kk="-1" data-kf="${rule}" aria-label="Ubrat">−</button>
+        <button class="btn kk-b" data-kk="-1" data-kf="${rule}" aria-label="Ubrat">−</button>
         <div class="kk-v">
           <span id="kk-${rule}">${kkValue(d, i, j, rule)}</span>
           <small>${esc(FLD[fld].lab)}</small>
         </div>
-        <button class="kk-b" data-kk="1" data-kf="${rule}" aria-label="Přidat">+</button>
+        <button class="btn kk-b" data-kk="1" data-kf="${rule}" aria-label="Přidat">+</button>
       </div>`;
     }
-    const foot = `<button class="btn" data-act="kkKbd">⌨ Napsat</button>
+    const foot = `<button class="btn grow" data-act="kkKbd">⌨ Napsat</button>
       ${
         s.done
           ? '<button class="btn primary grow" data-act="closeSheet">Hotovo</button>'

@@ -908,70 +908,39 @@ tr.done .okb {
   border-color: var(--accent);
   background: var(--surface);
 }
+/* panel krokovače: hlavička, tlačítka a popisky jako ve zbytku appky (.sheet-h, .btn, .btn.sm, .ed-meta),
+   větší jsou jen tlačítka − / + a upravovaná hodnota */
 .scrim.kk {
   background: rgba(10, 12, 15, 0.28);
-}
-.kk .sheet-h {
-  padding-top: 12px;
-  padding-bottom: 6px;
-}
-.kk .sheet-h .iconbtn {
-  width: 54px;
-  height: 54px;
-}
-.kk .sheet-h .iconbtn svg {
-  width: 30px;
-  height: 30px;
-}
-.kk .sheet-h h2 {
-  font-size: 26px;
-}
-.kk .sheet-b {
-  gap: 12px;
-  padding-top: 9px;
-  padding-bottom: 12px;
 }
 .kk-sub {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 15px; /* jako běžný text appky (body) */
+  gap: 8px;
   color: var(--ink-3);
 }
 .kk-sub b {
   color: var(--ink-2);
 }
-.kk-step {
+.kk-sub .btn {
   flex: none;
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: 12px;
-  min-height: 51px;
-  padding: 6px 15px;
-  font-size: 20px;
-  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.kk-step span {
+.kk-sub .btn span {
   color: var(--ink-3);
   font-weight: 500;
 }
 .kk-row {
   display: grid;
-  grid-template-columns: 84px 1fr 84px;
+  grid-template-columns: 72px 1fr 72px;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 .kk-b {
-  height: 66px;
-  border-radius: 15px;
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink);
+  min-height: 52px;
+  padding: 0;
   font-family: var(--display);
-  font-size: 39px;
-  font-weight: 700;
+  font-size: 26px;
   line-height: 1;
   touch-action: manipulation;
   user-select: none;
@@ -985,11 +954,11 @@ tr.done .okb {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 9px;
+  gap: 6px;
 }
 .kk-v b {
   font-family: var(--display);
-  font-size: 42px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -998,20 +967,11 @@ tr.done .okb {
   color: var(--ink-3);
 }
 .kk-v small {
-  font-size: 16px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
-}
-.kk .sheet-f {
-  padding-top: 12px;
-  padding-bottom: 15px;
-}
-.kk .sheet-f .btn {
-  min-height: 60px;
-  padding: 9px 18px;
-  font-size: 21px;
 }
 .exc-f {
   padding: 6px 10px 12px;
