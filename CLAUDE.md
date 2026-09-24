@@ -180,6 +180,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   tréninku (jako šablona). Rozdělaný trénink má `again` = id původního tréninku (kvůli nezaškrtnutému
   „Aktualizovat šablonu“), uložený trénink ho má jako `againOf` (porovnání v souhrnu, F3-03; starší
   rozdělaný trénink může mít `again:true`). Série do šablony z tréninku vždy přes `tplSet` (i `sec`, `km`).
+- Šablony podle fitka (F2-02, sekce „ŠABLONY PODLE FITKA“): šablona `{name, order, gyms, items}`, `gyms` = fitka
+  (`[]` = všechna, i starší šablony; doplňuje `tplNorm` při načtení a v `normBackup`), jen existující fitka přes `tplGyms`,
+  `tplHere(t, gymId)`. Úvodní obrazovka `vHomeTpls`: šablony `curGym()` nahoře, ostatní sbalené (`tplOther`, neukládá se),
+  karta `tplCard`. Výběr fitek v editoru `tplGymPick` (akce `tplGym`, `d.gyms`). Zápis šablony vždy přes
+  `Object.assign` s původní šablonou (zachová pole, která editor nezná). `delGym` odebere fitko i ze šablon.
 - Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“): panel `sheetWorkout(w, justSaved, nav)` po uložení
   i z Historie. Minulý běh stejného tréninku `prevRun` (pravidlo `sameRun`: šablona, jinak název bez
   automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné fitko), u cviku poslední výskyt `prevEx`

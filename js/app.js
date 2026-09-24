@@ -875,7 +875,7 @@
     if (!c) return;
     S.cfg = cfgNorm(c.cfg || S.cfg);
     S.exLib = exLoad(c.exLib, c.exV !== EX_V);
-    S.templates = c.templates || {};
+    S.templates = tplNorm(c.templates);
     S.months = c.months || {};
     S.body = c.body || {};
     if (c.bk) {
@@ -908,7 +908,7 @@
         S.exLegacy = S.exV !== EX_V && Object.keys(items).length ? items : null;
         S.exLib = exLoad(items, S.exV !== EX_V, S.exV === EX_V);
       } else if (id === "templates") {
-        S.templates = (data && data.items) || {};
+        S.templates = tplNorm(data && data.items);
       } else if (id === "backup") {
         S.bk = Object.assign({ last: null, points: [] }, data || {});
       }
@@ -2840,38 +2840,136 @@
       `Začít prázdný trénink
       </button>
     </section>`;
+    h += vHomeTpls(all);
+    return h;
+  }
+  /* ---------- ŠABLONY PODLE FITKA (F2-02) ----------
+     Šablona má t.gyms = seznam fitek, kam patří ([] = do všech fitek, i u starších šablon). Na úvodní
+     obrazovce nahoře šablony vybraného fitka (curGym) a šablony bez fitka, pod nimi „Ostatní šablony“
+     sbalené (tplOther, po otevření appky vždy sbalené). Smazané fitko se ze šablon odebere (delGym),
+     fitka, která už neexistují, se navíc nikdy nepočítají (tplGyms). */
+  let tplOther = false; // rozbalené „Ostatní šablony“
+  // doplní šablonám seznam fitek (starší šablony ho nemají); items = {id: šablona}
+  function tplNorm(items) {
+    const out = {};
+    for (const [id, t] of Object.entries(items || {})) {
+      if (!t || typeof t !== "object") continue;
+      const gyms = Array.isArray(t.gyms) ? t.gyms.filter((g) => typeof g === "string") : [];
+      out[id] = Object.assign({}, t, { gyms: [...new Set(gyms)] });
+    }
+    return out;
+  }
+  // fitka šablony, jen ta, která ještě existují (v pořadí fitek v Nastavení)
+  const tplGyms = (t) => S.cfg.gyms.filter((g) => (t.gyms || []).includes(g.id)).map((g) => g.id);
+  // patří šablona do fitka gymId? (bez fitka = do všech)
+  function tplHere(t, gymId) {
+    const gyms = tplGyms(t);
+    return !gyms.length || gyms.includes(gymId);
+  }
+  // seznam šablon na úvodní obrazovce: šablony vybraného fitka, pod nimi sbalené ostatní
+  function vHomeTpls(all) {
+    const gymId = curGym();
     const tpls = Object.entries(S.templates).sort(
       (a, b) => (a[1].order || 0) - (b[1].order || 0) || a[1].name.localeCompare(b[1].name),
     );
-    h += `<section class="sec">
+    const here = tpls.filter(([, t]) => tplHere(t, gymId));
+    const other = tpls.filter(([, t]) => !tplHere(t, gymId));
+    let h = `<section class="sec">
         <div class="sec-h">
-          <h2>Šablony</h2>
+          <h2>Šablony${gymId && S.cfg.gyms.length > 1 ? " · " + esc(gymName(gymId)) : ""}</h2>
           <button class="btn sm" data-act="newTpl">+ Nová šablona</button>
         </div>
         <div class="stack">`;
     if (!tpls.length) {
       h += '<div class="empty">Zatím žádné šablony. Vytvoř si třeba Push / Pull / Legs.</div>';
+    } else if (!here.length) {
+      h += '<div class="empty">Pro toto fitko zatím žádné šablony.</div>';
     }
-    for (const [id, t] of tpls) {
-      const last = all.find((w) => sameRun({ tplId: id, title: t.name }, w));
-      h +=
-        `<div class="card tpl">
+    for (const [id, t] of here) {
+      h += tplCard(id, t, all, gymId);
+    }
+    h += "</div></section>";
+    if (!other.length) return h;
+    // bez šablon pro toto fitko jsou ostatní vidět hned (bez sbalení)
+    const open = tplOther || !here.length;
+    h += '<section class="sec">';
+    if (here.length) {
+      h += `<button class="tpl-other" data-act="tplOther" aria-expanded="${open}">
+          <span class="grow">Ostatní šablony (${other.length})</span>${open ? IC.up : IC.down}
+        </button>`;
+    } else {
+      h += `<div class="sec-h"><h2>Ostatní šablony</h2></div>`;
+    }
+    if (open) {
+      h += '<div class="stack">';
+      for (const [id, t] of other) {
+        h += tplCard(id, t, all, null);
+      }
+      h += "</div>";
+    }
+    h += "</section>";
+    return h;
+  }
+  // výběr fitek v úpravě šablony (víc najednou, žádné = všechna fitka)
+  function tplGymPick(d) {
+    const gyms = d.gyms || [];
+    return `<div class="stack" style="gap:6px">
+        <div class="small" style="font-weight:600">Fitka</div>
+        <div class="chips" data-ck="tplGym">
+          ${S.cfg.gyms
+            .map(
+              (g) =>
+                `<button class="chip" data-act="tplGym" data-v="${g.id}" aria-pressed="${gyms.includes(g.id)}">
+                  <span class="sw" style="background:${gymColor(g.id)}"></span>
+                  ${esc(g.name)}
+                </button>`,
+            )
+            .join("")}
+        </div>
+        <p class="xs muted" style="margin:0">
+          ${
+            gyms.length
+              ? "Šablona se nahoře ukáže jen ve vybraných fitkách, jinde bude mezi ostatními."
+              : "Žádné fitko nevybrané: šablona se nahoře ukáže ve všech fitkách."
+          }
+        </p>
+      </div>`;
+  }
+  /* karta šablony; gymId = šablona vybraného fitka: „naposledy“ přednostně z tohoto fitka (bez názvu fitka),
+     jinak (i u ostatních šablon) poslední běh kdekoli s názvem fitka */
+  function tplCard(id, t, all, gymId) {
+    const runs = all.filter((w) => sameRun({ tplId: id, title: t.name }, w));
+    const lastHere = gymId ? runs.find((w) => w.gymId === gymId) : null;
+    const last = lastHere || runs[0];
+    const lastTxt = !last
+      ? ""
+      : " · naposledy " + fmtDateS(last.start) + (lastHere ? "" : " (" + esc(gymName(last.gymId)) + ")");
+    // u ostatních šablon, kam patří
+    const gyms = gymId ? [] : tplGyms(t);
+    return `<div class="card tpl">
         <div class="grow">
           <h3>${esc(t.name)}</h3>
           <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
-          <p class="xs">
-            ${(t.items || []).length} cviků` +
-        `${last ? " · naposledy " + fmtDateS(last.start) + " (" + esc(gymName(last.gymId)) + ")" : ""}
-          </p>
+          ${
+            gyms.length
+              ? `<p class="xs tpl-gyms">
+                ${gyms
+                  .map(
+                    (g) =>
+                      `<span class="pill"><span class="sw" style="background:${gymColor(g)}"></span>` +
+                      `${esc(gymName(g))}</span>`,
+                  )
+                  .join(" ")}
+              </p>`
+              : ""
+          }
+          <p class="xs">${(t.items || []).length} cviků${lastTxt}</p>
         </div>
         <div class="stack" style="gap:6px">
           <button class="btn sm primary" data-act="startTpl" data-v="${id}">Začít</button>
           <button class="btn sm" data-act="editTpl" data-v="${id}">Upravit</button>
         </div>
       </div>`;
-    }
-    h += "</div></section>";
-    return h;
   }
   function startOfWeek(t) {
     const d = new Date(t);
@@ -3154,6 +3252,9 @@
     h += `<div class="ed-head">
       <input class="ed-title" id="ed-title" data-f="title" value="${esc(d.title)}" aria-label="Název"
           placeholder="Název">`;
+    if (mode === "template" && S.cfg.gyms.length > 1) {
+      h += tplGymPick(d);
+    }
     if (mode !== "template") {
       h +=
         `<div class="row wrap-r">
@@ -7753,7 +7854,14 @@
         startWorkout(v);
         break;
       case "newTpl":
-        S.editDraft = { mode: "template", id: null, title: "Nová šablona", ex: [] };
+        S.editDraft = {
+          mode: "template",
+          id: null,
+          title: "Nová šablona",
+          // předvybrané fitko, kde teď cvičíš (s jedním fitkem bez přiřazení)
+          gyms: curGym() && S.cfg.gyms.length > 1 ? [curGym()] : [],
+          ex: [],
+        };
         goEdit();
         break;
       case "editTpl": {
@@ -7763,6 +7871,7 @@
           id: v,
           title: t.name,
           gymId: curGym(),
+          gyms: tplGyms(t),
           ex: (t.items || []).map((it) => ({
             k: uid("e"),
             exId: it.exId,
@@ -8515,9 +8624,12 @@
         }
         const items = Object.assign({}, S.templates);
         const id = d.id || uid("t");
-        items[id] = {
+        // Object.assign: zachová i pole, která editor nezná
+        items[id] = Object.assign({}, items[id], {
           name,
-          order: (items[id] && items[id].order) || Object.keys(items).length,
+          // pořadí 0 (první šablona) se při uložení nesmí změnit
+          order: items[id] ? items[id].order || 0 : Object.keys(items).length,
+          gyms: tplGyms({ gyms: d.gyms }),
           items: d.ex.map((e) => ({
             exId: e.exId,
             sets: e.sets.map((s) => ({
@@ -8528,13 +8640,23 @@
               km: num(s.km) || 0,
             })),
           })),
-        };
+        });
         put("config/templates", { items });
         S.editDraft = null;
         toast("Šablona uložena");
         go("train");
         break;
       }
+      case "tplGym": {
+        const gyms = tplGyms({ gyms: d.gyms });
+        d.gyms = gyms.includes(v) ? gyms.filter((g) => g !== v) : tplGyms({ gyms: gyms.concat(v) });
+        scheduleRender();
+        break;
+      }
+      case "tplOther":
+        tplOther = !tplOther;
+        scheduleRender();
+        break;
       case "delTpl":
         confirmSheet(
           "Smazat šablonu?",
@@ -8642,6 +8764,8 @@
         items[id] = {
           name: w.title,
           order: Object.keys(items).length,
+          // fitko tréninku (F2-02; s jedním fitkem bez přiřazení)
+          gyms: S.cfg.gyms.length > 1 ? tplGyms({ gyms: [w.gymId] }) : [],
           items: (w.ex || []).map((e) => ({ exId: e.exId, sets: e.sets.map(tplSet) })),
         };
         put("config/templates", { items });
@@ -8845,6 +8969,14 @@
           cfg.defaultGymId = cfg.gyms[0].id;
         }
         put("config/main", cfg);
+        // smazané fitko zmizí i ze šablon (F2-02)
+        if (Object.values(S.templates).some((x) => (x.gyms || []).includes(v))) {
+          const items = {};
+          for (const [id, x] of Object.entries(S.templates)) {
+            items[id] = Object.assign({}, x, { gyms: (x.gyms || []).filter((g) => g !== v) });
+          }
+          put("config/templates", { items });
+        }
         closeSheet();
         break;
       }
@@ -9586,7 +9718,7 @@
       exported: o.exported,
       cfg,
       exercises: exLoad(exUrlsClean(obj(o.exercises)), o.exDb !== EX_V),
-      templates: obj(o.templates),
+      templates: tplNorm(obj(o.templates)),
       months,
       body: obj(o.body),
       photos: photosClean(obj(o.photos)),
