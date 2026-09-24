@@ -152,6 +152,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   Barva je uložená v `g.col` (1–`GYM_COLORS` = 12, CSS proměnná `--sN`), doplňuje ji
   `cfgNorm` při načtení; nová barva přes `freeGymCol`. Barvu nikdy nepočítat z pořadí.
   Výběr barvy v `sheetGym` (F3-01, akce `gymCol`). Grafy, které nepatří fitku, mají `var(--chart)`, ne `--s1`.
+- Písmo (F3-11): velikost písma jen přes stupnici v `:root` v `css/app.css` (`--fs-2xs` 11, `--fs-xs` 12, `--fs-sm` 13,
+  `--fs-md` 14, `--fs-base` 15, `--fs-lg` 17, `--fs-xl` 20, `--fs-2xl` 22, `--fs-3xl` 26, `--fs-4xl` 30, `--fs-clock` 88 px),
+  nikdy `font-size` v px (ani v `style=` v JS). Nastavení → Vzhled → Velikost písma (`Local` `fontScale`, `setFontScale`,
+  `data-fs` na `<html>`) násobí celou stupnici přes `--fs-k` (1 / 1,15 / 1,3). Nová obrazovka se musí vejít i při
+  „Největší“ na šířku 360 px: rozměry podle textu v `em`, ne pevné px; přepínač `.seg` s víc volbami pod nadpis
+  (`.seg-wide`), ne vedle popisku; pevné lišty přes `min(…, vw)` (`--fs-tabs`); rozměry počítané v JS násobit
+  `fontK()` (okraje grafů).
 - Barvy (F3-01): šedý text `--ink-2`/`--ink-3` je zesílený kvůli čitelnosti, drobný text nedělat světlejší.
   Skupiny partií `MGRP` / `MGRP_OF` (6 skupin, i pro radar F3-04), barva `mgCol(k)` = `--g-<skupina>`.
   `musFigs(m, small, grp)`: `grp` = postava v barvách skupin (Statistiky, souhrn), jinak červená; `mgStack` = pruh

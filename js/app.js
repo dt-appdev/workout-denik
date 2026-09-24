@@ -5853,9 +5853,9 @@
             <div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">
               ${esc(f[1])}
             </div>
-            <div style="font-family:var(--display);font-size:34px;font-weight:600;line-height:1"
+            <div style="font-family:var(--display);font-size:var(--fs-4xl);font-weight:600;line-height:1"
                 class="num">
-              ${fmtKg(lastV)} <span style="font-size:18px">${esc(f[2])}</span>
+              ${fmtKg(lastV)} <span style="font-size:var(--fs-lg)">${esc(f[2])}</span>
             </div>
             ${
               avgNow != null
@@ -6073,6 +6073,18 @@
                 `</button>`,
             )
             .join("")}
+        </div>
+      </div>
+    </section>
+    <section class="sec">
+      <div class="sec-h"><h2>Velikost písma</h2></div>
+      <div class="card">
+        <div class="seg seg-wide">
+          ${FONT_SCALES.map(
+            ([k, l]) =>
+              `<button data-act="fontScale" data-v="${k}" aria-pressed="${fontScalePref() === k}">${l}` +
+              `</button>`,
+          ).join("")}
         </div>
       </div>
     </section>`;
@@ -7128,7 +7140,7 @@
           : `<div class="bar" id="restBar" style="width:${Math.max(0, (left / S.restTotal) * 100)}%"></div>`
       }
       <b id="restClock">${restClock(left)}</b>
-      <span>${over ? "Přečas" : "Odpočinek"}</span>
+      <span class="rest-l"><i>${over ? "Přečas" : "Odpočinek"}</i></span>
       ${
         over
           ? '<button data-act="restSkip">Zavřít</button>'
@@ -7433,10 +7445,12 @@
       if (!sp) return;
       const W = el.clientWidth || 320,
         H = sp.h;
-      const padL = 40,
+      // okraje pro popisky os rostou s písmem (F3-11)
+      const textScale = fontK();
+      const padL = Math.round(40 * textScale),
         padR = 12,
         padT = 12,
-        padB = 24;
+        padB = Math.round(24 * textScale);
       const iw = W - padL - padR,
         ih = H - padT - padB;
       let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
@@ -7448,7 +7462,7 @@
         const Y = (v) => padT + ih - (v / ymax) * ih;
         for (const t of ticks) {
           svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
-          <text x="${padL - 6}" y="${Y(t) + 4}" text-anchor="end">${yFmt(t)}</text>`;
+          <text x="${padL - 6}" y="${Y(t) + 4 * textScale}" text-anchor="end">${yFmt(t)}</text>`;
         }
         const bw = iw / sp.bars.length;
         sp.hit = [];
@@ -7501,7 +7515,7 @@
           Y = (y) => padT + ih - ((y - ya) / (yb - ya)) * ih;
         for (const t of ticks) {
           svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
-          <text x="${padL - 6}" y="${Y(t) + 4}" text-anchor="end">${yFmt(t)}</text>`;
+          <text x="${padL - 6}" y="${Y(t) + 4 * textScale}" text-anchor="end">${yFmt(t)}</text>`;
         }
         // x ticks: months
         const span = x1 - x0;
@@ -8819,6 +8833,10 @@
         setTheme(v);
         scheduleRender();
         break;
+      case "fontScale":
+        setFontScale(v);
+        scheduleRender();
+        break;
       case "export":
         doExport();
         break;
@@ -10027,10 +10045,35 @@
       m.content = TEST_PR ? "#f59f00" : getComputedStyle(r).getPropertyValue("--bg").trim() || "#0e1013";
     }
   }
+  /* velikost písma (F3-11): celá stupnice písma v css/app.css se násobí podle data-fs na <html>,
+     pamatuje se jen v tomto zařízení (Local fontScale), stejně jako motiv */
+  const FONT_SCALES = [
+    ["m", "Normální"],
+    ["l", "Větší"],
+    ["xl", "Největší"],
+  ];
+  function fontScalePref() {
+    const v = Local.get("fontScale", "m");
+    return FONT_SCALES.some(([k]) => k === v) ? v : "m";
+  }
+  // násobek písma pro rozměry počítané v JS (okraje grafů), podle --fs-k v css/app.css
+  function fontK() {
+    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fs-k")) || 1;
+  }
+  function setFontScale(v) {
+    Local.set("fontScale", v);
+    const r = document.documentElement;
+    if (v === "l" || v === "xl") {
+      r.setAttribute("data-fs", v);
+    } else {
+      r.removeAttribute("data-fs");
+    }
+  }
   if (TEST_PR) {
     document.title = "TEST #" + TEST_PR + " · Workout deník";
   }
   setTheme(themePref());
+  setFontScale(fontScalePref());
 
   /* ---------- start appky ---------- */
   render.toEx = true; // F1-11: otevřená appka s rozdělaným tréninkem ukáže naposledy změněný cvik
