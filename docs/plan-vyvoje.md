@@ -41,13 +41,14 @@ Pořadí: nejdřív ochrana dat, pak pohodlí při samotném tréninku, pak šab
 
 Aktuální pořadí dalších úloh (zhodnoceno 24. 9. 2026, má přednost před pořadím ve fázích):
 
-1. **F1-10** Políčka pro čísla – do historie se dnes ukládají přepočtené nesmysly, které pak kazí rekordy, statistiky i „Minule“.
-2. **F1-02** Displej nezhasne – pár řádků, pomůže při každém tréninku a obchází zpožděné oznámení pauzy se zamčeným displejem (F1-04). Vypínatelné kvůli baterii.
-3. **F0-10** Čitelný kód – čím později, tím víc konfliktů; dělat, když není otevřený jiný PR.
-4. **F1-03** Velká tlačítka +/− – nejužitečnější zbylá úloha fáze 1 (ovládání jednou rukou).
-5. **F0-08, F0-09** Zabezpečení – pojistky, nejpozději před F2-05 (vlastní fotky).
-6. **F3-09** Uklidit Nastavení – před fází 5, která přidá další volby.
-7. Dál podle fází: zbytek fáze 1 (F1-06, F1-07, F1-08), pak fáze 2, 3, 4 a 5.
+1. **F3-10** Oprava prázdné stránky Statistik u cviků na čas a vzdálenost – chyba ve vydané verzi, malá oprava.
+2. **F1-10** Políčka pro čísla – do historie se dnes ukládají přepočtené nesmysly, které pak kazí rekordy, statistiky i „Minule“.
+3. **F1-02** Displej nezhasne – pár řádků, pomůže při každém tréninku a obchází zpožděné oznámení pauzy se zamčeným displejem (F1-04). Vypínatelné kvůli baterii.
+4. **F0-10** Čitelný kód – čím později, tím víc konfliktů; dělat, když není otevřený jiný PR.
+5. **F1-03** Velká tlačítka +/− – nejužitečnější zbylá úloha fáze 1 (ovládání jednou rukou).
+6. **F0-08, F0-09** Zabezpečení – pojistky, nejpozději před F2-05 (vlastní fotky).
+7. **F3-09** Uklidit Nastavení – před fází 5, která přidá další volby.
+8. Dál podle fází: zbytek fáze 1 (F1-06, F1-07, F1-08), pak fáze 2, 3, 4 a 5.
 
 ```mermaid
 flowchart LR
@@ -115,6 +116,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F3-07** Roční heatmapa tréninků (barva podle počtu sérií).
 - [ ] **F3-08** Jednotky v grafech statistik na Y-ose, čas v hodinách (0:00), objem v kg. 
 - [ ] **F3-09** Uklidit Nastavení: voleb přibývá a stránka je dlouhá. Navrhnout přehlednější uspořádání (např. rozcestník se skupinami Fitka, Trénink, Vzhled, Data a záloha, O aplikaci, každá skupina na vlastní podstránce, nebo sbalitelné sekce).
+- [ ] **F3-10** Oprava (chyba): stránka cviku → Statistiky se u cviku na čas (plank) nebo na vzdálenost (běh) nevykreslí, obrazovka zůstane prázdná. Příčina: výchozí graf „Odh. 1RM“ (`S.detailMetric = "e1rm"`) tyhle cviky nemají a náhradní volba ve `vExDetail` vybere zase „e1rm“. Oprava: náhradou vzít první graf, který cvik má. Nalezeno při F0-10, je i ve vydané verzi.
 
 
 ### Fáze 4 – Chytré funkce
@@ -199,7 +201,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
-| 24. 9. 2026 | F0-10 | Čitelný kód, v appce se nic nemění. `js/app.js`, `css/app.css`, `sw.js` a `js/pwa.js` naformátované podle pravidel v CLAUDE.md: jeden příkaz na řádek, `if`/`for` ve složených závorkách, řádky do cca 110 znaků, CSS jedna vlastnost na řádek. HTML se skládá šablonovými řetězci rozloženými podle struktury HTML (nový řádek jen tam, kde nemůže změnit vzhled, jinak je šablona rozdělená na dvě spojené přes „+“). Nadpisy sekcí česky, komentáře nad nejasnými funkcemi datové vrstvy, „minule“, rekordů, tlačítka Zpět a zálohy. Ověřeno: struktura kódu i všechny texty shodné s původní verzí (až na zlomy řádků) a průchod appkou v prohlížeči (140 obrazovek a panelů) se shodným obsahem i rozvržením. Soubor `.git-blame-ignore-revs`, aby GitHub v historii řádků formátovací commity přeskočil. `app.js` má teď asi 8 400 řádků místo 3 000 (stejný kód, víc řádků). |
+| 24. 9. 2026 | F0-10 | Čitelný kód, v appce se nic nemění. `js/app.js`, `css/app.css`, `sw.js` a `js/pwa.js` naformátované podle pravidel v CLAUDE.md: jeden příkaz na řádek, `if`/`for` ve složených závorkách, řádky do cca 110 znaků, CSS jedna vlastnost na řádek. HTML se skládá šablonovými řetězci rozloženými podle struktury HTML (nový řádek jen tam, kde nemůže změnit vzhled, jinak je šablona rozdělená na dvě spojené přes „+“). Nadpisy sekcí česky, komentáře nad nejasnými funkcemi datové vrstvy, „minule“, rekordů, tlačítka Zpět a zálohy. Ověřeno: struktura kódu i všechny texty shodné s původní verzí (až na zlomy řádků) a průchod appkou v prohlížeči (140 obrazovek a panelů) se shodným obsahem i rozvržením. Soubor `.git-blame-ignore-revs`, aby GitHub v historii řádků formátovací commity přeskočil. `app.js` má teď asi 8 400 řádků místo 3 000 (stejný kód, víc řádků). Při ověřování nalezena starší chyba, zapsaná jako F3-10 (Statistiky cviku na čas a vzdálenost se nevykreslí). |
 | 24. 9. 2026 | F1-02 | Displej nezhasne během pauzy: nový vypínač v Nastavení → Odpočinek mezi sériemi (výchozí vypnuto). Během odpočinku a přečasu v rozdělaném tréninku drží appka displej zapnutý (Wake Lock, jen když je appka na očích; po návratu z jiné aplikace se obnoví sám). Po 10 min bez dotyku displej zhasne jako obvykle. Pod 15 % baterie bez nabíječky se funkce dočasně vypne a Nastavení to ukáže. Druhý vypínač „Po 30 s ztmavit obrazovku“ (výchozí zapnuto): černá obrazovka jen s odpočtem a dalším cvikem, po konci pauzy červený přečas; klepnutí ji schová a nic pod ní nezmáčkne. V testovací verzi se události zámku zapisují do Záznamu oznámení. Formát zálohy beze změny, v nastavení přibyly `screenOn` a `screenDim` s výchozí hodnotou. |
 | 24. 9. 2026 | F1-10 | Po připomínkách: třetí desetinné místo ani číslici navíc (4. číslice u hranice 999) nejde napsat, políčko ji nepřijme (dřív zčervenalo); „,5“ se hned změní na „0,5“. Po opuštění políčka a při ✓ se hodnota sjednotí: čas „85“ → „1:25“, „1:5“ → „1:05“, váha „5,“ → „5“, „082“ → „82“, „82.5“ → „82,5“. Samotné číslo v čase dál znamená sekundy. |
 | 24. 9. 2026 | F1-10 | Políčka pro čísla (série, délka tréninku, měření, tělesná hmotnost v Nastavení) přijmou jen číslice, desetinnou čárku/tečku a u času dvojtečku (čárka a tečka se v čase mění na dvojtečku, klávesnice s čísly dvojtečku nemá). Nesmysl (moc desetinných míst, nad hranicí, 1:75) má červený rámeček, po opuštění políčka krátká nápověda a ✓, Dokončit, Uložit ani Uložit šablonu / měření ho nepustí (skočí do políčka). Při ✓ v rozdělaném tréninku dotaz „Opravdu 150 kg? Minule: 80 kg“ u velkého nárůstu (jen nárůst; Opravit / Ano, je to správně; potvrzení platí, dokud se hodnota nezmění). Starší data s víc desetinnými místy (např. převod z liber) se v políčku zaokrouhlí na 2. Formát dat ani zálohy beze změny. F1-05 (rozdělaný trénink po zavření prohlížeče) ověřeno na telefonu, fungovalo už dřív. Do plánu zapsané aktuální pořadí úloh a opravený začátek souboru. |
