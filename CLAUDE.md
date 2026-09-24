@@ -9,6 +9,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 
 ## Pravidla
 
+- **Před implementací nové úlohy nebo funkce vždy nejdřív:** popiš, jak bude funkce fungovat
+  a co se změní oproti současnému stavu (ověřeno v kódu), jaké má výhody a nevýhody a možné
+  konflikty s budoucím vývojem (úlohy z plánu), a polož doplňující a upřesňující otázky (u každé
+  návrh výchozí volby). **Implementovat začni až po výslovném pokynu uživatele** („implementuj“,
+  „pusť se do toho“…). Odpovědi na otázky samy o sobě pokyn nejsou. Uživatel to nechce pokaždé
+  připomínat.
 - Jen řešení zdarma, žádné placené služby, API ani knihovny.
 - Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí. Nasazuje
   GitHub Actions (`.github/workflows/nasazeni.yml`, F0-04): `main` = vydaná verze
@@ -176,6 +182,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `wRecs`. Zlatá, když je v seznamu velký rekord (`REC_BIG`). Nastavení v `config/main`: `recCelEx` (po cviku; vypnuto =
   hláška po sérii jako dřív), `recCelW` (po tréninku), `recSnd` (id z `CEL_SOUNDS`, `"off"`). Medaile se zavírá jen
   klepnutím (Pokračovat, mimo kartu) nebo Zpět, sama nezmizí. Zvuky se skládají přes Web Audio (`celTone`), žádné soubory.
+- Kontrola čísel (F1-10, sekce „KONTROLA ČÍSEL“ a „UPOZORNĚNÍ NA VELKÝ SKOK“): každé číselné políčko má
+  `data-num="<pravidlo>"` (`NUM_RULES`: `kg`, `reps`, `sec`, `km`, `min`, `body`, `pct`, `kcal`, `bw`), při vykreslení
+  třídu `numCls(pravidlo, hodnota)`. Znaky filtruje `numInput` (globální posluchač `input`), platnost `numCheck`.
+  Před uložením `setProblem` / `draftProblem` (série) a `inputProblem(id)` (políčka ve formulářích). Nové číselné pole
+  (např. F1-03, F1-08, F4-04) vždy přes stejná pravidla. Uložené číslo do políčka přes `numStr` (nejvýš 2 desetinná
+  místa). ✓ série = `toggleSetDone`; velký nárůst proti minulé sérii (`JUMP`, `setJump`) se ptá přes `sheetJump`,
+  potvrzení `s.jumpOk` platí do změny hodnoty a neukládá se.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
