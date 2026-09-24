@@ -895,6 +895,84 @@ tr.done .okb {
   height: 32px;
   font-size: 18px;
 }
+/* krokovač: tlačítka +/− místo klávesnice (F1-03) */
+.cell[readonly] {
+  caret-color: transparent;
+  cursor: pointer;
+  user-select: none;
+}
+.sets tr.kk-on td {
+  background: var(--accent-soft);
+}
+.sets tr.kk-on .cell {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+/* panel krokovače: hlavička, tlačítka a popisky jako ve zbytku appky (.sheet-h, .btn, .btn.sm, .ed-meta),
+   větší jsou jen tlačítka − / + a upravovaná hodnota */
+.scrim.kk {
+  background: rgba(10, 12, 15, 0.28);
+}
+.kk-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-3);
+}
+.kk-sub b {
+  color: var(--ink-2);
+}
+.kk-sub .btn {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.kk-sub .btn span {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.kk-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  align-items: center;
+  gap: 8px;
+}
+.kk-b {
+  min-height: 52px;
+  padding: 0;
+  font-family: var(--display);
+  font-size: 26px;
+  line-height: 1;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.kk-b:active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.kk-v {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+.kk-v b {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kk-v b.ph {
+  color: var(--ink-3);
+}
+.kk-v small {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
 .exc-f {
   padding: 6px 10px 12px;
   display: flex;
