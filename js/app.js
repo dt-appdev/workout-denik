@@ -311,7 +311,7 @@ const S={
   histGym:"all", statsGym:"all", statsMetric:"count", statsRange:lsGet("statsRange","30d"), sumPeriod:"month", exSearch:"", exMuscle:"all",
   detailMetric:"e1rm", detailRange:"1y", detailGym:"all",
   bodyMetric:"weight", bodyRange:"all",
-  histView:lsGet("histView","list"), calM:0, // Historie: seznam / kalendář (F3-06), zobrazený měsíc kalendáře (0 = aktuální)
+  histView:lsGet("histView","cal")==="list"?"list":"cal", calM:0, // Historie: kalendář (výchozí) / seznam (F3-06), zobrazený měsíc kalendáře (0 = aktuální)
   selGym:null
 };
 let downloads=null, pointsApi=null;
@@ -851,7 +851,7 @@ function vHist(){
   const {all}=derive();
   const list=all.filter(w=>S.histGym==="all"||w.gymId===S.histGym);
   let h=topbar("Historie",list.length+" tréninků");
-  h+='<div class="seg seg-wide" style="margin-bottom:10px">'+[["list","Seznam"],["cal","Kalendář"]].map(([k,l])=>'<button data-act="histView" data-v="'+k+'" aria-pressed="'+(S.histView===k)+'">'+l+'</button>').join("")+'</div>';
+  h+='<div class="seg seg-wide" style="margin-bottom:10px">'+[["cal","Kalendář"],["list","Seznam"]].map(([k,l])=>'<button data-act="histView" data-v="'+k+'" aria-pressed="'+(S.histView===k)+'">'+l+'</button>').join("")+'</div>';
   h+=gymChips("histGym",S.histGym,true);
   if(S.histView==="cal")return h+vCal(all,list);
   if(!list.length)return h+'<div class="empty" style="margin-top:14px">Žádné tréninky.</div>';

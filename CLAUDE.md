@@ -138,7 +138,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (vázaný cvik jen ve stejném fitku). Klepnutí na „Porovnáno s…“ = panel v panelu (`prevW`, `wOpen`,
   `wBack`). Procvičené partie `wMuscles` (pomocná partie = půl série), postava přes `musFigs`
   (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
-- Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`list`/`cal`, `Local` `histView`),
+- Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`cal` výchozí / `list`, `Local` `histView`),
   `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
   Tréninky podle dne přes `wByDay` (klíč `dayKey`, použít i pro heatmapu F3-07), měření `bodyByDay`.
   Pod kolečkem název tréninku, streak `calStreak` a volné dny `calRest` vždy ze všech fitek. Klepnutí `sheetCalDay`:
