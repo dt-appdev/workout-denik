@@ -12,7 +12,8 @@
 importScripts("js/verze.js");
 const B = self.APP_BUILD || {};
 const VERSION = B.commit ? B.commit + "-" + B.cas : "lokal";
-const SCOPE = new URL(self.registration.scope).pathname; // "/workout-denik/" nebo "/workout-denik-test/pr-12/"
+// "/workout-denik/" nebo "/workout-denik-test/pr-12/"
+const SCOPE = new URL(self.registration.scope).pathname;
 const PR = (SCOPE.match(/\/pr-(\d+)\/$/) || [])[1];
 const PREFIX = "wd-" + (PR ? "pr" + PR : "main") + "-";
 const CACHE = PREFIX + VERSION;

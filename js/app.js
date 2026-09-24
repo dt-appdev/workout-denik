@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  /* ---------- constants ---------- */
+  /* ---------- konstanty (partie, vybavení, druhy sérií, měsíce, ikony) ---------- */
   const MUSCLES = {
     chest: "Hrudník",
     back: "Záda",
@@ -82,9 +82,9 @@
   };
 
   /* ---------- svalová mapa ----------
-   Anatomické SVG: Ryan Graves, CC BY 4.0 (balíček flutter-body-atlas).
-   Každá svalová vrstva bere barvu z proměnné --f-<klíč>, takže se obarvuje
-   nastavením stylu na obalu, ne přestavbou SVG. */
+     Anatomické SVG: Ryan Graves, CC BY 4.0 (balíček flutter-body-atlas).
+     Každá svalová vrstva bere barvu z proměnné --f-<klíč>, takže se obarvuje
+     nastavením stylu na obalu, ne přestavbou SVG. */
   /* ATLAS (anatomické SVG) je v js/atlas.js */
   const MUSCLE_MAP = (function () {
     const NAMES = {
@@ -170,11 +170,11 @@
     calves: "calves",
   };
   /* Databáze cviků = výchozí EX_DB (js/cviky.js) + odchylky uložené v config/exercises.
-   V config/exercises je {v:2, items:{id: jen změněná pole | celý vlastní cvik}}.
-   Starší data (bez v:2) obsahují celé kopie cviků; při načtení se z nich nechá jen to,
-   co se liší od výchozí databáze. Původní partie (EX_DB_OLD) se nahradí novými,
-   ručně změněné partie zůstanou.
-   partial = položky už jsou jen odchylky (načtené z config/exercises v:2), jinak celé cviky. */
+     V config/exercises je {v:2, items:{id: jen změněná pole | celý vlastní cvik}}.
+     Starší data (bez v:2) obsahují celé kopie cviků; při načtení se z nich nechá jen to,
+     co se liší od výchozí databáze. Původní partie (EX_DB_OLD) se nahradí novými,
+     ručně změněné partie zůstanou.
+     partial = položky už jsou jen odchylky (načtené z config/exercises v:2), jinak celé cviky. */
   const EX_V = 2,
     DELT = { delt_f: "delts", delt_s: "delts", delt_r: "delts" };
   const mNorm = (a) =>
@@ -345,26 +345,26 @@
   }
 
   /* =====================================================================
-   DATOVÁ VRSTVA
-   Aplikace mluví jen se Store. Store drží frontu zápisů, lokální cache
-   a rozdělaný trénink; samotné úložiště je vyměnitelný "backend".
-   Backend má rozhraní:
-     name
-     open()                      -> Promise<boolean>   (true = připojeno)
-     watch(onDoc, onReady, onErr) -> posílá onDoc(path, data|null)
-     set(path, data)             -> Promise
-     del(path)                   -> Promise
-     get(path)                   -> Promise<data|null>
-   Dnes: IndexedDbBackend (IndexedDB v prohlížeči, data jen v telefonu).
-   Do verze 9 to byl ClaudeDbBackend (databáze Claude artefaktu),
-   viz puvodni/workout-denik.html. Cesty dokumentů zůstávají stejné:
-     config/main, config/exercises, config/templates, config/backup,
-     workouts/RRRR-MM, body/all, state/active
-   ===================================================================== */
+     DATOVÁ VRSTVA
+     Aplikace mluví jen se Store. Store drží frontu zápisů, lokální cache
+     a rozdělaný trénink; samotné úložiště je vyměnitelný "backend".
+     Backend má rozhraní:
+       name
+       open()                      -> Promise<boolean>   (true = připojeno)
+       watch(onDoc, onReady, onErr) -> posílá onDoc(path, data|null)
+       set(path, data)             -> Promise
+       del(path)                   -> Promise
+       get(path)                   -> Promise<data|null>
+     Dnes: IndexedDbBackend (IndexedDB v prohlížeči, data jen v telefonu).
+     Do verze 9 to byl ClaudeDbBackend (databáze Claude artefaktu),
+     viz puvodni/workout-denik.html. Cesty dokumentů zůstávají stejné:
+       config/main, config/exercises, config/templates, config/backup,
+       workouts/RRRR-MM, body/all, state/active
+     ===================================================================== */
   /* Verze a kanál appky (F0-04). BUILD doplní při nasazení GitHub Actions do js/verze.js.
-   Testovací verze PR běží na adrese …/workout-denik-test/pr-12/ a má VLASTNÍ data: jiný prefix
-   v localStorage a jinou databázi IndexedDB. Vydaná verze se jí tak nedotkne.
-   Proto data ukládat vždy jen přes Local / Idb / Store, nikdy přímo. */
+     Testovací verze PR běží na adrese …/workout-denik-test/pr-12/ a má VLASTNÍ data: jiný prefix
+     v localStorage a jinou databázi IndexedDB. Vydaná verze se jí tak nedotkne.
+     Proto data ukládat vždy jen přes Local / Idb / Store, nikdy přímo. */
   const BUILD = Object.assign(
     { kanal: "lokal", pr: 0, nazev: "", vetev: "", commit: "", cas: "" },
     window.APP_BUILD || {},
@@ -398,12 +398,13 @@
     lsSet = (k, v) => Local.set(k, v);
 
   /* IndexedDB "workout-denik" (testovací verze PR 12: "workout-denik-pr12"):
-     docs   – dokumenty appky, klíč = cesta ("config/main", "workouts/2026-09", …)
-     points – body obnovy, klíč = id, hodnota {id, at, data (JSON text zálohy)} */
+       docs   – dokumenty appky, klíč = cesta ("config/main", "workouts/2026-09", …)
+       points – body obnovy, klíč = id, hodnota {id, at, data (JSON text zálohy)} */
   const Idb = {
     NAME: TEST_PR ? MAIN_DB + "-pr" + TEST_PR : MAIN_DB,
     VER: 1,
     db: null,
+    // otevře databázi (poprvé ji založí s úložišti docs a points); otevřenou drží v this.db
     open() {
       if (this.db) return Promise.resolve(this.db);
       return new Promise((res, rej) => {
@@ -446,6 +447,7 @@
         tx.onabort = () => rej(Idb.err(tx.error));
       });
     },
+    // chyba IndexedDB → chyba appky (plné úložiště dostane kód quota_exceeded)
     err(e) {
       if (e && e.name === "QuotaExceededError") {
         const x = new Error("Úložiště v telefonu je plné.");
@@ -499,6 +501,7 @@
     });
   }
 
+  // backend pro Store: dokumenty v úložišti docs databáze IndexedDB
   function IndexedDbBackend() {
     return {
       name: "indexeddb",
@@ -579,6 +582,8 @@
     },
   };
 
+  /* Store: jediné místo, přes které appka čte a zapisuje data.
+     Q = fronta zápisů {cesta: data | null (smazat)}, uložená v Local "queue", aby přežila zavření appky. */
   const Store = {
     backend: null,
     state: "connecting",
@@ -589,6 +594,7 @@
     pending() {
       return Object.keys(this.Q).length;
     },
+    // připojí backend, načte z něj všechny dokumenty (onDoc) a odešle frontu; false = úložiště nejde otevřít
     async init(backend, onDoc, onChange) {
       this.onDoc = onDoc;
       this.onChange = onChange;
@@ -629,12 +635,14 @@
       this.flush();
       return true;
     },
+    // zápis dokumentu (null = smazat): nejdřív do fronty v zařízení, pak do backendu
     put(path, data) {
       this.Q[path] = data === null ? null : JSON.parse(JSON.stringify(data));
       Local.set("queue", this.Q);
       this.onChange && this.onChange();
       this.flush();
     },
+    // odešle frontu do backendu; co se zapsalo, z fronty zmizí
     async flush() {
       const b = this.backend;
       if (!b || this.flushing) return;
@@ -681,6 +689,7 @@
     loadCache() {
       return Local.get("cache", null);
     },
+    // uloží cache se zpožděním 0,8 s (víc změn rychle po sobě = jeden zápis)
     saveCache(snap) {
       clearTimeout(this._ct);
       this._ct = setTimeout(() => Local.set("cache", snap()), 800);
@@ -689,6 +698,7 @@
     loadActive() {
       return Local.get("active", null);
     },
+    // rozdělaný trénink hned do Local, do databáze (state/active) se zpožděním 2,5 s
     saveActive(draft) {
       Local.set("active", draft);
       clearTimeout(this._at);
@@ -698,6 +708,7 @@
         }
       }, 2500);
     },
+    // rozdělaný trénink z databáze (když v Local chybí)
     async fetchActive() {
       if (!this.backend) return null;
       try {
@@ -709,7 +720,7 @@
     },
   };
 
-  /* ---------- state ---------- */
+  /* ---------- stav appky (S) a zápis dat (applyDoc, put) ---------- */
   const S = {
     cfg: {
       gyms: [],
@@ -773,6 +784,7 @@
       S.bk = c.bk;
     }
   })();
+  // všechna data appky pro cache v zařízení (Store.saveCache)
   const snapshot = () => ({
     cfg: S.cfg,
     exLib: S.exLib,
@@ -786,6 +798,7 @@
     Store.saveCache(snapshot);
   }
 
+  // načtený nebo změněný dokument (cesta jako "workouts/2026-09") promítne do stavu S
   function applyDoc(path, data) {
     const [col, id] = path.split("/");
     if (col === "config") {
@@ -813,10 +826,12 @@
     dirty();
     saveCache();
   }
+  // změna dat: hned do stavu S, pak přes Store do úložiště (jediný správný způsob zápisu)
   function put(path, data) {
     applyDoc(path, data);
     Store.put(path, data);
   }
+  // ukazatel uložení v horní liště (Uloženo / Ukládám… / Jen v zařízení)
   function updSync() {
     const el = document.getElementById("sync");
     if (!el) return;
@@ -830,7 +845,7 @@
     Store.saveActive(S.active);
   }
 
-  /* ---------- utils ---------- */
+  /* ---------- pomocné funkce (formát čísel a dat, escapování, fitka) ---------- */
   const esc = (s) =>
     String(s == null ? "" : s).replace(
       /[&<>"']/g,
@@ -952,14 +967,14 @@
   };
 
   /* ---------- TYPY CVIKŮ ----------
-   Určují, co se u série zapisuje a jak se počítá zátěž.
-   wr     váha × opakování          zátěž = váha
-   bw     vlastní váha              zátěž = tělesná hmotnost
-   bwplus vlastní váha + zátěž      zátěž = hmotnost + přidané kg
-   assist s dopomocí                zátěž = hmotnost − dopomoc
-   time   na čas                    bez objemu, rekord nejdelší výdrž
-   timew  na čas se zátěží          bez objemu, rekord nejdelší výdrž
-   dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo         */
+     Určují, co se u série zapisuje a jak se počítá zátěž.
+     wr     váha × opakování          zátěž = váha
+     bw     vlastní váha              zátěž = tělesná hmotnost
+     bwplus vlastní váha + zátěž      zátěž = hmotnost + přidané kg
+     assist s dopomocí                zátěž = hmotnost − dopomoc
+     time   na čas                    bez objemu, rekord nejdelší výdrž
+     timew  na čas se zátěží          bez objemu, rekord nejdelší výdrž
+     dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo         */
   const KIND = {
     wr: { l: "Váha a opakování", f: ["kg", "reps"], ex: "Bench press, bicepsový zdvih" },
     bw: { l: "Vlastní váha", f: ["reps"], ex: "Shyby, kliky, sedy-lehy" },
@@ -1039,12 +1054,13 @@
   }
 
   /* ---------- KONTROLA ČÍSEL (F1-10) ----------
-   Číselné políčko má atribut data-num="<pravidlo z NUM_RULES>". Nepovolený znak se do něj vůbec
-   nedostane (numFilter), hodnota, která i tak nedává smysl (moc desetinných míst, nad limitem, 1:75),
-   dostane červený rámeček (třída bad) a uložit ji nejde (numCheck). Prázdné políčko je v pořádku,
-   povinné hodnoty (opakování, čas, km u odškrtnuté série) hlídá setProblem.
-   Pravidla:  dec = počet desetinných míst (0 = jen celé číslo), min/max = rozsah, unit = jednotka do nápovědy,
-              time = čas (45, 1:30, 1:02:30; čárka a tečka se při psaní mění na dvojtečku). */
+     Číselné políčko má atribut data-num="<pravidlo z NUM_RULES>". Nepovolený znak se do něj vůbec
+     nedostane (numFilter), hodnota, která i tak nedává smysl (moc desetinných míst, nad limitem, 1:75),
+     dostane červený rámeček (třída bad) a uložit ji nejde (numCheck). Prázdné políčko je v pořádku,
+     povinné hodnoty (opakování, čas, km u odškrtnuté série) hlídá setProblem.
+     Pravidla:  dec = počet desetinných míst (0 = jen celé číslo), min/max = rozsah,
+                unit = jednotka do nápovědy,
+                time = čas (45, 1:30, 1:02:30; čárka a tečka se při psaní mění na dvojtečku). */
   const NUM_RULES = {
     kg: { lab: "Váha", dec: 2, max: 999, unit: "kg" },
     reps: { lab: "Opakování", dec: 0, max: 999 },
@@ -1087,7 +1103,8 @@
     }
     return out;
   }
-  // vejde se text do políčka? Nejvýš tolik číslic před čárkou, kolik má hranice (999 → 3), a dec desetinných míst;
+  // vejde se text do políčka? Nejvýš tolik číslic před čárkou, kolik má
+  // hranice (999 → 3), a dec desetinných míst;
   // u času nejvýš 5 číslic na začátku a 2 za každou dvojtečkou
   function numFits(rule, text) {
     const r = NUM_RULES[rule];
@@ -1188,7 +1205,8 @@
     if (kind === "dist" && !(num(s.km) > 0)) return { f: "km", msg: "Zadej vzdálenost." };
     return null;
   }
-  // první problém v tréninku nebo šabloně: {e, j, f, msg}; onlyDone = jen odškrtnuté série (i povinné hodnoty)
+  // první problém v tréninku nebo šabloně: {e, j, f, msg}; onlyDone =
+  // jen odškrtnuté série (i povinné hodnoty)
   function draftProblem(d, onlyDone) {
     for (const e of d.ex) {
       const kind = kindOf(e.exId);
@@ -1225,12 +1243,15 @@
     }, 80);
   }
 
-  /* ---------- derived data ---------- */
-  let D = null;
+  /* ---------- odvozená data: seznam tréninků a souhrny po cvicích (derive) ---------- */
+  let D = null; // výsledek derive(), null = spočítat znovu
+  // data se změnila: zahodit odvozená data a překreslit
   function dirty() {
     D = null;
     scheduleRender();
   }
+  /* všechny tréninky od nejnovějšího (all) a pro každý cvik jeho výskyty s hodnotami (byEx);
+     počítá se jen jednou po každé změně dat */
   function derive() {
     if (D) return D;
     const all = [];
@@ -1316,6 +1337,7 @@
     D = { all, byEx };
     return D;
   }
+  // fitko, ve kterém se cvik porovnává: u cviku vázaného na fitko gymId, jinak null (všechna fitka)
   function exCtxGym(exId, gymId) {
     const ex = S.exLib[exId];
     return ex && ex.gymDep ? gymId : null;
@@ -1331,17 +1353,20 @@
     }
     return null;
   }
+  // při úpravě uloženého tréninku se „minule“ bere jen z tréninků před ním
   const draftBefore = (d) => (d.mode === "edit" ? d.start : 0);
+  // „minule“ pro cvik v rozdělaném / upravovaném tréninku d
   function draftLast(d, exId) {
     return lastSession(exId, d.gymId, d.id, draftBefore(d));
   }
   /* ---------- MINULE A PŘEDVYPLNĚNÍ (F1-01) ----------
-   Série se párují podle druhu: zahřívací zvlášť, ostatní (pracovní, drop set, do selhání) spolu, v pořadí.
-   Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Zdroj: odpovídající série z minula,
-   jinak s.ph (hodnoty ze šablony u nikdy necvičeného cviku). Když ani jedno není, ukáže se „–“
-   ve sloupci Minule i v políčkách (hodnoty ze série nad ní se nepřebírají). */
+     Série se párují podle druhu: zahřívací zvlášť, ostatní (pracovní, drop set, do selhání) spolu, v pořadí.
+     Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Zdroj: odpovídající série z minula,
+     jinak s.ph (hodnoty ze šablony u nikdy necvičeného cviku). Když ani jedno není, ukáže se „–“
+     ve sloupci Minule i v políčkách (hodnoty ze série nad ní se nepřebírají). */
   const setGrp = (t) => (t === "w" ? "w" : "n");
   const HINT_F = ["kg", "reps", "sec", "km"];
+  // ke každé sérii cviku e: p = odpovídající série z minula (sloupec Minule), h = šedé předvyplnění
   function exHints(e, last) {
     const prev = { w: [], n: [] };
     if (last) {
@@ -1356,6 +1381,7 @@
       return { p, h: p || s.ph || null };
     });
   }
+  // série jako text „80×8 · 80×7“ (onlyWork = jen pracovní, bez zahřívacích)
   function setsStr(sets, onlyWork, kind) {
     kind = kind || "wr";
     return sets
@@ -1365,11 +1391,12 @@
   }
 
   /* ---------- UPOZORNĚNÍ NA VELKÝ SKOK (F1-10) ----------
-   Při ✓ v rozdělaném tréninku porovná hodnoty série se sérií z minula (sloupec Minule), a když
-   minulá hodnota chybí, s nejvyšší hodnotou cviku v historii (vázaný cvik jen v tomto fitku).
-   U úplně nového cviku se neporovnává nic. Ptá se jen při nárůstu (pokles bývá záměrný):
-   kg víc než 1,5× a aspoň o 20 kg, opakování víc než 2× a aspoň o 10, čas a km víc než 2×.
-   Potvrzení platí pro sérii, dokud se v ní nezmění hodnota (s.jumpOk, do uloženého tréninku se nedostane). */
+     Při ✓ v rozdělaném tréninku porovná hodnoty série se sérií z minula (sloupec Minule), a když
+     minulá hodnota chybí, s nejvyšší hodnotou cviku v historii (vázaný cvik jen v tomto fitku).
+     U úplně nového cviku se neporovnává nic. Ptá se jen při nárůstu (pokles bývá záměrný):
+     kg víc než 1,5× a aspoň o 20 kg, opakování víc než 2× a aspoň o 10, čas a km víc než 2×.
+     Potvrzení platí pro sérii, dokud se v ní nezmění hodnota (s.jumpOk, do uloženého tréninku
+     se nedostane). */
   const JUMP = {
     kg: { x: 1.5, add: 20 },
     reps: { x: 2, add: 10 },
@@ -1426,7 +1453,8 @@
     const body = `
     <p style="margin:0">${esc(jump.refTxt)}: <b>${esc(jumpFmt(jump.f, jump.ref))}</b></p>
     <p style="margin:0">Není to překlep?</p>`;
-    const foot = `<button class="btn grow" data-act="jumpFix" data-i="${i}" data-j="${j}" data-v="${esc(jump.f)}">
+    const foot = `<button class="btn grow" data-act="jumpFix" data-i="${i}" data-j="${j}"
+        data-v="${esc(jump.f)}">
       Opravit
     </button>
     <button class="btn primary grow" data-act="jumpOk" data-i="${i}" data-j="${j}">
@@ -1435,7 +1463,8 @@
     openSheet("Opravdu " + jumpFmt(jump.f, jump.v) + "?", body, foot);
   }
 
-  /* ✓ u série: odškrtnutí (převezme šedé předvyplnění, zkontroluje hodnoty a velký skok), nebo jeho zrušení */
+  /* ✓ u série: odškrtnutí (převezme šedé předvyplnění, zkontroluje hodnoty a velký skok),
+     nebo jeho zrušení */
   function toggleSetDone(d, i, j) {
     const e = d.ex[i];
     const s = e.sets[j];
@@ -1499,11 +1528,11 @@
   }
 
   /* ---------- REKORDY ----------
-   Počítají se chronologicky z celé historie (zpětně i pro importovaná data).
-   Kontext: cvik vázaný na fitko -> zvlášť pro každé fitko, jinak globálně.
-   První trénink s cvikem v kontextu (a první výskyt daného typu) rekord nezakládá.
-   Typy: maxKg (max. váha), e1rm (odh. 1RM), bestSet (kg × opak. nejvyšší součin),
-         vol (objem cviku v tréninku), reps (max. opakování bez zátěže u cviků s vlastní vahou). */
+     Počítají se chronologicky z celé historie (zpětně i pro importovaná data).
+     Kontext: cvik vázaný na fitko -> zvlášť pro každé fitko, jinak globálně.
+     První trénink s cvikem v kontextu (a první výskyt daného typu) rekord nezakládá.
+     Typy: maxKg (max. váha), e1rm (odh. 1RM), bestSet (kg × opak. nejvyšší součin),
+           vol (objem cviku v tréninku), reps (max. opakování bez zátěže u cviků s vlastní vahou). */
   const REC = {
     maxKg: "Max. zátěž",
     e1rm: "Odh. 1RM",
@@ -1516,6 +1545,7 @@
     totKm: "Vzdálenost v tréninku",
     speed: "Nejvyšší tempo",
   };
+  // název rekordu malými písmeny do věty
   const recLow = (t) => (t === "e1rm" ? "odh. 1RM" : REC[t].toLowerCase());
   const REC_ORDER = [
     "maxKg",
@@ -1530,10 +1560,12 @@
     "speed",
   ];
   const EPS = 1e-6;
+  // kontext rekordu: cvik, u cviku vázaného na fitko navíc fitko („bench|*“, „leg-press|g2“)
   function recCtx(exId, gymId) {
     const e = S.exLib[exId];
     return exId + "|" + (e && e.gymDep ? gymId : "*");
   }
+  // hodnota rekordu jako text („82,5 kg“, „100 kg × 5“, „1:30“, „5 km“…)
   function recFmt(type, v, set) {
     if (type === "reps") return fmtInt(v) + " opak.";
     if (type === "bestSet" && set) return fmtKg(set.load != null ? set.load : set.kg) + " kg × " + set.reps;
@@ -1614,6 +1646,8 @@
     }
     return any ? m : null;
   }
+  /* projde všechny tréninky od nejstaršího a zapíše, kde padl rekord:
+     byW = rekordy podle tréninku, byEx = podle cviku, best = nejlepší hodnoty v každém kontextu */
   function computeRecords() {
     const best = {}; // ctx -> {type:{v,set,w}}
     const seen = {}; // ctx -> true po prvním tréninku
@@ -1662,6 +1696,7 @@
     }
     return { best, byW, byEx };
   }
+  // rekordy (computeRecords), spočítané jednou po každé změně dat
   function recs() {
     const d = derive();
     if (!d.rec) {
@@ -1669,10 +1704,12 @@
     }
     return d.rec;
   }
+  // rekordy, které padly v tréninku w
   function wRecs(w) {
     return recs().byW[w.id] || [];
   }
-  // živé medaile pro rozdělaný trénink: vrací {j:[types]} pro cvik i, seznam typů cviku a jejich hodnoty v ({typ:{v,set,prev,prevSet}})
+  // živé medaile pro rozdělaný trénink: vrací {j:[types]} pro cvik i, seznam typů
+  // cviku a jejich hodnoty v ({typ:{v,set,prev,prevSet}})
   function liveRecords(d, i) {
     const e = d.ex[i];
     const kind = kindOf(e.exId);
@@ -1710,6 +1747,7 @@
     }
     return out;
   }
+  // seznam rekordů jako HTML (withEx = seskupený po cvicích)
   function recListHtml(list, withEx) {
     if (!list.length) return "";
     if (withEx) {
@@ -1758,13 +1796,14 @@
   const plural = (n, a, b, c) => (n === 1 ? a : n >= 2 && n <= 4 ? b : c);
 
   /* ---------- OSLAVA REKORDU (F3-02) ----------
-   Medaile přes celou obrazovku: v rozdělaném tréninku po dokončení cviku (odškrtnuté všechny pracovní
-   série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Zlatá = aspoň jeden velký rekord
-   (REC_BIG), jinak stříbrná; v seznamu jsou vždy všechny. Co už se oslavilo, si pamatuje cvik v rozdělaném
-   tréninku (e.cel = {typ: hodnota}, do uloženého tréninku se nedostane); znovu se slaví jen vyšší hodnota
-   nebo nový typ. Nastavení v config/main: recCelEx (po cviku; vypnuto = jen hláška po sérii jako dřív),
-   recCelW (po tréninku), recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio.
-   Zavření jen na přání (aby šlo vše v klidu přečíst): tlačítko Pokračovat, klepnutí mimo kartu, Zpět (navBack). */
+     Medaile přes celou obrazovku: v rozdělaném tréninku po dokončení cviku (odškrtnuté všechny pracovní
+     série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Zlatá = aspoň jeden velký rekord
+     (REC_BIG), jinak stříbrná; v seznamu jsou vždy všechny. Co už se oslavilo, si pamatuje cvik v rozdělaném
+     tréninku (e.cel = {typ: hodnota}, do uloženého tréninku se nedostane); znovu se slaví jen vyšší hodnota
+     nebo nový typ. Nastavení v config/main: recCelEx (po cviku; vypnuto = jen hláška po sérii jako dřív),
+     recCelW (po tréninku), recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio.
+     Zavření jen na přání (aby šlo vše v klidu přečíst): tlačítko Pokračovat, klepnutí mimo kartu,
+     Zpět (navBack). */
   const REC_BIG = { maxKg: 1, e1rm: 1, reps: 1, maxSec: 1, maxKm: 1, speed: 1 };
   let celEl = null;
   const exDone = (e) => {
@@ -1860,8 +1899,9 @@
       .join("");
     let sp = "";
     for (let i = 0; i < 14; i++) {
-      sp += `<i class="cel-sp"
-          style="--a:${(i * 360) / 14 + (i % 2 ? 9 : -5)}deg;--d:${95 + (i % 3) * 22}px;--s:${(0.7 + (i % 4) * 0.22).toFixed(2)};--dl:${(0.42 + (i % 5) * 0.05).toFixed(2)}s"></i>`;
+      sp +=
+        `<i class="cel-sp" style="--a:${(i * 360) / 14 + (i % 2 ? 9 : -5)}deg;--d:${95 + (i % 3) * 22}px;` +
+        `--s:${(0.7 + (i % 4) * 0.22).toFixed(2)};--dl:${(0.42 + (i % 5) * 0.05).toFixed(2)}s"></i>`;
     }
     const el = document.createElement("div");
     el.className = "cel " + k;
@@ -1889,7 +1929,8 @@
     celEl = el;
     const L = el.querySelector(".cel-l"),
       M = el.querySelector(".cel-more");
-    // „Posuň pro další“: místo drží, dokud se seznam dá posouvat (jinak by seznam na konci poskočil), jen zneviditelní
+    // „Posuň pro další“: místo drží, dokud se seznam dá posouvat (jinak by
+    // seznam na konci poskočil), jen zneviditelní
     const more = () => {
       if (L.scrollHeight - L.clientHeight > 4) {
         M.hidden = false;
@@ -2153,7 +2194,7 @@
     return `${h}</div></section>`;
   }
 
-  /* ---------- rendering ---------- */
+  /* ---------- vykreslení: hlavní smyčka, horní lišta, záložky ---------- */
   const CK = {}; // posun posuvných nabídek podle klíče
   function saveChipScroll(root) {
     (root || document).querySelectorAll("[data-ck]").forEach((el) => {
@@ -2289,7 +2330,7 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- HOME ---------- */
+  /* ---------- ÚVODNÍ OBRAZOVKA (záložka Trénink bez rozdělaného tréninku) ---------- */
   function curGym() {
     return S.selGym || S.cfg.defaultGymId || (S.cfg.gyms[0] && S.cfg.gyms[0].id) || null;
   }
@@ -2409,7 +2450,7 @@
     return n;
   }
 
-  /* ---------- EDITOR (active / edit past / template) ---------- */
+  /* ---------- EDITOR (rozdělaný trénink / úprava uloženého tréninku / šablona) ---------- */
   // série do šablony z uloženého tréninku (i čas a vzdálenost)
   function tplSet(s) {
     return { t: s.t, kg: s.kg || 0, reps: s.reps || 0, sec: s.sec || 0, km: s.km || 0 };
@@ -2424,12 +2465,14 @@
       done: false,
     };
   }
-  // nový cvik v tréninku: série podle šablony, jinak podle minula v tomto fitku; hodnoty zůstávají prázdné (šedé předvyplnění, F1-01)
+  // nový cvik v tréninku: série podle šablony, jinak podle minula v tomto fitku;
+  // hodnoty zůstávají prázdné (šedé předvyplnění, F1-01)
   function exEntryFor(exId, gymId, fromTplSets) {
     const last = lastSession(exId, gymId);
     let sets;
     if (fromTplSets && fromTplSets.length) {
-      const never = !lastSession(exId, gymId, null, 0, true); // hodnoty ze šablony jen u cviku, který nikdy necvičil
+      // hodnoty ze šablony jen u cviku, který nikdy necvičil
+      const never = !lastSession(exId, gymId, null, 0, true);
       sets = fromTplSets.map((x) => {
         const n = newSetFrom({ t: x.t || "n" });
         if (never) {
@@ -2475,10 +2518,11 @@
     go("train");
   }
   /* ---------- CVIČIT ZNOVU (F2-01) ----------
-   Nový trénink podle tréninku z historie: stejný název a cviky, počet a druh sérií z něj,
-   hodnoty jen šedě z minula v zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen ve stejném fitku.
-   Vazba na šablonu zůstane (když šablona ještě existuje), „Aktualizovat šablonu“ je ale nezaškrtnuté (d.again).
-   d.again = id původního tréninku, uloží se jako w.againOf (souhrn F3-03 s ním pak porovnává). */
+     Nový trénink podle tréninku z historie: stejný název a cviky, počet a druh sérií z něj,
+     hodnoty jen šedě z minula v zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen
+     ve stejném fitku. Vazba na šablonu zůstane (když šablona ještě existuje), „Aktualizovat šablonu“
+     je ale nezaškrtnuté (d.again).
+     d.again = id původního tréninku, uloží se jako w.againOf (souhrn F3-03 s ním pak porovnává). */
   let again = null; // {w, gym}: otevřené okno Cvičit znovu
   const againEx = (w) => (w.ex || []).filter((e) => S.exLib[e.exId]);
   function againInfo() {
@@ -2937,7 +2981,7 @@
     };
   }
 
-  /* ---------- HISTORY ---------- */
+  /* ---------- HISTORIE ---------- */
   function gymChips(act, cur, withAll) {
     return (
       `<div class="chips" data-ck="${act}">
@@ -3015,16 +3059,17 @@
     return h;
   }
   /* ---------- SOUHRN TRÉNINKU (F3-03) ----------
-   Panel tréninku (po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem
-   proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
-   (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
-   (prevEx: i z jiné šablony, cvik vázaný na fitko jen ze stejného fitka). Vše se počítá z uložených dat. */
+     Panel tréninku (po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem
+     proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
+     (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
+     (prevEx: i z jiné šablony, cvik vázaný na fitko jen ze stejného fitka). Vše se počítá z uložených dat. */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
     return DEF_TITLES.includes(t) ? "" : fold(t);
   };
-  // je x běh „stejného tréninku“ jako w? stejná šablona, jinak stejný (ne automatický) název, nebo zdroj Cvičit znovu
+  // je x běh „stejného tréninku“ jako w? stejná šablona, jinak stejný (ne
+  // automatický) název, nebo zdroj Cvičit znovu
   function sameRun(w, x) {
     if (w.againOf && x.id === w.againOf) return true;
     if (w.tplId && x.tplId) return w.tplId === x.tplId;
@@ -3136,8 +3181,8 @@
       return `<span class="${cls} flat">${SAME}</span>`;
     }
     return (
-      `<span class="${cls} ${neutral ? "flat" : d > 0 ? "gain" : "loss"}">${d > 0 ? TRI.up + " +" : TRI.down + " −"}` +
-      `${fmt(Math.abs(d))}</span>`
+      `<span class="${cls} ${neutral ? "flat" : d > 0 ? "gain" : "loss"}">` +
+      `${d > 0 ? TRI.up + " +" : TRI.down + " −"}${fmt(Math.abs(d))}</span>`
     );
   }
   // den s rokem, jen když se liší od roku tréninku
@@ -3194,12 +3239,12 @@
     const extra = [...new Set((p.ex || []).map((e) => e.exId))].filter((id) => !have.has(id));
     return (
       `<button class="cmp" data-act="prevW" data-v="${esc(p.id)}" data-m="${p.mk}">
-      <div class="grow">
-        Porovnáno s <b>${esc(p.title)}</b> · ${dayY(p.start, w.start)} · ${esc(gymName(p.gymId))}` +
-      `${p.gymId !== w.gymId ? " (jiné fitko)" : ""}` +
-      `${extra.length ? `<div class="xs muted">Minule navíc: ${esc(extra.map(exName).join(", "))}</div>` : ""}` +
-      `</div>
-      <span class="chev">›</span>
+        <div class="grow">
+          Porovnáno s <b>${esc(p.title)}</b> · ${dayY(p.start, w.start)} · ` +
+      `${esc(gymName(p.gymId))}${p.gymId !== w.gymId ? " (jiné fitko)" : ""}
+          ${extra.length ? `<div class="xs muted">Minule navíc: ${esc(extra.map(exName).join(", "))}</div>` : ""}
+        </div>
+        <span class="chev">›</span>
       </button>`
     );
   }
@@ -3247,7 +3292,8 @@
         !pb
           ? "<span></span>"
           : keyCmp(b.k, pb.k)
-            ? `<span class="d ${keyCmp(b.k, pb.k) > 0 ? 'gain">' + TRI.up : 'loss">' + TRI.down} z ${esc(setStr(kind, pb.s))}</span>`
+            ? `<span class="d ${keyCmp(b.k, pb.k) > 0 ? 'gain">' + TRI.up : 'loss">' + TRI.down}` +
+              ` z ${esc(setStr(kind, pb.s))}</span>`
             : `<span class="d flat">${SAME}</span>`
       }`;
     }
@@ -3358,11 +3404,11 @@
   }
 
   /* ---------- KALENDÁŘ (F3-06) ----------
-   Historie → Kalendář: měsíc, kolečko v barvě fitka, pod ním název tréninku (víc tréninků = kolečko
-   rozdělené na barvy a „2×“), tečka = měření v Tělo, čárkované kolečko = rozdělaný trénink.
-   Filtr fitek skryje tréninky z jiných fitek, streak a volné dny se počítají vždy ze všech fitek.
-   Otevře se vždy aktuální měsíc (S.calM = 0), přepíná se šipkami nebo swipem.
-   Budoucí dny jsou zatím neaktivní (místo pro plánované tréninky, F4-07). */
+     Historie → Kalendář: měsíc, kolečko v barvě fitka, pod ním název tréninku (víc tréninků = kolečko
+     rozdělené na barvy a „2×“), tečka = měření v Tělo, čárkované kolečko = rozdělaný trénink.
+     Filtr fitek skryje tréninky z jiných fitek, streak a volné dny se počítají vždy ze všech fitek.
+     Otevře se vždy aktuální měsíc (S.calM = 0), přepíná se šipkami nebo swipem.
+     Budoucí dny jsou zatím neaktivní (místo pro plánované tréninky, F4-07). */
   const dayKey = (t) => {
     const d = new Date(t);
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
@@ -3621,7 +3667,7 @@
     );
   }
 
-  /* ---------- STATS ---------- */
+  /* ---------- STATISTIKY ---------- */
   const RANGES = [
     ["7d", "7 dní", 7],
     ["30d", "30 dní", 30],
@@ -3901,8 +3947,8 @@
           ${Object.keys(lab)
             .map(
               (k) =>
-                `<button data-act="statsMetric" data-v="${k}" aria-pressed="${m === k}">${{ count: "Tréninky", sets: "Série", vol: "Objem", dur: "Čas" }[k]}` +
-                `</button>`,
+                `<button data-act="statsMetric" data-v="${k}" aria-pressed="${m === k}">` +
+                `${{ count: "Tréninky", sets: "Série", vol: "Objem", dur: "Čas" }[k]}</button>`,
             )
             .join("")}
         </div>
@@ -4201,8 +4247,8 @@
             : '<p class="desc muted">Popis provedení zatím chybí.</p>'
         }
         <div class="row wrap-r" style="justify-content:space-between">
-          <a class="link" href="${esc(exLink(ex))}" target="_blank" rel="noopener">${ex.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}` +
-        `</a>
+          <a class="link" href="${esc(exLink(ex))}" target="_blank" rel="noopener">` +
+        `${ex.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}</a>
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
         <div class="row wrap-r" style="margin-top:10px;gap:8px">
@@ -4349,8 +4395,8 @@
         ${Object.keys(M)
           .map(
             (k) =>
-              `<button data-act="detailMetric" data-v="${k}" aria-pressed="${S.detailMetric === k}">${M[k][0]}` +
-              `</button>`,
+              `<button data-act="detailMetric" data-v="${k}"
+                  aria-pressed="${S.detailMetric === k}">${M[k][0]}</button>`,
           )
           .join("")}
       </div>`;
@@ -4478,7 +4524,7 @@
     return h;
   }
 
-  /* ---------- BODY ---------- */
+  /* ---------- TĚLO (měření) ---------- */
   const BODY_F = [
     ["weight", "Hmotnost", "kg"],
     ["fat", "Tělesný tuk", "%"],
@@ -4664,7 +4710,7 @@
     );
   }
 
-  /* ---------- SETTINGS ---------- */
+  /* ---------- NASTAVENÍ ---------- */
   function vSettings() {
     let h = topbar("Nastavení", "Fitka, vzhled, záloha");
     const counts = {};
@@ -4737,7 +4783,8 @@
         <div class="xs muted">
           ${
             Object.values(S.body || {}).some((b) => isFinite(+b.weight))
-              ? "Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením."
+              ? "Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. " +
+                "Tahle hodnota slouží jen pro starší tréninky před prvním měřením."
               : "Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono."
           }
         </div>
@@ -4782,7 +4829,8 @@
               .map((x) => x.name)
               .join(", ");
             return `<button type="button" role="radio" data-act="gymCol" data-v="${c}"
-                aria-checked="${c === cur}" aria-label="Barva ${c}${o ? ", má ji " + esc(o) : ""}"><i style="background:var(--s${c})">
+                aria-checked="${c === cur}"
+                aria-label="Barva ${c}${o ? ", má ji " + esc(o) : ""}"><i style="background:var(--s${c})">
                 ${c === cur ? "✓" : ""}
               </i><small>${o ? esc(o) : "&nbsp;"}</small></button>`;
           })
@@ -4976,8 +5024,8 @@
           : '<p class="desc muted">Popis provedení zatím chybí.</p>')
       }
       <div class="row wrap-r" style="justify-content:space-between">
-        <a class="link" href="${esc(exLink(e))}" target="_blank" rel="noopener">${e.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}` +
-      `</a>
+        <a class="link" href="${esc(exLink(e))}" target="_blank" rel="noopener">` +
+      `${e.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}</a>
       <span class="xs muted">${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" : ""}</span>
     </div>`;
     if (list.length) {
@@ -5034,7 +5082,8 @@
     );
   }
   let exEd = null;
-  const exEdOut = () => exEd && (exEd.from === "detail" || exEd.from === "list"); // úprava otevřená mimo výběr cviků
+  // úprava otevřená mimo výběr cviků
+  const exEdOut = () => exEd && (exEd.from === "detail" || exEd.from === "list");
   // fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
   function sheetExEdit(id, from, fx) {
     const e = id
@@ -5074,20 +5123,19 @@
       gd = document.getElementById("x-gd") ? document.getElementById("x-gd").checked : !!e.gymDep;
     const fx = exEd.fx,
       have = fx && fedbHave(fx);
-    const b =
-      `${
-        exEd.id
-          ? ""
-          : fx
-            ? `<div class="banner" style="margin-top:0">
+    const b = `${
+      exEd.id
+        ? ""
+        : fx
+          ? `<div class="banner" style="margin-top:0">
               Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
               název je jen návrh.` +
-              `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
+            `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
             </div>`
-            : `<button class="btn sm" data-act="fedbOpen" data-v="form">
+          : `<button class="btn sm" data-act="fedbOpen" data-v="form">
               Předvyplnit z online databáze
             </button>`
-      }
+    }
       <label class="f">
         Název (anglicky, jako v Hevy)
         <input class="inp" id="x-name" value="${esc(name)}">
@@ -5107,34 +5155,37 @@
       ${exFigures({ pri: exEd.pri, sec: exEd.sec }, true)}
       <label class="f">
         Typ zápisu
-        <select class="inp" id="x-kind">${KIND_ORDER.map(
-          (k) => `<option value="${k}"${kind === k ? " selected" : ""}>${esc(KIND[k].l)}</option>`,
-        ).join("")}` +
-      `</select>` +
-      `<span class="xs muted" style="text-transform:none;letter-spacing:0;font-weight:500">${esc(KIND[kind].ex)}` +
-      `</span>
-    </label>
-    <label class="f">
-      Vybavení
-      <select class="inp" id="x-equip" data-f="xEquip">${Object.entries(EQUIP)
-        .map(([k, l]) => `<option value="${k}"${equip === k ? " selected" : ""}>${l}</option>`)
-        .join("")}` +
-      `</select>
-    </label>
-    <label class="switch">
-      <input type="checkbox" id="x-gd" ${gd ? "checked" : ""}>
-      <span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku
-          mají jiný odpor.</span></span>
-    </label>
-    <label class="f">
-      Popis provedení
-      <textarea class="inp" id="x-desc" rows="4">${esc(desc)}</textarea>
-    </label>
-    <label class="f">
-      Odkaz (Hevy nebo video)
-      <input class="inp" id="x-url" inputmode="url" value="${esc(url)}"
-          placeholder="prázdné = vyhledat video podle názvu">
-    </label>`;
+        <select class="inp" id="x-kind">
+          ${KIND_ORDER.map(
+            (k) => `<option value="${k}"${kind === k ? " selected" : ""}>${esc(KIND[k].l)}</option>`,
+          ).join("")}
+        </select>
+        <span class="xs muted" style="text-transform:none;letter-spacing:0;font-weight:500">
+          ${esc(KIND[kind].ex)}
+        </span>
+      </label>
+      <label class="f">
+        Vybavení
+        <select class="inp" id="x-equip" data-f="xEquip">
+          ${Object.entries(EQUIP)
+            .map(([k, l]) => `<option value="${k}"${equip === k ? " selected" : ""}>${l}</option>`)
+            .join("")}
+        </select>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="x-gd" ${gd ? "checked" : ""}>
+        <span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku
+            mají jiný odpor.</span></span>
+      </label>
+      <label class="f">
+        Popis provedení
+        <textarea class="inp" id="x-desc" rows="4">${esc(desc)}</textarea>
+      </label>
+      <label class="f">
+        Odkaz (Hevy nebo video)
+        <input class="inp" id="x-url" inputmode="url" value="${esc(url)}"
+            placeholder="prázdné = vyhledat video podle názvu">
+      </label>`;
     const id = exEd.id;
     // Zpět o úroveň: do výsledků online databáze, do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
     const nav =
@@ -5192,10 +5243,10 @@
   }
 
   /* ---------- hledání v databázi free-exercise-db (F0-03) ----------
-   Data jsou v js/fedb.js (FEDB, vytváří tools/fedb/build.py). Načtou se až při prvním
-   hledání: poprvé je potřeba internet, pak soubor drží service worker v cache.
-   Vybraný cvik předvyplní formulář Nový cvik a uloží se jako vlastní cvik se značkou
-   src:"fedb:<id>". Fotky se jen ukazují ve výsledcích (online), nic se neukládá. */
+     Data jsou v js/fedb.js (FEDB, vytváří tools/fedb/build.py). Načtou se až při prvním
+     hledání: poprvé je potřeba internet, pak soubor drží service worker v cache.
+     Vybraný cvik předvyplní formulář Nový cvik a uloží se jako vlastní cvik se značkou
+     src:"fedb:<id>". Fotky se jen ukazují ve výsledcích (online), nic se neukládá. */
   let fs = null,
     fedbP = null;
   function fedbLoad() {
@@ -5397,7 +5448,7 @@
     el.innerHTML = h;
   }
 
-  /* ---------- sheet ---------- */
+  /* ---------- panel vysouvaný zespodu (sheet) a potvrzovací okna ---------- */
   // sheetNav: otevřený panel pro tlačítko Zpět – lv = kolik stisků Zpět ho zavře (panel v panelu má víc),
   // back = jeden krok zpět, re = znovu otevřít (návrat ze stránky cviku nebo z úpravy tréninku)
   let sheetNav = null;
@@ -5504,14 +5555,14 @@
   }
 
   /* ---------- odpočinek mezi sériemi (F1-04) ----------
-   Časovač se počítá z času konce (S.restEnd), ne z odtikaných sekund, takže nevadí,
-   že Chrome appku na pozadí uspí. Stav je uložený v Local "rest" ({end,total,fired}),
-   přežije zavření appky i automatickou aktualizaci; smaže ho restStop().
-   Konec pauzy:
-   - appka je na očích celou dobu → pípnutí / vibrace podle S.cfg.restAlert,
-   - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
-     (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
-   S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série. */
+     Časovač se počítá z času konce (S.restEnd), ne z odtikaných sekund, takže nevadí,
+     že Chrome appku na pozadí uspí. Stav je uložený v Local "rest" ({end,total,fired}),
+     přežije zavření appky i automatickou aktualizaci; smaže ho restStop().
+     Konec pauzy:
+     - appka je na očích celou dobu → pípnutí / vibrace podle S.cfg.restAlert,
+     - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
+       (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
+     S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série. */
   const REST_VIB = [700, 300, 700],
     REST_OVER_MAX = 15 * 60; // 2 dlouhé vibrace; přečas zmizí po 15 min
   let audioCtx = null,
@@ -5610,8 +5661,9 @@
       : { type: "rest", tag: REST_TAG };
     navigator.serviceWorker.ready.then((r) => r.active && r.active.postMessage(msg)).catch(() => {});
   }
-  /* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo, kdy byla appka skrytá.
-   Jen pro vývoj: vede se a ukazuje (Nastavení → Verze aplikace) jen v testovací verzi PR a lokálně, ve vydané ne. */
+  /* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo,
+     kdy byla appka skrytá. Jen pro vývoj: vede se a ukazuje (Nastavení → Verze aplikace) jen v testovací
+     verzi PR a lokálně, ve vydané ne. */
   const DEV = !!TEST_PR || BUILD.kanal === "lokal";
   const REST_LOG = "wdlog-" + (TEST_PR ? "pr" + TEST_PR : "main");
   async function restLogRead() {
@@ -5813,12 +5865,12 @@
   });
 
   /* ---------- displej během pauzy (F1-02) ----------
-   S.cfg.screenOn: během odpočinkové pauzy (i přečasu) v rozdělaném tréninku displej nezhasne
-   (Screen Wake Lock, jen když je appka na očích; Chrome zámek při skrytí appky sám pustí,
-   po návratu ho appka vezme znovu). Pojistka: po WAKE_IDLE bez dotyku se zámek pustí.
-   Baterie pod WAKE_BATT bez nabíječky: funkce dočasně neplatí, Nastavení to ukáže.
-   S.cfg.screenDim: po WAKE_DIM bez dotyku černá obrazovka jen s odpočtem (jas webová appka
-   měnit neumí; na OLED displeji černá šetří baterii). Klepnutí ji schová a nic pod ní nezmáčkne. */
+     S.cfg.screenOn: během odpočinkové pauzy (i přečasu) v rozdělaném tréninku displej nezhasne
+     (Screen Wake Lock, jen když je appka na očích; Chrome zámek při skrytí appky sám pustí,
+     po návratu ho appka vezme znovu). Pojistka: po WAKE_IDLE bez dotyku se zámek pustí.
+     Baterie pod WAKE_BATT bez nabíječky: funkce dočasně neplatí, Nastavení to ukáže.
+     S.cfg.screenDim: po WAKE_DIM bez dotyku černá obrazovka jen s odpočtem (jas webová appka
+     měnit neumí; na OLED displeji černá šetří baterii). Klepnutí ji schová a nic pod ní nezmáčkne. */
   const WAKE_IDLE = 10 * 60 * 1000,
     WAKE_DIM = 30 * 1000,
     WAKE_BATT = 0.15,
@@ -6003,7 +6055,7 @@
     return h;
   }
 
-  /* ---------- charts ---------- */
+  /* ---------- grafy (SVG) ---------- */
   const CH = {};
   let chN = 0;
   function chartPh(spec, h) {
@@ -6044,7 +6096,8 @@
         padB = 24;
       const iw = W - padL - padR,
         ih = H - padT - padB;
-      let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(sp.label)}">`;
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
+          aria-label="${esc(sp.label)}">`;
       if (sp.type === "bar") {
         const vals = sp.bars.map((b) => b.v);
         const ticks = niceTicks(0, Math.max(1, ...vals), 4);
@@ -6063,8 +6116,9 @@
             hh = padT + ih - y;
           if (b.v > 0) {
             const r = Math.min(4, w / 2, hh);
-            svg += `<path fill="var(--chart)"
-                d="M${x},${padT + ih}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${padT + ih}Z"/>`;
+            svg +=
+              `<path fill="var(--chart)" d="M${x},${padT + ih}V${y + r}Q${x},${y} ${x + r},${y}` +
+              `H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${padT + ih}Z"/>`;
           }
           if (
             b.tip !== undefined ? b.label : i % 4 === 3 || (i === sp.bars.length - 1 && sp.bars.length < 5)
@@ -6217,7 +6271,7 @@
     rsT = setTimeout(drawCharts, 150);
   });
 
-  /* ---------- events ---------- */
+  /* ---------- akce: klepnutí (data-act), psaní a změny v políčkách ---------- */
   document.addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-act]");
     if (!t) return;
@@ -7287,7 +7341,8 @@
       case "copyMain":
         confirmSheet(
           "Zkopírovat data z vydané verze?",
-          "Data této testovací verze se nahradí kopií dat z vydané verze v tomto telefonu. Vydaná verze se nijak nezmění.",
+          "Data této testovací verze se nahradí kopií dat z vydané verze v tomto telefonu. " +
+            "Vydaná verze se nijak nezmění.",
           "Zkopírovat",
           "copyMainOk",
         );
@@ -7299,7 +7354,8 @@
       case "testDel":
         confirmSheet(
           "Smazat data testovacích verzí?",
-          "Smažou se tréninky a nastavení ze všech testovacích verzí v tomto telefonu. Data vydané verze zůstanou.",
+          "Smažou se tréninky a nastavení ze všech testovacích verzí v tomto telefonu. " +
+            "Data vydané verze zůstanou.",
           "Smazat",
           "testDelOk",
         );
@@ -7440,14 +7496,14 @@
   });
 
   /* ---------- tlačítko Zpět (F0-06) ----------
-   Každý stisk systémového Zpět (i gesto) = jeden krok navBack() podle toho, co je na obrazovce:
-   panel → o úroveň / zavřít, stránka cviku a úprava → tam, odkud se přišlo, jiná záložka → Trénink.
-   Na hlavní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
-   Historie prohlížeče jen „počítá kroky“: drží se v ní aspoň tolik záznamů, kolik kroků zbývá
-   na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
-   přidané bez klepnutí může při Zpět přeskočit. Po hlášce na hlavní obrazovce zůstanou kroky
-   „dopředu“ v historii; dotyk (klepnutí i swipe) pojistku obnoví krokem vpřed (history.forward),
-   ten klepnutí nepotřebuje. Rozdělaný trénink Zpět nikdy neukončí. */
+     Každý stisk systémového Zpět (i gesto) = jeden krok navBack() podle toho, co je na obrazovce:
+     panel → o úroveň / zavřít, stránka cviku a úprava → tam, odkud se přišlo, jiná záložka → Trénink.
+     Na hlavní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
+     Historie prohlížeče jen „počítá kroky“: drží se v ní aspoň tolik záznamů, kolik kroků zbývá
+     na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
+     přidané bez klepnutí může při Zpět přeskočit. Po hlášce na hlavní obrazovce zůstanou kroky
+     „dopředu“ v historii; dotyk (klepnutí i swipe) pojistku obnoví krokem vpřed (history.forward),
+     ten klepnutí nepotřebuje. Rozdělaný trénink Zpět nikdy neukončí. */
   // pos = kde v historii appky jsme, top = nejvyšší existující záznam, wait = čeká se na krok vpřed
   const Nav = { pos: 0, top: 0, ignore: false, exit: false, wait: false };
   (function () {
@@ -7471,7 +7527,9 @@
   function navFrame() {
     return { route: S.route, re: sheetNav && sheetNav.re, y: window.scrollY, d: navDepth() };
   }
-  const edChanged = () => !!S.editDraft && JSON.stringify(S.editDraft) !== S.editOrig; // úprava tréninku/šablony má neuložené změny
+  // úprava tréninku/šablony má neuložené změny
+  const edChanged = () => !!S.editDraft && JSON.stringify(S.editDraft) !== S.editOrig;
+  // přepnutí záložky dole (zavře stránku cviku i úpravu; Historie vždy na aktuálním měsíci)
   function goTab(v) {
     S.exDetail = null;
     S.editDraft = null;
@@ -7484,6 +7542,7 @@
     }
     go(v);
   }
+  // otevře úpravu tréninku nebo šablony (S.editDraft) a zapamatuje si, kam se pak vrátit
   function goEdit() {
     const f = navFrame();
     closeSheet();
@@ -7491,6 +7550,8 @@
     S.editOrig = JSON.stringify(S.editDraft);
     go("edit");
   }
+  /* jeden krok zpět: medaile, panel, stránka cviku / úprava (tam, odkud se přišlo), jiná záložka → Trénink;
+     force = zahodit neuložené změny bez ptaní; false = už není kam (hlavní obrazovka Tréninku) */
   function navBack(force) {
     if (celEl) {
       celClose();
@@ -7536,6 +7597,7 @@
     }
     return false;
   }
+  // doplní záznamy do historie prohlížeče, aby na každý krok zpět zbyl jeden (jen po klepnutí)
   function navEnsure() {
     if (Nav.exit || Nav.wait || (navigator.userActivation && !navigator.userActivation.isActive)) return;
     const need = navDepth() + 1;
@@ -7596,15 +7658,15 @@
   // po klepnutí doplnit kroky (otevřený panel, stránka)
   document.addEventListener("click", () => navEnsure());
 
-  /* ---------- backup (F0-01) ----------
-   Dvě vrstvy ochrany:
-   1) Záloha do souboru (JSON) — stáhne se do telefonu, odtud ručně na Disk / e-mail.
-      Datum poslední zálohy je v config/backup.last.
-      Po 7 dnech bez zálohy ukáže úvodní obrazovka pruh s připomínkou.
-   2) Body obnovy uvnitř appky (IndexedDB, úložiště "points"): automaticky jednou za 7 dní,
-      vždy před obnovou ze zálohy a ručně. Drží se posledních BK_MAX_POINTS.
-   Formát souboru: version 2 = version 1 + pole "photos" (zatím prázdné, pro F2-05).
-   Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše". */
+  /* ---------- záloha (F0-01) ----------
+     Dvě vrstvy ochrany:
+     1) Záloha do souboru (JSON) — stáhne se do telefonu, odtud ručně na Disk / e-mail.
+        Datum poslední zálohy je v config/backup.last.
+        Po 7 dnech bez zálohy ukáže úvodní obrazovka pruh s připomínkou.
+     2) Body obnovy uvnitř appky (IndexedDB, úložiště "points"): automaticky jednou za 7 dní,
+        vždy před obnovou ze zálohy a ručně. Drží se posledních BK_MAX_POINTS.
+     Formát souboru: version 2 = version 1 + pole "photos" (zatím prázdné, pro F2-05).
+     Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše". */
   const BK_VERSION = 2,
     BK_REMIND_DAYS = 7,
     BK_AUTO_DAYS = 7,
@@ -7615,6 +7677,7 @@
     exdb: "Před aktualizací databáze cviků",
     manual: "Ručně vytvořený",
   };
+  // počet tréninků ve všech měsících
   const countW = (months) => Object.values(months || {}).reduce((a, m) => a + Object.keys(m || {}).length, 0);
   const daysAgo = (t) => Math.floor((Date.now() - t) / DAY);
   const agoLabel = (t) => {
@@ -7622,6 +7685,7 @@
     return n <= 0 ? "dnes" : n === 1 ? "včera" : "před " + n + " " + plural(n, "dnem", "dny", "dny");
   };
 
+  // celá záloha jako objekt (formát v2); stejný obsah má i bod obnovy
   function snapshotAll() {
     return {
       app: "workout-denik",
@@ -7637,12 +7701,14 @@
       photos: {}, // F2-05: {photoId:{exId,gymId,mime,data(base64)}} — zatím prázdné
     };
   }
+  // čas poslední zálohy do souboru (z databáze nebo z Local, novější z nich), jinak null
   function lastBackupAt() {
     const a = +(S.bk && S.bk.last) || 0,
       b = +lsGet("lastBackup", 0) || 0;
     const m = Math.max(a, b);
     return m || null;
   }
+  // zapamatuje si čas zálohy do souboru
   function markBackup(ts) {
     lsSet("lastBackup", ts);
     put("config/backup", Object.assign({}, S.bk, { last: ts }));
@@ -7748,6 +7814,7 @@
       }
     }
   }
+  // okno s návodem, jak dostat zálohu na Disk (force = otevřené tlačítkem Jak na Disk?)
   function showBackupHelp(force, name) {
     let b = "";
     if (!force) {
@@ -7804,6 +7871,7 @@
     };
   }
   let importData = null;
+  // přečte vybraný soubor zálohy a nabídne obnovu (importSheet)
   function readImport(inp) {
     const f = inp.files && inp.files[0];
     if (!f) return;
@@ -7818,6 +7886,7 @@
     r.readAsText(f);
     inp.value = "";
   }
+  // kolik tréninků ze zálohy o v appce chybí (přidá je Sloučit)
   function mergeCount(o) {
     let n = 0;
     for (const mk in o.months) {
@@ -7830,6 +7899,7 @@
     }
     return n;
   }
+  // okno obnovy: co je v záloze (label = soubor nebo bod obnovy), volba Sloučit / Nahradit vše
   function importSheet(o, label) {
     importData = o;
     const nb = countW(o.months),
@@ -7860,6 +7930,7 @@
     }
     openSheet("Obnovit ze zálohy", b, '<button class="btn grow" data-act="closeSheet">Zrušit</button>');
   }
+  // Nahradit vše se ještě jednou zeptá, Sloučit rovnou
   function confirmImport(mode) {
     if (mode === "replace") {
       confirmSheet(
@@ -7873,6 +7944,8 @@
       doImport("merge");
     }
   }
+  /* obnova ze zálohy importData: nejdřív bod obnovy „před obnovou“, pak sloučit nebo nahradit;
+     v = "merge" / "replace", s „!“ na konci bez bodu obnovy (když se ho nepodařilo vytvořit) */
   async function doImport(v) {
     const o = importData;
     if (!o) return;
@@ -7912,6 +7985,7 @@
       );
     }
   }
+  // Nahradit vše: data appky = obsah zálohy (měsíce, které v záloze nejsou, se smažou)
   function applyReplace(o) {
     put("config/main", o.cfg);
     putEx(o.exercises);
@@ -7926,6 +8000,7 @@
       put("workouts/" + mk, { items: o.months[mk] });
     }
   }
+  // Sloučit: doplní jen to, co v appce chybí, nic nepřepíše; vrací počty přidaných položek
   function applyMerge(o) {
     const r = { w: 0, other: 0 };
     const addMissing = (cur, src) => {
@@ -8020,6 +8095,7 @@
       makePoint.busy = false;
     }
   }
+  // automatický bod obnovy jednou za BK_AUTO_DAYS dní (jen jednou za spuštění appky)
   function autoPoint() {
     if (autoPoint.armed || !pointsApi || Store.state !== "ok") return;
     autoPoint.armed = true;
@@ -8035,9 +8111,11 @@
       }
     }, 20000);
   }
+  // obsah bodu obnovy (JSON text zálohy)
   function fetchPoint(id) {
     return pointsApi.read(id);
   }
+  // Obnovit z bodu obnovy: otevře stejné okno jako soubor zálohy
   async function openPoint(id) {
     const p = (S.bk.points || []).find((x) => x.id === id);
     try {
@@ -8047,6 +8125,7 @@
       toast(e.message || "Bod obnovy nejde načíst.");
     }
   }
+  // stáhne bod obnovy jako soubor zálohy
   async function savePoint(id) {
     const p = (S.bk.points || []).find((x) => x.id === id);
     if (!downloads) {
@@ -8068,9 +8147,9 @@
   }
 
   /* ---------- verze appky (F0-04) ----------
-   Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
-   (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
-   Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA). */
+     Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
+     (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
+     Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA). */
   const MAIN_URL = BUILD.vydana || "../"; // adresa vydané verze (z testovací verze)
   const fmtSize = (b) =>
     b < 1048576
@@ -8146,7 +8225,8 @@
             : "Aktualizace tady nejde zkontrolovat.",
     );
   }
-  /* data testovacích verzí v tomto telefonu (jen pro vydanou verzi): databáze workout-denik-prN a klíče zd1-prN: */
+  /* data testovacích verzí v tomto telefonu (jen pro vydanou verzi):
+     databáze workout-denik-prN a klíče zd1-prN: */
   const testKeys = () => {
     const out = [];
     try {
@@ -8315,7 +8395,7 @@
   }
   setTheme(themePref());
 
-  /* ---------- boot ---------- */
+  /* ---------- start appky ---------- */
   render();
   (async function boot() {
     downloads = LocalDownloads;
