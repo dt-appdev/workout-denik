@@ -56,7 +56,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
-| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR. |
+| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08). |
 | `.github/sestav-web.sh` | Sestaví web: `vydana` = `main`, `testovaci` = otevřené PR do `pr-N/` + rozcestník; zapíše `js/verze.js`. |
 | `.github/komentare.sh` | Komentář s odkazem na testovací verzi v každém nasazeném PR. |
 | `manifest.webmanifest` | Název, ikony a barvy pro instalaci PWA. |
@@ -83,6 +83,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Všechny cesty relativní (`css/app.css`, ne `/css/app.css`), appka běží
   v podadresáři `https://<uživatel>.github.io/workout-denik/`.
 - Žádné externí zdroje (CDN, Google Fonts…) – offline by nefungovaly.
+- Pravidla zabezpečení (F0-08): `index.html` má Content-Security-Policy. Skripty, písma, `fetch`, manifest
+  a service worker jen z vlastních souborů, obrázky navíc z `https://raw.githubusercontent.com`, styly i přímo
+  u prvků (`style="…"`). Nikdy kód přímo v HTML (`onclick=`, `onerror=`, `javascript:`…), jen posluchače
+  (sekce „pravidla zabezpečení" v `js/app.js`); úloha „kontrola" v GitHub Actions takový PR odmítne.
+  Nový vnější zdroj nebo `blob:`/`data:` obrázky (F2-05, F4-08) přidat do CSP v `index.html`. Co pravidla
+  zablokují, ukáže testovací verze hláškou (`securitypolicyviolation`).
 - Styl kódu (čitelnost pro člověka má přednost před stručností):
   - jeden příkaz na řádek, odsazení 2 mezery, řádky nejvýš cca 110 znaků,
   - `if`/`for` s tělem na víc řádků ve složených závorkách (jednořádkový `if` jen pro

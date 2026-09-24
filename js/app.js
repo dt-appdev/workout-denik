@@ -5417,8 +5417,7 @@
             ${
               x.ni
                 ? '<span class="fsimg"></span>'
-                : `<img class="fsimg" src="${esc(FEDB_IMG + x.id + "/0.jpg")}" alt="" loading="lazy"
-                    onerror="this.style.visibility='hidden'">`
+                : `<img class="fsimg" src="${esc(FEDB_IMG + x.id + "/0.jpg")}" alt="" loading="lazy">`
             }
             <div class="grow">
               <div style="font-weight:600">${esc(x.n)}</div>
@@ -7494,6 +7493,30 @@
         d.end = d.start + m * 60000;
       }
     }
+  });
+
+  /* ---------- pravidla zabezpečení (F0-08) ----------
+     Content-Security-Policy v index.html: kód a data jen z vlastních souborů, obrázky navíc
+     z raw.githubusercontent.com. Kód zapsaný přímo v HTML (onclick=, onerror= …) prohlížeč
+     nespustí, proto se události řeší tady posluchači. */
+
+  // náhled fotky z free-exercise-db, který se nenačetl (offline, chybí), se schová
+  document.addEventListener(
+    "error",
+    (ev) => {
+      const t = ev.target;
+      if (t && t.tagName === "IMG" && t.classList.contains("fsimg")) {
+        t.style.visibility = "hidden";
+      }
+    },
+    true,
+  );
+  // v testovací verzi a lokálně ukázat, co pravidla zablokovala (zapomenutá úprava pravidel)
+  document.addEventListener("securitypolicyviolation", (ev) => {
+    if (!DEV) return;
+    const what = !ev.blockedURI || ev.blockedURI === "inline" ? "kód přímo v HTML" : ev.blockedURI;
+    toast("Zabezpečení zablokovalo: " + ev.effectiveDirective + " " + what);
+    console.warn("CSP:", ev.effectiveDirective, what, ev.sourceFile + ":" + ev.lineNumber);
   });
 
   /* ---------- tlačítko Zpět (F0-06) ----------

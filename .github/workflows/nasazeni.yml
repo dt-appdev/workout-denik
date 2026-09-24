@@ -36,6 +36,14 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v5
+      # F0-08: kód zapsaný přímo v HTML (onclick=, onerror= …, javascript:) by pravidla
+      # zabezpečení (Content-Security-Policy v index.html) zablokovala a nefungoval by
+      - name: Kontrola kódu v HTML
+        run: |
+          if grep -nE '\bon[a-z]+=["'"'"'`]|javascript:' index.html js/*.js sw.js; then
+            echo "::error::Kód přímo v HTML (viz řádky výše) pravidla zabezpečení zablokují, použij posluchač."
+            exit 1
+          fi
       - name: Sestavit web (zkouška)
         env:
           GH_TOKEN: ${{ github.token }}
