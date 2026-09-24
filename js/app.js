@@ -50,14 +50,30 @@
   ];
   const DAY = 86400000;
   const IC = {
-    train: '<svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
+    train: `<svg viewBox="0 0 24 24">
+      <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>
+    </svg>`,
     hist: '<svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
-    ex: '<svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5zM12 6.5v13"/></svg>',
+    ex: `<svg viewBox="0 0 24 24">
+      <path
+          d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5zM12 6.5v13"/>
+    </svg>`,
     stats: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
-    body: '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M5 9h14M12 9v6M12 15l-3.5 6M12 15l3.5 6"/></svg>',
-    set: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+    body: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="5" r="2.2"/>
+      <path d="M5 9h14M12 9v6M12 15l-3.5 6M12 15l3.5 6"/>
+    </svg>`,
+    set: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"/>
+      <path
+          d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>
+    </svg>`,
     check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-    more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
+    more: `<svg viewBox="0 0 24 24">
+      <circle cx="5" cy="12" r="1.2"/>
+      <circle cx="12" cy="12" r="1.2"/>
+      <circle cx="19" cy="12" r="1.2"/>
+    </svg>`,
     close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -99,9 +115,7 @@
           .map((v) => "--f-" + v + ":" + f)
           .join(";");
       }).join(";");
-      return (
-        '<div class="fig" style="' + st + '">' + ATLAS[view].replace("__L__", esc(label || "")) + "</div>"
-      );
+      return `<div class="fig" style="${st}">${ATLAS[view].replace("__L__", esc(label || ""))}</div>`;
     }
     function exSvg(view, pri, sec, label) {
       return svg(
@@ -265,15 +279,10 @@
   function exFigures(e, small) {
     const pri = exPri(e),
       sec = e.sec || [];
-    return (
-      '<div class="figs' +
-      (small ? " sm" : "") +
-      '"><figure>' +
-      MUSCLE_MAP.exSvg("front", pri, sec, "Zepředu") +
-      "<figcaption>Zepředu</figcaption></figure><figure>" +
-      MUSCLE_MAP.exSvg("back", pri, sec, "Zezadu") +
-      "<figcaption>Zezadu</figcaption></figure></div>"
-    );
+    return `<div class="figs${small ? " sm" : ""}">
+      <figure>${MUSCLE_MAP.exSvg("front", pri, sec, "Zepředu")}<figcaption>Zepředu</figcaption></figure>
+      <figure>${MUSCLE_MAP.exSvg("back", pri, sec, "Zezadu")}<figcaption>Zezadu</figcaption></figure>
+    </div>`;
   }
   // postava zepředu a zezadu obarvená podle hodnot partií (m: {partie: počet}), sytější = víc;
   // grp = barva podle skupiny partie (F3-01), jinak červená
@@ -291,15 +300,10 @@
         "%, var(--m-idle))"
       );
     };
-    return (
-      '<div class="figs' +
-      (small ? " sm" : "") +
-      '"><figure>' +
-      MUSCLE_MAP.svg("front", heat, "Zepředu") +
-      "<figcaption>Zepředu</figcaption></figure><figure>" +
-      MUSCLE_MAP.svg("back", heat, "Zezadu") +
-      "<figcaption>Zezadu</figcaption></figure></div>"
-    );
+    return `<div class="figs${small ? " sm" : ""}">
+      <figure>${MUSCLE_MAP.svg("front", heat, "Zepředu")}<figcaption>Zepředu</figcaption></figure>
+      <figure>${MUSCLE_MAP.svg("back", heat, "Zezadu")}<figcaption>Zezadu</figcaption></figure>
+    </div>`;
   }
   // pruh s poměrem skupin partií a legenda v procentech (F3-01)
   function mgStack(m) {
@@ -315,33 +319,28 @@
     const rows = Object.keys(MGRP)
       .filter((x) => g[x])
       .sort((a, b) => g[b] - g[a]);
-    return (
-      '<div class="gstack" aria-hidden="true">' +
-      rows.map((x) => '<i style="flex:' + g[x] + ";background:var(--g-" + x + ')"></i>').join("") +
-      '</div><div class="glegend">' +
-      rows
+    return `<div class="gstack" aria-hidden="true">
+      ${rows.map((x) => `<i style="flex:${g[x]};background:var(--g-${x})"></i>`).join("")}
+    </div>
+    <div class="glegend">
+      ${rows
         .map(
           (x) =>
-            '<span><i style="background:var(--g-' +
-            x +
-            ')"></i>' +
-            MGRP[x] +
-            " <b>" +
-            Math.round((g[x] / tot) * 100) +
-            " %</b></span>",
+            `<span><i style="background:var(--g-${x})"></i>${MGRP[x]} ` +
+            `<b>${Math.round((g[x] / tot) * 100)} ` +
+            `%</b></span>`,
         )
-        .join("") +
-      "</div>"
-    );
+        .join("")}
+    </div>`;
   }
   function exTags(e) {
     const pri = exPri(e),
       sec = e.sec || [];
     return (
-      '<div class="mus">' +
-      pri.map((k) => '<span class="tag p">' + esc(MUSCLE_MAP.NAMES[k] || k) + "</span>").join("") +
-      sec.map((k) => '<span class="tag s">' + esc(MUSCLE_MAP.NAMES[k] || k) + "</span>").join("") +
-      "</div>"
+      `<div class="mus">
+      ${pri.map((k) => `<span class="tag p">${esc(MUSCLE_MAP.NAMES[k] || k)}</span>`).join("")}` +
+      `${sec.map((k) => `<span class="tag s">${esc(MUSCLE_MAP.NAMES[k] || k)}</span>`).join("")}
+    </div>`
     );
   }
 
@@ -824,9 +823,8 @@
     const n = Store.pending(),
       st = Store.state;
     el.className = "sync" + (st === "off" ? " off" : n ? " pending" : "");
-    el.innerHTML =
-      "<i></i>" +
-      (st === "off" ? "Jen v zařízení" : n ? "Ukládám…" : st === "connecting" ? "Připojuji" : "Uloženo");
+    el.innerHTML = `<i></i>
+    ${st === "off" ? "Jen v zařízení" : n ? "Ukládám…" : st === "connecting" ? "Připojuji" : "Uloženo"}`;
   }
   function saveActive() {
     Store.saveActive(S.active);
@@ -1428,9 +1426,12 @@
     const body = `
     <p style="margin:0">${esc(jump.refTxt)}: <b>${esc(jumpFmt(jump.f, jump.ref))}</b></p>
     <p style="margin:0">Není to překlep?</p>`;
-    const foot = `
-    <button class="btn grow" data-act="jumpFix" data-i="${i}" data-j="${j}" data-v="${esc(jump.f)}">Opravit</button>
-    <button class="btn primary grow" data-act="jumpOk" data-i="${i}" data-j="${j}">Ano, je to správně</button>`;
+    const foot = `<button class="btn grow" data-act="jumpFix" data-i="${i}" data-j="${j}" data-v="${esc(jump.f)}">
+      Opravit
+    </button>
+    <button class="btn primary grow" data-act="jumpOk" data-i="${i}" data-j="${j}">
+      Ano, je to správně
+    </button>`;
     openSheet("Opravdu " + jumpFmt(jump.f, jump.v) + "?", body, foot);
   }
 
@@ -1717,48 +1718,42 @@
       for (const r of list) {
         (g[r.exId] = g[r.exId] || []).push(r);
       }
-      return (
-        '<div class="reclist">' +
-        Object.keys(g)
+      return `<div class="reclist">
+        ${Object.keys(g)
           .map(
             (id) =>
-              '<div class="recex"><div class="rn"><span class="md">🏅</span><b>' +
-              esc(exName(id)) +
-              "</b></div>" +
-              g[id]
-                .map(
-                  (r) =>
-                    '<div class="rr">' +
-                    esc(REC[r.type]) +
-                    ": <b>" +
-                    esc(recFmt(r.type, r.v, r.set)) +
-                    '</b><span class="muted"> (dříve ' +
-                    esc(recFmt(r.type, r.prev, r.prevSet)) +
-                    ")</span></div>",
-                )
-                .join("") +
-              "</div>",
+              `<div class="recex">
+                <div class="rn"><span class="md">🏅</span><b>${esc(exName(id))}</b></div>
+                ${g[id]
+                  .map(
+                    (r) =>
+                      `<div class="rr">
+                        ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b>` +
+                      `<span class="muted"> (dříve ` +
+                      `${esc(recFmt(r.type, r.prev, r.prevSet))})</span>
+                      </div>`,
+                  )
+                  .join("")}
+              </div>`,
           )
-          .join("") +
-        "</div>"
-      );
+          .join("")}
+      </div>`;
     }
-    return (
-      '<div class="reclist">' +
-      list
+    return `<div class="reclist">
+      ${list
         .map(
           (r) =>
-            '<div class="rec"><span class="md">🏅</span><div class="grow">' +
-            esc(REC[r.type]) +
-            ": <b>" +
-            esc(recFmt(r.type, r.v, r.set)) +
-            '</b><span class="muted"> (dříve ' +
-            esc(recFmt(r.type, r.prev, r.prevSet)) +
-            ")</span></div></div>",
+            `<div class="rec">
+              <span class="md">🏅</span>
+              <div class="grow">
+                ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b>` +
+            `<span class="muted"> (dříve ` +
+            `${esc(recFmt(r.type, r.prev, r.prevSet))})</span>
+              </div>
+            </div>`,
         )
-        .join("") +
-      "</div>"
-    );
+        .join("")}
+    </div>`;
   }
   const plural = (n, a, b, c) => (n === 1 ? a : n >= 2 && n <= 4 ? b : c);
 
@@ -1798,63 +1793,42 @@
         : { a: "#ffffff", b: "#dde2e8", c: "#aab2bc", d: "#66707b", r: "#2a78d6", r2: "#1d5aa3" };
     const id = "cel" + k,
       bar = "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"; // činka z ikony appky
-    return (
-      '<svg viewBox="0 0 200 240" aria-hidden="true"><defs>' +
-      '<linearGradient id="' +
-      id +
-      'o" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' +
-      m.a +
-      '"/><stop offset=".35" stop-color="' +
-      m.b +
-      '"/><stop offset=".7" stop-color="' +
-      m.c +
-      '"/><stop offset="1" stop-color="' +
-      m.d +
-      '"/></linearGradient>' +
-      '<linearGradient id="' +
-      id +
-      'i" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="' +
-      m.a +
-      '"/><stop offset=".45" stop-color="' +
-      m.b +
-      '"/><stop offset="1" stop-color="' +
-      m.c +
-      '"/></linearGradient>' +
-      '<clipPath id="' +
-      id +
-      'c"><circle cx="100" cy="152" r="70"/></clipPath></defs><g class="cel-sw">' +
-      '<polygon points="56,0 96,0 114,98 84,106" fill="' +
-      m.r +
-      '"/><polygon points="70,0 82,0 99,100 90,103" fill="#fff" opacity=".85"/>' +
-      '<polygon points="144,0 104,0 86,98 116,106" fill="' +
-      m.r2 +
-      '"/><polygon points="130,0 118,0 101,100 110,103" fill="#fff" opacity=".7"/>' +
-      '<rect x="84" y="84" width="32" height="14" rx="4" fill="' +
-      m.d +
-      '"/>' +
-      '<circle cx="100" cy="152" r="70" fill="url(#' +
-      id +
-      'o)"/><circle cx="100" cy="152" r="70" fill="none" stroke="' +
-      m.d +
-      '" stroke-width="2.5" opacity=".6"/>' +
-      '<circle cx="100" cy="152" r="54" fill="url(#' +
-      id +
-      'i)" stroke="' +
-      m.d +
-      '" stroke-opacity=".45" stroke-width="2"/>' +
-      '<g transform="translate(100 152) scale(3.3) translate(-12 -12)" fill="none" stroke-linecap="round"><path d="' +
-      bar +
-      '" stroke="' +
-      m.a +
-      '" stroke-width="3.1" transform="translate(.35 .45)"/><path d="' +
-      bar +
-      '" stroke="' +
-      m.d +
-      '" stroke-width="2.3"/></g>' +
-      '<g clip-path="url(#' +
-      id +
-      'c)"><rect class="cel-shine" x="0" y="60" width="26" height="200" fill="#fff" opacity=".55" transform="rotate(20 100 152)"/></g></g></svg>'
-    );
+    return `<svg viewBox="0 0 200 240" aria-hidden="true">
+      <defs>
+        <linearGradient id="${id}o" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${m.a}"/>
+          <stop offset=".35" stop-color="${m.b}"/>
+          <stop offset=".7" stop-color="${m.c}"/>
+          <stop offset="1" stop-color="${m.d}"/>
+        </linearGradient>
+        <linearGradient id="${id}i" x1="1" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="${m.a}"/>
+          <stop offset=".45" stop-color="${m.b}"/>
+          <stop offset="1" stop-color="${m.c}"/>
+        </linearGradient>
+        <clipPath id="${id}c"><circle cx="100" cy="152" r="70"/></clipPath>
+      </defs>
+      <g class="cel-sw">
+        <polygon points="56,0 96,0 114,98 84,106" fill="${m.r}"/>
+        <polygon points="70,0 82,0 99,100 90,103" fill="#fff" opacity=".85"/>
+        <polygon points="144,0 104,0 86,98 116,106" fill="${m.r2}"/>
+        <polygon points="130,0 118,0 101,100 110,103" fill="#fff" opacity=".7"/>
+        <rect x="84" y="84" width="32" height="14" rx="4" fill="${m.d}"/>
+        <circle cx="100" cy="152" r="70" fill="url(#${id}o)"/>
+        <circle cx="100" cy="152" r="70" fill="none" stroke="${m.d}" stroke-width="2.5" opacity=".6"/>
+        <circle cx="100" cy="152" r="54" fill="url(#${id}i)" stroke="${m.d}" stroke-opacity=".45"
+            stroke-width="2"/>
+        <g transform="translate(100 152) scale(3.3) translate(-12 -12)" fill="none"
+            stroke-linecap="round">
+          <path d="${bar}" stroke="${m.a}" stroke-width="3.1" transform="translate(.35 .45)"/>
+          <path d="${bar}" stroke="${m.d}" stroke-width="2.3"/>
+        </g>
+        <g clip-path="url(#${id}c)">
+          <rect class="cel-shine" x="0" y="60" width="26" height="200" fill="#fff" opacity=".55"
+              transform="rotate(20 100 152)"/>
+        </g>
+      </g>
+    </svg>`;
   }
   function celebrate(R, sub) {
     celClose(true);
@@ -1869,56 +1843,42 @@
     const list = ids
       .map(
         (id) =>
-          (ids.length > 1 ? '<div class="cel-g">' + esc(exName(id)) + "</div>" : "") +
+          (ids.length > 1 ? `<div class="cel-g">${esc(exName(id))}</div>` : "") +
           g[id]
             .sort((a, b) => rank(a.type) - rank(b.type))
             .map((r) => {
               const b = REC_BIG[r.type];
-              return (
-                '<div class="cel-r' +
-                (b ? "" : " small") +
-                '"><span class="cel-dot ' +
-                (b ? "g" : "s") +
-                '"></span><span>' +
-                esc(REC[r.type]) +
-                "</span><b>" +
-                esc(recFmt(r.type, r.v, r.set)) +
-                '</b><span class="was">dříve ' +
-                esc(recFmt(r.type, r.prev, r.prevSet)) +
-                "</span></div>"
-              );
+              return `<div class="cel-r${b ? "" : " small"}">
+                <span class="cel-dot ${b ? "g" : "s"}"></span>
+                <span>${esc(REC[r.type])}</span>
+                <b>${esc(recFmt(r.type, r.v, r.set))}</b>
+                <span class="was">dříve ${esc(recFmt(r.type, r.prev, r.prevSet))}</span>
+              </div>`;
             })
             .join(""),
       )
       .join("");
     let sp = "";
     for (let i = 0; i < 14; i++) {
-      sp +=
-        '<i class="cel-sp" style="--a:' +
-        ((i * 360) / 14 + (i % 2 ? 9 : -5)) +
-        "deg;--d:" +
-        (95 + (i % 3) * 22) +
-        "px;--s:" +
-        (0.7 + (i % 4) * 0.22).toFixed(2) +
-        ";--dl:" +
-        (0.42 + (i % 5) * 0.05).toFixed(2) +
-        's"></i>';
+      sp += `<i class="cel-sp"
+          style="--a:${(i * 360) / 14 + (i % 2 ? 9 : -5)}deg;--d:${95 + (i % 3) * 22}px;--s:${(0.7 + (i % 4) * 0.22).toFixed(2)};--dl:${(0.42 + (i % 5) * 0.05).toFixed(2)}s"></i>`;
     }
     const el = document.createElement("div");
     el.className = "cel " + k;
     el.setAttribute("role", "dialog");
     el.setAttribute("aria-label", "Nový rekord");
-    el.innerHTML =
-      '<div class="cel-m"><div class="cel-glow"></div><div class="cel-rays"></div>' +
-      sp +
-      celMedal(k) +
-      "</div>" +
-      '<div class="cel-c"><h2>Nový rekord!</h2><div class="cel-ex">' +
-      esc(sub) +
-      '</div><div class="cel-l">' +
-      list +
-      '</div><div class="cel-more" hidden>↓ Posuň pro další</div>' +
-      '<button class="btn cel-ok">Pokračovat</button></div>';
+    el.innerHTML = `<div class="cel-m">
+      <div class="cel-glow"></div>
+      <div class="cel-rays"></div>
+      ${sp}${celMedal(k)}
+    </div>
+    <div class="cel-c">
+      <h2>Nový rekord!</h2>
+      <div class="cel-ex">${esc(sub)}</div>
+      <div class="cel-l">${list}</div>
+      <div class="cel-more" hidden>↓ Posuň pro další</div>
+      <button class="btn cel-ok">Pokračovat</button>
+    </div>`;
     const t0 = Date.now();
     el.addEventListener("click", (ev) => {
       // zavře tlačítko nebo klepnutí mimo kartu (v kartě se posouvá seznam)
@@ -2145,44 +2105,52 @@
   function recSettings() {
     const c = S.cfg;
     let h = '<section class="sec"><div class="sec-h"><h2>Rekordy</h2></div><div class="card stack">';
+    h += `<div class="xs muted">
+      Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování,
+      výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.
+    </div>`;
     h +=
-      '<div class="xs muted">Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování, výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.</div>';
-    h +=
-      '<label class="switch"><input type="checkbox" data-act="recCelEx" ' +
-      (c.recCelEx ? "checked" : "") +
-      '><span><b>Oslava po dokončení cviku</b><br><span class="xs muted">Po odškrtnutí poslední pracovní série cviku. Když ji vypneš, ukáže se po sérii s rekordem jen krátká hláška nahoře.</span></span></label>';
-    h +=
-      '<label class="switch"><input type="checkbox" data-act="recCelW" ' +
-      (c.recCelW ? "checked" : "") +
-      '><span><b>Oslava po uložení tréninku</b><br><span class="xs muted">Nad souhrnem tréninku, se všemi rekordy po cvicích.</span></span></label>';
+      `<label class="switch">
+      <input type="checkbox" data-act="recCelEx" ${c.recCelEx ? "checked" : ""}>
+      <span><b>Oslava po dokončení cviku</b><br><span class="xs muted">Po odškrtnutí poslední pracovní
+          série cviku. Když ji vypneš, ukáže se po sérii s rekordem jen krátká hláška nahoře.</span>` +
+      `</span>
+    </label>`;
+    h += `<label class="switch">
+      <input type="checkbox" data-act="recCelW" ${c.recCelW ? "checked" : ""}>
+      <span><b>Oslava po uložení tréninku</b><br><span class="xs muted">Nad souhrnem tréninku, se všemi
+          rekordy po cvicích.</span></span>
+    </label>`;
     if (c.recCelEx || c.recCelW) {
-      h +=
-        '<div class="stack" style="gap:6px"><span>Zvuk oslavy <span class="xs muted">· hraje přes hlasitost médií</span></span><div class="spick">' +
-        [["off", "Vypnuto"]]
-          .concat(CEL_SOUNDS.map((x) => [x.id, x.name]))
-          .map(
-            ([id, l]) =>
-              '<div class="spr"><button class="spr-l" data-act="recSnd" data-v="' +
-              id +
-              '" aria-pressed="' +
-              (c.recSnd === id) +
-              '"><span class="rad"></span>' +
-              l +
-              "</button>" +
-              (id === "off"
-                ? ""
-                : '<button class="spr-p" data-act="recSndPlay" data-v="' +
-                  id +
-                  '" aria-label="Přehrát zvuk ' +
-                  l +
-                  '">▶</button>') +
-              "</div>",
-          )
-          .join("") +
-        "</div></div>";
+      h += `<div class="stack" style="gap:6px">
+        <span>Zvuk oslavy <span class="xs muted">· hraje přes hlasitost médií</span></span>
+        <div class="spick">
+          ${[["off", "Vypnuto"]]
+            .concat(CEL_SOUNDS.map((x) => [x.id, x.name]))
+            .map(
+              ([id, l]) =>
+                `<div class="spr">
+                  <button class="spr-l" data-act="recSnd" data-v="${id}"
+                      aria-pressed="${c.recSnd === id}">
+                    <span class="rad"></span>
+                    ${l}
+                  </button>
+                  ${
+                    id === "off"
+                      ? ""
+                      : `<button class="spr-p" data-act="recSndPlay" data-v="${id}"
+                          aria-label="Přehrát zvuk ${l}">
+                        ▶
+                      </button>`
+                  }
+                </div>`,
+            )
+            .join("")}
+        </div>
+      </div>`;
       h += '<button class="btn block" data-act="recTry">Vyzkoušet</button>';
     }
-    return h + "</div></section>";
+    return `${h}</div></section>`;
   }
 
   /* ---------- rendering ---------- */
@@ -2218,7 +2186,7 @@
   }
   function toast(msg, cls) {
     const r = document.getElementById("toastRoot");
-    r.innerHTML = '<div class="toast' + (cls ? " " + cls : "") + '" role="status">' + esc(msg) + "</div>";
+    r.innerHTML = `<div class="toast${cls ? " " + cls : ""}" role="status">${esc(msg)}</div>`;
     clearTimeout(toast.t);
     toast.t = setTimeout(() => (r.innerHTML = ""), 2600);
   }
@@ -2237,30 +2205,21 @@
     document.getElementById("tabs").innerHTML = t
       .map(
         ([k, l]) =>
-          '<button data-act="tab" data-v="' +
-          k +
-          '" aria-current="' +
-          (cur === k) +
-          '">' +
-          IC[k] +
-          (k === "train" && S.active && S.route !== "train" ? '<span class="dot"></span>' : "") +
-          l +
-          "</button>",
+          `<button data-act="tab" data-v="${k}" aria-current="${cur === k}">${IC[k]}` +
+          `${k === "train" && S.active && S.route !== "train" ? '<span class="dot"></span>' : ""}${l}` +
+          `</button>`,
       )
       .join("");
   }
   function topbar(title, sub, left, subCls) {
-    return (
-      testBar() +
-      '<header class="top">' +
-      (left || "") +
-      "<h1" +
-      (String(title).length > 18 ? ' class="long"' : "") +
-      ">" +
-      esc(title) +
-      (sub ? "<small" + (subCls ? ' class="' + subCls + '"' : "") + ">" + esc(sub) + "</small>" : "") +
-      '</h1><span class="sync" id="sync"></span></header>'
-    );
+    return `${testBar()}
+    <header class="top">
+      ${left || ""}
+      <h1${String(title).length > 18 ? ' class="long"' : ""}>
+        ${esc(title)}${sub ? `<small${subCls ? ` class="${subCls}"` : ""}>${esc(sub)}</small>` : ""}
+      </h1>
+      <span class="sync" id="sync"></span>
+    </header>`;
   }
   function render() {
     const app = document.getElementById("app");
@@ -2289,7 +2248,7 @@
       }
     } catch (err) {
       console.error(err);
-      h = topbar("Chyba") + '<div class="banner">' + esc(err.message) + "</div>";
+      h = `${topbar("Chyba")}<div class="banner">${esc(err.message)}</div>`;
     }
     const focusId = document.activeElement && document.activeElement.id;
     app.innerHTML = h;
@@ -2346,66 +2305,76 @@
       new Date().toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long" }),
     );
     if (Store.state === "off") {
-      h +=
-        '<div class="banner">Úložiště v prohlížeči teď není dostupné. Záznamy se drží v telefonu a uloží se, až bude znovu dostupné.</div>';
+      h += `<div class="banner">
+        Úložiště v prohlížeči teď není dostupné. Záznamy se drží v telefonu a uloží se, až bude znovu
+        dostupné.
+      </div>`;
     }
     h += backupBanner();
     h +=
-      '<div class="kpis"><div class="kpi"><b>' +
-      thisWeek +
-      '</b><span>Tento týden</span></div><div class="kpi"><b>' +
-      w30.length +
-      '</b><span>Za 30 dní</span></div><div class="kpi"><b>' +
-      (vol30 >= 1000 ? fmtKg(Math.round(vol30 / 100) / 10) + " t" : fmtInt(vol30) + " kg") +
-      "</b><span>Objem 30 dní</span></div></div>";
+      `<div class="kpis">
+      <div class="kpi"><b>${thisWeek}</b><span>Tento týden</span></div>
+      <div class="kpi"><b>${w30.length}</b><span>Za 30 dní</span></div>
+      <div class="kpi">
+        <b>${vol30 >= 1000 ? fmtKg(Math.round(vol30 / 100) / 10) + " t" : fmtInt(vol30) + " kg"}</b>` +
+      `<span>Objem
+          30 dní</span>
+      </div>
+    </div>`;
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Kde dnes cvičíš</h2></div>
+      <div class="chips" data-ck="selGym">
+        ${S.cfg.gyms
+          .map(
+            (g) =>
+              `<button class="chip" data-act="selGym" data-v="${g.id}"
+                  aria-pressed="${curGym() === g.id}">
+                <span class="sw" style="background:${gymColor(g.id)}"></span>
+                ${esc(g.name)}
+              </button>`,
+          )
+          .join("")}
+      </div>
+    </section>`;
     h +=
-      '<section class="sec"><div class="sec-h"><h2>Kde dnes cvičíš</h2></div><div class="chips" data-ck="selGym">' +
-      S.cfg.gyms
-        .map(
-          (g) =>
-            '<button class="chip" data-act="selGym" data-v="' +
-            g.id +
-            '" aria-pressed="' +
-            (curGym() === g.id) +
-            '"><span class="sw" style="background:' +
-            gymColor(g.id) +
-            '"></span>' +
-            esc(g.name) +
-            "</button>",
-        )
-        .join("") +
-      "</div></section>";
-    h +=
-      '<section class="sec startbar"><button class="btn primary block" data-act="startEmpty">' +
-      IC.plus.replace(
-        "<svg",
-        '<svg width="18" height="18" style="stroke:currentColor;fill:none;stroke-width:2.4"',
-      ) +
-      " Začít prázdný trénink</button></section>";
+      `<section class="sec startbar">
+      <button class="btn primary block" data-act="startEmpty">
+        ${IC.plus.replace(
+          "<svg",
+          '<svg width="18" height="18" style="stroke:currentColor;fill:none;stroke-width:2.4"',
+        )} ` +
+      `Začít prázdný trénink
+      </button>
+    </section>`;
     const tpls = Object.entries(S.templates).sort(
       (a, b) => (a[1].order || 0) - (b[1].order || 0) || a[1].name.localeCompare(b[1].name),
     );
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Šablony</h2><button class="btn sm" data-act="newTpl">+ Nová šablona</button></div><div class="stack">';
+    h += `<section class="sec">
+        <div class="sec-h">
+          <h2>Šablony</h2>
+          <button class="btn sm" data-act="newTpl">+ Nová šablona</button>
+        </div>
+        <div class="stack">`;
     if (!tpls.length) {
       h += '<div class="empty">Zatím žádné šablony. Vytvoř si třeba Push / Pull / Legs.</div>';
     }
     for (const [id, t] of tpls) {
       const last = all.find((w) => sameRun({ tplId: id, title: t.name }, w));
       h +=
-        '<div class="card tpl"><div class="grow"><h3>' +
-        esc(t.name) +
-        "</h3><p>" +
-        esc((t.items || []).map((i) => exName(i.exId)).join(", ")) +
-        '</p><p class="xs">' +
-        (t.items || []).length +
-        " cviků" +
-        (last ? " · naposledy " + fmtDateS(last.start) + " (" + esc(gymName(last.gymId)) + ")" : "") +
-        '</p></div><div class="stack" style="gap:6px"><button class="btn sm primary" data-act="startTpl" data-v="' +
-        id +
-        '">Začít</button><button class="btn sm" data-act="editTpl" data-v="' +
-        id +
-        '">Upravit</button></div></div>';
+        `<div class="card tpl">
+        <div class="grow">
+          <h3>${esc(t.name)}</h3>
+          <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
+          <p class="xs">
+            ${(t.items || []).length} cviků` +
+        `${last ? " · naposledy " + fmtDateS(last.start) + " (" + esc(gymName(last.gymId)) + ")" : ""}
+          </p>
+        </div>
+        <div class="stack" style="gap:6px">
+          <button class="btn sm primary" data-act="startTpl" data-v="${id}">Začít</button>
+          <button class="btn sm" data-act="editTpl" data-v="${id}">Upravit</button>
+        </div>
+      </div>`;
     }
     h += "</div></section>";
     return h;
@@ -2517,17 +2486,15 @@
       n = (w.ex || []).length - againEx(w).length;
     return (
       (again.gym !== w.gymId
-        ? '<p class="small muted" style="margin:0">Trénink byl v ' +
-          esc(gymName(w.gymId)) +
-          ". Hodnoty z minula se vezmou z vybraného fitka.</p>"
+        ? `<p class="small muted" style="margin:0">
+          Trénink byl v ${esc(gymName(w.gymId))}. Hodnoty z minula se vezmou z vybraného fitka.
+        </p>`
         : "") +
       (n
-        ? '<p class="small muted" style="margin:0">' +
-          n +
-          " " +
-          plural(n, "cvik už v appce není", "cviky už v appce nejsou", "cviků už v appce není") +
-          (n === 1 ? ", vynechá se." : ", vynechají se.") +
-          "</p>"
+        ? `<p class="small muted" style="margin:0">
+          ${n} ${plural(n, "cvik už v appce není", "cviky už v appce nejsou", "cviků už v appce není")}` +
+          `${n === 1 ? ", vynechá se." : ", vynechají se."}
+        </p>`
         : "")
     );
   }
@@ -2535,21 +2502,18 @@
     again = { w, gym: S.cfg.gyms.some((g) => g.id === curGym()) ? curGym() : w.gymId };
     const ex = againEx(w);
     const b =
-      '<p style="margin:0">' +
-      ex.length +
-      " " +
-      plural(ex.length, "cvik", "cviky", "cviků") +
-      ": " +
-      esc(ex.map((e) => exName(e.exId)).join(", ")) +
-      '</p><div class="small" style="font-weight:600">Kde dnes cvičíš</div>' +
-      gymChips("againGym", again.gym, false) +
-      '<div class="stack" id="againInfo" style="gap:6px">' +
-      againInfo() +
-      "</div>";
+      `<p style="margin:0">
+      ${ex.length} ${plural(ex.length, "cvik", "cviky", "cviků")}: ` +
+      `${esc(ex.map((e) => exName(e.exId)).join(", "))}
+    </p>
+    <div class="small" style="font-weight:600">Kde dnes cvičíš</div>
+    ${gymChips("againGym", again.gym, false)}
+    <div class="stack" id="againInfo" style="gap:6px">${againInfo()}</div>`;
     openSheet(
       "Cvičit znovu: " + w.title,
       b,
-      '<button class="btn grow" data-act="againBack">Zpět</button><button class="btn primary grow" data-act="againOk">Začít</button>',
+      `<button class="btn grow" data-act="againBack">Zpět</button>
+      <button class="btn primary grow" data-act="againOk">Začít</button>`,
       false,
       { lv: wOpen && wOpen.nav.lv ? wOpen.nav.lv + 1 : 2, back: wBack(wOpen) },
     );
@@ -2617,24 +2581,19 @@
     return t;
   }
   function finInfo(d, end, lastAt) {
-    return (
-      "Délka <b>" +
-      fmtDur(end - d.start) +
-      "</b>" +
-      (lastAt
+    return `Délka <b>${fmtDur(end - d.start)}</b>${
+      lastAt
         ? " · poslední série v " + fmtTime(lastAt) + ", navrženo +3 min"
-        : " · bez časů sérií, navržen aktuální čas")
-    );
+        : " · bez časů sérií, navržen aktuální čas"
+    }`;
   }
   function durLabel(w) {
     const dur = fmtDur((w.end || w.start) - w.start);
     return w.endOrig
-      ? '<span title="Délka upravena ručně, původně ' +
-          fmtDur(w.endOrig - w.start) +
-          '">' +
-          dur +
-          ' <span class="edited">✎ upraveno</span></span>'
-      : "<span>" + dur + "</span>";
+      ? `<span title="Délka upravena ručně, původně ${fmtDur(w.endOrig - w.start)}">${dur} ` +
+          `<span class="edited">✎ ` +
+          `upraveno</span></span>`
+      : `<span>${dur}</span>`;
   }
   function curDraft() {
     return S.route === "edit" ? S.editDraft : S.active;
@@ -2655,7 +2614,7 @@
     const left =
       mode === "active"
         ? ""
-        : '<button class="iconbtn" data-act="edCancel" aria-label="Zpět">' + IC.back + "</button>";
+        : `<button class="iconbtn" data-act="edCancel" aria-label="Zpět">${IC.back}</button>`;
     const heading =
       mode === "template"
         ? d.id
@@ -2677,53 +2636,51 @@
         vol += setVol(k, { kg: num(s.kg) || 0, reps: num(s.reps) || 0 }, d.start);
       }
     }
-    h +=
-      '<div class="ed-head"><input class="ed-title" id="ed-title" data-f="title" value="' +
-      esc(d.title) +
-      '" aria-label="Název" placeholder="Název">';
+    h += `<div class="ed-head">
+      <input class="ed-title" id="ed-title" data-f="title" value="${esc(d.title)}" aria-label="Název"
+          placeholder="Název">`;
     if (mode !== "template") {
       h +=
-        '<div class="row wrap-r"><label class="f grow" style="min-width:150px">Fitko<select class="inp" id="ed-gym" data-f="gymId">' +
-        S.cfg.gyms
-          .map(
-            (g) =>
-              '<option value="' +
-              g.id +
-              '"' +
-              (g.id === d.gymId ? " selected" : "") +
-              ">" +
-              esc(g.name) +
-              "</option>",
-          )
-          .join("") +
-        "</select></label>";
+        `<div class="row wrap-r">
+          <label class="f grow" style="min-width:150px">
+            Fitko
+            <select class="inp" id="ed-gym" data-f="gymId">${S.cfg.gyms
+              .map(
+                (g) =>
+                  `<option value="${g.id}"${g.id === d.gymId ? " selected" : ""}>${esc(g.name)}</option>`,
+              )
+              .join("")}` +
+        `</select>
+        </label>`;
       if (mode === "edit") {
-        h +=
-          '<label class="f">Datum<input class="inp" type="date" id="ed-date" data-f="date" value="' +
-          toDateInput(d.start) +
-          '"></label><label class="f">Začátek<input class="inp" type="time" id="ed-time" data-f="time" value="' +
-          toTimeInput(d.start) +
-          '"></label><label class="f">Délka (min)<input class="inp' +
-          numCls("min", durMin) +
-          '" inputmode="numeric" id="ed-dur" data-num="min" data-f="dur" value="' +
-          durMin +
-          '" style="width:90px"></label>';
+        h += `<label class="f">
+          Datum
+          <input class="inp" type="date" id="ed-date" data-f="date" value="${toDateInput(d.start)}">
+        </label>
+        <label class="f">
+          Začátek
+          <input class="inp" type="time" id="ed-time" data-f="time" value="${toTimeInput(d.start)}">
+        </label>
+        <label class="f">
+          Délka (min)
+          <input class="inp${numCls("min", durMin)}" inputmode="numeric" id="ed-dur" data-num="min"
+              data-f="dur" value="${durMin}" style="width:90px">
+        </label>`;
       }
       h += "</div>";
-      h +=
-        '<div class="ed-meta">' +
-        (mode === "active"
-          ? '<div class="stat"><b data-elapsed>' +
-            fmtClock((Date.now() - d.start) / 1000) +
-            "</b><span>Čas</span></div>"
-          : "") +
-        '<div class="stat"><b>' +
-        fmtInt(vol) +
-        ' kg</b><span>Objem</span></div><div class="stat"><b>' +
-        done +
-        "</b><span>" +
-        (mode === "active" ? "Hotové série" : "Pracovní série") +
-        "</span></div></div>";
+      h += `<div class="ed-meta">
+        ${
+          mode === "active"
+            ? `<div class="stat">
+              <b data-elapsed>${fmtClock((Date.now() - d.start) / 1000)}</b><span>Čas</span>
+            </div>`
+            : ""
+        }
+        <div class="stat"><b>${fmtInt(vol)} kg</b><span>Objem</span></div>
+        <div class="stat">
+          <b>${done}</b><span>${mode === "active" ? "Hotové série" : "Pracovní série"}</span>
+        </div>
+      </div>`;
     }
     h += "</div>";
     h += '<div class="stack" style="margin-top:12px">';
@@ -2731,18 +2688,18 @@
       h += vExCard(d, e, i);
     });
     h += "</div>";
-    h +=
-      '<div class="stack" style="margin-top:12px"><button class="btn block" data-act="addEx">+ Přidat cvik</button>';
+    h += `<div class="stack" style="margin-top:12px">
+        <button class="btn block" data-act="addEx">+ Přidat cvik</button>`;
     if (mode === "active") {
-      h +=
-        '<button class="btn primary block" data-act="finish">Dokončit trénink</button><button class="btn ghost danger block" data-act="discard">Zahodit trénink</button>';
+      h += `<button class="btn primary block" data-act="finish">Dokončit trénink</button>
+        <button class="btn ghost danger block" data-act="discard">Zahodit trénink</button>`;
     } else if (mode === "edit") {
-      h +=
-        '<button class="btn primary block" data-act="saveEdit">Uložit změny</button><button class="btn ghost danger block" data-act="delWorkout">Smazat trénink</button>';
+      h += `<button class="btn primary block" data-act="saveEdit">Uložit změny</button>
+        <button class="btn ghost danger block" data-act="delWorkout">Smazat trénink</button>`;
     } else {
       h +=
-        '<button class="btn primary block" data-act="saveTpl">Uložit šablonu</button>' +
-        (d.id ? '<button class="btn ghost danger block" data-act="delTpl">Smazat šablonu</button>' : "");
+        `<button class="btn primary block" data-act="saveTpl">Uložit šablonu</button>` +
+        `${d.id ? '<button class="btn ghost danger block" data-act="delTpl">Smazat šablonu</button>' : ""}`;
     }
     h += "</div>";
     return h;
@@ -2754,75 +2711,67 @@
     const kind = kindOf(e.exId),
       flds = kFields(kind);
     const lr = mode === "active" ? liveRecords(d, i) : { sets: {}, ex: [] };
-    let h =
-      '<article class="exc" data-i="' +
-      i +
-      '"><div class="exc-h"><div class="grow"><h3><button data-act="openEx" data-v="' +
-      esc(e.exId) +
-      '">' +
-      esc(ex.name) +
-      "</button></h3>" +
-      (ex.cz ? '<div class="cz">' + esc(ex.cz) + "</div>" : "");
+    let h = `<article class="exc" data-i="${i}">
+      <div class="exc-h">
+        <div class="grow">
+          <h3><button data-act="openEx" data-v="${esc(e.exId)}">${esc(ex.name)}</button></h3>
+          ${ex.cz ? `<div class="cz">${esc(ex.cz)}</div>` : ""}`;
     h +=
-      '<div class="row wrap-r" style="margin-top:4px;gap:6px">' +
-      (ex.gymDep
-        ? '<span class="pill gd" title="Progres se počítá zvlášť pro každé fitko">vázáno na fitko</span>'
-        : '<span class="pill">univerzální</span>') +
-      (kind !== "wr" ? '<span class="pill">' + esc(KIND[kind].l.toLowerCase()) + "</span>" : "") +
-      (lr.ex.length
-        ? '<span class="exmedal" title="' +
-          esc(lr.ex.map((t) => REC[t]).join(", ")) +
-          '">🏅 ' +
-          esc(lr.ex.map(recLow).join(", ")) +
-          "</span>"
-        : "") +
-      '</div></div><button class="iconbtn" data-act="exMenu" data-i="' +
-      i +
-      '" aria-label="Možnosti cviku">' +
-      IC.more +
-      "</button></div>";
+      `<div class="row wrap-r" style="margin-top:4px;gap:6px">
+        ${
+          ex.gymDep
+            ? `<span class="pill gd" title="Progres se počítá zvlášť pro každé fitko">
+              vázáno na fitko
+            </span>`
+            : '<span class="pill">univerzální</span>'
+        }` +
+      `${kind !== "wr" ? `<span class="pill">${esc(KIND[kind].l.toLowerCase())}</span>` : ""}` +
+      `${
+        lr.ex.length
+          ? `<span class="exmedal" title="${esc(lr.ex.map((t) => REC[t]).join(", "))}">
+            🏅 ${esc(lr.ex.map(recLow).join(", "))}
+          </span>`
+          : ""
+      }` +
+      `</div></div>
+      <button class="iconbtn" data-act="exMenu" data-i="${i}" aria-label="Možnosti cviku">
+        ${IC.more}
+      </button>
+      </div>`;
     if (mode !== "template") {
       const other = !last && ex.gymDep ? lastSession(e.exId, d.gymId, d.id, draftBefore(d), true) : null;
-      h +=
-        '<div class="exc-prev">' +
-        (last
-          ? "Minule" +
-            (ex.gymDep ? " v " + esc(gymName(last.w.gymId)) : "") +
-            " (" +
-            fmtDateS(last.w.start) +
-            '): <span class="num">' +
-            esc(setsStr(last.e.sets, true, kind)) +
-            "</span>"
-          : ex.gymDep
-            ? "V tomto fitku zatím bez záznamu" +
-              (other
-                ? ". V jiném fitku (" +
-                  esc(gymName(other.w.gymId)) +
-                  ", " +
-                  fmtDateS(other.w.start) +
-                  '): <span class="num">' +
-                  esc(setsStr(other.e.sets, true, kind)) +
-                  "</span>"
-                : "")
-            : "Zatím bez záznamu") +
-        "</div>";
+      h += `<div class="exc-prev">
+        ${
+          last
+            ? `Minule${ex.gymDep ? " v " + esc(gymName(last.w.gymId)) : ""} (${fmtDateS(last.w.start)}): ` +
+              `<span class="num">${esc(setsStr(last.e.sets, true, kind))}` +
+              `</span>`
+            : ex.gymDep
+              ? "V tomto fitku zatím bez záznamu" +
+                (other
+                  ? `. V jiném fitku (${esc(gymName(other.w.gymId))}, ${fmtDateS(other.w.start)}): ` +
+                    `<span class="num">${esc(setsStr(other.e.sets, true, kind))}` +
+                    `</span>`
+                  : "")
+              : "Zatím bez záznamu"
+        }
+      </div>`;
     }
     if (e.note || e.showNote) {
-      h +=
-        '<textarea class="exc-note" id="note-' +
-        e.k +
-        '" data-f="note" data-i="' +
-        i +
-        '" rows="1" placeholder="Poznámka ke cviku">' +
-        esc(e.note || "") +
-        "</textarea>";
+      h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
+          placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
     }
-    h +=
-      '<table class="sets"><thead><tr><th class="c-type">Série</th>' +
-      (mode !== "template" ? '<th class="c-prev">Minule</th>' : "") +
-      flds.map((f) => '<th class="c-in">' + FLD[f].lab + "</th>").join("") +
-      (mode === "active" ? '<th class="c-ok"><span aria-label="Hotovo">✓</span></th>' : "") +
-      '<th class="c-x"></th></tr></thead><tbody>';
+    h += `<table class="sets">
+      <thead>
+        <tr>
+          <th class="c-type">Série</th>
+          ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
+          ${flds.map((f) => `<th class="c-in">${FLD[f].lab}</th>`).join("")}
+          ${mode === "active" ? '<th class="c-ok"><span aria-label="Hotovo">✓</span></th>' : ""}
+          <th class="c-x"></th>
+        </tr>
+      </thead>
+      <tbody>`;
     let wn = 0;
     const hints = exHints(e, last);
     const fval = (s, f) =>
@@ -2839,58 +2788,51 @@
       const p = hints[j].p,
         hn = hints[j].h;
       h +=
-        '<tr class="' +
-        (s.done ? "done" : "") +
-        '"><td class="c-type"><button class="stype ' +
-        s.t +
-        '" data-act="cycType" data-i="' +
-        i +
-        '" data-j="' +
-        j +
-        '" title="' +
-        TYPE_NAME[s.t] +
-        ' — klepnutím změníš">' +
-        lbl +
-        (lr.sets[j]
-          ? '<span class="medal" title="' + esc(lr.sets[j].map((t) => REC[t]).join(", ")) + '">🏅</span>'
-          : "") +
-        "</button></td>";
+        `<tr class="${s.done ? "done" : ""}">
+        <td class="c-type">
+          <button class="stype ${s.t}" data-act="cycType" data-i="${i}" data-j="${j}"
+              title="${TYPE_NAME[s.t]} — klepnutím změníš">
+            ${lbl}` +
+        `${
+          lr.sets[j]
+            ? `<span class="medal" title="${esc(lr.sets[j].map((t) => REC[t]).join(", "))}">🏅</span>`
+            : ""
+        }
+          </button>
+        </td>`;
       if (mode !== "template") {
-        h += '<td class="c-prev num">' + (p ? esc(setStr(kind, p)) : "–") + "</td>";
+        h += `<td class="c-prev num">${p ? esc(setStr(kind, p)) : "–"}</td>`;
       }
       for (const f of flds) {
         const fld = f === "plus" || f === "minus" ? "kg" : f;
         h += `<td class="c-in">
-        <input class="cell${numCls(fld, fval(s, fld))}" id="in-${e.k}-${j}-${f}" inputmode="${FLD[f].mode}"
-          data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}" value="${esc(fval(s, fld))}"
-          placeholder="${esc(phOf(hn, fld))}" aria-label="${FLD[f].lab}">
-      </td>`;
+          <input class="cell${numCls(fld, fval(s, fld))}" id="in-${e.k}-${j}-${f}"
+              inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
+              value="${esc(fval(s, fld))}" placeholder="${esc(phOf(hn, fld))}"
+              aria-label="${FLD[f].lab}">
+        </td>`;
       }
       if (mode === "active") {
-        h +=
-          '<td class="c-ok"><button class="okb" data-act="done" data-i="' +
-          i +
-          '" data-j="' +
-          j +
-          '" aria-pressed="' +
-          !!s.done +
-          '" aria-label="Série hotová">' +
-          IC.check +
-          "</button></td>";
+        h += `<td class="c-ok">
+          <button class="okb" data-act="done" data-i="${i}" data-j="${j}" aria-pressed="${!!s.done}"
+              aria-label="Série hotová">
+            ${IC.check}
+          </button>
+        </td>`;
       }
-      h +=
-        '<td class="c-x"><button class="xb" data-act="delSet" data-i="' +
-        i +
-        '" data-j="' +
-        j +
-        '" aria-label="Smazat sérii">×</button></td></tr>';
+      h += `<td class="c-x">
+        <button class="xb" data-act="delSet" data-i="${i}" data-j="${j}" aria-label="Smazat sérii">
+          ×
+        </button>
+      </td>
+      </tr>`;
     });
-    h +=
-      '</tbody></table><div class="exc-f"><button class="btn sm" data-act="addSet" data-i="' +
-      i +
-      '">+ Série</button><button class="btn sm" data-act="addWarm" data-i="' +
-      i +
-      '">+ Zahřívací</button></div></article>';
+    h += `</tbody></table>
+    <div class="exc-f">
+      <button class="btn sm" data-act="addSet" data-i="${i}">+ Série</button>
+      <button class="btn sm" data-act="addWarm" data-i="${i}">+ Zahřívací</button>
+    </div>
+    </article>`;
     return h;
   }
   function draftToWorkout(d, onlyDone) {
@@ -2998,60 +2940,42 @@
   /* ---------- HISTORY ---------- */
   function gymChips(act, cur, withAll) {
     return (
-      '<div class="chips" data-ck="' +
-      act +
-      '">' +
-      (withAll
-        ? '<button class="chip" data-act="' +
-          act +
-          '" data-v="all" aria-pressed="' +
-          (cur === "all") +
-          '">Všechna fitka</button>'
-        : "") +
-      S.cfg.gyms
+      `<div class="chips" data-ck="${act}">
+        ${
+          withAll
+            ? `<button class="chip" data-act="${act}" data-v="all" aria-pressed="${cur === "all"}">
+              Všechna fitka
+            </button>`
+            : ""
+        }` +
+      `${S.cfg.gyms
         .map(
           (g) =>
-            '<button class="chip" data-act="' +
-            act +
-            '" data-v="' +
-            g.id +
-            '" aria-pressed="' +
-            (cur === g.id) +
-            '"><span class="sw" style="background:' +
-            gymColor(g.id) +
-            '"></span>' +
-            esc(g.name) +
-            "</button>",
+            `<button class="chip" data-act="${act}" data-v="${g.id}" aria-pressed="${cur === g.id}">
+              <span class="sw" style="background:${gymColor(g.id)}"></span>
+              ${esc(g.name)}
+            </button>`,
         )
-        .join("") +
-      "</div>"
+        .join("")}` +
+      `</div>`
     );
   }
   function vHist() {
     const { all } = derive();
     const list = all.filter((w) => S.histGym === "all" || w.gymId === S.histGym);
     let h = topbar("Historie", list.length + " tréninků");
-    h +=
-      '<div class="seg seg-wide" style="margin-bottom:10px">' +
-      [
-        ["cal", "Kalendář"],
-        ["list", "Seznam"],
-      ]
-        .map(
-          ([k, l]) =>
-            '<button data-act="histView" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.histView === k) +
-            '">' +
-            l +
-            "</button>",
-        )
-        .join("") +
-      "</div>";
+    h += `<div class="seg seg-wide" style="margin-bottom:10px">${[
+      ["cal", "Kalendář"],
+      ["list", "Seznam"],
+    ]
+      .map(
+        ([k, l]) =>
+          `<button data-act="histView" data-v="${k}" aria-pressed="${S.histView === k}">${l}</button>`,
+      )
+      .join("")}</div>`;
     h += gymChips("histGym", S.histGym, true);
     if (S.histView === "cal") return h + vCal(all, list);
-    if (!list.length) return h + '<div class="empty" style="margin-top:14px">Žádné tréninky.</div>';
+    if (!list.length) return `${h}<div class="empty" style="margin-top:14px">Žádné tréninky.</div>`;
     let curM = "";
     const lim = S.histLimit || 40;
     list.slice(0, lim).forEach((w) => {
@@ -3059,33 +2983,31 @@
       const m = MONTHS_FULL[d.getMonth()] + " " + d.getFullYear();
       if (m !== curM) {
         curM = m;
-        h += '<div class="mhead">' + m + "</div>";
+        h += `<div class="mhead">${m}</div>`;
       }
       h +=
-        '<button class="hw" data-act="openW" data-v="' +
-        esc(w.id) +
-        '" data-m="' +
-        w.mk +
-        '" style="margin-bottom:8px"><div class="row"><h3 class="grow">' +
-        esc(w.title) +
-        (wRecs(w).length ? ' <span class="medals">🏅 ' + wRecs(w).length + "</span>" : "") +
-        '</h3><span class="pill"><span class="sw" style="background:' +
-        gymColor(w.gymId) +
-        '"></span>' +
-        esc(gymName(w.gymId)) +
-        '</span></div><div class="line num"><span>' +
-        fmtDay(w.start) +
-        " " +
-        fmtTime(w.start) +
-        "</span>" +
-        durLabel(w) +
-        "<span>" +
-        fmtInt(wVol(w)) +
-        " kg</span><span>" +
-        wSets(w) +
-        ' sérií</span></div><div class="exs">' +
-        esc((w.ex || []).map((e) => e.sets.length + "× " + exName(e.exId)).join(", ")) +
-        "</div></button>";
+        `<button class="hw" data-act="openW" data-v="${esc(w.id)}" data-m="${w.mk}"
+          style="margin-bottom:8px">
+        <div class="row">
+          <h3 class="grow">
+            ${esc(w.title)}` +
+        `${wRecs(w).length ? ` <span class="medals">🏅 ${wRecs(w).length}</span>` : ""}
+          </h3>
+          <span class="pill">
+            <span class="sw" style="background:${gymColor(w.gymId)}"></span>
+            ${esc(gymName(w.gymId))}
+          </span>
+        </div>
+        <div class="line num">
+          <span>${fmtDay(w.start)} ${fmtTime(w.start)}</span>
+          ${durLabel(w)}
+          <span>${fmtInt(wVol(w))} kg</span>
+          <span>${wSets(w)} sérií</span>
+        </div>
+        <div class="exs">
+          ${esc((w.ex || []).map((e) => e.sets.length + "× " + exName(e.exId)).join(", "))}
+        </div>
+      </button>`;
     });
     if (list.length > lim) {
       h += '<button class="btn block" data-act="histMore">Zobrazit další</button>';
@@ -3199,27 +3121,23 @@
   // rozdíl proti minule: ▲ víc (zeleně), ▼ míň (červeně), ◄► beze změny; neutral = jen šedě (čas)
   // trojúhelníčky jako SVG, aby vypadaly stejně v každém písmu
   const TRI = (() => {
-    const t = (d) => '<svg class="tri" viewBox="0 0 10 10" aria-hidden="true"><path d="' + d + '"/></svg>';
+    const t = (d) => `<svg class="tri" viewBox="0 0 10 10" aria-hidden="true"><path d="${d}"/></svg>`;
     return {
       up: t("M5 1.5 9.5 8.5H.5z"),
       down: t("M5 8.5 .5 1.5h9z"),
-      same: '<svg class="tri tri2" viewBox="0 0 20 10" aria-hidden="true"><path d="M.5 5 7 .8v8.4zM19.5 5 13 .8v8.4z"/></svg>',
+      same: `<svg class="tri tri2" viewBox="0 0 20 10" aria-hidden="true">
+        <path d="M.5 5 7 .8v8.4zM19.5 5 13 .8v8.4z"/>
+      </svg>`,
     };
   })();
   const SAME = TRI.same + " 0";
   function dHtml(d, fmt, cls, neutral) {
     if (Math.abs(d) < EPS || fmt(Math.abs(d)) === fmt(0)) {
-      return '<span class="' + cls + ' flat">' + SAME + "</span>";
+      return `<span class="${cls} flat">${SAME}</span>`;
     }
     return (
-      '<span class="' +
-      cls +
-      " " +
-      (neutral ? "flat" : d > 0 ? "gain" : "loss") +
-      '">' +
-      (d > 0 ? TRI.up + " +" : TRI.down + " −") +
-      fmt(Math.abs(d)) +
-      "</span>"
+      `<span class="${cls} ${neutral ? "flat" : d > 0 ? "gain" : "loss"}">${d > 0 ? TRI.up + " +" : TRI.down + " −"}` +
+      `${fmt(Math.abs(d))}</span>`
     );
   }
   // den s rokem, jen když se liší od roku tréninku
@@ -3231,8 +3149,7 @@
       vol = wVol(w),
       sets = wSets(w),
       rec = wRecs(w).length;
-    const kpi = (v, l, dl) =>
-      '<div class="kpi"><b>' + v + "</b><span>" + l + "</span>" + (p ? dl : "") + "</div>";
+    const kpi = (v, l, dl) => `<div class="kpi"><b>${v}</b><span>${l}</span>${p ? dl : ""}</div>`;
     let dv = "";
     if (p) {
       const pv = wVol(p);
@@ -3240,17 +3157,14 @@
       dv =
         dHtml(vol - pv, (x) => fmtInt(x) + " kg", "dl") +
         (pc
-          ? '<span class="dl pc ' +
-            (pc > 0 ? "gain" : "loss") +
-            '">' +
-            (pc > 0 ? "+" : "−") +
-            Math.abs(pc) +
-            " %</span>"
+          ? `<span class="dl pc ${pc > 0 ? "gain" : "loss"}">
+            ${pc > 0 ? "+" : "−"}${Math.abs(pc)} %
+          </span>`
           : "");
     }
     return (
-      '<div class="kpis k4">' +
-      kpi(
+      `<div class="kpis k4">
+      ${kpi(
         fmtDurS(dur),
         "Čas",
         p
@@ -3261,41 +3175,32 @@
               true,
             )
           : "",
-      ) +
-      kpi(fmtVol(vol), "Objem", dv) +
-      kpi(sets, "Série", p ? dHtml(sets - wSets(p), String, "dl") : "") +
-      kpi(rec, "Rekordy", p ? dHtml(rec - wRecs(p).length, String, "dl") : "") +
-      "</div>"
+      )}` +
+      `${kpi(fmtVol(vol), "Objem", dv)}` +
+      `${kpi(sets, "Série", p ? dHtml(sets - wSets(p), String, "dl") : "")}` +
+      `${kpi(rec, "Rekordy", p ? dHtml(rec - wRecs(p).length, String, "dl") : "")}
+    </div>`
     );
   }
   function sumCompare(w, p) {
     if (!p) {
-      return (
-        '<div class="small muted">' +
-        (w.tplId || w.againOf || runKey(w.title)
+      return `<div class="small muted">${
+        w.tplId || w.againOf || runKey(w.title)
           ? "První trénink „" + esc(w.title) + "“, zatím není s čím porovnat."
-          : "Trénink bez šablony, není s čím porovnat.") +
-        "</div>"
-      );
+          : "Trénink bez šablony, není s čím porovnat."
+      }</div>`;
     }
     const have = new Set((w.ex || []).map((e) => e.exId));
     const extra = [...new Set((p.ex || []).map((e) => e.exId))].filter((id) => !have.has(id));
     return (
-      '<button class="cmp" data-act="prevW" data-v="' +
-      esc(p.id) +
-      '" data-m="' +
-      p.mk +
-      '"><div class="grow">Porovnáno s <b>' +
-      esc(p.title) +
-      "</b> · " +
-      dayY(p.start, w.start) +
-      " · " +
-      esc(gymName(p.gymId)) +
-      (p.gymId !== w.gymId ? " (jiné fitko)" : "") +
-      (extra.length
-        ? '<div class="xs muted">Minule navíc: ' + esc(extra.map(exName).join(", ")) + "</div>"
-        : "") +
-      '</div><span class="chev">›</span></button>'
+      `<button class="cmp" data-act="prevW" data-v="${esc(p.id)}" data-m="${p.mk}">
+      <div class="grow">
+        Porovnáno s <b>${esc(p.title)}</b> · ${dayY(p.start, w.start)} · ${esc(gymName(p.gymId))}` +
+      `${p.gymId !== w.gymId ? " (jiné fitko)" : ""}` +
+      `${extra.length ? `<div class="xs muted">Minule navíc: ${esc(extra.map(exName).join(", "))}</div>` : ""}` +
+      `</div>
+      <span class="chev">›</span>
+      </button>`
     );
   }
   function sumMuscles(w) {
@@ -3303,25 +3208,21 @@
       rows = Object.entries(m).sort((a, b) => b[1] - a[1]);
     if (!rows.length) return "";
     const mx = rows[0][1];
-    return (
-      '<div class="card"><h3 class="sumh">Procvičené partie</h3>' +
-      musFigs(m, false, true) +
-      mgStack(m) +
-      '<div class="mbars">' +
-      rows
-        .map(
-          ([k, v]) =>
-            '<div class="mbar"><span>' +
-            esc(MUSCLE_MAP.NAMES[k]) +
-            '</span><div><i style="width:' +
-            Math.max(4, (v / mx) * 100) +
-            "%;background:" +
-            mgCol(k) +
-            '"></i></div></div>',
-        )
-        .join("") +
-      "</div></div>"
-    );
+    return `<div class="card">
+      <h3 class="sumh">Procvičené partie</h3>
+      ${musFigs(m, false, true)}${mgStack(m)}
+      <div class="mbars">
+        ${rows
+          .map(
+            ([k, v]) =>
+              `<div class="mbar">
+                <span>${esc(MUSCLE_MAP.NAMES[k])}</span>
+                <div><i style="width:${Math.max(4, (v / mx) * 100)}%;background:${mgCol(k)}"></i></div>
+              </div>`,
+          )
+          .join("")}
+      </div>
+    </div>`;
   }
   function sumEx(w, exId) {
     const kind = kindOf(exId),
@@ -3329,11 +3230,9 @@
     const pw = prevEx(exId, w);
     if (!pw) {
       const ex = S.exLib[exId];
-      return (
-        ' <span class="pill new">' +
-        (ex && ex.gymDep && prevEx(exId, w, true) ? "Poprvé v tomto fitku" : "Poprvé") +
-        "</span>"
-      );
+      return ` <span class="pill new">
+        ${ex && ex.gymDep && prevEx(exId, w, true) ? "Poprvé v tomto fitku" : "Poprvé"}
+      </span>`;
     }
     const ps = exSetsIn(pw, exId);
     const b = bestOf(kind, sets),
@@ -3342,38 +3241,26 @@
       pt = exTotal(kind, ps, pw.start);
     let h = "";
     if (b) {
-      h +=
-        '<span class="k">Nejlepší</span><span class="v">' +
-        esc(setStr(kind, b.s)) +
-        "</span>" +
-        (!pb
+      h += `<span class="k">Nejlepší</span>
+      <span class="v">${esc(setStr(kind, b.s))}</span>
+      ${
+        !pb
           ? "<span></span>"
           : keyCmp(b.k, pb.k)
-            ? '<span class="d ' +
-              (keyCmp(b.k, pb.k) > 0 ? 'gain">' + TRI.up : 'loss">' + TRI.down) +
-              " z " +
-              esc(setStr(kind, pb.s)) +
-              "</span>"
-            : '<span class="d flat">' + SAME + "</span>");
+            ? `<span class="d ${keyCmp(b.k, pb.k) > 0 ? 'gain">' + TRI.up : 'loss">' + TRI.down} z ${esc(setStr(kind, pb.s))}</span>`
+            : `<span class="d flat">${SAME}</span>`
+      }`;
     }
     if (t.v > 0 || pt.v > 0) {
-      h +=
-        '<span class="k">' +
-        t.lab +
-        '</span><span class="v">' +
-        t.fmt(t.v) +
-        "</span>" +
-        dHtml(t.v - pt.v, t.fmt, "d");
+      h += `<span class="k">${t.lab}</span>
+      <span class="v">${t.fmt(t.v)}</span>
+      ${dHtml(t.v - pt.v, t.fmt, "d")}`;
     }
     return {
-      h:
-        h +
-        '<span class="src">Minule ' +
-        dayY(pw.start, w.start) +
-        " · " +
-        esc(pw.title) +
-        (sameRun(w, pw) ? "" : " (jiný trénink)") +
-        "</span>",
+      h: `${h}
+      <span class="src">
+        Minule ${dayY(pw.start, w.start)} · ${esc(pw.title)}${sameRun(w, pw) ? "" : " (jiný trénink)"}
+      </span>`,
     };
   }
   let wOpen = null; // otevřený panel tréninku {w, justSaved, nav} – pro panel v panelu a krok zpět
@@ -3382,38 +3269,29 @@
     nav = nav || {};
     wOpen = { w, justSaved, nav };
     const p = prevRun(w);
-    let b =
-      '<div class="row wrap-r small muted num"><span class="pill"><span class="sw" style="background:' +
-      gymColor(w.gymId) +
-      '"></span>' +
-      esc(gymName(w.gymId)) +
-      "</span><span>" +
-      fmtDay(w.start) +
-      " " +
-      fmtTime(w.start) +
-      "</span></div>" +
-      (w.endOrig
-        ? '<div class="xs muted">Délka upravena ručně: původně ' +
-          fmtDur(w.endOrig - w.start) +
-          " (konec " +
-          fmtTime(w.endOrig) +
-          "), uloženo " +
-          fmtDur(w.end - w.start) +
-          " (konec " +
-          fmtTime(w.end) +
-          ").</div>"
-        : "");
+    let b = `<div class="row wrap-r small muted num">
+      <span class="pill">
+        <span class="sw" style="background:${gymColor(w.gymId)}"></span>
+        ${esc(gymName(w.gymId))}
+      </span>
+      <span>${fmtDay(w.start)} ${fmtTime(w.start)}</span>
+    </div>
+    ${
+      w.endOrig
+        ? `<div class="xs muted">
+          Délka upravena ručně: původně ${fmtDur(w.endOrig - w.start)} (konec ${fmtTime(w.endOrig)}),
+          uloženo ${fmtDur(w.end - w.start)} (konec ${fmtTime(w.end)}).
+        </div>`
+        : ""
+    }`;
     b += sumKpis(w, p) + sumCompare(w, p);
     const R = wRecs(w);
     if (justSaved || R.length) {
       b += R.length
-        ? '<div class="recbox"><h3>🏅 ' +
-          R.length +
-          " " +
-          plural(R.length, "rekord", "rekordy", "rekordů") +
-          "</h3>" +
-          recListHtml(R, true) +
-          "</div>"
+        ? `<div class="recbox">
+          <h3>🏅 ${R.length} ${plural(R.length, "rekord", "rekordy", "rekordů")}</h3>
+          ${recListHtml(R, true)}
+        </div>`
         : '<div class="small muted">Tentokrát bez nového rekordu.</div>';
     }
     b += sumMuscles(w);
@@ -3424,64 +3302,56 @@
       const c = seen[e.exId] ? null : sumEx(w, e.exId);
       seen[e.exId] = true;
       b +=
-        '<div class="card"><div style="font-weight:700;color:var(--accent-2)"><button class="linkbtn" data-act="openEx" data-v="' +
-        esc(e.exId) +
-        '">' +
-        esc(exName(e.exId)) +
-        "</button>" +
-        (er.length ? ' <span class="medals">🏅 ' + er.length + "</span>" : "") +
-        (typeof c === "string" ? c : "") +
-        "</div>" +
-        (e.note ? '<div class="xs muted">' + esc(e.note) + "</div>" : "") +
-        (c && c.h ? '<div class="excmp">' + c.h + "</div>" : "") +
-        '<div class="dset">' +
-        (() => {
-          const k = kindOf(e.exId);
-          return e.sets
-            .map((s) => {
-              const l = s.t === "w" ? "W" : s.t === "d" ? "D" : s.t === "f" ? "F" : ++wn;
-              const L = setLoad(k, s, w.start);
-              const r = hasReps(k) && L && s.reps ? e1rm(L, s.reps) : 0;
-              return (
-                '<div><span class="lbl ' +
-                s.t +
-                '">' +
-                l +
-                "</span><span>" +
-                esc(setStr(k, s)) +
-                (s.rpe ? " @" + s.rpe : "") +
-                "</span>" +
-                (isWork(s.t) && r
-                  ? '<span class="muted">1RM ≈ ' + fmtKg(Math.round(r * 10) / 10) + "</span>"
-                  : "") +
-                "</div>"
-              );
-            })
-            .join("");
-        })() +
-        "</div></div>";
+        `<div class="card">
+        <div style="font-weight:700;color:var(--accent-2)">
+          <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
+        `</button>${er.length ? ` <span class="medals">🏅 ${er.length}</span>` : ""}` +
+        `${typeof c === "string" ? c : ""}
+        </div>
+        ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}` +
+        `${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
+        <div class="dset">
+          ${(() => {
+            const k = kindOf(e.exId);
+            return e.sets
+              .map((s) => {
+                const l = s.t === "w" ? "W" : s.t === "d" ? "D" : s.t === "f" ? "F" : ++wn;
+                const L = setLoad(k, s, w.start);
+                const r = hasReps(k) && L && s.reps ? e1rm(L, s.reps) : 0;
+                return (
+                  `<div>
+                  <span class="lbl ${s.t}">${l}</span><span>${esc(setStr(k, s))}` +
+                  `${s.rpe ? " @" + s.rpe : ""}</span>` +
+                  `${
+                    isWork(s.t) && r
+                      ? `<span class="muted">1RM ≈ ${fmtKg(Math.round(r * 10) / 10)}</span>`
+                      : ""
+                  }
+                </div>`
+                );
+              })
+              .join("");
+          })()}
+        </div>
+        </div>`;
     }
     openSheet(
       (justSaved ? "Hotovo · " : "") + w.title,
       b,
-      (justSaved
-        ? ""
-        : '<button class="btn primary full" data-act="wAgain" data-v="' +
-          esc(w.id) +
-          '" data-m="' +
-          w.mk +
-          '">Cvičit znovu</button>') +
-        '<button class="btn grow" data-act="wToTpl" data-v="' +
-        esc(w.id) +
-        '" data-m="' +
-        w.mk +
-        '">Uložit jako šablonu</button><button class="btn grow' +
-        (justSaved ? " primary" : "") +
-        '" data-act="editW" data-v="' +
-        esc(w.id) +
-        '" data-m="' +
-        w.mk +
-        '">Upravit</button>',
+      `${
+        justSaved
+          ? ""
+          : `<button class="btn primary full" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
+            Cvičit znovu
+          </button>`
+      }
+      <button class="btn grow" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
+        Uložit jako šablonu
+      </button>
+      <button class="btn grow${justSaved ? " primary" : ""}" data-act="editW" data-v="${esc(w.id)}"
+          data-m="${w.mk}">
+        Upravit
+      </button>`,
       noanim,
       nav,
     );
@@ -3556,29 +3426,31 @@
     const streak = calStreak(all),
       rest = calRest(all);
     let h =
-      '<div class="kpis cal-k"><div class="kpi"><b>🔥 ' +
-      streak +
-      "</b><span>" +
-      plural(streak, "týden", "týdny", "týdnů") +
-      ' v řadě</span></div><div class="kpi"><b>' +
-      (rest == null ? "–" : rest) +
-      "</b><span>" +
-      (rest == null ? "dní" : plural(rest, "den", "dny", "dní")) +
-      " volna</span></div></div>";
+      `<div class="kpis cal-k">
+      <div class="kpi">
+        <b>🔥 ${streak}</b><span>${plural(streak, "týden", "týdny", "týdnů")} v řadě</span>
+      </div>
+      <div class="kpi">
+        <b>${rest == null ? "–" : rest}</b>` +
+      `<span>${rest == null ? "dní" : plural(rest, "den", "dny", "dní")} ` +
+      `volna</span>
+      </div>
+    </div>`;
     const isNow = y === now.getFullYear() && mo === now.getMonth();
     h +=
-      '<div class="card cal" data-cal="1"><div class="cal-nav"><button class="iconbtn" data-act="calM" data-v="-1" aria-label="Předchozí měsíc">‹</button>' +
-      (isNow
-        ? '<b class="cal-t">'
-        : '<button class="cal-t" data-act="calM" data-v="0" title="Zpět na aktuální měsíc">') +
-      calMonthName(m0) +
-      " " +
-      y +
-      (isNow ? "</b>" : " <small>↺</small></button>") +
-      '<button class="iconbtn" data-act="calM" data-v="1" aria-label="Další měsíc">›</button></div>';
-    h +=
-      '<div class="cal-g">' +
-      ["po", "út", "st", "čt", "pá", "so", "ne"].map((d) => '<div class="cal-wd">' + d + "</div>").join("");
+      `<div class="card cal" data-cal="1">
+      <div class="cal-nav">
+        <button class="iconbtn" data-act="calM" data-v="-1" aria-label="Předchozí měsíc">‹</button>
+        ${
+          isNow
+            ? '<b class="cal-t">'
+            : '<button class="cal-t" data-act="calM" data-v="0" title="Zpět na aktuální měsíc">'
+        }` +
+      `${calMonthName(m0)} ${y}${isNow ? "</b>" : " <small>↺</small></button>"}
+        <button class="iconbtn" data-act="calM" data-v="1" aria-label="Další měsíc">›</button>
+      </div>`;
+    h += `<div class="cal-g">
+      ${["po", "út", "st", "čt", "pá", "so", "ne"].map((d) => `<div class="cal-wd">${d}</div>`).join("")}`;
     for (let i = (m0.getDay() + 6) % 7; i > 0; i--) {
       h += "<div></div>";
     }
@@ -3636,43 +3508,27 @@
           ? ' tabindex="-1" aria-disabled="true"'
           : a && !ws.length && !bs.length
             ? ' data-act="calActive"'
-            : ' data-act="calDay" data-v="' + k + '"';
+            : ` data-act="calDay" data-v="${k}"`;
       h +=
-        '<button class="cal-d' +
-        (k === today ? " today" : "") +
-        (fut ? " fut" : "") +
-        '"' +
-        tap +
-        ' aria-label="' +
-        esc(aria) +
-        '"><span class="' +
-        cls +
-        '"' +
-        (st ? ' style="' + st + '"' : "") +
-        ">" +
-        d +
-        (bs.length ? '<i class="cal-b"></i>' : "") +
-        "</span>" +
-        (lab ? '<span class="cal-l">' + esc(lab) + "</span>" : "") +
-        "</button>";
+        `<button class="cal-d${k === today ? " today" : ""}${fut ? " fut" : ""}"${tap}
+          aria-label="${esc(aria)}">
+        <span class="${cls}"${st ? ` style="${st}"` : ""}>${d}` +
+        `${bs.length ? '<i class="cal-b"></i>' : ""}</span>
+        ${lab ? `<span class="cal-l">${esc(lab)}</span>` : ""}
+      </button>`;
     }
     h += "</div></div>";
     h +=
-      '<div class="small muted num cal-sum">' +
-      calMonthName(m0) +
-      ": <b>" +
-      nW +
-      "</b> " +
-      plural(nW, "trénink", "tréninky", "tréninků") +
-      (S.histGym !== "all" ? " (" + esc(gymName(S.histGym)) + ")" : "") +
-      " · <b>" +
-      nRest +
-      "</b> " +
-      plural(nRest, "volný den", "volné dny", "volných dnů") +
-      (nBody
-        ? ' · <i class="cal-b"></i> <b>' + nBody + "</b> " + plural(nBody, "den", "dny", "dní") + " s měřením"
-        : "") +
-      "</div>";
+      `<div class="small muted num cal-sum">
+      ${calMonthName(m0)}: <b>${nW}</b> ${plural(nW, "trénink", "tréninky", "tréninků")}` +
+      `${S.histGym !== "all" ? " (" + esc(gymName(S.histGym)) + ")" : ""} · <b>${nRest}</b> ` +
+      `${plural(nRest, "volný den", "volné dny", "volných dnů")}` +
+      `${
+        nBody
+          ? ` · <i class="cal-b"></i> <b>${nBody}</b> ${plural(nBody, "den", "dny", "dní")} s měřením`
+          : ""
+      }
+    </div>`;
     return h;
   }
   // klepnutí na den: jedna věc se otevře rovnou, víc (tréninky, měření) = výběr
@@ -3693,44 +3549,35 @@
     }
     let b = '<div class="stack" style="gap:8px">';
     for (const w of ws) {
-      b +=
-        '<button class="hw" data-act="calW" data-v="' +
-        esc(w.id) +
-        '" data-m="' +
-        w.mk +
-        '" data-k="' +
-        k +
-        '"><div class="row"><h3 class="grow">' +
-        esc(w.title) +
-        '</h3><span class="pill"><span class="sw" style="background:' +
-        gymColor(w.gymId) +
-        '"></span>' +
-        esc(gymName(w.gymId)) +
-        '</span></div><div class="line num"><span>' +
-        fmtTime(w.start) +
-        "</span>" +
-        durLabel(w) +
-        "<span>" +
-        fmtInt(wVol(w)) +
-        " kg</span><span>" +
-        wSets(w) +
-        " sérií</span></div></button>";
+      b += `<button class="hw" data-act="calW" data-v="${esc(w.id)}" data-m="${w.mk}" data-k="${k}">
+        <div class="row">
+          <h3 class="grow">${esc(w.title)}</h3>
+          <span class="pill">
+            <span class="sw" style="background:${gymColor(w.gymId)}"></span>
+            ${esc(gymName(w.gymId))}
+          </span>
+        </div>
+        <div class="line num">
+          <span>${fmtTime(w.start)}</span>
+          ${durLabel(w)}
+          <span>${fmtInt(wVol(w))} kg</span>
+          <span>${wSets(w)} sérií</span>
+        </div>
+      </button>`;
     }
     for (const x of bs) {
-      b +=
-        '<button class="hw" data-act="calBody" data-v="' +
-        esc(x.id) +
-        '" data-k="' +
-        k +
-        '"><div class="row"><h3 class="grow"><i class="cal-b"></i> Měření</h3></div><div class="line num">' +
-        BODY_F.filter(([f]) => x[f] !== undefined && x[f] !== null && x[f] !== "")
-          .slice(0, 3)
-          .map(([f, l, u]) => "<span>" + esc(l) + " <b>" + fmtKg(+x[f]) + "</b> " + esc(u) + "</span>")
-          .join("") +
-        "</div></button>";
+      b += `<button class="hw" data-act="calBody" data-v="${esc(x.id)}" data-k="${k}">
+        <div class="row"><h3 class="grow"><i class="cal-b"></i> Měření</h3></div>
+        <div class="line num">
+          ${BODY_F.filter(([f]) => x[f] !== undefined && x[f] !== null && x[f] !== "")
+            .slice(0, 3)
+            .map(([f, l, u]) => `<span>${esc(l)} <b>${fmtKg(+x[f])}</b> ${esc(u)}</span>`)
+            .join("")}
+        </div>
+      </button>`;
     }
     const d = new Date(ws.length ? ws[0].start : bs[0].date);
-    openSheet(fmtDay(d.getTime()) + " " + d.getFullYear(), b + "</div>", null, noanim);
+    openSheet(fmtDay(d.getTime()) + " " + d.getFullYear(), `${b}</div>`, null, noanim);
   }
   function calShift(v) {
     if (!v) {
@@ -3788,22 +3635,9 @@
     return r && r[2] ? Date.now() - r[2] * DAY : -Infinity;
   }
   function rangeSeg(act, cur) {
-    return (
-      '<div class="seg seg-wide">' +
-      RANGES.map(
-        ([k, l]) =>
-          '<button data-act="' +
-          act +
-          '" data-v="' +
-          k +
-          '" aria-pressed="' +
-          (cur === k) +
-          '">' +
-          l +
-          "</button>",
-      ).join("") +
-      "</div>"
-    );
+    return `<div class="seg seg-wide">${RANGES.map(
+      ([k, l]) => `<button data-act="${act}" data-v="${k}" aria-pressed="${cur === k}">${l}</button>`,
+    ).join("")}</div>`;
   }
   function filtW(g) {
     return derive().all.filter((w) => g === "all" || w.gymId === g);
@@ -3849,56 +3683,33 @@
     return s;
   }
   function kpiGrid(s) {
-    return (
-      '<div class="kpis k6">' +
-      '<div class="kpi"><b>' +
-      s.n +
-      "</b><span>Tréninky</span></div>" +
-      '<div class="kpi"><b>' +
-      fmtHours(s.dur) +
-      "</b><span>Čas</span></div>" +
-      '<div class="kpi"><b>' +
-      fmtVol(s.vol) +
-      "</b><span>Objem</span></div>" +
-      '<div class="kpi"><b>' +
-      fmtInt(s.sets) +
-      "</b><span>Série</span></div>" +
-      '<div class="kpi"><b>' +
-      s.recs +
-      "</b><span>Rekordy</span></div>" +
-      '<div class="kpi"><b>' +
-      (s.n ? fmtDurS(s.dur / s.n) : "–") +
-      "</b><span>Ø délka</span></div></div>"
-    );
+    return `<div class="kpis k6">
+      <div class="kpi"><b>${s.n}</b><span>Tréninky</span></div>
+      <div class="kpi"><b>${fmtHours(s.dur)}</b><span>Čas</span></div>
+      <div class="kpi"><b>${fmtVol(s.vol)}</b><span>Objem</span></div>
+      <div class="kpi"><b>${fmtInt(s.sets)}</b><span>Série</span></div>
+      <div class="kpi"><b>${s.recs}</b><span>Rekordy</span></div>
+      <div class="kpi"><b>${s.n ? fmtDurS(s.dur / s.n) : "–"}</b><span>Ø délka</span></div>
+    </div>`;
   }
   function hbarList(rows, stk) {
     if (!rows.length) return '<div class="muted small">Nic.</div>';
     const mx = Math.max(...rows.map((r) => r.v)) || 1;
-    return (
-      '<div class="hbars' +
-      (stk ? " stk" : "") +
-      '">' +
-      rows
+    return `<div class="hbars${stk ? " stk" : ""}">
+      ${rows
         .map(
           (r) =>
-            '<div class="hbar"' +
-            (r.act ? ' role="button" data-act="' + r.act + '" data-v="' + esc(r.id) + '"' : "") +
-            '><span class="hl" title="' +
-            esc(r.label) +
-            '">' +
-            (r.sw ? '<span class="sw" style="background:' + r.sw + '"></span>' : "") +
-            esc(r.label) +
-            '</span><div class="t" style="width:' +
-            Math.max(2, (r.v / mx) * 100) +
-            "%" +
-            (r.sw ? ";background:" + r.sw : "") +
-            '"></div><span class="v">' +
-            esc(r.txt || String(r.v)) +
-            "</span></div>",
+            `<div class="hbar"${r.act ? ` role="button" data-act="${r.act}" data-v="${esc(r.id)}"` : ""}>
+              <span class="hl" title="${esc(r.label)}">
+                ${r.sw ? `<span class="sw" style="background:${r.sw}"></span>` : ""}${esc(r.label)}
+              </span>
+              <div class="t"
+                  style="width:${Math.max(2, (r.v / mx) * 100)}%${r.sw ? ";background:" + r.sw : ""}"></div>
+              <span class="v">${esc(r.txt || String(r.v))}</span>
+            </div>`,
         )
-        .join("") +
-      "</div>"
-    );
+        .join("")}
+    </div>`;
   }
   function topExRows(s, n) {
     return Object.entries(s.ex)
@@ -3924,9 +3735,9 @@
   }
   function summaryBlock(s, withGyms) {
     let h = kpiGrid(s);
-    h += '<div class="subh">Nejčastější cviky</div>' + hbarList(topExRows(s, 5), true);
+    h += `<div class="subh">Nejčastější cviky</div>${hbarList(topExRows(s, 5), true)}`;
     if (withGyms) {
-      h += '<div class="subh">Podle fitek</div>' + hbarList(gymRows(s));
+      h += `<div class="subh">Podle fitek</div>${hbarList(gymRows(s))}`;
     }
     return h;
   }
@@ -4075,87 +3886,87 @@
     const s = summarize(ws);
     let h = topbar("Statistiky", g === "all" ? "Všechna fitka" : gymName(g));
     h += gymChips("statsGym", g, true);
-    h +=
-      '<section class="sec">' +
-      rangeSeg("statsRange", range) +
-      '<div style="margin-top:10px">' +
-      kpiGrid(s) +
-      "</div></section>";
+    h += `<section class="sec">
+      ${rangeSeg("statsRange", range)}
+      <div style="margin-top:10px">${kpiGrid(s)}</div>
+    </section>`;
     // graf
     const m = S.statsMetric;
     const lab = { count: "Tréninky", sets: "Pracovní série", vol: "Objem (kg)", dur: "Čas (min)" };
     const bars = bucketsFor(range, ws.length ? ws : wsAll);
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Průběh</h2><div class="seg">' +
-      Object.keys(lab)
-        .map(
-          (k) =>
-            '<button data-act="statsMetric" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (m === k) +
-            '">' +
-            { count: "Tréninky", sets: "Série", vol: "Objem", dur: "Čas" }[k] +
-            "</button>",
-        )
-        .join("") +
-      '</div></div><div class="card">' +
-      chartPh(
-        {
-          type: "bar",
-          label: lab[m],
-          unit: m === "vol" ? " kg" : m === "dur" ? " min" : "",
-          bars: bars.map((b) => ({ x: b.x, label: b.label, tip: b.tip, v: b[m] })),
-        },
-        180,
-      ) +
-      "</div></section>";
+    h += `<section class="sec">
+      <div class="sec-h">
+        <h2>Průběh</h2>
+        <div class="seg">
+          ${Object.keys(lab)
+            .map(
+              (k) =>
+                `<button data-act="statsMetric" data-v="${k}" aria-pressed="${m === k}">${{ count: "Tréninky", sets: "Série", vol: "Objem", dur: "Čas" }[k]}` +
+                `</button>`,
+            )
+            .join("")}
+        </div>
+      </div>
+      <div class="card">
+        ${chartPh(
+          {
+            type: "bar",
+            label: lab[m],
+            unit: m === "vol" ? " kg" : m === "dur" ? " min" : "",
+            bars: bars.map((b) => ({ x: b.x, label: b.label, tip: b.tip, v: b[m] })),
+          },
+          180,
+        )}
+      </div>
+    </section>`;
     // partie
     const mv = Object.entries(s.mus).sort((a, b) => b[1] - a[1]);
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Pracovní série podle partie</h2></div><div class="card">' +
-      (mv.length
-        ? musFigs(s.mus, true, true) +
-          mgStack(s.mus) +
-          hbarList(mv.map(([k, v]) => ({ label: MUSCLE_MAP.NAMES[k], v, sw: mgCol(k) })))
-        : '<div class="muted small">V tomto období nic.</div>') +
-      '<p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p></div></section>';
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Nejčastější cviky</h2></div><div class="card">' +
-      hbarList(topExRows(s, 8), true) +
-      "</div></section>";
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Pracovní série podle partie</h2></div>
+      <div class="card">
+        ${
+          mv.length
+            ? musFigs(s.mus, true, true) +
+              mgStack(s.mus) +
+              hbarList(mv.map(([k, v]) => ({ label: MUSCLE_MAP.NAMES[k], v, sw: mgCol(k) })))
+            : '<div class="muted small">V tomto období nic.</div>'
+        }
+        <p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p>
+      </div>
+    </section>`;
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Nejčastější cviky</h2></div>
+      <div class="card">${hbarList(topExRows(s, 8), true)}</div>
+    </section>`;
     if (g === "all") {
-      h +=
-        '<section class="sec"><div class="sec-h"><h2>Podle fitek</h2></div><div class="card">' +
-        hbarList(gymRows(s)) +
-        "</div></section>";
+      h += `<section class="sec">
+        <div class="sec-h"><h2>Podle fitek</h2></div>
+        <div class="card">${hbarList(gymRows(s))}</div>
+      </section>`;
     }
     // kalendářní souhrny
     const P = calPeriods();
     const pk = S.sumPeriod;
     const p = P[pk];
     const ps = summarize(wsAll.filter((w) => w.start >= p.a && w.start < p.b));
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Souhrn · ' +
-      esc(p.l) +
-      '</h2></div><div class="seg seg-wide" style="margin-bottom:10px">' +
-      Object.entries(P)
-        .map(
-          ([k, v]) =>
-            '<button data-act="sumPeriod" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (pk === k) +
-            '">' +
-            v.short +
-            "</button>",
-        )
-        .join("") +
-      '</div><div class="card">' +
-      (ps.n
-        ? summaryBlock(ps, g === "all")
-        : '<div class="muted small">V tomto období žádný trénink.</div>') +
-      "</div></section>";
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Souhrn · ${esc(p.l)}</h2></div>
+      <div class="seg seg-wide" style="margin-bottom:10px">
+        ${Object.entries(P)
+          .map(
+            ([k, v]) =>
+              `<button data-act="sumPeriod" data-v="${k}" aria-pressed="${pk === k}">${v.short}</button>`,
+          )
+          .join("")}
+      </div>
+      <div class="card">
+        ${
+          ps.n
+            ? summaryBlock(ps, g === "all")
+            : '<div class="muted small">V tomto období žádný trénink.</div>'
+        }
+      </div>
+    </section>`;
     // seznam cviků
     const { byEx } = derive();
     let rows = [];
@@ -4183,48 +3994,39 @@
       });
     }
     rows.sort((a, b) => b.last - a.last);
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Cviky</h2><span class="xs muted">' +
-      rows.length +
-      '</span></div><input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…" value="' +
-      esc(S.exSearch) +
-      '"><div class="chips" data-ck="exMuscle" style="margin-top:8px"><button class="chip" data-act="exMuscle" data-v="all" aria-pressed="' +
-      (S.exMuscle === "all") +
-      '">Vše</button>' +
-      Object.entries(MUSCLES)
-        .filter(([k]) => k !== "other")
-        .map(
-          ([k, l]) =>
-            '<button class="chip" data-act="exMuscle" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.exMuscle === k) +
-            '">' +
-            l +
-            "</button>",
-        )
-        .join("") +
-      '</div><div class="stack" style="margin-top:10px;gap:6px">';
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Cviky</h2><span class="xs muted">${rows.length}</span></div>
+      <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
+          value="${esc(S.exSearch)}">
+      <div class="chips" data-ck="exMuscle" style="margin-top:8px">
+        <button class="chip" data-act="exMuscle" data-v="all" aria-pressed="${S.exMuscle === "all"}">
+          Vše
+        </button>
+        ${Object.entries(MUSCLES)
+          .filter(([k]) => k !== "other")
+          .map(
+            ([k, l]) =>
+              `<button class="chip" data-act="exMuscle" data-v="${k}" aria-pressed="${S.exMuscle === k}">
+                ${l}
+              </button>`,
+          )
+          .join("")}
+      </div>
+      <div class="stack" style="margin-top:10px;gap:6px">`;
     for (const r of rows.slice(0, S.exLimit || 60)) {
       h +=
-        '<button class="exrow" data-act="openEx" data-v="' +
-        esc(r.id) +
-        '"><div class="grow"><div class="n">' +
-        esc(r.ex.name) +
-        "</div>" +
-        (r.ex.cz ? '<div class="cz">' + esc(r.ex.cz) + "</div>" : "") +
-        '<div class="m">' +
-        esc(MUSCLES[exGroup(r.ex)] || "") +
-        " · " +
-        r.n +
-        "×" +
-        (range !== "all" ? " (" + r.inR + "× v období)" : "") +
-        " · naposledy " +
-        fmtDateS(r.last) +
-        (r.ex.gymDep && r.gyms > 1 && g === "all" ? " · " + r.gyms + " fitka" : "") +
-        '</div></div><div class="r">' +
-        (r.best ? fmtKg(Math.round(r.best)) + "<small>odh. 1RM</small>" : "–") +
-        "</div></button>";
+        `<button class="exrow" data-act="openEx" data-v="${esc(r.id)}">
+        <div class="grow">
+          <div class="n">${esc(r.ex.name)}</div>
+          ${r.ex.cz ? `<div class="cz">${esc(r.ex.cz)}</div>` : ""}
+          <div class="m">
+            ${esc(MUSCLES[exGroup(r.ex)] || "")} · ${r.n}×` +
+        `${range !== "all" ? " (" + r.inR + "× v období)" : ""} · naposledy ${fmtDateS(r.last)}` +
+        `${r.ex.gymDep && r.gyms > 1 && g === "all" ? " · " + r.gyms + " fitka" : ""}
+          </div>
+        </div>
+        <div class="r">${r.best ? `${fmtKg(Math.round(r.best))}<small>odh. 1RM</small>` : "–"}</div>
+      </button>`;
     }
     if (rows.length > (S.exLimit || 60)) {
       h += '<button class="btn block" data-act="exMore">Další cviky</button>';
@@ -4260,117 +4062,107 @@
     rows.sort(S.exlSort === "az" ? az : (a, b) => b.last - a.last || az(a, b));
     const lim = S.exlLimit || 100;
     let h = topbar("Cviky", all.length + " " + plural(all.length, "cvik", "cviky", "cviků") + " v databázi");
-    h +=
-      '<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…" value="' +
-      esc(S.exlQ) +
-      '" autocomplete="off">';
-    h +=
-      '<div class="chips" data-ck="exlM" style="margin-top:8px"><button class="chip" data-act="exlM" data-v="all" aria-pressed="' +
-      (S.exlM === "all") +
-      '">Všechny partie</button>' +
-      Object.entries(MUSCLES)
+    h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
+        value="${esc(S.exlQ)}" autocomplete="off">`;
+    h += `<div class="chips" data-ck="exlM" style="margin-top:8px">
+      <button class="chip" data-act="exlM" data-v="all" aria-pressed="${S.exlM === "all"}">
+        Všechny partie
+      </button>
+      ${Object.entries(MUSCLES)
         .filter(([k]) => k !== "other")
         .map(
           ([k, l]) =>
-            '<button class="chip" data-act="exlM" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.exlM === k) +
-            '">' +
-            l +
-            "</button>",
+            `<button class="chip" data-act="exlM" data-v="${k}" aria-pressed="${S.exlM === k}">
+              ${l}
+            </button>`,
         )
-        .join("") +
-      "</div>";
-    h +=
-      '<div class="chips" data-ck="exlEq" style="margin-top:6px"><button class="chip" data-act="exlEq" data-v="all" aria-pressed="' +
-      (S.exlEq === "all") +
-      '">Všechno vybavení</button>' +
-      Object.entries(EQUIP)
+        .join("")}
+    </div>`;
+    h += `<div class="chips" data-ck="exlEq" style="margin-top:6px">
+      <button class="chip" data-act="exlEq" data-v="all" aria-pressed="${S.exlEq === "all"}">
+        Všechno vybavení
+      </button>
+      ${Object.entries(EQUIP)
         .map(
           ([k, l]) =>
-            '<button class="chip" data-act="exlEq" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.exlEq === k) +
-            '">' +
-            l +
-            "</button>",
+            `<button class="chip" data-act="exlEq" data-v="${k}" aria-pressed="${S.exlEq === k}">
+              ${l}
+            </button>`,
         )
-        .join("") +
-      "</div>";
-    h +=
-      '<div class="row wrap-r" style="margin-top:8px;gap:8px"><div class="seg">' +
-      [
-        ["last", "Naposledy"],
-        ["az", "A–Z"],
-      ]
-        .map(
-          ([k, l]) =>
-            '<button data-act="exlSort" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.exlSort === k) +
-            '">' +
-            l +
-            "</button>",
-        )
-        .join("") +
-      "</div>" +
-      (nHid
-        ? '<button class="chip" data-act="exlHid" aria-pressed="' +
-          S.exlHid +
-          '">Skryté (' +
-          nHid +
-          ")</button>"
-        : "") +
-      '<span class="grow"></span><button class="btn sm" data-act="fedbOpen" data-v="list">Hledat online</button><button class="btn sm" data-act="exlNew">+ Nový cvik</button></div>';
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>' +
-      (S.exlHid ? "Skryté cviky" : "Seznam") +
-      '</h2><span class="xs muted">' +
-      rows.length +
-      "</span></div>";
+        .join("")}
+    </div>`;
+    h += `<div class="row wrap-r" style="margin-top:8px;gap:8px">
+      <div class="seg">
+        ${[
+          ["last", "Naposledy"],
+          ["az", "A–Z"],
+        ]
+          .map(
+            ([k, l]) =>
+              `<button data-act="exlSort" data-v="${k}" aria-pressed="${S.exlSort === k}">${l}</button>`,
+          )
+          .join("")}
+      </div>
+      ${
+        nHid
+          ? `<button class="chip" data-act="exlHid" aria-pressed="${S.exlHid}">Skryté (${nHid})</button>`
+          : ""
+      }
+      <span class="grow"></span>
+      <button class="btn sm" data-act="fedbOpen" data-v="list">Hledat online</button>
+      <button class="btn sm" data-act="exlNew">+ Nový cvik</button>
+    </div>`;
+    h += `<section class="sec">
+    <div class="sec-h">
+      <h2>${S.exlHid ? "Skryté cviky" : "Seznam"}</h2>
+      <span class="xs muted">${rows.length}</span>
+    </div>`;
     if (S.exlHid) {
-      h +=
-        '<p class="xs muted" style="margin:0 0 8px">Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš je přes Upravit → Zobrazit.</p>';
+      h += `<p class="xs muted" style="margin:0 0 8px">
+        Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš
+        je přes Upravit → Zobrazit.
+      </p>`;
     }
     if (!rows.length) {
       h +=
-        '<div class="empty">Nic neodpovídá hledání nebo filtru.' +
-        (S.exlQ.trim() && !S.exlHid
-          ? '<br><button class="btn sm" data-act="fedbOpen" data-v="list" style="margin-top:10px">Hledat „' +
-            esc(S.exlQ.trim()) +
-            "“ online</button>"
-          : "") +
-        "</div>";
+        `<div class="empty">
+        Nic neodpovídá hledání nebo filtru.` +
+        `${
+          S.exlQ.trim() && !S.exlHid
+            ? `<br>
+            <button class="btn sm" data-act="fedbOpen" data-v="list" style="margin-top:10px">
+              Hledat „${esc(S.exlQ.trim())}“ online
+            </button>`
+            : ""
+        }` +
+        `</div>`;
     }
     h += '<div class="stack" style="gap:6px">';
     for (const r of rows.slice(0, lim)) {
       const e = r.e;
       h +=
-        '<button class="exrow" data-act="openEx" data-v="' +
-        esc(r.id) +
-        '"><div class="grow"><div class="n">' +
-        esc(e.name) +
-        (e.custom ? ' <span class="xs muted">(vlastní)</span>' : "") +
-        "</div>" +
-        (e.cz ? '<div class="cz">' + esc(e.cz) + "</div>" : "") +
-        '<div class="m">' +
-        esc(
-          exPri(e)
-            .map((k) => MUSCLE_MAP.NAMES[k])
-            .join(", ") ||
-            MUSCLES[e.muscle] ||
-            "",
-        ) +
-        " · " +
-        esc(EQUIP[e.equip] || "") +
-        (r.n ? " · " + r.n + "× · naposledy " + fmtDateS(r.last) : "") +
-        "</div></div></button>";
+        `<button class="exrow" data-act="openEx" data-v="${esc(r.id)}">
+        <div class="grow">
+          <div class="n">
+            ${esc(e.name)}${e.custom ? ' <span class="xs muted">(vlastní)</span>' : ""}
+          </div>
+          ${e.cz ? `<div class="cz">${esc(e.cz)}</div>` : ""}
+          <div class="m">
+            ${esc(
+              exPri(e)
+                .map((k) => MUSCLE_MAP.NAMES[k])
+                .join(", ") ||
+                MUSCLES[e.muscle] ||
+                "",
+            )} ` +
+        `· ${esc(EQUIP[e.equip] || "")}` +
+        `${r.n ? " · " + r.n + "× · naposledy " + fmtDateS(r.last) : ""}
+          </div>
+        </div>
+      </button>`;
     }
     if (rows.length > lim) {
-      h += '<button class="btn block" data-act="exlMore">Další cviky (' + (rows.length - lim) + ")</button>";
+      h += `<button class="btn block" data-act="exlMore">Další cviky (${rows.length - lim})</button>`;
     }
     h += "</div></section>";
     return h;
@@ -4384,101 +4176,100 @@
     let h = topbar(
       ex.name,
       ex.cz || "",
-      '<button class="iconbtn" data-act="exBack" aria-label="Zpět">' + IC.back + "</button>",
+      `<button class="iconbtn" data-act="exBack" aria-label="Zpět">${IC.back}</button>`,
       "czsub",
     );
-    h +=
-      '<div class="seg seg-wide" style="margin-bottom:10px">' +
-      [
+    h += `<div class="seg seg-wide" style="margin-bottom:10px">
+      ${[
         ["info", "Popis"],
         ["stats", "Statistiky" + (list.length ? " (" + list.length + "×)" : "")],
       ]
         .map(
           ([k, l]) =>
-            '<button data-act="exPart" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.exPart === k) +
-            '">' +
-            l +
-            "</button>",
+            `<button data-act="exPart" data-v="${k}" aria-pressed="${S.exPart === k}">${l}</button>`,
         )
-        .join("") +
-      "</div>";
+        .join("")}
+    </div>`;
     if (S.exPart !== "stats") {
       // popis
       h +=
-        '<div class="card exinfo">' +
-        exFigures(ex) +
-        exTags(ex) +
-        (ex.desc
-          ? '<p class="desc">' + esc(ex.desc) + "</p>"
-          : '<p class="desc muted">Popis provedení zatím chybí.</p>') +
-        '<div class="row wrap-r" style="justify-content:space-between"><a class="link" href="' +
-        esc(exLink(ex)) +
-        '" target="_blank" rel="noopener">' +
-        (ex.url ? "Otevřít na Hevy ↗" : "Hledat video ↗") +
-        '</a><span class="xs muted">' +
-        esc(EQUIP[ex.equip] || "") +
-        "</span></div>" +
-        '<div class="row wrap-r" style="margin-top:10px;gap:8px"><button class="btn sm" data-act="editExDetail" data-v="' +
-        esc(id) +
-        '">Upravit cvik</button></div></div>';
+        `<div class="card exinfo">
+        ${exFigures(ex)}${exTags(ex)}` +
+        `${
+          ex.desc
+            ? `<p class="desc">${esc(ex.desc)}</p>`
+            : '<p class="desc muted">Popis provedení zatím chybí.</p>'
+        }
+        <div class="row wrap-r" style="justify-content:space-between">
+          <a class="link" href="${esc(exLink(ex))}" target="_blank" rel="noopener">${ex.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}` +
+        `</a>
+          <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
+        </div>
+        <div class="row wrap-r" style="margin-top:10px;gap:8px">
+          <button class="btn sm" data-act="editExDetail" data-v="${esc(id)}">Upravit cvik</button>
+        </div>
+      </div>`;
       h +=
-        '<div class="card" style="margin-top:10px"><label class="switch"><input type="checkbox" id="gymDepToggle" data-act="toggleGymDep" ' +
-        (ex.gymDep ? "checked" : "") +
-        '><span><b>Vázáno na fitko</b><br><span class="xs muted">' +
-        (ex.gymDep
-          ? "Každé fitko má vlastní progres, grafy i rekordy."
-          : "Data ze všech fitek se sčítají dohromady.") +
-        "</span></span></label></div>";
+        `<div class="card" style="margin-top:10px">
+        <label class="switch">
+          <input type="checkbox" id="gymDepToggle" data-act="toggleGymDep"
+              ${ex.gymDep ? "checked" : ""}>
+          <span><b>Vázáno na fitko</b><br>` +
+        `<span class="xs muted">${
+          ex.gymDep
+            ? "Každé fitko má vlastní progres, grafy i rekordy."
+            : "Data ze všech fitek se sčítají dohromady."
+        }` +
+        `</span></span>
+        </label>
+      </div>`;
       if (ex.archived) {
-        h +=
-          '<div class="card small" style="margin-top:10px"><b>Skrytý cvik.</b> <span class="muted">Nenabízí se při přidávání do tréninku. Vrátíš ho přes Upravit cvik → Zobrazit.</span></div>';
+        h += `<div class="card small" style="margin-top:10px">
+          <b>Skrytý cvik.</b> <span class="muted">Nenabízí se při přidávání do tréninku. Vrátíš ho
+            přes Upravit cvik → Zobrazit.</span>
+        </div>`;
       }
-      h +=
-        '<p class="small muted" style="margin-top:12px">' +
-        (list.length
-          ? "Cvičeno " +
-            list.length +
-            "× · naposledy " +
-            fmtDate(list[0].w.start) +
-            ' <button class="linkbtn" data-act="exPart" data-v="stats" style="color:var(--accent-2);font-weight:600">Statistiky →</button>'
-          : "S tímto cvikem zatím nemáš žádný záznam.") +
-        "</p>";
+      h += `<p class="small muted" style="margin-top:12px">
+        ${
+          list.length
+            ? `Cvičeno ${list.length}× · naposledy ${fmtDate(list[0].w.start)} ` +
+              `<button class="linkbtn" data-act="exPart" data-v="stats"
+                style="color:var(--accent-2);font-weight:600">Statistiky →</button>`
+            : "S tímto cvikem zatím nemáš žádný záznam."
+        }
+      </p>`;
       return h;
     }
     // statistiky
     if (!list.length) {
-      return h + '<div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>';
+      return `${h}
+      <div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>`;
     }
-    h +=
-      '<p class="xs muted" style="margin:0 0 8px">' +
-      (ex.gymDep
+    h += `<p class="xs muted" style="margin:0 0 8px">${
+      ex.gymDep
         ? "Vázáno na fitko: počítá se zvlášť pro každé fitko."
-        : "Nevázáno na fitko: data ze všech fitek se sčítají.") +
-      " Změníš v Popisu.</p>";
+        : "Nevázáno na fitko: data ze všech fitek se sčítají."
+    } Změníš v Popisu.</p>`;
     const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
     if (ex.gymDep && gymsWith.length > 1) {
-      h +=
-        '<div class="sec"><div class="chips" data-ck="detailGym"><button class="chip" data-act="detailGym" data-v="all" aria-pressed="' +
-        (S.detailGym === "all") +
-        '">Všechna (zvlášť)</button>' +
-        gymsWith
-          .map(
-            (g) =>
-              '<button class="chip" data-act="detailGym" data-v="' +
-              g +
-              '" aria-pressed="' +
-              (S.detailGym === g) +
-              '"><span class="sw" style="background:' +
-              gymColor(g) +
-              '"></span>' +
-              esc(gymName(g)) +
-              "</button>",
-          )
-          .join("") +
-        "</div></div>";
+      h += `<div class="sec">
+        <div class="chips" data-ck="detailGym">
+          <button class="chip" data-act="detailGym" data-v="all"
+              aria-pressed="${S.detailGym === "all"}">
+            Všechna (zvlášť)
+          </button>
+          ${gymsWith
+            .map(
+              (g) =>
+                `<button class="chip" data-act="detailGym" data-v="${g}"
+                    aria-pressed="${S.detailGym === g}">
+                  <span class="sw" style="background:${gymColor(g)}"></span>
+                  ${esc(gymName(g))}
+                </button>`,
+            )
+            .join("")}
+        </div>
+      </div>`;
     }
     const kind = kindOf(id);
     const bw = hasReps(kind) && kind !== "wr";
@@ -4515,18 +4306,15 @@
     const pr = (recs().byEx[id] || []).filter(
       (r) => r.w.start >= since && (!ex.gymDep || S.detailGym === "all" || r.gymId === S.detailGym),
     ).length;
-    h +=
-      '<section class="sec">' +
-      rangeSeg("detailRange", S.detailRange) +
-      '<div class="kpis k4" style="margin-top:10px"><div class="kpi"><b>' +
-      sel.length +
-      '</b><span>Tréninky</span></div><div class="kpi"><b>' +
-      ps +
-      '</b><span>Série</span></div><div class="kpi"><b>' +
-      fmtVol(pv) +
-      '</b><span>Objem</span></div><div class="kpi"><b>' +
-      pr +
-      "</b><span>Rekordy</span></div></div></section>";
+    h += `<section class="sec">
+      ${rangeSeg("detailRange", S.detailRange)}
+      <div class="kpis k4" style="margin-top:10px">
+        <div class="kpi"><b>${sel.length}</b><span>Tréninky</span></div>
+        <div class="kpi"><b>${ps}</b><span>Série</span></div>
+        <div class="kpi"><b>${fmtVol(pv)}</b><span>Objem</span></div>
+        <div class="kpi"><b>${pr}</b><span>Rekordy</span></div>
+      </div>
+    </section>`;
     const key = M[S.detailMetric][1];
     let series;
     if (ex.gymDep) {
@@ -4556,51 +4344,51 @@
         },
       ];
     }
+    h += `<section class="sec">
+      <div class="seg" style="margin-bottom:10px">
+        ${Object.keys(M)
+          .map(
+            (k) =>
+              `<button data-act="detailMetric" data-v="${k}" aria-pressed="${S.detailMetric === k}">${M[k][0]}` +
+              `</button>`,
+          )
+          .join("")}
+      </div>`;
     h +=
-      '<section class="sec"><div class="seg" style="margin-bottom:10px">' +
-      Object.keys(M)
-        .map(
-          (k) =>
-            '<button data-act="detailMetric" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (S.detailMetric === k) +
-            '">' +
-            M[k][0] +
-            "</button>",
-        )
-        .join("") +
-      "</div>";
-    h +=
-      '<div class="card">' +
-      chartPh({ type: "line", label: M[S.detailMetric][0], unit: M[S.detailMetric][2], series }, 200) +
-      (series.length > 1
-        ? '<div class="legend">' +
-          series
-            .map((s) => '<span><i style="background:' + s.color + '"></i>' + esc(s.name) + "</span>")
-            .join("") +
-          "</div>"
-        : "") +
-      "</div></section>";
+      `<div class="card">
+        ${chartPh({ type: "line", label: M[S.detailMetric][0], unit: M[S.detailMetric][2], series }, 200)}` +
+      `${
+        series.length > 1
+          ? `<div class="legend">${series
+              .map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`)
+              .join("")}</div>`
+          : ""
+      }
+    </div>
+    </section>`;
     // rekordy
     const R = recs();
     const ctxs = ex.gymDep
       ? gymsWith.map((g) => ({ g, name: gymName(g), b: R.best[id + "|" + g] }))
       : [{ g: null, name: "", b: R.best[id + "|*"] }];
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Osobní rekordy</h2></div><div class="stack" style="gap:8px">';
+    h += `<section class="sec">
+        <div class="sec-h"><h2>Osobní rekordy</h2></div>
+        <div class="stack" style="gap:8px">`;
     for (const c of ctxs) {
       if (!c.b) continue;
       h +=
-        '<div class="card recgrid">' +
-        (ex.gymDep
-          ? '<div class="rg-h"><span class="pill"><span class="sw" style="background:' +
-            gymColor(c.g) +
-            '"></span>' +
-            esc(c.name) +
-            "</span></div>"
-          : "") +
-        REC_ORDER.filter((t) => c.b[t])
+        `<div class="card recgrid">
+          ${
+            ex.gymDep
+              ? `<div class="rg-h">
+                <span class="pill">
+                  <span class="sw" style="background:${gymColor(c.g)}"></span>
+                  ${esc(c.name)}
+                </span>
+              </div>`
+              : ""
+          }` +
+        `${REC_ORDER.filter((t) => c.b[t])
           .map((t) => {
             const r = c.b[t];
             const sub =
@@ -4609,82 +4397,79 @@
                 : t === "bestSet"
                   ? fmtInt(r.v) + " kg · "
                   : "";
-            return (
-              '<div class="rg-r"><span class="rg-l">' +
-              REC[t] +
-              "</span><b>" +
-              esc(recFmt(t, r.v, r.set)) +
-              '</b><span class="rg-s">' +
-              sub +
-              fmtDate(r.w.start) +
-              "</span></div>"
-            );
+            return `<div class="rg-r">
+              <span class="rg-l">${REC[t]}</span>
+              <b>${esc(recFmt(t, r.v, r.set))}</b>
+              <span class="rg-s">${sub}${fmtDate(r.w.start)}</span>
+            </div>`;
           })
-          .join("") +
-        "</div>";
+          .join("")}` +
+        `</div>`;
     }
     h += "</div>";
     const rl = (R.byEx[id] || []).slice().reverse().slice(0, 8);
     if (rl.length) {
-      h +=
-        '<div class="card" style="margin-top:8px"><div class="subh" style="margin-top:0">Poslední rekordy</div>' +
-        rl
+      h += `<div class="card" style="margin-top:8px">
+        <div class="subh" style="margin-top:0">Poslední rekordy</div>
+        ${rl
           .map(
             (r) =>
-              '<div class="rec"><span class="md">🏅</span><div class="grow">' +
-              esc(REC[r.type]) +
-              ": <b>" +
-              esc(recFmt(r.type, r.v, r.set)) +
-              '</b> <span class="muted">· ' +
-              fmtDate(r.w.start) +
-              (ex.gymDep ? " · " + esc(gymName(r.gymId)) : "") +
-              "</span></div></div>",
+              `<div class="rec">
+                <span class="md">🏅</span>
+                <div class="grow">
+                  ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
+              `<span class="muted">· ` +
+              `${fmtDate(r.w.start)}${ex.gymDep ? " · " + esc(gymName(r.gymId)) : ""}</span>
+                </div>
+              </div>`,
           )
-          .join("") +
-        "</div>";
+          .join("")}
+      </div>`;
     }
     h +=
-      '<p class="xs muted">Odhad 1RM podle Epleyho: váha × (1 + opakování / 30). Zahřívací série se nepočítají. První trénink s cvikem' +
-      (ex.gymDep ? " v každém fitku" : "") +
-      " rekord nezakládá." +
-      (bw
-        ? " U tohoto typu se zátěž počítá z tvé tělesné hmotnosti (" +
-          fmtKg(bodyWeightAt(Date.now())) +
-          " kg)."
-        : "") +
-      "</p></section>";
+      `<p class="xs muted">
+      Odhad 1RM podle Epleyho: váha × (1 + opakování / 30). Zahřívací série se nepočítají. První trénink
+      s cvikem${ex.gymDep ? " v každém fitku" : ""} rekord nezakládá.` +
+      `${
+        bw
+          ? " U tohoto typu se zátěž počítá z tvé tělesné hmotnosti (" +
+            fmtKg(bodyWeightAt(Date.now())) +
+            " kg)."
+          : ""
+      }
+    </p>
+    </section>`;
     // historie
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Historie cviku</h2><span class="xs muted">' +
-      list.length +
-      '×</span></div><div class="stack" style="gap:6px">';
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Historie cviku</h2><span class="xs muted">${list.length}×</span></div>
+      <div class="stack" style="gap:6px">`;
     for (const s of list.slice(0, S.exHistLimit || 25)) {
       const nr = wRecs(s.w).filter((r) => r.exId === id).length;
       h +=
-        '<div class="card" style="padding:10px 12px"><div class="row small"><b class="grow">' +
-        fmtDay(s.w.start) +
-        " " +
-        new Date(s.w.start).getFullYear() +
-        (nr ? ' <span class="medals">🏅' + (nr > 1 ? "×" + nr : "") + "</span>" : "") +
-        '</b><span class="pill"><span class="sw" style="background:' +
-        gymColor(s.w.gymId) +
-        '"></span>' +
-        esc(gymName(s.w.gymId)) +
-        '</span></div><div class="small num" style="margin-top:4px">' +
-        s.e.sets
-          .map(
-            (st) =>
-              '<span class="' +
-              (st.t === "w" ? "muted" : "") +
-              '">' +
-              (st.t !== "n"
-                ? '<span class="lbl ' + st.t + '" style="font-weight:700">' + st.t.toUpperCase() + "</span> "
-                : "") +
-              esc(setStr(s.kind, st)) +
-              "</span>",
-          )
-          .join(" · ") +
-        "</div></div>";
+        `<div class="card" style="padding:10px 12px">
+        <div class="row small">
+          <b class="grow">
+            ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
+        `${nr ? ` <span class="medals">🏅${nr > 1 ? "×" + nr : ""}</span>` : ""}
+          </b>
+          <span class="pill">
+            <span class="sw" style="background:${gymColor(s.w.gymId)}"></span>
+            ${esc(gymName(s.w.gymId))}
+          </span>
+        </div>
+        <div class="small num" style="margin-top:4px">
+          ${s.e.sets
+            .map(
+              (st) =>
+                `<span class="${st.t === "w" ? "muted" : ""}">${
+                  st.t !== "n"
+                    ? `<span class="lbl ${st.t}" style="font-weight:700">${st.t.toUpperCase()}</span> `
+                    : ""
+                }${esc(setStr(s.kind, st))}</span>`,
+            )
+            .join(" · ")}
+        </div>
+      </div>`;
     }
     if (list.length > (S.exHistLimit || 25)) {
       h += '<button class="btn block" data-act="exHistMore">Starší</button>';
@@ -4749,57 +4534,54 @@
       return { x: p.x, y: sum / n, n };
     });
     const avgNow = avg.length ? avg[avg.length - 1].y : null;
-    h +=
-      '<section class="sec"><div class="chips" data-ck="bodyMetric">' +
-      BODY_F.map(
-        ([k, l, u]) =>
-          '<button class="chip" data-act="bodyMetric" data-v="' +
-          k +
-          '" aria-pressed="' +
-          (m === k) +
-          '">' +
-          l +
-          (u && u !== "kg" && u !== "cm"
+    h += `<section class="sec"><div class="chips" data-ck="bodyMetric">${BODY_F.map(
+      ([k, l, u]) =>
+        `<button class="chip" data-act="bodyMetric" data-v="${k}" aria-pressed="${m === k}">${l}${
+          u && u !== "kg" && u !== "cm"
             ? " (" + u + ")"
             : u === "kg" && (k === "fatMass" || k === "muscleMass" || k === "water")
               ? " (kg)"
-              : "") +
-          "</button>",
-      ).join("") +
-      "</div>";
-    h += '<div style="margin-top:8px">' + rangeSeg("bodyRange", S.bodyRange) + "</div>";
+              : ""
+        }</button>`,
+    ).join("")}</div>`;
+    h += `<div style="margin-top:8px">${rangeSeg("bodyRange", S.bodyRange)}</div>`;
     if (pts.length) {
       const lastV = pts[pts.length - 1].y,
         firstV = pts[0].y,
         diff = lastV - firstV;
       const unit = f[2] ? " " + f[2] : "";
       const dAvg = avg.length > 1 ? avg[avg.length - 1].y - avg[0].y : 0;
-      h +=
-        '<div class="card" style="margin-top:10px"><div class="row" style="align-items:flex-end;margin-bottom:6px"><div class="grow"><div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">' +
-        esc(f[1]) +
-        '</div><div style="font-family:var(--display);font-size:34px;font-weight:600;line-height:1" class="num">' +
-        fmtKg(lastV) +
-        ' <span style="font-size:18px">' +
-        esc(f[2]) +
-        "</span></div>" +
-        (avgNow != null
-          ? '<div class="xs muted num">průměr 7 dní ' + fmtKg(Math.round(avgNow * 10) / 10) + unit + "</div>"
-          : "") +
-        '</div><div class="small muted num" style="text-align:right">' +
-        (pts.length > 1
-          ? (diff > 0 ? "+" : "") +
-            fmtKg(Math.round(diff * 10) / 10) +
-            unit +
-            " od " +
-            fmtDateS(pts[0].x) +
-            '<div class="xs">průměr ' +
-            (dAvg > 0 ? "+" : "") +
-            fmtKg(Math.round(dAvg * 10) / 10) +
-            unit +
-            "</div>"
-          : "") +
-        "</div></div>" +
-        chartPh(
+      h += `<div class="card" style="margin-top:10px">
+        <div class="row" style="align-items:flex-end;margin-bottom:6px">
+          <div class="grow">
+            <div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">
+              ${esc(f[1])}
+            </div>
+            <div style="font-family:var(--display);font-size:34px;font-weight:600;line-height:1"
+                class="num">
+              ${fmtKg(lastV)} <span style="font-size:18px">${esc(f[2])}</span>
+            </div>
+            ${
+              avgNow != null
+                ? `<div class="xs muted num">
+                  průměr 7 dní ${fmtKg(Math.round(avgNow * 10) / 10)}${unit}
+                </div>`
+                : ""
+            }
+          </div>
+          <div class="small muted num" style="text-align:right">
+            ${
+              pts.length > 1
+                ? `${(diff > 0 ? "+" : "") + fmtKg(Math.round(diff * 10) / 10) + unit} ` +
+                  `od ${fmtDateS(pts[0].x)}
+                <div class="xs">
+                  průměr ${dAvg > 0 ? "+" : ""}${fmtKg(Math.round(dAvg * 10) / 10)}${unit}
+                </div>`
+                : ""
+            }
+          </div>
+        </div>
+        ${chartPh(
           {
             type: "line",
             label: f[1],
@@ -4810,38 +4592,38 @@
             ],
           },
           190,
-        ) +
-        '<div class="legend"><span><i style="background:var(--chart)"></i>Klouzavý průměr 7 dní</span><span><i style="background:var(--ink-3);height:7px;width:7px;border-radius:50%"></i>Jednotlivá měření</span></div>' +
-        '<div class="xs muted" style="margin-top:6px">' +
-        pts.length +
-        " " +
-        plural(pts.length, "den s měřením", "dny s měřením", "dnů s měřením") +
-        " v období" +
-        (all.length > pts.length ? " z " + all.length + " měření celkem" : "") +
-        "</div></div>";
+        )}
+        <div class="legend">
+          <span><i style="background:var(--chart)"></i>Klouzavý průměr 7 dní</span>
+          <span><i style="background:var(--ink-3);height:7px;width:7px;border-radius:50%"></i>Jednotlivá
+            měření</span>
+        </div>
+        <div class="xs muted" style="margin-top:6px">
+          ${pts.length} ${plural(pts.length, "den s měřením", "dny s měřením", "dnů s měřením")} v
+          období${all.length > pts.length ? " z " + all.length + " měření celkem" : ""}
+        </div>
+      </div>`;
     } else {
-      h +=
-        '<div class="empty" style="margin-top:10px">Pro „' +
-        esc(f[1]) +
-        "“ v tomto období žádné měření.</div>";
+      h += `<div class="empty" style="margin-top:10px">
+        Pro „${esc(f[1])}“ v tomto období žádné měření.
+      </div>`;
     }
-    h +=
-      '</section><section class="sec"><div class="sec-h"><h2>Měření</h2><span class="xs muted">' +
-      items.length +
-      '</span></div><div class="stack" style="gap:6px">';
+    h += `</section>
+    <section class="sec">
+      <div class="sec-h"><h2>Měření</h2><span class="xs muted">${items.length}</span></div>
+      <div class="stack" style="gap:6px">`;
     for (const i of items.slice(0, S.bodyLimit || 30)) {
-      h +=
-        '<button class="hw" data-act="editBody" data-v="' +
-        i.id +
-        '"><div class="row"><b class="grow">' +
-        fmtDate(i.date) +
-        "</b>" +
-        (i.note ? '<span class="pill">' + esc(i.note) + "</span>" : "") +
-        '</div><div class="line num">' +
-        BODY_F.filter(([k]) => i[k] !== undefined && i[k] !== null && i[k] !== "")
-          .map(([k, l, u]) => "<span>" + esc(l) + " <b>" + fmtKg(+i[k]) + "</b> " + esc(u) + "</span>")
-          .join("") +
-        "</div></button>";
+      h += `<button class="hw" data-act="editBody" data-v="${i.id}">
+        <div class="row">
+          <b class="grow">${fmtDate(i.date)}</b>
+          ${i.note ? `<span class="pill">${esc(i.note)}</span>` : ""}
+        </div>
+        <div class="line num">
+          ${BODY_F.filter(([k]) => i[k] !== undefined && i[k] !== null && i[k] !== "")
+            .map(([k, l, u]) => `<span>${esc(l)} <b>${fmtKg(+i[k])}</b> ${esc(u)}</span>`)
+            .join("")}
+        </div>
+      </button>`;
     }
     if (!items.length) {
       h += '<div class="empty">Zatím žádná měření.</div>';
@@ -4856,29 +4638,27 @@
   const bodyRule = (unit) => (unit === "%" ? "pct" : unit === "kcal" ? "kcal" : "body");
   function sheetBody(id, nav) {
     const v = id ? S.body[id] : { date: Date.now() };
-    let b =
-      '<label class="f">Datum<input class="inp" type="date" id="b-date" value="' +
-      toDateInput(v.date) +
-      '"></label><div class="grid2">';
+    let b = `<label class="f">
+      Datum
+      <input class="inp" type="date" id="b-date" value="${toDateInput(v.date)}">
+    </label>
+    <div class="grid2">`;
     for (const [k, l, u] of BODY_F) {
       const rule = bodyRule(u);
       const val = v[k] != null ? numStr(v[k]).replace(".", ",") : "";
-      b += `<label class="f">${esc(l)}${u ? " (" + esc(u) + ")" : ""}
-      <input class="inp${numCls(rule, val)}" id="b-${k}" inputmode="decimal" data-num="${rule}" data-lab="${esc(l)}"
-        value="${esc(val)}">
-    </label>`;
+      b += `<label class="f">
+        ${esc(l)}${u ? " (" + esc(u) + ")" : ""}
+        <input class="inp${numCls(rule, val)}" id="b-${k}" inputmode="decimal" data-num="${rule}"
+            data-lab="${esc(l)}" value="${esc(val)}">
+      </label>`;
     }
-    b +=
-      '</div><label class="f">Poznámka<input class="inp" id="b-note" value="' +
-      esc(v.note || "") +
-      '"></label>';
+    b += `</div>
+    <label class="f">Poznámka<input class="inp" id="b-note" value="${esc(v.note || "")}"></label>`;
     openSheet(
       id ? "Upravit měření" : "Nové měření",
       b,
-      (id ? '<button class="btn danger" data-act="delBody" data-v="' + id + '">Smazat</button>' : "") +
-        '<button class="btn primary grow" data-act="saveBody" data-v="' +
-        (id || "") +
-        '">Uložit</button>',
+      `${id ? `<button class="btn danger" data-act="delBody" data-v="${id}">Smazat</button>` : ""}
+      <button class="btn primary grow" data-act="saveBody" data-v="${id || ""}">Uložit</button>`,
       false,
       nav,
     );
@@ -4891,133 +4671,138 @@
     for (const w of derive().all) {
       counts[w.gymId] = (counts[w.gymId] || 0) + 1;
     }
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Fitka</h2><button class="btn sm" data-act="addGym">+ Přidat</button></div><div class="stack" style="gap:6px">';
+    h += `<section class="sec">
+        <div class="sec-h">
+          <h2>Fitka</h2>
+          <button class="btn sm" data-act="addGym">+ Přidat</button>
+        </div>
+        <div class="stack" style="gap:6px">`;
     S.cfg.gyms.forEach((g, i, a) => {
-      h +=
-        '<div class="card row" style="padding:10px 12px"><span class="sw" style="width:12px;height:12px;border-radius:50%;background:' +
-        gymColor(g.id) +
-        '"></span><div class="grow"><b>' +
-        esc(g.name) +
-        '</b><div class="xs muted">' +
-        (counts[g.id] || 0) +
-        " tréninků" +
-        (S.cfg.defaultGymId === g.id ? " · výchozí" : "") +
-        "</div></div>" +
-        (a.length > 1
-          ? '<div class="gymmv"><button class="iconbtn" data-act="gymMove" data-v="' +
-            g.id +
-            '" data-d="-1" aria-label="Posunout ' +
-            esc(g.name) +
-            ' výš"' +
-            (i === 0 ? " disabled" : "") +
-            ">" +
-            IC.up +
-            '</button><button class="iconbtn" data-act="gymMove" data-v="' +
-            g.id +
-            '" data-d="1" aria-label="Posunout ' +
-            esc(g.name) +
-            ' níž"' +
-            (i === a.length - 1 ? " disabled" : "") +
-            ">" +
-            IC.down +
-            "</button></div>"
-          : "") +
-        '<button class="btn sm" data-act="editGym" data-v="' +
-        g.id +
-        '">Upravit</button></div>';
+      h += `<div class="card row" style="padding:10px 12px">
+        <span class="sw" style="width:12px;height:12px;border-radius:50%;background:${gymColor(g.id)}"></span>
+        <div class="grow">
+          <b>${esc(g.name)}</b>
+          <div class="xs muted">
+            ${counts[g.id] || 0} tréninků${S.cfg.defaultGymId === g.id ? " · výchozí" : ""}
+          </div>
+        </div>
+        ${
+          a.length > 1
+            ? `<div class="gymmv">
+              <button class="iconbtn" data-act="gymMove" data-v="${g.id}" data-d="-1"
+                  aria-label="Posunout ${esc(g.name)} výš"${i === 0 ? " disabled" : ""}>
+                ${IC.up}
+              </button>
+              <button class="iconbtn" data-act="gymMove" data-v="${g.id}" data-d="1"
+                  aria-label="Posunout ${esc(g.name)} níž"${i === a.length - 1 ? " disabled" : ""}>
+                ${IC.down}
+              </button>
+            </div>`
+            : ""
+        }
+        <button class="btn sm" data-act="editGym" data-v="${g.id}">Upravit</button>
+      </div>`;
     });
     h += "</div></section>";
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">' +
-      [
-        ["dark", "Tmavý"],
-        ["light", "Světlý"],
-        ["auto", "Podle systému"],
-      ]
-        .map(
-          ([k, l]) =>
-            '<button data-act="theme" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (themePref() === k) +
-            '">' +
-            l +
-            "</button>",
-        )
-        .join("") +
-      "</div></div></section>";
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp' +
-      numCls("bw", S.cfg.bodyWeight || 80) +
-      '" id="bwInp" data-f="bodyWeight" data-num="bw" inputmode="decimal" value="' +
-      esc(S.cfg.bodyWeight || 80) +
-      '"></label></div><div class="xs muted">' +
-      (Object.values(S.body || {}).some((b) => isFinite(+b.weight))
-        ? "Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením."
-        : "Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.") +
-      "</div></div></section>";
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Vzhled</h2></div>
+      <div class="card row">
+        <span class="grow">Motiv</span>
+        <div class="seg">
+          ${[
+            ["dark", "Tmavý"],
+            ["light", "Světlý"],
+            ["auto", "Podle systému"],
+          ]
+            .map(
+              ([k, l]) =>
+                `<button data-act="theme" data-v="${k}" aria-pressed="${themePref() === k}">${l}` +
+                `</button>`,
+            )
+            .join("")}
+        </div>
+      </div>
+    </section>`;
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Tělesná hmotnost</h2></div>
+      <div class="card stack">
+        <div class="row">
+          <span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span>
+          <label class="f" style="width:110px">
+            kg
+            <input class="inp${numCls("bw", S.cfg.bodyWeight || 80)}" id="bwInp" data-f="bodyWeight"
+                data-num="bw" inputmode="decimal" value="${esc(S.cfg.bodyWeight || 80)}">
+          </label>
+        </div>
+        <div class="xs muted">
+          ${
+            Object.values(S.body || {}).some((b) => isFinite(+b.weight))
+              ? "Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením."
+              : "Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono."
+          }
+        </div>
+      </div>
+    </section>`;
     h += restSettings();
     h += recSettings();
     h += versionSettings();
     h +=
-      '<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
+      `<section class="sec">
+        <div class="sec-h"><h2>O aplikaci</h2></div>
+        <div class="card small muted">
+          Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí ` +
+      `<a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank"
+              rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na
+          hevyapp.com.
+        </div>
+      </section>`;
     h += backupSettings();
     return h;
   }
   function sheetGym(id) {
     const g = id ? S.cfg.gyms.find((x) => x.id === id) : { name: "" };
     const cnt = id ? derive().all.filter((w) => w.gymId === id).length : 0;
-    let b =
-      '<label class="f">Název<input class="inp" id="g-name" value="' +
-      esc(g.name) +
-      '" placeholder="např. Fitness Brno-střed"></label><label class="switch"><input type="checkbox" id="g-def" ' +
-      (id && S.cfg.defaultGymId === id ? "checked" : "") +
-      "> Výchozí fitko</label>";
+    let b = `<label class="f">
+      Název
+      <input class="inp" id="g-name" value="${esc(g.name)}" placeholder="např. Fitness Brno-střed">
+    </label>
+    <label class="switch">
+      <input type="checkbox" id="g-def" ${id && S.cfg.defaultGymId === id ? "checked" : ""}> Výchozí
+      fitko
+    </label>`;
     // barva (F3-01): předvybraná vlastní, u nového fitka první volná; pod obsazenou barvou název fitka
     const cur = id && g.col ? g.col : freeGymCol(S.cfg.gyms);
-    b +=
-      '<div><div class="f lbl-f" style="margin-bottom:8px">Barva</div><div class="cpick" role="radiogroup" aria-label="Barva fitka">' +
-      Array.from({ length: GYM_COLORS }, (_, i) => i + 1)
-        .map((c) => {
-          const o = S.cfg.gyms
-            .filter((x) => x.col === c && x.id !== id)
-            .map((x) => x.name)
-            .join(", ");
-          return (
-            '<button type="button" role="radio" data-act="gymCol" data-v="' +
-            c +
-            '" aria-checked="' +
-            (c === cur) +
-            '" aria-label="Barva ' +
-            c +
-            (o ? ", má ji " + esc(o) : "") +
-            '"><i style="background:var(--s' +
-            c +
-            ')">' +
-            (c === cur ? "✓" : "") +
-            "</i><small>" +
-            (o ? esc(o) : "&nbsp;") +
-            "</small></button>"
-          );
-        })
-        .join("") +
-      "</div></div>";
+    b += `<div>
+      <div class="f lbl-f" style="margin-bottom:8px">Barva</div>
+      <div class="cpick" role="radiogroup" aria-label="Barva fitka">
+        ${Array.from({ length: GYM_COLORS }, (_, i) => i + 1)
+          .map((c) => {
+            const o = S.cfg.gyms
+              .filter((x) => x.col === c && x.id !== id)
+              .map((x) => x.name)
+              .join(", ");
+            return `<button type="button" role="radio" data-act="gymCol" data-v="${c}"
+                aria-checked="${c === cur}" aria-label="Barva ${c}${o ? ", má ji " + esc(o) : ""}"><i style="background:var(--s${c})">
+                ${c === cur ? "✓" : ""}
+              </i><small>${o ? esc(o) : "&nbsp;"}</small></button>`;
+          })
+          .join("")}
+      </div>
+    </div>`;
     if (id && cnt) {
-      b +=
-        '<div class="small muted">Fitko má ' +
-        cnt +
-        " tréninků, proto ho nelze smazat. Tréninky můžeš přesunout jinam v Historii → Upravit.</div>";
+      b += `<div class="small muted">
+        Fitko má ${cnt} tréninků, proto ho nelze smazat. Tréninky můžeš přesunout jinam v Historii →
+        Upravit.
+      </div>`;
     }
     openSheet(
       id ? "Upravit fitko" : "Nové fitko",
       b,
-      (id && !cnt && S.cfg.gyms.length > 1
-        ? '<button class="btn danger" data-act="delGym" data-v="' + id + '">Smazat</button>'
-        : "") +
-        '<button class="btn primary grow" data-act="saveGym" data-v="' +
-        (id || "") +
-        '">Uložit</button>',
+      `${
+        id && !cnt && S.cfg.gyms.length > 1
+          ? `<button class="btn danger" data-act="delGym" data-v="${id}">Smazat</button>`
+          : ""
+      }<button class="btn primary grow" data-act="saveGym" data-v="${id || ""}">Uložit</button>`,
     );
   }
 
@@ -5056,13 +4841,17 @@
     const arr = pickerRows();
     if (!arr.length) {
       return (
-        '<div class="empty">Nic neodpovídá filtru.' +
-        (pick.q.trim()
-          ? '<br><button class="btn sm" data-act="fedbOpen" data-v="picker" style="margin-top:10px">Hledat „' +
-            esc(pick.q.trim()) +
-            "“ online</button>"
-          : "") +
-        "</div>"
+        `<div class="empty">
+        Nic neodpovídá filtru.` +
+        `${
+          pick.q.trim()
+            ? `<br>
+            <button class="btn sm" data-act="fedbOpen" data-v="picker" style="margin-top:10px">
+              Hledat „${esc(pick.q.trim())}“ online
+            </button>`
+            : ""
+        }` +
+        `</div>`
       );
     }
     let h = "";
@@ -5070,106 +4859,90 @@
       const on = pick.sel.includes(id);
       const n = byEx[id] ? byEx[id].length : 0;
       h +=
-        '<div class="pickrow"><button class="pick" data-act="pickToggle" data-v="' +
-        esc(id) +
-        '" aria-pressed="' +
-        on +
-        '"><span class="chk">' +
-        (on ? IC.check : "") +
-        '</span><div class="grow"><div style="font-weight:600">' +
-        esc(e.name) +
-        "</div>" +
-        (e.cz ? '<div class="cz">' + esc(e.cz) + "</div>" : "") +
-        '<div class="xs muted">' +
-        esc(
-          exPri(e)
-            .map((k) => MUSCLE_MAP.NAMES[k])
-            .join(", ") ||
-            MUSCLES[e.muscle] ||
-            "",
-        ) +
-        " · " +
-        esc(EQUIP[e.equip] || "") +
-        (n ? " · " + n + "× v historii" : "") +
-        (e.gymDep ? " · vázáno na fitko" : "") +
-        '</div></div></button><button class="infob" data-act="exInfo" data-v="' +
-        esc(id) +
-        '" aria-label="Info o cviku ' +
-        esc(e.name) +
-        '" title="Popis a statistiky">i</button></div>';
+        `<div class="pickrow">
+        <button class="pick" data-act="pickToggle" data-v="${esc(id)}" aria-pressed="${on}">
+          <span class="chk">${on ? IC.check : ""}</span>
+          <div class="grow">
+            <div style="font-weight:600">${esc(e.name)}</div>
+            ${e.cz ? `<div class="cz">${esc(e.cz)}</div>` : ""}
+            <div class="xs muted">
+              ${esc(
+                exPri(e)
+                  .map((k) => MUSCLE_MAP.NAMES[k])
+                  .join(", ") ||
+                  MUSCLES[e.muscle] ||
+                  "",
+              )} ` +
+        `· ${esc(EQUIP[e.equip] || "")}${n ? " · " + n + "× v historii" : ""}` +
+        `${e.gymDep ? " · vázáno na fitko" : ""}
+            </div>
+          </div>
+        </button>
+        <button class="infob" data-act="exInfo" data-v="${esc(id)}"
+            aria-label="Info o cviku ${esc(e.name)}" title="Popis a statistiky">
+          i
+        </button>
+      </div>`;
     }
     if (arr.length > (pick.limit || 120)) {
-      h +=
-        '<button class="btn block" data-act="pickMore">Další cviky (' +
-        (arr.length - (pick.limit || 120)) +
-        ")</button>";
+      h += `<button class="btn block" data-act="pickMore">
+        Další cviky (${arr.length - (pick.limit || 120)})
+      </button>`;
     }
     return h;
   }
   function pickerBody() {
     const n = pickerRows().length;
-    return (
-      '<input class="inp" id="pickQ" data-f="pickQ" placeholder="Hledat cvik (anglicky i česky)…" value="' +
-      esc(pick.q) +
-      '" autocomplete="off">' +
-      '<div class="chips" data-ck="pickM"><button class="chip" data-act="pickM" data-v="all" aria-pressed="' +
-      (pick.m === "all") +
-      '">Všechny partie</button>' +
-      Object.entries(MUSCLES)
+    return `<input class="inp" id="pickQ" data-f="pickQ" placeholder="Hledat cvik (anglicky i česky)…"
+        value="${esc(pick.q)}" autocomplete="off">
+    <div class="chips" data-ck="pickM">
+      <button class="chip" data-act="pickM" data-v="all" aria-pressed="${pick.m === "all"}">
+        Všechny partie
+      </button>
+      ${Object.entries(MUSCLES)
         .filter(([k]) => k !== "other")
         .map(
           ([k, l]) =>
-            '<button class="chip" data-act="pickM" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (pick.m === k) +
-            '">' +
-            l +
-            "</button>",
+            `<button class="chip" data-act="pickM" data-v="${k}" aria-pressed="${pick.m === k}">
+              ${l}
+            </button>`,
         )
-        .join("") +
-      "</div>" +
-      '<div class="chips" data-ck="pickEq"><button class="chip" data-act="pickEq" data-v="all" aria-pressed="' +
-      (pick.eq === "all") +
-      '">Vše</button>' +
-      Object.entries(EQUIP)
+        .join("")}
+    </div>
+    <div class="chips" data-ck="pickEq">
+      <button class="chip" data-act="pickEq" data-v="all" aria-pressed="${pick.eq === "all"}">
+        Vše
+      </button>
+      ${Object.entries(EQUIP)
         .map(
           ([k, l]) =>
-            '<button class="chip" data-act="pickEq" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (pick.eq === k) +
-            '">' +
-            l +
-            "</button>",
+            `<button class="chip" data-act="pickEq" data-v="${k}" aria-pressed="${pick.eq === k}">
+              ${l}
+            </button>`,
         )
-        .join("") +
-      "</div>" +
-      '<div class="row wrap-r" style="justify-content:space-between"><button class="chip" data-act="pickHist" aria-pressed="' +
-      pick.hist +
-      '">Jen cviky z historie</button><span class="xs muted">' +
-      n +
-      " " +
-      plural(n, "cvik", "cviky", "cviků") +
-      "</span></div>" +
-      '<div class="row wrap-r" style="gap:8px"><button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button><button class="btn sm" data-act="fedbOpen" data-v="picker">Hledat v online databázi</button></div>' +
-      '<div class="stack" id="pickList" style="gap:6px">' +
-      pickerList() +
-      "</div>"
-    );
+        .join("")}
+    </div>
+    <div class="row wrap-r" style="justify-content:space-between">
+      <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
+      <span class="xs muted">${n} ${plural(n, "cvik", "cviky", "cviků")}</span>
+    </div>
+    <div class="row wrap-r" style="gap:8px">
+      <button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button>
+      <button class="btn sm" data-act="fedbOpen" data-v="picker">Hledat v online databázi</button>
+    </div>
+    <div class="stack" id="pickList" style="gap:6px">${pickerList()}</div>`;
   }
   function renderPicker(keep) {
     const sb = document.querySelector(".sheet-b");
     const st = keep && sb ? sb.scrollTop : 0;
     saveChipScroll(sb || undefined);
-    const f =
-      '<button class="btn primary grow" data-act="pickDone" ' +
-      (pick.sel.length ? "" : "disabled") +
-      ">" +
-      (pick.mode === "replace"
-        ? "Nahradit"
-        : "Přidat" + (pick.sel.length ? " (" + pick.sel.length + ")" : "")) +
-      "</button>";
+    const f = `<button class="btn primary grow" data-act="pickDone" ${pick.sel.length ? "" : "disabled"}>
+      ${
+        pick.mode === "replace"
+          ? "Nahradit"
+          : "Přidat" + (pick.sel.length ? " (" + pick.sel.length + ")" : "")
+      }
+    </button>`;
     openSheet(pick.mode === "replace" ? "Nahradit cvik" : "Přidat cviky", pickerBody(), f, keep, {
       re: () => renderPicker(true),
     });
@@ -5195,19 +4968,18 @@
     const R = recs();
     const rl = (R.byEx[id] || []).slice(-3).reverse();
     let b =
-      exFigures(e) +
-      exTags(e) +
-      (e.desc
-        ? '<p class="desc">' + esc(e.desc) + "</p>"
-        : '<p class="desc muted">Popis provedení zatím chybí.</p>') +
-      '<div class="row wrap-r" style="justify-content:space-between"><a class="link" href="' +
-      esc(exLink(e)) +
-      '" target="_blank" rel="noopener">' +
-      (e.url ? "Otevřít na Hevy ↗" : "Hledat video ↗") +
-      '</a><span class="xs muted">' +
-      esc(EQUIP[e.equip] || "") +
-      (e.gymDep ? " · vázáno na fitko" : "") +
-      "</span></div>";
+      `${
+        exFigures(e) +
+        exTags(e) +
+        (e.desc
+          ? `<p class="desc">${esc(e.desc)}</p>`
+          : '<p class="desc muted">Popis provedení zatím chybí.</p>')
+      }
+      <div class="row wrap-r" style="justify-content:space-between">
+        <a class="link" href="${esc(exLink(e))}" target="_blank" rel="noopener">${e.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}` +
+      `</a>
+      <span class="xs muted">${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" : ""}</span>
+    </div>`;
     if (list.length) {
       let best = 0,
         nSets = 0;
@@ -5217,38 +4989,34 @@
         }
         nSets += x.nWork;
       }
+      b += `<div class="kpis k4">
+        <div class="kpi"><b>${list.length}</b><span>Tréninků</span></div>
+        <div class="kpi"><b>${nSets}</b><span>Sérií</span></div>
+        <div class="kpi"><b>${best ? fmtKg(Math.round(best)) : "–"}</b><span>Odh. 1RM</span></div>
+        <div class="kpi"><b>${fmtDateS(list[0].w.start)}</b><span>Naposledy</span></div>
+      </div>`;
       b +=
-        '<div class="kpis k4"><div class="kpi"><b>' +
-        list.length +
-        '</b><span>Tréninků</span></div><div class="kpi"><b>' +
-        nSets +
-        '</b><span>Sérií</span></div><div class="kpi"><b>' +
-        (best ? fmtKg(Math.round(best)) : "–") +
-        '</b><span>Odh. 1RM</span></div><div class="kpi"><b>' +
-        fmtDateS(list[0].w.start) +
-        "</b><span>Naposledy</span></div></div>";
-      b +=
-        '<div class="small">Minule: <span class="num">' +
-        esc(setsStr(list[0].e.sets, true, kindOf(id))) +
-        '</span> <span class="muted">(' +
-        esc(gymName(list[0].w.gymId)) +
-        ")</span></div>";
+        `<div class="small">
+        Minule: <span class="num">${esc(setsStr(list[0].e.sets, true, kindOf(id)))}</span> ` +
+        `<span class="muted">(` +
+        `${esc(gymName(list[0].w.gymId))})</span>
+      </div>`;
       if (rl.length) {
-        b +=
-          '<div class="reclist">' +
-          rl
+        b += `<div class="reclist">
+          ${rl
             .map(
               (r) =>
-                '<div class="rec"><span class="md">🏅</span><div class="grow">' +
-                esc(REC[r.type]) +
-                ": <b>" +
-                esc(recFmt(r.type, r.v, r.set)) +
-                '</b> <span class="muted">· ' +
-                fmtDate(r.w.start) +
-                "</span></div></div>",
+                `<div class="rec">
+                  <span class="md">🏅</span>
+                  <div class="grow">
+                    ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
+                `<span class="muted">· ` +
+                `${fmtDate(r.w.start)}</span>
+                  </div>
+                </div>`,
             )
-            .join("") +
-          "</div>";
+            .join("")}
+        </div>`;
       }
     } else {
       b += '<div class="small muted">S tímto cvikem zatím nemáš žádný záznam.</div>';
@@ -5256,11 +5024,11 @@
     openSheet(
       e.name,
       b,
-      '<button class="btn grow" data-act="backPicker">Zpět na výběr</button><button class="btn" data-act="editExInfo" data-v="' +
-        esc(id) +
-        '">Upravit</button><button class="btn primary" data-act="openEx" data-v="' +
-        esc(id) +
-        '" data-p="info">Stránka cviku</button>',
+      `<button class="btn grow" data-act="backPicker">Zpět na výběr</button>
+      <button class="btn" data-act="editExInfo" data-v="${esc(id)}">Upravit</button>
+      <button class="btn primary" data-act="openEx" data-v="${esc(id)}" data-p="info">
+        Stránka cviku
+      </button>`,
       true,
       { lv: 2, back: () => renderPicker(true), re: () => sheetExInfo(id) },
     );
@@ -5307,56 +5075,66 @@
     const fx = exEd.fx,
       have = fx && fedbHave(fx);
     const b =
-      (exEd.id
-        ? ""
-        : fx
-          ? '<div class="banner" style="margin-top:0">Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český název je jen návrh.' +
-            (have ? "<br><b>Podobný cvik už máš: " + esc(exOf(have).cz || exOf(have).name) + "</b>" : "") +
-            "</div>"
-          : '<button class="btn sm" data-act="fedbOpen" data-v="form">Předvyplnit z online databáze</button>') +
-      '<label class="f">Název (anglicky, jako v Hevy)<input class="inp" id="x-name" value="' +
-      esc(name) +
-      '"></label>' +
-      '<label class="f">Český název<input class="inp" id="x-cz" value="' +
-      esc(cz) +
-      '"></label>' +
-      '<div><div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div><div class="mpick">' +
-      MKEYS.map(
-        (k) =>
-          '<button type="button" class="' +
-          (exEd.pri.includes(k) ? "p" : exEd.sec.includes(k) ? "s" : "") +
-          '" data-act="xMus" data-v="' +
-          k +
-          '">' +
-          esc(MUSCLE_MAP.NAMES[k]) +
-          "</button>",
-      ).join("") +
-      "</div></div>" +
-      exFigures({ pri: exEd.pri, sec: exEd.sec }, true) +
-      '<label class="f">Typ zápisu<select class="inp" id="x-kind">' +
-      KIND_ORDER.map(
-        (k) =>
-          '<option value="' + k + '"' + (kind === k ? " selected" : "") + ">" + esc(KIND[k].l) + "</option>",
-      ).join("") +
-      '</select><span class="xs muted" style="text-transform:none;letter-spacing:0;font-weight:500">' +
-      esc(KIND[kind].ex) +
-      "</span></label>" +
-      '<label class="f">Vybavení<select class="inp" id="x-equip" data-f="xEquip">' +
-      Object.entries(EQUIP)
-        .map(
-          ([k, l]) => '<option value="' + k + '"' + (equip === k ? " selected" : "") + ">" + l + "</option>",
-        )
-        .join("") +
-      "</select></label>" +
-      '<label class="switch"><input type="checkbox" id="x-gd" ' +
-      (gd ? "checked" : "") +
-      '><span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku mají jiný odpor.</span></span></label>' +
-      '<label class="f">Popis provedení<textarea class="inp" id="x-desc" rows="4">' +
-      esc(desc) +
-      "</textarea></label>" +
-      '<label class="f">Odkaz (Hevy nebo video)<input class="inp" id="x-url" inputmode="url" value="' +
-      esc(url) +
-      '" placeholder="prázdné = vyhledat video podle názvu"></label>';
+      `${
+        exEd.id
+          ? ""
+          : fx
+            ? `<div class="banner" style="margin-top:0">
+              Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
+              název je jen návrh.` +
+              `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
+            </div>`
+            : `<button class="btn sm" data-act="fedbOpen" data-v="form">
+              Předvyplnit z online databáze
+            </button>`
+      }
+      <label class="f">
+        Název (anglicky, jako v Hevy)
+        <input class="inp" id="x-name" value="${esc(name)}">
+      </label>
+      <label class="f">Český název<input class="inp" id="x-cz" value="${esc(cz)}"></label>
+      <div>
+        <div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div>
+        <div class="mpick">
+          ${MKEYS.map(
+            (k) =>
+              `<button type="button"
+                  class="${exEd.pri.includes(k) ? "p" : exEd.sec.includes(k) ? "s" : ""}"
+                  data-act="xMus" data-v="${k}">${esc(MUSCLE_MAP.NAMES[k])}</button>`,
+          ).join("")}
+        </div>
+      </div>
+      ${exFigures({ pri: exEd.pri, sec: exEd.sec }, true)}
+      <label class="f">
+        Typ zápisu
+        <select class="inp" id="x-kind">${KIND_ORDER.map(
+          (k) => `<option value="${k}"${kind === k ? " selected" : ""}>${esc(KIND[k].l)}</option>`,
+        ).join("")}` +
+      `</select>` +
+      `<span class="xs muted" style="text-transform:none;letter-spacing:0;font-weight:500">${esc(KIND[kind].ex)}` +
+      `</span>
+    </label>
+    <label class="f">
+      Vybavení
+      <select class="inp" id="x-equip" data-f="xEquip">${Object.entries(EQUIP)
+        .map(([k, l]) => `<option value="${k}"${equip === k ? " selected" : ""}>${l}</option>`)
+        .join("")}` +
+      `</select>
+    </label>
+    <label class="switch">
+      <input type="checkbox" id="x-gd" ${gd ? "checked" : ""}>
+      <span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku
+          mají jiný odpor.</span></span>
+    </label>
+    <label class="f">
+      Popis provedení
+      <textarea class="inp" id="x-desc" rows="4">${esc(desc)}</textarea>
+    </label>
+    <label class="f">
+      Odkaz (Hevy nebo video)
+      <input class="inp" id="x-url" inputmode="url" value="${esc(url)}"
+          placeholder="prázdné = vyhledat video podle názvu">
+    </label>`;
     const id = exEd.id;
     // Zpět o úroveň: do výsledků online databáze, do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
     const nav =
@@ -5384,20 +5162,20 @@
     openSheet(
       id ? "Upravit cvik" : "Nový cvik",
       b,
-      (id
-        ? '<button class="btn danger" data-act="archEx" data-v="' +
-          esc(id) +
-          '">' +
-          (e.archived ? "Zobrazit" : "Skrýt") +
-          "</button>"
-        : "") +
-        '<button class="btn grow" data-act="backPicker">Zpět</button>' +
-        (id && exChanged(id)
-          ? '<button class="btn" data-act="resetEx" data-v="' + esc(id) + '">Výchozí</button>'
-          : "") +
-        '<button class="btn primary grow" data-act="saveEx" data-v="' +
-        esc(id || "") +
-        '">Uložit</button>',
+      `${
+        id
+          ? `<button class="btn danger" data-act="archEx" data-v="${esc(id)}">
+            ${e.archived ? "Zobrazit" : "Skrýt"}
+          </button>`
+          : ""
+      }
+      <button class="btn grow" data-act="backPicker">Zpět</button>
+      ${
+        id && exChanged(id)
+          ? `<button class="btn" data-act="resetEx" data-v="${esc(id)}">Výchozí</button>`
+          : ""
+      }
+      <button class="btn primary grow" data-act="saveEx" data-v="${esc(id || "")}">Uložit</button>`,
       false,
       nav,
     );
@@ -5489,13 +5267,15 @@
     renderFs();
   }
   function renderFs() {
-    const b =
-      '<input class="inp" id="fsQ" data-f="fsQ" placeholder="Název anglicky i česky, např. bench press, dřep…" value="' +
-      esc(fs.q) +
-      '" autocomplete="off">' +
-      '<div class="row wrap-r" id="fsBar" style="gap:8px"></div>' +
-      '<div class="stack" id="fsList" style="gap:6px"></div>' +
-      '<p class="xs muted" style="margin:2px 0 0">Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před uložením je zkontroluj.</p>';
+    const b = `<input class="inp" id="fsQ" data-f="fsQ"
+        placeholder="Název anglicky i česky, např. bench press, dřep…" value="${esc(fs.q)}"
+        autocomplete="off">
+    <div class="row wrap-r" id="fsBar" style="gap:8px"></div>
+    <div class="stack" id="fsList" style="gap:6px"></div>
+    <p class="xs muted" style="margin:2px 0 0">
+      Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před
+      uložením je zkontroluj.
+    </p>`;
     openSheet("Online databáze cviků", b, '<button class="btn grow" data-act="fsBack">Zpět</button>', false, {
       lv: fsLv(),
       back: fsBack,
@@ -5512,8 +5292,11 @@
         .catch(() => {
           const el = document.getElementById("fsList");
           if (el) {
-            el.innerHTML =
-              '<div class="empty">Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i offline.<br><button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button></div>';
+            el.innerHTML = `<div class="empty">
+              Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i
+              offline.<br>
+              <button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button>
+            </div>`;
           }
         });
     }
@@ -5550,24 +5333,25 @@
       rows = fs.all ? all : str,
       hid = all.length - str.length;
     bar.innerHTML =
-      '<button class="chip" data-act="fsAll" aria-pressed="' +
-      fs.all +
-      '">I protahování, kardio a plyometrie' +
-      (hid ? " (" + hid + ")" : "") +
-      '</button><span class="grow"></span><span class="xs muted">' +
-      (q
+      `<button class="chip" data-act="fsAll" aria-pressed="${fs.all}">
+      I protahování, kardio a plyometrie${hid ? " (" + hid + ")" : ""}
+    </button>
+    <span class="grow"></span>
+    <span class="xs muted">${
+      q
         ? rows.length + " " + plural(rows.length, "cvik", "cviky", "cviků")
-        : FEDB.length + " cviků v databázi") +
-      "</span>";
+        : FEDB.length + " cviků v databázi"
+    }` + `</span>`;
     if (!q) {
       el.innerHTML = '<div class="empty">Napiš název cviku anglicky nebo česky.</div>';
       return;
     }
     if (!rows.length) {
       el.innerHTML =
-        '<div class="empty">Nic nenalezeno.' +
-        (hid ? " Zapni „I protahování, kardio a plyometrie“." : " Zkus jiné slovo, třeba anglicky.") +
-        "</div>";
+        `<div class="empty">
+        Nic nenalezeno.` +
+        `${hid ? " Zapni „I protahování, kardio a plyometrie“." : " Zkus jiné slovo, třeba anglicky."}
+      </div>`;
       return;
     }
     const lim = fs.limit || 40;
@@ -5576,42 +5360,39 @@
       const have = fedbHave(x),
         he = have && S.exLib[have];
       h +=
-        '<div class="pickrow"><button class="pick" data-act="fsPick" data-v="' +
-        esc(x.id) +
-        '">' +
-        (x.ni
-          ? '<span class="fsimg"></span>'
-          : '<img class="fsimg" src="' +
-            esc(FEDB_IMG + x.id + "/0.jpg") +
-            '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">') +
-        '<div class="grow"><div style="font-weight:600">' +
-        esc(x.n) +
-        '</div><div class="cz">' +
-        esc(x.cz) +
-        '</div><div class="xs muted">' +
-        esc(x.p.map((k) => MUSCLE_MAP.NAMES[k]).join(", ")) +
-        " · " +
-        esc(EQUIP[x.e] || "") +
-        (FEDB_CAT[x.c] ? " · " + FEDB_CAT[x.c] : "") +
-        "</div>" +
-        (he
-          ? '<div class="xs have">Už máš: ' +
-            esc(he.cz || he.name) +
-            (he.archived ? " (skrytý)" : "") +
-            "</div>"
-          : "") +
-        "</div></button>" +
-        (he
-          ? '<button class="btn sm fshave" data-act="fsHave" data-v="' +
-            esc(have) +
-            '">' +
-            (fs.from === "picker" ? "Vybrat" : "Otevřít") +
-            "</button>"
-          : "") +
-        "</div>";
+        `<div class="pickrow">
+          <button class="pick" data-act="fsPick" data-v="${esc(x.id)}">
+            ${
+              x.ni
+                ? '<span class="fsimg"></span>'
+                : `<img class="fsimg" src="${esc(FEDB_IMG + x.id + "/0.jpg")}" alt="" loading="lazy"
+                    onerror="this.style.visibility='hidden'">`
+            }
+            <div class="grow">
+              <div style="font-weight:600">${esc(x.n)}</div>
+              <div class="cz">${esc(x.cz)}</div>
+              <div class="xs muted">
+                ${esc(x.p.map((k) => MUSCLE_MAP.NAMES[k]).join(", "))} · ${esc(EQUIP[x.e] || "")}` +
+        `${FEDB_CAT[x.c] ? " · " + FEDB_CAT[x.c] : ""}</div>` +
+        `${
+          he
+            ? `<div class="xs have">
+              Už máš: ${esc(he.cz || he.name)}${he.archived ? " (skrytý)" : ""}
+            </div>`
+            : ""
+        }` +
+        `</div></button>` +
+        `${
+          he
+            ? `<button class="btn sm fshave" data-act="fsHave" data-v="${esc(have)}">
+              ${fs.from === "picker" ? "Vybrat" : "Otevřít"}
+            </button>`
+            : ""
+        }` +
+        `</div>`;
     }
     if (rows.length > lim) {
-      h += '<button class="btn block" data-act="fsMore">Další cviky (' + (rows.length - lim) + ")</button>";
+      h += `<button class="btn block" data-act="fsMore">Další cviky (${rows.length - lim})</button>`;
     }
     el.innerHTML = h;
   }
@@ -5621,20 +5402,17 @@
   // back = jeden krok zpět, re = znovu otevřít (návrat ze stránky cviku nebo z úpravy tréninku)
   let sheetNav = null;
   function openSheet(title, body, foot, noanim, nav) {
-    document.getElementById("sheetRoot").innerHTML =
-      '<div class="scrim" data-act="scrim"><div class="sheet' +
-      (noanim ? " noanim" : "") +
-      '" role="dialog" aria-modal="true" aria-label="' +
-      esc(title) +
-      '"><div class="sheet-h"><h2>' +
-      esc(title) +
-      '</h2><button class="iconbtn" data-act="closeSheet" aria-label="Zavřít">' +
-      IC.close +
-      '</button></div><div class="sheet-b">' +
-      body +
-      "</div>" +
-      (foot ? '<div class="sheet-f">' + foot + "</div>" : "") +
-      "</div></div>";
+    document.getElementById("sheetRoot").innerHTML = `<div class="scrim" data-act="scrim">
+      <div class="sheet${noanim ? " noanim" : ""}" role="dialog" aria-modal="true"
+          aria-label="${esc(title)}">
+        <div class="sheet-h">
+          <h2>${esc(title)}</h2>
+          <button class="iconbtn" data-act="closeSheet" aria-label="Zavřít">${IC.close}</button>
+        </div>
+        <div class="sheet-b">${body}</div>
+        ${foot ? `<div class="sheet-f">${foot}</div>` : ""}
+      </div>
+    </div>`;
     document.body.style.overflow = "hidden";
     sheetNav = Object.assign(
       { lv: 1, back: closeSheet, re: () => openSheet(title, body, foot, true, nav) },
@@ -5649,14 +5427,9 @@
   function confirmSheet(title, text, btn, act, v) {
     openSheet(
       title,
-      '<p style="margin:0">' + text + "</p>",
-      '<button class="btn grow" data-act="closeSheet">Zrušit</button><button class="btn primary grow" data-act="' +
-        act +
-        '" data-v="' +
-        esc(v || "") +
-        '">' +
-        esc(btn) +
-        "</button>",
+      `<p style="margin:0">${text}</p>`,
+      `<button class="btn grow" data-act="closeSheet">Zrušit</button>
+      <button class="btn primary grow" data-act="${act}" data-v="${esc(v || "")}">${esc(btn)}</button>`,
     );
   }
 
@@ -5664,66 +5437,70 @@
   function restSettings() {
     const c = S.cfg,
       ns = notifState();
-    let h =
-      '<section class="sec"><div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div><div class="card stack">';
-    h +=
-      '<div class="stack" style="gap:6px"><span>Výchozí časovač</span><div class="seg seg-wide">' +
-      [60, 90, 120, 150, 180]
-        .map(
-          (s) =>
-            '<button data-act="restSec" data-v="' +
-            s +
-            '" aria-pressed="' +
-            (c.restSec === s) +
-            '">' +
-            fmtClock(s) +
-            "</button>",
-        )
-        .join("") +
-      "</div></div>";
-    h +=
-      '<div class="stack" style="gap:6px"><span>Na konci pauzy</span><div class="seg seg-wide">' +
-      [
-        ["both", "Zvuk i vibrace"],
-        ["sound", "Zvuk"],
-        ["vib", "Vibrace"],
-      ]
-        .map(
-          ([k, l]) =>
-            '<button data-act="restAlert" data-v="' +
-            k +
-            '" aria-pressed="' +
-            (c.restAlert === k) +
-            '">' +
-            l +
-            "</button>",
-        )
-        .join("") +
-      "</div></div>";
-    h +=
-      '<label class="switch"><input type="checkbox" data-act="restOver" ' +
-      (c.restOver ? "checked" : "") +
-      '><span><b>Počítat přečas</b><br><span class="xs muted">Po konci pauzy lišta zůstane a ukazuje, jak dlouho už odpočíváš (+0:25), dokud neodškrtneš další sérii.</span></span></label>';
-    h +=
-      '<label class="switch"><input type="checkbox" data-act="restNotify" ' +
-      (c.restNotify ? "checked" : "") +
-      (ns === "none" ? " disabled" : "") +
-      '><span><b>Oznámení na pozadí</b><br><span class="xs muted">Když je appka na pozadí nebo máš zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. Zvuk a vibraci oznámení určuje nastavení oznámení v Androidu.</span></span></label>';
+    let h = `<section class="sec">
+        <div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div>
+        <div class="card stack">`;
+    h += `<div class="stack" style="gap:6px">
+      <span>Výchozí časovač</span>
+      <div class="seg seg-wide">
+        ${[60, 90, 120, 150, 180]
+          .map(
+            (s) =>
+              `<button data-act="restSec" data-v="${s}" aria-pressed="${c.restSec === s}">${fmtClock(s)}` +
+              `</button>`,
+          )
+          .join("")}
+      </div>
+    </div>`;
+    h += `<div class="stack" style="gap:6px">
+      <span>Na konci pauzy</span>
+      <div class="seg seg-wide">
+        ${[
+          ["both", "Zvuk i vibrace"],
+          ["sound", "Zvuk"],
+          ["vib", "Vibrace"],
+        ]
+          .map(
+            ([k, l]) =>
+              `<button data-act="restAlert" data-v="${k}" aria-pressed="${c.restAlert === k}">${l}` +
+              `</button>`,
+          )
+          .join("")}
+      </div>
+    </div>`;
+    h += `<label class="switch">
+      <input type="checkbox" data-act="restOver" ${c.restOver ? "checked" : ""}>
+      <span><b>Počítat přečas</b><br><span class="xs muted">Po konci pauzy lišta zůstane a ukazuje, jak
+          dlouho už odpočíváš (+0:25), dokud neodškrtneš další sérii.</span></span>
+    </label>`;
+    h += `<label class="switch">
+      <input type="checkbox" data-act="restNotify"
+          ${c.restNotify ? "checked" : ""}${ns === "none" ? " disabled" : ""}>
+      <span><b>Oznámení na pozadí</b><br><span class="xs muted">Když je appka na pozadí nebo máš
+          zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. Zvuk a vibraci oznámení určuje
+          nastavení oznámení v Androidu.</span></span>
+    </label>`;
     if (c.restNotify) {
       if (ns === "none") {
         h += '<div class="xs muted">Tento prohlížeč oznámení nepodporuje.</div>';
       } else if (ns === "denied") {
-        h +=
-          '<div class="xs muted">Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).</div>';
+        h += `<div class="xs muted">
+          Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník
+          → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).
+        </div>`;
       } else if (ns === "default") {
         h += '<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
       } else {
-        h +=
-          '<div class="row"><span class="grow xs muted">Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.</span><button class="btn sm" data-act="notifTest">Vyzkoušet</button></div>';
+        h += `<div class="row">
+          <span class="grow xs muted">
+            Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.
+          </span>
+          <button class="btn sm" data-act="notifTest">Vyzkoušet</button>
+        </div>`;
       }
     }
     h += wakeSettings();
-    return h + "</div></section>";
+    return `${h}</div></section>`;
   }
 
   /* ---------- odpočinek mezi sériemi (F1-04) ----------
@@ -5857,22 +5634,25 @@
     const a = await restLogRead();
     openSheet(
       "Záznam oznámení",
-      '<div class="xs muted" style="margin-bottom:8px">Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.</div>' +
-        (a.length
-          ? '<div class="stack" style="gap:4px">' +
-            a
+      `<div class="xs muted" style="margin-bottom:8px">
+        Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
+      </div>
+      ${
+        a.length
+          ? `<div class="stack" style="gap:4px">
+            ${a
               .map(
                 (x) =>
-                  '<div class="small"><b class="num">' +
-                  esc(new Date(x.at).toLocaleTimeString("cs-CZ")) +
-                  "</b> " +
-                  esc(x.txt) +
-                  "</div>",
+                  `<div class="small">
+                    <b class="num">${esc(new Date(x.at).toLocaleTimeString("cs-CZ"))}</b> ${esc(x.txt)}
+                  </div>`,
               )
-              .join("") +
-            "</div>"
-          : '<div class="muted small">Zatím nic.</div>'),
-      '<button class="btn grow" data-act="restLogClear">Smazat záznam</button><button class="btn primary grow" data-act="closeSheet">Zavřít</button>',
+              .join("")}
+          </div>`
+          : '<div class="muted small">Zatím nic.</div>'
+      }`,
+      `<button class="btn grow" data-act="restLogClear">Smazat záznam</button>
+      <button class="btn primary grow" data-act="closeSheet">Zavřít</button>`,
     );
   }
   function restClearNotif() {
@@ -5946,24 +5726,22 @@
     const left = (S.restEnd - Date.now()) / 1000,
       over = left <= 0;
     el.hidden = false;
-    el.innerHTML =
-      '<div class="rest-in' +
-      (over ? " over" : "") +
-      '">' +
-      (over
-        ? ""
-        : '<div class="bar" id="restBar" style="width:' +
-          Math.max(0, (left / S.restTotal) * 100) +
-          '%"></div>') +
-      '<b id="restClock">' +
-      restClock(left) +
-      "</b><span>" +
-      (over ? "Přečas" : "Odpočinek") +
-      "</span>" +
-      (over
-        ? '<button data-act="restSkip">Zavřít</button>'
-        : '<button data-act="restAdj" data-v="-15">−15</button><button data-act="restAdj" data-v="15">+15</button><button data-act="restSkip">Přeskočit</button>') +
-      "</div>";
+    el.innerHTML = `<div class="rest-in${over ? " over" : ""}">
+      ${
+        over
+          ? ""
+          : `<div class="bar" id="restBar" style="width:${Math.max(0, (left / S.restTotal) * 100)}%"></div>`
+      }
+      <b id="restClock">${restClock(left)}</b>
+      <span>${over ? "Přečas" : "Odpočinek"}</span>
+      ${
+        over
+          ? '<button data-act="restSkip">Zavřít</button>'
+          : `<button data-act="restAdj" data-v="-15">−15</button>` +
+            `<button data-act="restAdj" data-v="15">+15` +
+            `</button><button data-act="restSkip">Přeskočit</button>`
+      }
+    </div>`;
   }
   const restClock = (left) => (left > 0 ? fmtClock(left) : "+" + fmtClock(-left));
   function restTick() {
@@ -6197,28 +5975,30 @@
   /* Nastavení → vypínače pod Odpočinkem */
   function wakeSettings() {
     const c = S.cfg;
-    let h = `
-    <label class="switch">
-      <input type="checkbox" data-act="screenOn" ${c.screenOn ? "checked" : ""}${wakeApi ? "" : " disabled"}>
-      <span><b>Displej nezhasne během pauzy</b><br><span class="xs muted">Během odpočinku a přečasu
-        v rozdělaném tréninku zůstane displej zapnutý, pokud máš appku otevřenou. Když se ho 10 minut
-        nedotkneš, zhasne jako obvykle. Displej navíc spotřebuje trochu baterie.</span></span>
+    let h = `<label class="switch">
+      <input type="checkbox" data-act="screenOn"
+          ${c.screenOn ? "checked" : ""}${wakeApi ? "" : " disabled"}>
+      <span><b>Displej nezhasne během pauzy</b><br><span class="xs muted">Během odpočinku a přečasu v
+          rozdělaném tréninku zůstane displej zapnutý, pokud máš appku otevřenou. Když se ho 10 minut
+          nedotkneš, zhasne jako obvykle. Displej navíc spotřebuje trochu baterie.</span></span>
     </label>`;
     if (!wakeApi) {
       h += '<div class="xs muted">Tento prohlížeč neumí držet displej zapnutý.</div>';
       return h;
     }
     if (!c.screenOn) return h;
-    h += `
-    <label class="switch">
+    h +=
+      `<label class="switch">
       <input type="checkbox" data-act="screenDim" ${c.screenDim ? "checked" : ""}>
       <span><b>Po 30 s ztmavit obrazovku</b><br><span class="xs muted">Když se displeje 30 s nedotkneš,
-        zčerná a ukáže jen odpočet. Na displeji OLED to šetří baterii. Klepnutí vrátí appku.</span></span>
+          zčerná a ukáže jen odpočet. Na displeji OLED to šetří baterii. Klepnutí vrátí appku.</span>` +
+      `</span>
     </label>`;
     if (batteryLow()) {
-      h += `
-      <div class="banner" style="margin-top:0">Baterie je pod ${WAKE_BATT * 100} %, displej teď během pauzy zhasne
-        jako obvykle. Znovu to začne fungovat nad ${WAKE_BATT * 100} % nebo při nabíjení.</div>`;
+      h += `<div class="banner" style="margin-top:0">
+        Baterie je pod ${WAKE_BATT * 100} %, displej teď během pauzy zhasne jako obvykle. Znovu to začne
+        fungovat nad ${WAKE_BATT * 100} % nebo při nabíjení.
+      </div>`;
     }
     return h;
   }
@@ -6229,7 +6009,7 @@
   function chartPh(spec, h) {
     const id = "ch" + ++chN;
     CH[id] = Object.assign({ h }, spec);
-    return '<div class="chart" id="' + id + '" data-chart="' + id + '" style="height:' + h + 'px"></div>';
+    return `<div class="chart" id="${id}" data-chart="${id}" style="height:${h}px"></div>`;
   }
   function niceTicks(min, max, n) {
     if (min === max) {
@@ -6264,40 +6044,15 @@
         padB = 24;
       const iw = W - padL - padR,
         ih = H - padT - padB;
-      let svg =
-        '<svg viewBox="0 0 ' +
-        W +
-        " " +
-        H +
-        '" width="' +
-        W +
-        '" height="' +
-        H +
-        '" role="img" aria-label="' +
-        esc(sp.label) +
-        '">';
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(sp.label)}">`;
       if (sp.type === "bar") {
         const vals = sp.bars.map((b) => b.v);
         const ticks = niceTicks(0, Math.max(1, ...vals), 4);
         const ymax = ticks[ticks.length - 1];
         const Y = (v) => padT + ih - (v / ymax) * ih;
         for (const t of ticks) {
-          svg +=
-            '<line class="grid" x1="' +
-            padL +
-            '" x2="' +
-            (W - padR) +
-            '" y1="' +
-            Y(t) +
-            '" y2="' +
-            Y(t) +
-            '"/><text x="' +
-            (padL - 6) +
-            '" y="' +
-            (Y(t) + 4) +
-            '" text-anchor="end">' +
-            yFmt(t) +
-            "</text>";
+          svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
+          <text x="${padL - 6}" y="${Y(t) + 4}" text-anchor="end">${yFmt(t)}</text>`;
         }
         const bw = iw / sp.bars.length;
         sp.hit = [];
@@ -6308,67 +6063,29 @@
             hh = padT + ih - y;
           if (b.v > 0) {
             const r = Math.min(4, w / 2, hh);
-            svg +=
-              '<path fill="var(--chart)" d="M' +
-              x +
-              "," +
-              (padT + ih) +
-              "V" +
-              (y + r) +
-              "Q" +
-              x +
-              "," +
-              y +
-              " " +
-              (x + r) +
-              "," +
-              y +
-              "H" +
-              (x + w - r) +
-              "Q" +
-              (x + w) +
-              "," +
-              y +
-              " " +
-              (x + w) +
-              "," +
-              (y + r) +
-              "V" +
-              (padT + ih) +
-              'Z"/>';
+            svg += `<path fill="var(--chart)"
+                d="M${x},${padT + ih}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${padT + ih}Z"/>`;
           }
           if (
             b.tip !== undefined ? b.label : i % 4 === 3 || (i === sp.bars.length - 1 && sp.bars.length < 5)
           ) {
-            svg +=
-              '<text x="' + (x + w / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + b.label + "</text>";
+            svg += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${b.label}</text>`;
           }
           sp.hit.push({
             x: x + w / 2,
             y: Math.min(y, padT + ih - 2),
             html:
-              "<b>" +
-              (b.v >= 1000 ? fmtInt(b.v) : fmtKg(Math.round(b.v))) +
-              sp.unit +
-              "</b><br>" +
-              (b.tip || "týden od " + b.label),
+              `<b>${b.v >= 1000 ? fmtInt(b.v) : fmtKg(Math.round(b.v))}${sp.unit}</b><br>` +
+              `${b.tip || "týden od " + b.label}`,
           });
         });
-        svg +=
-          '<line class="axis" x1="' +
-          padL +
-          '" x2="' +
-          (W - padR) +
-          '" y1="' +
-          (padT + ih) +
-          '" y2="' +
-          (padT + ih) +
-          '"/>';
+        svg += `<line class="axis" x1="${padL}" x2="${W - padR}" y1="${padT + ih}" y2="${padT + ih}"/>`;
       } else {
         const pts = sp.series.flatMap((s) => s.pts);
         if (!pts.length) {
-          el.innerHTML =
-            '<div class="muted small" style="padding-top:60px;text-align:center">V tomto období žádná data.</div>';
+          el.innerHTML = `<div class="muted small" style="padding-top:60px;text-align:center">
+            V tomto období žádná data.
+          </div>`;
           return;
         }
         let x0 = Math.min(...pts.map((p) => p.x)),
@@ -6386,22 +6103,8 @@
         const X = (x) => padL + ((x - x0) / (x1 - x0)) * iw,
           Y = (y) => padT + ih - ((y - ya) / (yb - ya)) * ih;
         for (const t of ticks) {
-          svg +=
-            '<line class="grid" x1="' +
-            padL +
-            '" x2="' +
-            (W - padR) +
-            '" y1="' +
-            Y(t) +
-            '" y2="' +
-            Y(t) +
-            '"/><text x="' +
-            (padL - 6) +
-            '" y="' +
-            (Y(t) + 4) +
-            '" text-anchor="end">' +
-            yFmt(t) +
-            "</text>";
+          svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
+          <text x="${padL - 6}" y="${Y(t) + 4}" text-anchor="end">${yFmt(t)}</text>`;
         }
         // x ticks: months
         const span = x1 - x0;
@@ -6416,45 +6119,20 @@
             const x = X(d.getTime());
             if (x - lastX > 34) {
               svg +=
-                '<text x="' +
-                x +
-                '" y="' +
-                (H - 6) +
-                '" text-anchor="middle">' +
-                MONTHS[d.getMonth()] +
-                (d.getMonth() === 0 ? " " + String(d.getFullYear()).slice(2) : "") +
-                "</text>";
+                `<text x="${x}" y="${H - 6}" text-anchor="middle">
+                ${MONTHS[d.getMonth()]}` +
+                `${d.getMonth() === 0 ? " " + String(d.getFullYear()).slice(2) : ""}
+              </text>`;
               lastX = x;
             }
           }
           d.setMonth(d.getMonth() + 1);
         }
         if (lastX < 0) {
-          svg +=
-            '<text x="' +
-            padL +
-            '" y="' +
-            (H - 6) +
-            '">' +
-            fmtDateS(x0) +
-            '</text><text x="' +
-            (W - padR) +
-            '" y="' +
-            (H - 6) +
-            '" text-anchor="end">' +
-            fmtDateS(x1) +
-            "</text>";
+          svg += `<text x="${padL}" y="${H - 6}">${fmtDateS(x0)}</text>
+          <text x="${W - padR}" y="${H - 6}" text-anchor="end">${fmtDateS(x1)}</text>`;
         }
-        svg +=
-          '<line class="axis" x1="' +
-          padL +
-          '" x2="' +
-          (W - padR) +
-          '" y1="' +
-          (padT + ih) +
-          '" y2="' +
-          (padT + ih) +
-          '"/>';
+        svg += `<line class="axis" x1="${padL}" x2="${W - padR}" y1="${padT + ih}" y2="${padT + ih}"/>`;
         sp.hit = [];
         for (const s of sp.series) {
           if (!s.pts.length) continue;
@@ -6462,61 +6140,43 @@
             const path = s.pts
               .map((p, i) => (i ? "L" : "M") + X(p.x).toFixed(1) + "," + Y(p.y).toFixed(1))
               .join("");
-            svg +=
-              '<path d="' +
-              path +
-              '" fill="none" stroke="' +
-              s.color +
-              '" stroke-width="' +
-              (s.w || 2) +
-              '" stroke-linejoin="round" stroke-linecap="round"/>';
+            svg += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2}"
+                stroke-linejoin="round" stroke-linecap="round"/>`;
           }
           const many = s.pts.length > 60 && !s.dots;
           s.pts.forEach((p, i) => {
             const last = i === s.pts.length - 1;
             if (s.noDots) {
             } else if (s.dots) {
-              svg += '<circle cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="2.6" fill="' + s.color + '"/>';
+              svg += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="2.6" fill="${s.color}"/>`;
             } else if (!many || last) {
-              svg +=
-                '<circle cx="' +
-                X(p.x) +
-                '" cy="' +
-                Y(p.y) +
-                '" r="' +
-                (last ? 5 : 3.2) +
-                '" fill="' +
-                s.color +
-                '" stroke="var(--surface)" stroke-width="2"/>';
+              svg += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${last ? 5 : 3.2}" fill="${s.color}"
+                  stroke="var(--surface)" stroke-width="2"/>`;
             }
             sp.hit.push({
               x: X(p.x),
               y: Y(p.y),
               html:
-                (sp.series.length > 1
-                  ? '<span class="sw" style="background:' + s.color + '"></span>' + esc(s.name) + "<br>"
-                  : "") +
-                "<b>" +
-                fmtKg(Math.round(p.y * 10) / 10) +
-                sp.unit +
-                "</b> · " +
-                fmtDate(p.x) +
-                (p.n > 1 ? " (" + p.n + " měření)" : "") +
-                (p.s && p.s.bestSet && S.detailMetric === "e1rm"
-                  ? "<br>" + fmtKg(p.s.bestSet.kg) + "×" + p.s.bestSet.reps
-                  : ""),
+                `${
+                  sp.series.length > 1
+                    ? `<span class="sw" style="background:${s.color}"></span>${esc(s.name)}<br>`
+                    : ""
+                }` +
+                `<b>${fmtKg(Math.round(p.y * 10) / 10)}` +
+                `${sp.unit}</b> · ${fmtDate(p.x)}${p.n > 1 ? " (" + p.n + " měření)" : ""}` +
+                `${
+                  p.s && p.s.bestSet && S.detailMetric === "e1rm"
+                    ? `<br>${fmtKg(p.s.bestSet.kg)}×${p.s.bestSet.reps}`
+                    : ""
+                }`,
             });
           });
         }
       }
-      svg +=
-        '<line id="' +
-        el.id +
-        '-cx" x1="0" x2="0" y1="' +
-        padT +
-        '" y2="' +
-        (padT + ih) +
-        '" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/></svg><div class="tip" hidden></div>';
+      svg += `<line id="${el.id}-cx" x1="0" x2="0" y1="${padT}" y2="${padT + ih}" stroke="var(--ink-3)"
+          stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>
+      </svg>
+      <div class="tip" hidden></div>`;
       el.innerHTML = svg;
       const tip = el.querySelector(".tip"),
         cx = el.querySelector("#" + el.id + "-cx");
@@ -6678,25 +6338,27 @@
         const e = d.ex[i];
         openSheet(
           exName(e.exId),
-          '<div class="stack"><button class="btn block" data-act="exNote" data-i="' +
-            i +
-            '">' +
-            (e.note || e.showNote ? "Upravit poznámku" : "Přidat poznámku") +
-            '</button><button class="btn block" data-act="exReplace" data-i="' +
-            i +
-            '">Nahradit jiným cvikem</button><div class="grid2"><button class="btn" data-act="exUp" data-i="' +
-            i +
-            '" ' +
-            (i === 0 ? "disabled" : "") +
-            '>↑ Posunout výš</button><button class="btn" data-act="exDown" data-i="' +
-            i +
-            '" ' +
-            (i === d.ex.length - 1 ? "disabled" : "") +
-            '>↓ Posunout níž</button></div><button class="btn block" data-act="openEx" data-v="' +
-            esc(e.exId) +
-            '">Stránka cviku (popis, statistiky)</button><button class="btn block danger" data-act="exRemove" data-i="' +
-            i +
-            '">Odebrat cvik z tréninku</button></div>',
+          `<div class="stack">
+            <button class="btn block" data-act="exNote" data-i="${i}">
+              ${e.note || e.showNote ? "Upravit poznámku" : "Přidat poznámku"}
+            </button>
+            <button class="btn block" data-act="exReplace" data-i="${i}">Nahradit jiným cvikem</button>
+            <div class="grid2">
+              <button class="btn" data-act="exUp" data-i="${i}" ${i === 0 ? "disabled" : ""}>
+                ↑ Posunout výš
+              </button>
+              <button class="btn" data-act="exDown" data-i="${i}"
+                  ${i === d.ex.length - 1 ? "disabled" : ""}>
+                ↓ Posunout níž
+              </button>
+            </div>
+            <button class="btn block" data-act="openEx" data-v="${esc(e.exId)}">
+              Stránka cviku (popis, statistiky)
+            </button>
+            <button class="btn block danger" data-act="exRemove" data-i="${i}">
+              Odebrat cvik z tréninku
+            </button>
+          </div>`,
         );
         break;
       }
@@ -7041,35 +6703,37 @@
         }
         const lastAt = lastSetAt(d);
         const sug = suggestEnd(d);
-        let b =
-          '<p style="margin:0">' +
-          ex.length +
-          " cviků, " +
-          ex.reduce((a, e) => a + e.sets.length, 0) +
-          " sérií.</p>" +
-          (undone
-            ? '<p class="small muted" style="margin:0">' + undone + " neoznačených sérií se neuloží.</p>"
-            : "");
-        b +=
-          '<div class="card stack" style="gap:8px"><div class="row"><label class="f grow">Začátek<input class="inp" type="time" value="' +
-          toTimeInput(d.start) +
-          '" disabled></label><label class="f grow">Konec<input class="inp" type="time" id="fin-end" data-f="finEnd" value="' +
-          toTimeInput(sug) +
-          '"></label></div><div class="small muted" id="fin-info">' +
-          finInfo(d, sug, lastAt) +
-          "</div></div>";
+        let b = `<p style="margin:0">
+          ${ex.length} cviků, ${ex.reduce((a, e) => a + e.sets.length, 0)} sérií.
+        </p>
+        ${
+          undone ? `<p class="small muted" style="margin:0">${undone} neoznačených sérií se neuloží.</p>` : ""
+        }`;
+        b += `<div class="card stack" style="gap:8px">
+          <div class="row">
+            <label class="f grow">
+              Začátek
+              <input class="inp" type="time" value="${toTimeInput(d.start)}" disabled>
+            </label>
+            <label class="f grow">
+              Konec
+              <input class="inp" type="time" id="fin-end" data-f="finEnd" value="${toTimeInput(sug)}">
+            </label>
+          </div>
+          <div class="small muted" id="fin-info">${finInfo(d, sug, lastAt)}</div>
+        </div>`;
         if (d.tplId && S.templates[d.tplId]) {
           b +=
-            '<label class="switch"><input type="checkbox" id="updTpl"' +
-            (d.again ? "" : " checked") +
-            "> Aktualizovat šablonu „" +
-            esc(S.templates[d.tplId].name) +
-            "“ (cviky a váhy)</label>";
+            `<label class="switch">
+            <input type="checkbox" id="updTpl"${d.again ? "" : " checked"}> Aktualizovat šablonu „` +
+            `${esc(S.templates[d.tplId].name)}“ (cviky a váhy)
+          </label>`;
         }
         openSheet(
           "Dokončit trénink?",
           b,
-          '<button class="btn grow" data-act="closeSheet">Zpět</button><button class="btn primary grow" data-act="finishOk">Uložit trénink</button>',
+          `<button class="btn grow" data-act="closeSheet">Zpět</button>
+          <button class="btn primary grow" data-act="finishOk">Uložit trénink</button>`,
         );
         break;
       }
@@ -7993,9 +7657,10 @@
       ? "Poslední záloha do souboru " + agoLabel(last) + "."
       : "Zatím nemáš žádnou zálohu v souboru.";
     return (
-      '<div class="banner act"><span class="grow">' +
-      txt +
-      '</span><button class="btn" data-act="export">Zálohovat</button></div>'
+      `<div class="banner act"><span class="grow">${txt}</span>` +
+      `<button class="btn" data-act="export">
+        Zálohovat
+      </button></div>`
     );
   }
 
@@ -8003,48 +7668,57 @@
   function backupSettings() {
     const last = lastBackupAt();
     let h = '<section class="sec"><div class="sec-h"><h2>Záloha</h2></div><div class="card stack">';
-    h +=
-      '<div class="small muted">Záloha je jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo telefon, třeba na Google Disk.</div>';
-    h +=
-      '<div class="row wrap-r"><button class="btn primary grow" data-act="export">Stáhnout zálohu</button><label class="btn grow" for="impFile">Obnovit ze souboru</label><input type="file" id="impFile" accept=".json,application/json" hidden></div>';
-    h +=
-      '<div class="row"><span class="xs muted grow">Poslední záloha: ' +
-      (last ? fmtDate(last) + " (" + agoLabel(last) + ")" : "zatím nikdy") +
-      '</span><button class="btn sm ghost" data-act="bkHelp">Jak na Disk?</button></div>';
+    h += `<div class="small muted">
+      Záloha je jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo
+      telefon, třeba na Google Disk.
+    </div>`;
+    h += `<div class="row wrap-r">
+      <button class="btn primary grow" data-act="export">Stáhnout zálohu</button>
+      <label class="btn grow" for="impFile">Obnovit ze souboru</label>
+      <input type="file" id="impFile" accept=".json,application/json" hidden>
+    </div>`;
+    h += `<div class="row">
+      <span class="xs muted grow">
+        Poslední záloha: ${last ? fmtDate(last) + " (" + agoLabel(last) + ")" : "zatím nikdy"}
+      </span>
+      <button class="btn sm ghost" data-act="bkHelp">Jak na Disk?</button>
+    </div>`;
     h += "</div></section>";
 
-    h +=
-      '<section class="sec"><div class="sec-h"><h2>Body obnovy</h2>' +
-      (pointsApi ? '<button class="btn sm" data-act="bkNow">+ Vytvořit teď</button>' : "") +
-      '</div><div class="card">';
+    h += `<section class="sec">
+      <div class="sec-h">
+        <h2>Body obnovy</h2>
+        ${pointsApi ? '<button class="btn sm" data-act="bkNow">+ Vytvořit teď</button>' : ""}
+      </div>
+      <div class="card">`;
     if (!pointsApi) {
-      h += '<div class="small muted">Body obnovy tady nejsou dostupné (prohlížeč nepovolil úložiště).</div>';
+      h += `<div class="small muted">
+        Body obnovy tady nejsou dostupné (prohlížeč nepovolil úložiště).
+      </div>`;
     } else {
       h +=
-        '<div class="small muted" style="margin-bottom:6px">Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy. Chrání před chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. Drží se posledních ' +
-        BK_MAX_POINTS +
-        ".</div>";
+        `<div class="small muted" style="margin-bottom:6px">
+        Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy. Chrání před
+        chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. Drží se posledních ` +
+        `${BK_MAX_POINTS}.
+      </div>`;
       const pts = S.bk.points || [];
       if (!pts.length) {
         h += '<div class="xs muted">Zatím žádný bod obnovy.</div>';
       }
       for (const p of pts) {
         h +=
-          '<div class="bkpt"><div class="grow"><b class="small">' +
-          fmtDate(p.at) +
-          " " +
-          toTimeInput(p.at) +
-          '</b><div class="xs muted">' +
-          esc(BK_REASON[p.reason] || p.reason) +
-          " · " +
-          fmtInt(p.n || 0) +
-          " " +
-          plural(p.n || 0, "trénink", "tréninky", "tréninků") +
-          '</div></div><button class="btn sm ghost" data-act="bkSave" data-v="' +
-          esc(p.id) +
-          '">Stáhnout</button><button class="btn sm" data-act="bkRestore" data-v="' +
-          esc(p.id) +
-          '">Obnovit</button></div>';
+          `<div class="bkpt">
+          <div class="grow">
+            <b class="small">${fmtDate(p.at)} ${toTimeInput(p.at)}</b>
+            <div class="xs muted">
+              ${esc(BK_REASON[p.reason] || p.reason)} · ${fmtInt(p.n || 0)} ` +
+          `${plural(p.n || 0, "trénink", "tréninky", "tréninků")}
+            </div>
+          </div>
+          <button class="btn sm ghost" data-act="bkSave" data-v="${esc(p.id)}">Stáhnout</button>
+          <button class="btn sm" data-act="bkRestore" data-v="${esc(p.id)}">Obnovit</button>
+        </div>`;
       }
     }
     h += "</div></section>";
@@ -8078,19 +7752,28 @@
     let b = "";
     if (!force) {
       b +=
-        '<p style="margin:0">Soubor <b>' +
-        esc(name || "workout-denik-….json") +
-        "</b> je v telefonu ve složce <b>Stažené</b> (Download).</p>";
+        `<p style="margin:0">
+        Soubor <b>${esc(name || "workout-denik-….json")}</b> je v telefonu ve složce <b>Stažené</b> ` +
+        `(Download).
+      </p>`;
     }
-    b +=
-      '<p class="small muted" style="margin:0">Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj:</p>';
-    b +=
-      '<ol class="steps small"><li>V Chromu klepni na <b>⋮ → Stažené soubory</b> (nebo otevři appku <b>Soubory</b> → Stažené).</li><li>Podrž soubor zálohy a zvol <b>Sdílet</b>.</li><li>Vyber <b>Disk</b> → Uložit (nebo Gmail a pošli si ho).</li></ol>';
-    b +=
-      '<p class="xs muted" style="margin:0">Obnova: Nastavení → Záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).</p>';
+    b += `<p class="small muted" style="margin:0">
+      Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj:
+    </p>`;
+    b += `<ol class="steps small">
+      <li>
+        V Chromu klepni na <b>⋮ → Stažené soubory</b> (nebo otevři appku <b>Soubory</b> → Stažené).
+      </li>
+      <li>Podrž soubor zálohy a zvol <b>Sdílet</b>.</li>
+      <li>Vyber <b>Disk</b> → Uložit (nebo Gmail a pošli si ho).</li>
+    </ol>`;
+    b += `<p class="xs muted" style="margin:0">
+      Obnova: Nastavení → Záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).
+    </p>`;
     const foot = force
       ? '<button class="btn primary grow" data-act="closeSheet">Rozumím</button>'
-      : '<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button><button class="btn primary grow" data-act="closeSheet">Hotovo</button>';
+      : `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
+      <button class="btn primary grow" data-act="closeSheet">Hotovo</button>`;
     openSheet(force ? "Záloha na Disk" : "Záloha stažena", b, foot);
   }
 
@@ -8153,27 +7836,27 @@
       nc = countW(S.months),
       nm = mergeCount(o);
     let b =
-      '<p style="margin:0">' +
-      esc(label) +
-      (o.exported ? " z <b>" + esc(fmtDate(Date.parse(o.exported))) + "</b>" : "") +
-      ": " +
-      fmtInt(nb) +
-      " " +
-      plural(nb, "trénink", "tréninky", "tréninků") +
-      ". V appce je teď " +
-      fmtInt(nc) +
-      ".</p>";
-    b +=
-      '<div class="card stack" style="gap:6px"><b>Sloučit</b><div class="small muted">Doplní jen to, co v appce chybí (tréninky, cviky, šablony, měření, fitka). Nic se nepřepíše ani nesmaže. Přibude ' +
-      fmtInt(nm) +
-      " " +
-      plural(nm, "trénink", "tréninky", "tréninků") +
-      '.</div><button class="btn primary" data-act="importGo" data-v="merge">Sloučit</button></div>';
-    b +=
-      '<div class="card stack" style="gap:6px"><b>Nahradit vše</b><div class="small muted">Současná data se smažou a nahradí obsahem zálohy.</div><button class="btn danger" data-act="importGo" data-v="replace">Nahradit vše</button></div>';
+      `<p style="margin:0">
+      ${esc(label)}${o.exported ? ` z <b>${esc(fmtDate(Date.parse(o.exported)))}</b>` : ""}: ` +
+      `${fmtInt(nb)} ${plural(nb, "trénink", "tréninky", "tréninků")}. V appce je teď ${fmtInt(nc)}.
+    </p>`;
+    b += `<div class="card stack" style="gap:6px">
+      <b>Sloučit</b>
+      <div class="small muted">
+        Doplní jen to, co v appce chybí (tréninky, cviky, šablony, měření, fitka). Nic se nepřepíše ani
+        nesmaže. Přibude ${fmtInt(nm)} ${plural(nm, "trénink", "tréninky", "tréninků")}.
+      </div>
+      <button class="btn primary" data-act="importGo" data-v="merge">Sloučit</button>
+    </div>`;
+    b += `<div class="card stack" style="gap:6px">
+      <b>Nahradit vše</b>
+      <div class="small muted">Současná data se smažou a nahradí obsahem zálohy.</div>
+      <button class="btn danger" data-act="importGo" data-v="replace">Nahradit vše</button>
+    </div>`;
     if (pointsApi) {
-      b +=
-        '<div class="xs muted">Před obnovou se automaticky vytvoří bod obnovy, takže jde krok vrátit.</div>';
+      b += `<div class="xs muted">
+        Před obnovou se automaticky vytvoří bod obnovy, takže jde krok vrátit.
+      </div>`;
     }
     openSheet("Obnovit ze zálohy", b, '<button class="btn grow" data-act="closeSheet">Zrušit</button>');
   }
@@ -8395,66 +8078,56 @@
       : (b / 1048576).toLocaleString("cs-CZ", { maximumFractionDigits: 1 }) + " MB";
   function testBar() {
     if (!TEST_PR) return "";
-    return (
-      '<div class="testbar"><b>TEST · PR #' +
-      esc(TEST_PR) +
-      '</b><span class="grow">' +
-      esc(BUILD.nazev) +
-      '</span><a href="' +
-      esc(MAIN_URL) +
-      '">Vydaná verze ›</a></div>'
-    );
+    return `<div class="testbar"><b>TEST · PR #${esc(TEST_PR)}</b><span class="grow">
+        ${esc(BUILD.nazev)}
+      </span><a href="${esc(MAIN_URL)}">Vydaná verze ›</a></div>`;
   }
   function versionSettings() {
     const t = Date.parse(BUILD.cas);
-    let h = '<section class="sec"><div class="sec-h"><h2>Verze aplikace</h2></div><div class="card stack">';
-    h +=
-      '<div class="row"><b class="grow">' +
-      (TEST_PR
+    let h = `<section class="sec">
+      <div class="sec-h"><h2>Verze aplikace</h2></div>
+      <div class="card stack">`;
+    h += `<div class="row"><b class="grow">${
+      TEST_PR
         ? "Testovací verze · PR #" + esc(TEST_PR)
         : BUILD.kanal === "main"
           ? "Vydaná verze"
-          : "Lokální spuštění") +
-      "</b>" +
-      (TEST_PR ? '<span class="pill test">TEST</span>' : "") +
-      "</div>";
+          : "Lokální spuštění"
+    }</b>${TEST_PR ? '<span class="pill test">TEST</span>' : ""}</div>`;
     if (TEST_PR && BUILD.nazev) {
-      h +=
-        '<div class="small">' +
-        esc(BUILD.nazev) +
-        (BUILD.vetev ? '<div class="xs muted">Větev ' + esc(BUILD.vetev) + "</div>" : "") +
-        "</div>";
+      h += `<div class="small">
+        ${esc(BUILD.nazev)}${BUILD.vetev ? `<div class="xs muted">Větev ${esc(BUILD.vetev)}</div>` : ""}
+      </div>`;
     }
-    h +=
-      '<div class="small muted">' +
-      (BUILD.commit && isFinite(t)
+    h += `<div class="small muted">${
+      BUILD.commit && isFinite(t)
         ? "Nasazeno " + fmtDate(t) + " " + fmtTime(t) + " · kód změny " + esc(BUILD.commit)
-        : "Bez údajů o nasazení (spuštěno mimo GitHub Pages).") +
-      "</div>";
+        : "Bez údajů o nasazení (spuštěno mimo GitHub Pages)."
+    }</div>`;
     h += '<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
     if (TEST_PR) {
-      h +=
-        '<div class="small muted">Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se vydané verze netýká.</div>';
-      h +=
-        '<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button><a class="btn" href="' +
-        esc(MAIN_URL) +
-        '">Otevřít vydanou verzi</a>';
+      h += `<div class="small muted">
+        Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se
+        vydané verze netýká.
+      </div>`;
+      h += `<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button>
+      <a class="btn" href="${esc(MAIN_URL)}">Otevřít vydanou verzi</a>`;
     } else if (S.testData === undefined) {
       scanTestData();
     } else if (S.testData.n) {
       h +=
-        '<div class="row"><span class="small grow">Data testovacích verzí v telefonu: ' +
-        S.testData.n +
-        " " +
-        plural(S.testData.n, "verze", "verze", "verzí") +
-        " (≈ " +
-        fmtSize(S.testData.bytes) +
-        ')</span><button class="btn sm" data-act="testDel">Smazat</button></div>';
+        `<div class="row">
+        <span class="small grow">
+          Data testovacích verzí v telefonu: ${S.testData.n} ` +
+        `${plural(S.testData.n, "verze", "verze", "verzí")} (≈ ${fmtSize(S.testData.bytes)})
+        </span>
+        <button class="btn sm" data-act="testDel">Smazat</button>
+      </div>`;
     }
     if (DEV && window.caches) {
       h += '<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>';
     } // jen pro vývoj (F1-04)
-    return h + "</div></section>";
+    return `${h}</div></section>`;
   }
   async function checkUpdate() {
     if (!window.PWA) {
