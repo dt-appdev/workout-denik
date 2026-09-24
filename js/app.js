@@ -4334,8 +4334,9 @@
               vol: ["Objem", "vol", " kg"],
               reps: ["Max opak.", "maxReps", ""],
             };
+    // vybraný graf cvik nemá (např. „Odh. 1RM“ u planku) → první graf, který má
     if (!M[S.detailMetric]) {
-      S.detailMetric = "e1rm";
+      S.detailMetric = Object.keys(M)[0];
     }
     const since = rangeSince(S.detailRange);
     let sel = list.filter((s) => s.w.start >= since && s.nWork > 0);
