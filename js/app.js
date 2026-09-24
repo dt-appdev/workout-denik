@@ -180,6 +180,52 @@
   const mNorm = (a) =>
     Array.isArray(a) ? a.map((k) => DELT[k] || k).filter((k, i, x) => x.indexOf(k) === i) : [];
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  /* ---------- odkaz u cviku (F0-09) ----------
+     Jen adresa http(s) s doménou, nejvýš URL_MAX znaků. Adrese bez schématu („youtube.com/…“) se doplní
+     https://. Jiný odkaz (skript, intent://, adresa uvnitř appky…) se neuloží ani neotevře. */
+  const URL_MAX = 500;
+  // jednotná podoba odkazu: bez mezer okolo, adresa bez schématu dostane https://
+  function urlNormalize(value) {
+    const text = String(value || "").trim();
+    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(text);
+    const looksLikeHost = /^[^\s/?#]+\.[^\s/?#]+([/?#]|$)/.test(text);
+    if (text && !hasScheme && looksLikeHost) {
+      return "https://" + text;
+    }
+    return text;
+  }
+  // co je na odkazu špatně (text do hlášky), "" = v pořádku; prázdný odkaz je povolený
+  function urlProblem(value) {
+    const text = urlNormalize(value);
+    if (!text) return "";
+    if (text.length > URL_MAX) return "Odkaz může mít nejvýš " + URL_MAX + " znaků";
+    let url = null;
+    try {
+      url = new URL(text);
+    } catch (e) {}
+    if (!url || !/^https?:$/.test(url.protocol) || !url.hostname.includes(".") || /\s/.test(text)) {
+      return "Odkaz musí začínat https:// (nebo http://)";
+    }
+    return "";
+  }
+  // odkaz, který jde bezpečně otevřít, jinak ""
+  const urlSafe = (value) => (urlProblem(value) ? "" : urlNormalize(value));
+  // odkazy u cviků ze zálohy: jednotná podoba, neplatný se zahodí (výchozí cvik dostane zpět svůj z EX_DB)
+  function exUrlsClean(items) {
+    for (const id in items) {
+      const item = items[id];
+      if (!item || typeof item !== "object" || !("url" in item)) continue;
+      if (!urlProblem(item.url)) {
+        item.url = urlNormalize(item.url);
+      } else if (EX_DB[id] && EX_DB[id].url) {
+        item.url = EX_DB[id].url;
+      } else {
+        delete item.url;
+      }
+    }
+    return items;
+  }
+
   function exPack(items, legacy, partial) {
     const out = {};
     for (const id in items || {}) {
@@ -259,7 +305,17 @@
             .slice(0, 1)
         : [];
   const exLink = (e) =>
-    e.url || "https://www.youtube.com/results?search_query=" + encodeURIComponent(e.name + " exercise form");
+    urlSafe(e.url) ||
+    "https://www.youtube.com/results?search_query=" + encodeURIComponent(e.name + " exercise form");
+  // popisek odkazu u cviku podle toho, kam vede
+  function exLinkLabel(e) {
+    const url = urlSafe(e.url);
+    if (!url) return "Hledat video ↗";
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    if (/(^|\.)hevyapp\.com$/.test(host)) return "Otevřít na Hevy ↗";
+    if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return "Video na YouTube ↗";
+    return "Otevřít odkaz ↗";
+  }
   // hledání bez ohledu na velikost písmen a diakritiku („tlak" najde „Tlak", „stehna" i „stehná")
   const fold = (s) =>
     String(s || "")
@@ -4521,7 +4577,7 @@
         }
         <div class="row wrap-r" style="justify-content:space-between">
           <a class="link" href="${esc(exLink(ex))}" target="_blank" rel="noopener">` +
-        `${ex.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}</a>
+        `${esc(exLinkLabel(ex))}</a>
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
         <div class="row wrap-r" style="margin-top:10px;gap:8px">
@@ -5300,7 +5356,7 @@
       }
       <div class="row wrap-r" style="justify-content:space-between">
         <a class="link" href="${esc(exLink(e))}" target="_blank" rel="noopener">` +
-      `${e.url ? "Otevřít na Hevy ↗" : "Hledat video ↗"}</a>
+      `${esc(exLinkLabel(e))}</a>
       <span class="xs muted">${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" : ""}</span>
     </div>`;
     if (list.length) {
@@ -5458,7 +5514,7 @@
       </label>
       <label class="f">
         Odkaz (Hevy nebo video)
-        <input class="inp" id="x-url" inputmode="url" value="${esc(url)}"
+        <input class="inp${urlProblem(url) ? " bad" : ""}" id="x-url" inputmode="url" value="${esc(url)}"
             placeholder="prázdné = vyhledat video podle názvu">
       </label>`;
     const id = exEd.id;
@@ -6897,6 +6953,16 @@
           toast("Vyber aspoň jednu hlavní partii.");
           break;
         }
+        // F0-09: odkaz jen https://… (http://…), jinak se cvik neuloží
+        const urlInput = document.getElementById("x-url");
+        urlInput.value = urlNormalize(urlInput.value);
+        const urlMsg = urlProblem(urlInput.value);
+        if (urlMsg) {
+          urlInput.classList.add("bad");
+          toast("Oprav zvýrazněný odkaz. " + urlMsg + ".");
+          focusInput("x-url");
+          break;
+        }
         const items = Object.assign({}, S.exLib);
         const o = Object.assign({}, items[id] || { custom: true }, {
           name,
@@ -6912,7 +6978,7 @@
         if (!v && exEd.fx) {
           o.src = "fedb:" + exEd.fx.id;
         } // F0-03: cvik převzatý z free-exercise-db
-        const url = document.getElementById("x-url").value.trim();
+        const url = urlInput.value;
         if (url) {
           o.url = url;
         } else {
@@ -7673,6 +7739,9 @@
     if (t.dataset && t.dataset.num) {
       numInput(t);
     } // F1-10: jen povolené znaky, červený rámeček
+    if (t.id === "x-url" && t.classList.contains("bad") && !urlProblem(t.value)) {
+      t.classList.remove("bad");
+    } // F0-09: opravený odkaz už není červený
     const f = t.dataset && t.dataset.f;
     if (!f) return;
     const d = curDraft();
@@ -7760,6 +7829,16 @@
     }
     if (t.id === "impFile") {
       readImport(t);
+      return;
+    }
+    if (t.id === "x-url") {
+      // odkaz u cviku (F0-09): doplnit https://, neplatný zvýraznit s krátkou nápovědou
+      t.value = urlNormalize(t.value);
+      const msg = urlProblem(t.value);
+      t.classList.toggle("bad", !!msg);
+      if (msg) {
+        toast(msg);
+      }
       return;
     }
     if (f === "xEquip") {
@@ -8189,7 +8268,7 @@
     return {
       exported: o.exported,
       cfg,
-      exercises: exLoad(obj(o.exercises), o.exDb !== EX_V),
+      exercises: exLoad(exUrlsClean(obj(o.exercises)), o.exDb !== EX_V),
       templates: obj(o.templates),
       months,
       body: obj(o.body),

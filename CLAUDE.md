@@ -89,6 +89,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (sekce „pravidla zabezpečení" v `js/app.js`); úloha „kontrola" v GitHub Actions takový PR odmítne.
   Nový vnější zdroj nebo `blob:`/`data:` obrázky (F2-05, F4-08) přidat do CSP v `index.html`. Co pravidla
   zablokují, ukáže testovací verze hláškou (`securitypolicyviolation`).
+- Odkaz u cviku (F0-09, sekce „odkaz u cviku" v `js/app.js`): jen `http(s)` s doménou, `URL_MAX` znaků.
+  `urlNormalize` (doplní `https://`), `urlProblem` (text hlášky, `""` = v pořádku), `urlSafe` (otevírat jen tohle),
+  `exLink` / `exLinkLabel` pro odkaz a popisek, `exUrlsClean` při obnově zálohy (`normBackup`).
 - Styl kódu (čitelnost pro člověka má přednost před stručností):
   - jeden příkaz na řádek, odsazení 2 mezery, řádky nejvýš cca 110 znaků,
   - `if`/`for` s tělem na víc řádků ve složených závorkách (jednořádkový `if` jen pro
