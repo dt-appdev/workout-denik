@@ -451,12 +451,55 @@ a.btn {
 .iconbtn:disabled {
   opacity: 0.3;
 }
-.gymmv {
-  display: flex;
+/* přetažení (F2-07): úchyt, zvednutá položka jede s prstem, ostatní uhýbají */
+.dnd-h {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75em;
+  height: 2.75em;
+  margin: -0.4em -0.5em -0.4em 0;
+  color: var(--ink-3);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
 }
-.gymmv .iconbtn {
-  width: 34px;
+.dnd-h svg {
+  width: 1.4em;
+  height: 1.4em;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+.dnd-act .dnd-it {
+  transition: transform 0.15s ease;
+}
+.dnd-act .dnd-it.dnd-on {
+  transition: none;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.dnd-on .dnd-h {
+  color: var(--accent);
+  cursor: grabbing;
+}
+.dnd-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.dnd-row b {
+  overflow-wrap: anywhere;
+}
+.sec-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
 }
 /* rozcestník Nastavení (F3-09): řádek = skupina, oranžový = je čas zálohovat */
 .setlist {

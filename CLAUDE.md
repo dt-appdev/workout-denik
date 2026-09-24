@@ -149,7 +149,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v `localStorage`. Stránka cviku (route `exd`, `vExDetail`) má části Popis
   a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
   (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
-- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (šipky v Nastavení, akce `gymMove`).
+- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (přetažením v Nastavení, F2-07).
   Barva je uložená v `g.col` (1–`GYM_COLORS` = 12, CSS proměnná `--sN`), doplňuje ji
   `cfgNorm` při načtení; nová barva přes `freeGymCol`. Barvu nikdy nepočítat z pořadí.
   Výběr barvy v `sheetGym` (F3-01, akce `gymCol`). Grafy, které nepatří fitku, mají `var(--chart)`, ne `--s1`.
@@ -246,6 +246,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
   série z minula bez zahřívacích (`warmMax`, přes `draftLast`), zaokrouhleno na krok `kkStep` (`warmKg`). Zápis přes
   `kkSet` (stejně jako − / +), bez záznamu z minula se tlačítko neukáže.
+- Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
+  Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
+  uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona
+  `tplNextOrder`). Vysoké položky (karty cviků) se netahají na stránce, ale v panelu s krátkým seznamem
+  (`sheetExOrder`, `sheetTplOrder`). V panelu se posouvá `.sheet-b`, jinak stránka (`dndView` bez lišt).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
