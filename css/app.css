@@ -393,7 +393,10 @@ textarea.inp{min-height:84px;resize:vertical;line-height:1.4}
 .cel-ex{flex:none;margin-top:4px;font-weight:700;font-size:16px}
 .cel-l{flex:0 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin-top:10px;padding-bottom:4px;display:flex;flex-direction:column;gap:6px;text-align:left;scrollbar-width:none}
 .cel-l::-webkit-scrollbar{display:none} /* posuvník by šel přes hodnoty, posun ukazuje rozmazání a „Posuň pro další“ */
-.cel-l.more{-webkit-mask:linear-gradient(#000 calc(100% - 44px),transparent);mask:linear-gradient(#000 calc(100% - 44px),transparent)}
+/* rozmazaný okraj tam, kam se dá seznam posunout: nahoře (.up) i dole (.more) */
+.cel-l{--ft:0px;--fb:0px}
+.cel-l.up{--ft:32px}.cel-l.more{--fb:44px}
+.cel-l.up,.cel-l.more{-webkit-mask:linear-gradient(transparent,#000 var(--ft),#000 calc(100% - var(--fb)),transparent);mask:linear-gradient(transparent,#000 var(--ft),#000 calc(100% - var(--fb)),transparent)}
 .cel-g{font-weight:700;font-size:14px;margin-top:4px}
 .cel-r{display:grid;grid-template-columns:14px 1fr auto;gap:0 8px;align-items:baseline;font-size:14px}
 .cel-r.small{color:var(--ink-2)}

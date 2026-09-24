@@ -684,7 +684,7 @@ function celebrate(R,sub){
   document.body.appendChild(el);celEl=el;
   const L=el.querySelector(".cel-l"),M=el.querySelector(".cel-more");
   // „Posuň pro další“: místo drží, dokud se seznam dá posouvat (jinak by seznam na konci poskočil), jen zneviditelní
-  const more=()=>{if(L.scrollHeight-L.clientHeight>4)M.hidden=false;const m=L.scrollHeight-L.scrollTop-L.clientHeight>4;L.classList.toggle("more",m);M.style.visibility=m?"":"hidden"};
+  const more=()=>{if(L.scrollHeight-L.clientHeight>4)M.hidden=false;const m=L.scrollHeight-L.scrollTop-L.clientHeight>4;L.classList.toggle("more",m);L.classList.toggle("up",L.scrollTop>4);M.style.visibility=m?"":"hidden"};
   L.addEventListener("scroll",more);requestAnimationFrame(more);setTimeout(more,500);
   if(S.cfg.recSnd!=="off")celSound(gold);
 }
