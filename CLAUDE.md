@@ -76,8 +76,17 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Všechny cesty relativní (`css/app.css`, ne `/css/app.css`), appka běží
   v podadresáři `https://<uživatel>.github.io/workout-denik/`.
 - Žádné externí zdroje (CDN, Google Fonts…) – offline by nefungovaly.
-- Styl kódu v `js/app.js`: kompaktní (často víc příkazů na řádku), HTML se skládá
-  jako řetězce, texty escapovat přes `esc()`. Komentáře česky.
+- Styl kódu (čitelnost pro člověka má přednost před stručností):
+  - jeden příkaz na řádek, odsazení 2 mezery, řádky nejvýš cca 110 znaků,
+  - `if`/`for` s tělem na víc řádků ve složených závorkách (jednořádkový `if` jen pro
+    krátký návrat, např. `if (!x) return;`),
+  - delší HTML skládat přes šablonové řetězce (`` `…${esc(x)}…` ``) rozložené na víc
+    řádků podle struktury HTML, texty vždy escapovat přes `esc()`,
+  - srozumitelné názvy proměnných a funkcí (ne jednopísmenné, kromě krátkých smyček),
+  - krátký český komentář nad každou funkcí, která není zřejmá z názvu, a nad každou
+    sekcí souboru,
+  - starší kompaktní kód (víc příkazů na řádku) se převede v úloze F0-10; do té doby
+    nový kód psát už takto a starý přeformátovat jen tam, kde se stejně mění.
 - Kliknutí se řeší delegací přes `data-act` / `data-v` (jeden velký `switch`).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
