@@ -2889,13 +2889,18 @@
     for (const [id, t] of here) {
       h += tplCard(id, t, all, gymId);
     }
-    // ostatní šablony až po tlačítku (jako „Zobrazit další“ v Historii), bez šablon pro toto fitko hned
-    if (other.length && (tplOther || !here.length)) {
-      for (const [id, t] of other) {
-        h += tplCard(id, t, all, null);
-      }
-    } else if (other.length) {
+    // ostatní šablony až po tlačítku (jako „Zobrazit další“ v Historii), bez šablon pro toto fitko hned;
+    // na místě tlačítka pak nadpis
+    if (other.length && !tplOther && here.length) {
       h += '<button class="btn block" data-act="tplOther">Ostatní šablony</button>';
+    }
+    h += "</div></section>";
+    if (!other.length || (!tplOther && here.length)) return h;
+    h += `<section class="sec">
+        <div class="sec-h"><h2>Ostatní šablony</h2></div>
+        <div class="stack">`;
+    for (const [id, t] of other) {
+      h += tplCard(id, t, all, null);
     }
     h += "</div></section>";
     return h;
