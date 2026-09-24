@@ -208,6 +208,17 @@
     }
     return "";
   }
+  // zvýraznit neplatný odkaz v poli a napsat pod něj, co je špatně (zůstane, dokud se neopraví);
+  // bez hlášky nahoře a bez klávesnice, ta by ji na telefonu odsunula mimo obrazovku
+  function urlMark(input) {
+    const msg = urlProblem(input.value);
+    input.classList.toggle("bad", !!msg);
+    const msgEl = document.getElementById(input.id + "-msg");
+    if (msgEl) {
+      msgEl.textContent = msg;
+    }
+    return msg;
+  }
   // odkaz, který jde bezpečně otevřít, jinak ""
   const urlSafe = (value) => (urlProblem(value) ? "" : urlNormalize(value));
   // odkazy u cviků ze zálohy: jednotná podoba, neplatný se zahodí (výchozí cvik dostane zpět svůj z EX_DB)
@@ -5516,6 +5527,7 @@
         Odkaz (Hevy nebo video)
         <input class="inp${urlProblem(url) ? " bad" : ""}" id="x-url" inputmode="url" value="${esc(url)}"
             placeholder="prázdné = vyhledat video podle názvu">
+        <span class="fmsg" id="x-url-msg">${esc(urlProblem(url))}</span>
       </label>`;
     const id = exEd.id;
     // Zpět o úroveň: do výsledků online databáze, do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
@@ -6956,11 +6968,8 @@
         // F0-09: odkaz jen https://… (http://…), jinak se cvik neuloží
         const urlInput = document.getElementById("x-url");
         urlInput.value = urlNormalize(urlInput.value);
-        const urlMsg = urlProblem(urlInput.value);
-        if (urlMsg) {
-          urlInput.classList.add("bad");
-          toast("Oprav zvýrazněný odkaz. " + urlMsg + ".");
-          focusInput("x-url");
+        if (urlMark(urlInput)) {
+          urlInput.scrollIntoView({ block: "center", behavior: "smooth" });
           break;
         }
         const items = Object.assign({}, S.exLib);
@@ -7740,7 +7749,7 @@
       numInput(t);
     } // F1-10: jen povolené znaky, červený rámeček
     if (t.id === "x-url" && t.classList.contains("bad") && !urlProblem(t.value)) {
-      t.classList.remove("bad");
+      urlMark(t);
     } // F0-09: opravený odkaz už není červený
     const f = t.dataset && t.dataset.f;
     if (!f) return;
@@ -7832,13 +7841,9 @@
       return;
     }
     if (t.id === "x-url") {
-      // odkaz u cviku (F0-09): doplnit https://, neplatný zvýraznit s krátkou nápovědou
+      // odkaz u cviku (F0-09): doplnit https://, neplatný zvýraznit s nápovědou pod polem
       t.value = urlNormalize(t.value);
-      const msg = urlProblem(t.value);
-      t.classList.toggle("bad", !!msg);
-      if (msg) {
-        toast(msg);
-      }
+      urlMark(t);
       return;
     }
     if (f === "xEquip") {
