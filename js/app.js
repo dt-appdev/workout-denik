@@ -311,7 +311,7 @@ const Store={
 
 /* ---------- state ---------- */
 const S={
-  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true},
+  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCel:true,recSnd:"fanfara"},
   exLib:exLoad({}), exV:0, exLegacy:null, templates:{}, months:{}, body:{},
   bk:{last:null,points:[]}, // config/backup: datum poslední zálohy do souboru + body obnovy
   active:Store.loadActive(),
@@ -381,7 +381,7 @@ const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
 const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
 /* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
 function cfgNorm(c){
-  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true},c&&typeof c==="object"?c:{});
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCel:true,recSnd:"fanfara"},c&&typeof c==="object"?c:{});
   c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
   return c;
 }
@@ -601,12 +601,12 @@ function computeRecords(){
 }
 function recs(){const d=derive();if(!d.rec)d.rec=computeRecords();return d.rec}
 function wRecs(w){return recs().byW[w.id]||[]}
-// živé medaile pro rozdělaný trénink: vrací {j:[types]} pro cvik i a seznam typů cviku
+// živé medaile pro rozdělaný trénink: vrací {j:[types]} pro cvik i, seznam typů cviku a jejich hodnoty v ({typ:{v,set,prev,prevSet}})
 function liveRecords(d,i){
   const e=d.ex[i];
   const kind=kindOf(e.exId);
   const b=recs().best[recCtx(e.exId,d.gymId)];
-  const out={sets:{},ex:[]};
+  const out={sets:{},ex:[],v:{}};
   if(!b)return out;                        // první trénink s cvikem v tomto kontextu
   const conv=s=>({t:s.t,kg:num(s.kg)||0,reps:num(s.reps)||0,sec:parseSec(s.sec)||0,km:num(s.km)||0});
   const done=e.sets.map(s=>s.done?conv(s):{t:"w"});
@@ -614,7 +614,7 @@ function liveRecords(d,i){
   const m=exMetrics(e.exId,done.concat(extra),d.start);if(!m)return out;
   for(const type in m){
     const prev=b[type];if(!prev||!(m[type].v>prev.v+EPS))continue;
-    out.ex.push(type);
+    out.ex.push(type);out.v[type]={v:m[type].v,set:m[type].set,prev:prev.v,prevSet:prev.set};
     if(m[type].j!=null&&m[type].j<done.length)(out.sets[m[type].j]=out.sets[m[type].j]||[]).push(type);
   }
   return out;
@@ -628,6 +628,124 @@ function recListHtml(list,withEx){
   return '<div class="reclist">'+list.map(r=>'<div class="rec"><span class="md">🏅</span><div class="grow">'+esc(REC[r.type])+': <b>'+esc(recFmt(r.type,r.v,r.set))+'</b><span class="muted"> (dříve '+esc(recFmt(r.type,r.prev,r.prevSet))+')</span></div></div>').join("")+'</div>';
 }
 const plural=(n,a,b,c)=>n===1?a:(n>=2&&n<=4?b:c);
+
+/* ---------- OSLAVA REKORDU (F3-02) ----------
+   Medaile přes celou obrazovku: v rozdělaném tréninku po dokončení cviku (odškrtnuté všechny pracovní
+   série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Zlatá = aspoň jeden velký rekord
+   (REC_BIG), jinak stříbrná; v seznamu jsou vždy všechny. Co už se oslavilo, si pamatuje cvik v rozdělaném
+   tréninku (e.cel = {typ: hodnota}, do uloženého tréninku se nedostane); znovu se slaví jen vyšší hodnota
+   nebo nový typ. Nastavení v config/main: recCel (zapnuto; vypnuto = jen hláška po sérii jako dřív),
+   recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio, žádné soubory.
+   Zavření: klepnutí (ne do seznamu, ten se posouvá), Zpět (navBack), během tréninku samo po CEL_AUTO. */
+const REC_BIG={maxKg:1,e1rm:1,reps:1,maxSec:1,maxKm:1,speed:1};
+const CEL_AUTO=5000;
+let celEl=null,celT=0;
+const exDone=e=>{const w=e.sets.filter(s=>isWork(s.t));return w.length>0&&w.every(s=>s.done)};
+// po odškrtnutí série: dokončený cvik s novým (ještě neoslaveným) rekordem
+function celExercise(e,lr){
+  if(!exDone(e)||!lr.ex.length)return;
+  const c=e.cel||{},nw=lr.ex.filter(t=>!(c[t]!=null&&lr.v[t].v<=c[t]+EPS));
+  if(!nw.length)return;
+  e.cel=Object.assign({},c);for(const t of nw)e.cel[t]=lr.v[t].v;
+  celebrate(nw.map(t=>Object.assign({exId:e.exId,type:t},lr.v[t])),exName(e.exId),CEL_AUTO);
+}
+function celMedal(k){
+  const m=k==="gold"?{a:"#fff4b8",b:"#f5c542",c:"#d99a0b",d:"#9c6400",r:"#cf3a31",r2:"#9e2a23"}:{a:"#ffffff",b:"#dde2e8",c:"#aab2bc",d:"#66707b",r:"#2a78d6",r2:"#1d5aa3"};
+  const id="cel"+k,bar="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"; // činka z ikony appky
+  return '<svg viewBox="0 0 200 240" aria-hidden="true"><defs>'+
+    '<linearGradient id="'+id+'o" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+m.a+'"/><stop offset=".35" stop-color="'+m.b+'"/><stop offset=".7" stop-color="'+m.c+'"/><stop offset="1" stop-color="'+m.d+'"/></linearGradient>'+
+    '<linearGradient id="'+id+'i" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="'+m.a+'"/><stop offset=".45" stop-color="'+m.b+'"/><stop offset="1" stop-color="'+m.c+'"/></linearGradient>'+
+    '<clipPath id="'+id+'c"><circle cx="100" cy="152" r="70"/></clipPath></defs><g class="cel-sw">'+
+    '<polygon points="56,0 96,0 114,98 84,106" fill="'+m.r+'"/><polygon points="70,0 82,0 99,100 90,103" fill="#fff" opacity=".85"/>'+
+    '<polygon points="144,0 104,0 86,98 116,106" fill="'+m.r2+'"/><polygon points="130,0 118,0 101,100 110,103" fill="#fff" opacity=".7"/>'+
+    '<rect x="84" y="84" width="32" height="14" rx="4" fill="'+m.d+'"/>'+
+    '<circle cx="100" cy="152" r="70" fill="url(#'+id+'o)"/><circle cx="100" cy="152" r="70" fill="none" stroke="'+m.d+'" stroke-width="2.5" opacity=".6"/>'+
+    '<circle cx="100" cy="152" r="54" fill="url(#'+id+'i)" stroke="'+m.d+'" stroke-opacity=".45" stroke-width="2"/>'+
+    '<g transform="translate(100 152) scale(3.3) translate(-12 -12)" fill="none" stroke-linecap="round"><path d="'+bar+'" stroke="'+m.a+'" stroke-width="3.1" transform="translate(.35 .45)"/><path d="'+bar+'" stroke="'+m.d+'" stroke-width="2.3"/></g>'+
+    '<g clip-path="url(#'+id+'c)"><rect class="cel-shine" x="0" y="60" width="26" height="200" fill="#fff" opacity=".55" transform="rotate(20 100 152)"/></g></g></svg>';
+}
+function celebrate(R,sub,auto){
+  celClose(true);
+  const gold=R.some(r=>REC_BIG[r.type]),k=gold?"gold":"silver",rank=t=>(REC_BIG[t]?0:100)+REC_ORDER.indexOf(t);
+  const g={};for(const r of R)(g[r.exId]=g[r.exId]||[]).push(r);
+  const ids=Object.keys(g);
+  const list=ids.map(id=>(ids.length>1?'<div class="cel-g">'+esc(exName(id))+'</div>':'')+g[id].sort((a,b)=>rank(a.type)-rank(b.type)).map(r=>{const b=REC_BIG[r.type];
+    return '<div class="cel-r'+(b?'':' small')+'"><span class="cel-dot '+(b?'g':'s')+'"></span><span>'+esc(REC[r.type])+'</span><b>'+esc(recFmt(r.type,r.v,r.set))+'</b><span class="was">dříve '+esc(recFmt(r.type,r.prev,r.prevSet))+'</span></div>'}).join("")).join("");
+  let sp="";for(let i=0;i<14;i++)sp+='<i class="cel-sp" style="--a:'+(i*360/14+(i%2?9:-5))+'deg;--d:'+(95+i%3*22)+'px;--s:'+(.7+i%4*.22).toFixed(2)+';--dl:'+(.42+i%5*.05).toFixed(2)+'s"></i>';
+  const el=document.createElement("div");
+  el.className="cel "+k;el.setAttribute("role","dialog");el.setAttribute("aria-label","Nový rekord");
+  el.innerHTML='<div class="cel-m"><div class="cel-glow"></div><div class="cel-rays"></div>'+sp+celMedal(k)+'</div>'+
+    '<div class="cel-c"'+(auto?' style="--dur:'+auto+'ms"':'')+'><h2>Nový rekord!</h2><div class="cel-ex">'+esc(sub)+'</div><div class="cel-l">'+list+'</div><div class="cel-more" hidden>↓ Posuň pro další</div>'+
+    (auto?'<div class="cel-t">Zmizí samo, nebo klepni kamkoli</div><div class="cel-p"></div>':'<button class="btn cel-ok">Pokračovat</button>')+'</div>';
+  const t0=Date.now();
+  el.addEventListener("click",ev=>{ // do seznamu klepnutí nezavírá (posouvání), po tréninku jen tlačítko nebo mimo kartu
+    if(Date.now()-t0<400||ev.target.closest(".cel-l"))return;
+    if(!auto&&ev.target.closest(".cel-c")&&!ev.target.closest(".cel-ok"))return;
+    celClose();
+  });
+  document.body.appendChild(el);celEl=el;
+  const L=el.querySelector(".cel-l"),M=el.querySelector(".cel-more");
+  const more=()=>{const m=L.scrollHeight-L.scrollTop-L.clientHeight>4;L.classList.toggle("more",m);M.hidden=!m};
+  L.addEventListener("scroll",more);requestAnimationFrame(more);setTimeout(more,500);
+  if(auto)celT=setTimeout(()=>{if(celEl===el)celClose()},auto+350);
+  if(S.cfg.recSnd!=="off")celSound(gold);
+}
+function celClose(now){
+  const el=celEl;if(!el)return;celEl=null;clearTimeout(celT);
+  if(now||matchMedia("(prefers-reduced-motion:reduce)").matches)el.remove();else{el.classList.add("out");setTimeout(()=>el.remove(),250)}
+}
+// zvuky oslavy: plná podoba pro zlatou, kratší a tišší pro stříbrnou
+let celOut=null;
+function celTone(t,f,s,d,o){ // tón f Hz od s na d s; o = {type, vol, att, vib, lp, lpTo, hold}
+  o=o||{};const a=audioCtx,g=a.createGain(),osc=a.createOscillator();osc.type=o.type||"triangle";osc.frequency.value=f;let out=osc;
+  if(o.lp){const fl=a.createBiquadFilter();fl.type="lowpass";fl.frequency.setValueAtTime(o.lp,t+s);if(o.lpTo)fl.frequency.linearRampToValueAtTime(o.lpTo,t+s+Math.min(.25,d));osc.connect(fl);out=fl}
+  if(o.vib){const l=a.createOscillator(),lg=a.createGain();l.frequency.value=5.5;lg.gain.setValueAtTime(0,t+s);lg.gain.linearRampToValueAtTime(f*.012,t+s+.35);l.connect(lg);lg.connect(osc.frequency);l.start(t+s);l.stop(t+s+d+.05)}
+  const v=o.vol||.12,att=o.att||.012;
+  g.gain.setValueAtTime(0,t+s);g.gain.linearRampToValueAtTime(v,t+s+att);
+  if(o.hold){g.gain.setValueAtTime(v,t+s+d-.18);g.gain.linearRampToValueAtTime(.0001,t+s+d)}else g.gain.exponentialRampToValueAtTime(.0005,t+s+d);
+  out.connect(g);g.connect(celOut);osc.start(t+s);osc.stop(t+s+d+.05);
+}
+const NT={G4:392,B4:493.88,C5:523.25,D5:587.33,E5:659.25,G5:783.99,A5:880,B5:987.77,C6:1046.5,D6:1174.66,E6:1318.51,G6:1567.98,A6:1760,C7:2093};
+const CEL_SOUNDS=[
+  {id:"fanfara",name:"Fanfára",play(t,gold){
+    const n=gold?[["C5",0,.11],["E5",.11,.11],["G5",.22,.11],["C6",.36,.7]]:[["G5",0,.12],["C6",.14,.45]];
+    for(const [k,s,d] of n){celTone(t,NT[k],s,d,{vol:gold?.16:.1});celTone(t,NT[k]*2,s,d,{type:"sine",vol:gold?.04:.025})}}},
+  {id:"tada",name:"Ta-dá",play(t,gold){
+    const br={type:"sawtooth",lp:700,lpTo:2600,att:.03};
+    if(gold)for(const k of ["G4","B4","D5"])celTone(t,NT[k],0,.14,Object.assign({vol:.06},br));
+    const s=gold?.17:0,d=gold?1.25:.6,v=gold?.07:.045;
+    for(const k of ["C5","E5","G5"].concat(gold?["C6"]:[])){celTone(t,NT[k],s,d,Object.assign({vol:v,hold:true,vib:gold},br));celTone(t,NT[k]*1.004,s,d,Object.assign({vol:v*.6,hold:true},br))}}},
+  {id:"zvonky",name:"Zvonkohra",play(t,gold){
+    const n=gold?[["E6",0],["G6",.09],["C7",.18],["G6",.34],["C7",.42]]:[["G6",0],["C7",.1]];
+    for(const [k,s] of n){const f=NT[k],d=gold?1.3:.8,v=gold?.09:.06;
+      celTone(t,f,s,d,{type:"sine",vol:v,att:.003});celTone(t,f*2.76,s,d*.5,{type:"sine",vol:v*.35,att:.003});celTone(t,f*5.4,s,d*.25,{type:"sine",vol:v*.15,att:.003})}}},
+  {id:"levelup",name:"Level up",play(t,gold){
+    const n=gold?["C5","E5","G5","C6","E6","G6","C7"]:["G5","C6","E6","G6"];
+    n.forEach((k,i)=>celTone(t,NT[k],i*.055,i===n.length-1?.4:.07,{type:"square",lp:3200,vol:gold?.06:.04,att:.004}))}},
+  {id:"mince",name:"Mince",play(t,gold){
+    const o={type:"square",lp:4000,vol:gold?.06:.04,att:.003};
+    celTone(t,NT.B5,0,.08,o);celTone(t,NT.E6,.08,gold?.55:.35,o);
+    if(gold){celTone(t,NT.B5,.3,.08,o);celTone(t,NT.E6*1.5,.38,.6,o)}}},
+  {id:"harfa",name:"Harfa",play(t,gold){
+    const sc=["C5","D5","E5","G5","A5","C6","D6","E6","G6","A6","C7"],n=gold?sc:sc.slice(5);
+    n.forEach((k,i)=>celTone(t,NT[k],i*.035,.9,{vol:gold?.07:.05,att:.004}));
+    if(gold)for(const k of ["C6","E6","G6"])celTone(t,NT[k],n.length*.035+.05,1.2,{vol:.06,att:.004})}}
+];
+function celSound(gold,id){
+  const x=CEL_SOUNDS.find(x=>x.id===(id||S.cfg.recSnd))||CEL_SOUNDS[0];
+  try{audioUnlock();if(!audioCtx)return;if(!celOut){celOut=audioCtx.createDynamicsCompressor();celOut.connect(audioCtx.destination)}x.play(audioCtx.currentTime+.05,gold)}catch(e){}
+}
+function recSettings(){
+  const c=S.cfg;
+  let h='<section class="sec"><div class="sec-h"><h2>Rekordy</h2></div><div class="card stack">';
+  h+='<label class="switch"><input type="checkbox" data-act="recCel" '+(c.recCel?"checked":"")+'><span><b>Oslava rekordu</b><br><span class="xs muted">Po dokončení cviku a po uložení tréninku vyskočí medaile. Zlatá za max. zátěž, odhad 1RM, opakování, výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.</span></span></label>';
+  if(c.recCel){
+    h+='<div class="stack" style="gap:6px"><span>Zvuk oslavy <span class="xs muted">· hraje přes hlasitost médií</span></span><div class="spick">'+
+      [["off","Vypnuto"]].concat(CEL_SOUNDS.map(x=>[x.id,x.name])).map(([id,l])=>'<div class="spr"><button class="spr-l" data-act="recSnd" data-v="'+id+'" aria-pressed="'+(c.recSnd===id)+'"><span class="rad"></span>'+l+'</button>'+(id==="off"?'':'<button class="spr-p" data-act="recSndPlay" data-v="'+id+'" aria-label="Přehrát zvuk '+l+'">▶</button>')+'</div>').join("")+'</div></div>';
+    h+='<button class="btn block" data-act="recTry">Vyzkoušet</button>';
+  }
+  return h+'</div></section>';
+}
 
 /* ---------- rendering ---------- */
 const CK={};                       // posun posuvných nabídek podle klíče
@@ -1373,6 +1491,7 @@ function vSettings(){
   h+='<section class="sec"><div class="sec-h"><h2>Vzhled</h2></div><div class="card row"><span class="grow">Motiv</span><div class="seg">'+[["dark","Tmavý"],["light","Světlý"],["auto","Podle systému"]].map(([k,l])=>'<button data-act="theme" data-v="'+k+'" aria-pressed="'+(themePref()===k)+'">'+l+'</button>').join("")+'</div></div></section>';
   h+='<section class="sec"><div class="sec-h"><h2>Tělesná hmotnost</h2></div><div class="card stack"><div class="row"><span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span><label class="f" style="width:110px">kg<input class="inp" id="bwInp" data-f="bodyWeight" inputmode="decimal" value="'+esc(S.cfg.bodyWeight||80)+'"></label></div><div class="xs muted">'+(Object.values(S.body||{}).some(b=>isFinite(+b.weight))?'Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. Tahle hodnota slouží jen pro starší tréninky před prvním měřením.':'Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono.')+'</div></div></section>';
   h+=restSettings();
+  h+=recSettings();
   h+=versionSettings();
   h+='<section class="sec"><div class="sec-h"><h2>O aplikaci</h2></div><div class="card small muted">Schéma svalů vychází z anatomických kreseb <b>Ryana Gravese</b>, použitých pod licencí <a class="link" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (balíček flutter-body-atlas). Odkazy na cviky vedou na hevyapp.com.</div></section>';
   h+=backupSettings();
@@ -1778,7 +1897,9 @@ document.addEventListener("click",ev=>{
         if(isTimed(kind)&&!(parseSec(s.sec)>0)){toast("Zadej čas (např. 45 nebo 1:30).");break}
         if(kind==="dist"&&!(num(s.km)>0)){toast("Zadej vzdálenost.");break}
         s.done=true;s.at=Date.now();if(d===S.active)restStart(); // v úpravě staršího tréninku bez časovače
-        {const lr=liveRecords(d,i);const t=lr.sets[j];if(t&&t.length)toast("🏅 Nový rekord: "+t.map(recLow).join(", "))}
+        {const lr=liveRecords(d,i);const t=lr.sets[j];
+          if(S.cfg.recCel&&d===S.active)celExercise(d.ex[i],lr); // oslava až po dokončení cviku (F3-02)
+          else if(t&&t.length)toast("🏅 Nový rekord: "+t.map(recLow).join(", "))}
       }else{s.done=false;delete s.at}
       touchDraft();scheduleRender();break}
     case "delSet":d.ex[i].sets.splice(j,1);touchDraft();scheduleRender();break;
@@ -1865,6 +1986,7 @@ document.addEventListener("click",ev=>{
       S.active=null;saveActive();restStop();closeSheet();
       toast("Trénink uložen");go("hist");
       sheetWorkout(Object.assign({id,mk:monthKey(w.start)},w),true);
+      if(S.cfg.recCel){const R=wRecs({id});if(R.length)celebrate(R,w.title+" · "+R.length+" "+plural(R.length,"rekord","rekordy","rekordů"),0)}
       break}
     case "discard":confirmSheet("Zahodit trénink?","Rozdělaný trénink se smaže a neuloží.","Zahodit","discardOk");break;
     case "discardOk":S.active=null;saveActive();restStop();closeSheet();go("train");break;
@@ -1952,6 +2074,10 @@ document.addEventListener("click",ev=>{
     case "restOver":put("config/main",Object.assign({},S.cfg,{restOver:t.checked}));break;
     case "restNotify":put("config/main",Object.assign({},S.cfg,{restNotify:t.checked}));if(t.checked)notifAsk();restPost();break;
     case "notifAsk":notifAsk();break;
+    case "recCel":put("config/main",Object.assign({},S.cfg,{recCel:t.checked}));break;
+    case "recSnd":put("config/main",Object.assign({},S.cfg,{recSnd:v}));if(v!=="off")celSound(true,v);break;
+    case "recSndPlay":celSound(true,v);break;
+    case "recTry":celebrate([{exId:"",type:"e1rm",v:100,prev:95}],"Ukázka",CEL_AUTO);break;
     case "notifTest":restTest();break;
     case "restLog":sheetRestLog();break;
     case "restLogClear":if(window.caches)caches.delete(REST_LOG).then(sheetRestLog);break;
@@ -2010,7 +2136,7 @@ const Nav={pos:0,top:0,ignore:false,exit:false,wait:false};
 // kolik stisků Zpět zbývá na hlavní obrazovku Tréninku
 function navDepth(){
   const r=S.route,top=S.nav[S.nav.length-1];
-  return (sheetNav?sheetNav.lv:0)+(r==="exd"||r==="edit"?1+(top?top.d:1):r==="train"?0:1);
+  return (celEl?1:0)+(sheetNav?sheetNav.lv:0)+(r==="exd"||r==="edit"?1+(top?top.d:1):r==="train"?0:1);
 }
 // místo, kam se vrátit ze stránky cviku nebo z úpravy (i s otevřeným panelem a posunem stránky)
 function navFrame(){return {route:S.route,re:sheetNav&&sheetNav.re,y:window.scrollY,d:navDepth()}}
@@ -2018,6 +2144,7 @@ const edChanged=()=>!!S.editDraft&&JSON.stringify(S.editDraft)!==S.editOrig; // 
 function goTab(v){S.exDetail=null;S.editDraft=null;if(v==="hist"&&S.route!=="hist")S.calM=0;if(v==="ex"&&S.route!=="ex"&&S.route!=="exd"){S.exlQ="";S.exlLimit=0}go(v)}
 function goEdit(){const f=navFrame();closeSheet();S.nav.push(f);S.editOrig=JSON.stringify(S.editDraft);go("edit")}
 function navBack(force){
+  if(celEl){celClose();return true}
   if(sheetNav){sheetNav.back();return true}
   const r=S.route;
   if(r==="edit"&&!force&&edChanged()){confirmSheet("Zahodit změny?","Neuložené změny se ztratí.","Zahodit","edDiscard");return true}
