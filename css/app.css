@@ -746,6 +746,13 @@ select.inp {
   font-size: var(--fs-sm);
   line-height: 1.35;
 }
+/* F2-02: fitka u ostatních šablon */
+.tpl p.tpl-gyms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
 .kpis {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
