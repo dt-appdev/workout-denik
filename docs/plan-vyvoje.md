@@ -48,7 +48,8 @@ Aktuální pořadí dalších úloh (zhodnoceno 24. 9. 2026, má přednost před
 5. **F1-03** Velká tlačítka +/− – nejužitečnější zbylá úloha fáze 1 (ovládání jednou rukou).
 6. **F0-08, F0-09** Zabezpečení – pojistky, nejpozději před F2-05 (vlastní fotky).
 7. **F3-09** Uklidit Nastavení – před fází 5, která přidá další volby.
-8. Dál podle fází: zbytek fáze 1 (F1-06, F1-07, F1-08), pak fáze 2, 3, 4 a 5.
+8. **F3-11** Jednotná stupnice písma – spolu s F3-09 nebo před ní (úklid Nastavení tak rovnou použije nové velikosti).
+9. Dál podle fází: zbytek fáze 1 (F1-06, F1-07, F1-08), pak fáze 2, 3, 4 a 5.
 
 ```mermaid
 flowchart LR
@@ -85,7 +86,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 
 - [x] **F1-01** „Minule" u každé série: hodnoty z posledního tréninku v tomtéž fitku, předvyplněné.
 - [x] **F1-02** Displej nezhasne během tréninku (Wake Lock).
-- [ ] **F1-03** Velká tlačítka +/− pro váhu a opakování, ovládání jednou rukou.
+- [x] **F1-03** Velká tlačítka +/− pro váhu a opakování, ovládání jednou rukou.
 - [x] **F1-04** Časovač počítaný z času startu (nevypadne na pozadí) a vibrace na konci pauzy.
 - [x] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče.
 - [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05).
@@ -117,6 +118,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F3-08** Jednotky v grafech statistik na Y-ose, čas v hodinách (0:00), objem v kg. 
 - [ ] **F3-09** Uklidit Nastavení: voleb přibývá a stránka je dlouhá. Navrhnout přehlednější uspořádání (např. rozcestník se skupinami Fitka, Trénink, Vzhled, Data a záloha, O aplikaci, každá skupina na vlastní podstránce, nebo sbalitelné sekce).
 - [x] **F3-10** Oprava (chyba): stránka cviku → Statistiky se u cviku na čas (plank) nebo na vzdálenost (běh) nevykreslí, obrazovka zůstane prázdná. Příčina: výchozí graf „Odh. 1RM“ (`S.detailMetric = "e1rm"`) tyhle cviky nemají a náhradní volba ve `vExDetail` vybere zase „e1rm“. Oprava: náhradou vzít první graf, který cvik má. Nalezeno při F0-10, je i ve vydané verzi.
+- [ ] **F3-11** Jednotná stupnice písma (vzniklo u F1-03): ve stylech je dnes 23 různých velikostí písma (10,5–88 px), pevné jsou jen běžný text 15 px, `.small` 13 px a `.xs` 12 px, zbytek vznikal podle oka a často je skoro stejný (12 a 12,5, 14 a 14,5, 19–22 px). Zavést pár pojmenovaných velikostí jako proměnné v `:root` (např. drobný 12, malý 13, běžný 15, nadpis 18, velký nadpis 22, velké číslo 28 a víc), převést na ně celou appku a zapsat pravidlo do CLAUDE.md, aby nové funkce používaly jen je. Vzhled se má změnit co nejméně, jen sjednotit.
 
 
 ### Fáze 4 – Chytré funkce
@@ -202,6 +204,8 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 | Datum | Úloha | Poznámka |
 |---|---|---|
 | 24. 9. 2026 | F0-08 | Pravidla zabezpečení stránky (Content-Security-Policy v `index.html`): skripty, písma, odesílání dat, manifest a service worker jen z vlastních souborů, obrázky navíc z `raw.githubusercontent.com` (náhledy free-exercise-db), vložené objekty, formuláře a změna základní adresy zakázané. Styly zapsané přímo u prvků zůstávají povolené (`'unsafe-inline'` jen pro styly, přepis 118 míst by nic podstatného nepřinesl). `onerror` u náhledu fotky nahrazený společným posluchačem (sekce „pravidla zabezpečení“ v `js/app.js`). Testovací verze a lokální spuštění ukážou hlášku, když pravidla něco zablokují. Úloha „kontrola“ v GitHub Actions odmítne PR s kódem přímo v HTML (`onclick=`, `javascript:` …). Pro F2-05 (vlastní fotky) a F4-08 (obrázek souhrnu) bude potřeba přidat do `img-src` `blob:`. |
+| 24. 9. 2026 | – | Do plánu přidána úloha F3-11 (jednotná stupnice písma), zařazená k F3-09. Vzniklo u F1-03: v krokovači byl řádek „Série … · minule“ po zvětšení panelu 1,5× větší než běžný text. |
+| 24. 9. 2026 | F1-03 | Krokovač: v rozdělaném tréninku klepnutí na kg, opakování, čas nebo km neotevře klávesnici, ale dole panel s tlačítky − a + pro všechny hodnoty série pod sebou (podržení mění hodnotu dál). Začíná se od zapsané hodnoty, u prázdného políčka od šedé hodnoty z minula; upravovaná série je v tabulce zvýrazněná a vidět nad panelem. Krok se mění jedním tlačítkem dokola: kg 0,5 → 1 → 1,25 → 2,5 → 5 → 10 (výchozí 2,5), čas 1 → 5 → 30 s (výchozí 5), km 0,1 → 0,5 → 1; pamatuje se pro každý cvik (vázaný cvik zvlášť pro každé fitko), jen v telefonu. Opakování po 1. „Napsat“ otevře klávesnici v políčku, „✓ Série hotová“ odškrtne sérii se vším jako ✓ (kontrola čísel, velký skok, rekord, pauza) a panel zavře. Chyba nebo „Opravit“ u velkého skoku otevře krokovač. Nastavení → Zadávání čísel v tréninku: vypínač „Tlačítka +/−“ (výchozí zapnuto, `stepper` v `config/main`). Úprava uloženého tréninku a šablony beze změny. Formát zálohy beze změny. |
 | 24. 9. 2026 | F3-10 | Oprava: stránka cviku → Statistiky se u cviků na čas (plank) a na vzdálenost (běh) zase vykreslí. Když cvik nemá vybraný graf (např. „Odh. 1RM“), ukáže se první graf, který má (Nejdelší výdrž, Nejdelší). Cviky s váhou beze změny. Data ani formát zálohy beze změny. |
 | 24. 9. 2026 | F0-10 | Čitelný kód, v appce se nic nemění. `js/app.js`, `css/app.css`, `sw.js` a `js/pwa.js` naformátované podle pravidel v CLAUDE.md: jeden příkaz na řádek, `if`/`for` ve složených závorkách, řádky do cca 110 znaků, CSS jedna vlastnost na řádek. HTML se skládá šablonovými řetězci rozloženými podle struktury HTML (nový řádek jen tam, kde nemůže změnit vzhled, jinak je šablona rozdělená na dvě spojené přes „+“). Nadpisy sekcí česky, komentáře nad nejasnými funkcemi datové vrstvy, „minule“, rekordů, tlačítka Zpět a zálohy. Ověřeno: struktura kódu i všechny texty shodné s původní verzí (až na zlomy řádků) a průchod appkou v prohlížeči (140 obrazovek a panelů) se shodným obsahem i rozvržením. Soubor `.git-blame-ignore-revs`, aby GitHub v historii řádků formátovací commity přeskočil. `app.js` má teď asi 8 400 řádků místo 3 000 (stejný kód, víc řádků). Při ověřování nalezena starší chyba, zapsaná jako F3-10 (Statistiky cviku na čas a vzdálenost se nevykreslí). |
 | 24. 9. 2026 | F1-02 | Displej nezhasne během pauzy: nový vypínač v Nastavení → Odpočinek mezi sériemi (výchozí vypnuto). Během odpočinku a přečasu v rozdělaném tréninku drží appka displej zapnutý (Wake Lock, jen když je appka na očích; po návratu z jiné aplikace se obnoví sám). Po 10 min bez dotyku displej zhasne jako obvykle. Pod 15 % baterie bez nabíječky se funkce dočasně vypne a Nastavení to ukáže. Druhý vypínač „Po 30 s ztmavit obrazovku“ (výchozí zapnuto): černá obrazovka jen s odpočtem a dalším cvikem, po konci pauzy červený přečas; klepnutí ji schová a nic pod ní nezmáčkne. V testovací verzi se události zámku zapisují do Záznamu oznámení. Formát zálohy beze změny, v nastavení přibyly `screenOn` a `screenDim` s výchozí hodnotou. |

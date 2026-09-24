@@ -205,6 +205,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (např. F1-03, F1-08, F4-04) vždy přes stejná pravidla. Uložené číslo do políčka přes `numStr` (nejvýš 2 desetinná
   místa). ✓ série = `toggleSetDone`; velký nárůst proti minulé sérii (`JUMP`, `setJump`) se ptá přes `sheetJump`,
   potvrzení `s.jumpOk` platí do změny hodnoty a neukládá se.
+- Krokovač (F1-03, sekce „KROKOVAČ“): v rozdělaném tréninku se zapnutým `S.cfg.stepper` (výchozí zapnuto) jsou
+  políčka série `readonly` s `data-act="kk"` a klepnutí otevře `sheetStepper(i, j, f)` (panel s třídou `kk` přes
+  `openSheet(…, nav.cls)`, stav `kk`, řádek `tr.kk-on`). − / + (`data-kk`, `kkPress`, podržení opakuje) počítá od hodnoty,
+  jinak od šedého předvyplnění (`kkBase`), meze z `NUM_RULES`. Kroky `STEPS` (kg, sec, km; opakování 1) se pamatují
+  v `Local` `kkStep` pro cvik (vázaný i pro fitko). „Napsat“ = `kkKeyboard` (políčko `kkKbd` bez readonly do opuštění),
+  „Série hotová“ = `toggleSetDone`. `focusInput` u políčka s krokovačem otevře panel místo klávesnice.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
