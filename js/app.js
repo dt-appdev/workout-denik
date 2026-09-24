@@ -2846,9 +2846,10 @@
   /* ---------- ŠABLONY PODLE FITKA (F2-02) ----------
      Šablona má t.gyms = seznam fitek, kam patří ([] = do všech fitek, i u starších šablon). Na úvodní
      obrazovce nahoře šablony vybraného fitka (curGym) a šablony bez fitka, ostatní až po tlačítku
-     „Zobrazit další“ jako v Historii (tplOther, po otevření appky a změně fitka znovu skryté). Smazané fitko se ze šablon odebere (delGym),
-     fitka, která už neexistují, se navíc nikdy nepočítají (tplGyms). */
-  let tplOther = false; // ukázané ostatní šablony (klepnutí na „Zobrazit další“)
+     „Ostatní šablony“ (jako „Zobrazit další“ v Historii; tplOther, po otevření appky a změně fitka
+     znovu skryté). Smazané fitko se ze šablon odebere (delGym), fitka, která už neexistují, se navíc
+     nikdy nepočítají (tplGyms). */
+  let tplOther = false; // ukázané ostatní šablony (klepnutí na tlačítko „Ostatní šablony“)
   // doplní šablonám seznam fitek (starší šablony ho nemají); items = {id: šablona}
   function tplNorm(items) {
     const out = {};
@@ -2866,7 +2867,7 @@
     const gyms = tplGyms(t);
     return !gyms.length || gyms.includes(gymId);
   }
-  // seznam šablon na úvodní obrazovce: šablony vybraného fitka, pod nimi ostatní po „Zobrazit další“
+  // šablony na úvodní obrazovce: šablony vybraného fitka, pod nimi ostatní po tlačítku „Ostatní šablony“
   function vHomeTpls(all) {
     const gymId = curGym();
     const tpls = Object.entries(S.templates).sort(
@@ -2888,13 +2889,13 @@
     for (const [id, t] of here) {
       h += tplCard(id, t, all, gymId);
     }
-    // ostatní šablony až po „Zobrazit další“ (jako v Historii), bez šablon pro toto fitko hned
+    // ostatní šablony až po tlačítku (jako „Zobrazit další“ v Historii), bez šablon pro toto fitko hned
     if (other.length && (tplOther || !here.length)) {
       for (const [id, t] of other) {
         h += tplCard(id, t, all, null);
       }
     } else if (other.length) {
-      h += '<button class="btn block" data-act="tplOther">Zobrazit další</button>';
+      h += '<button class="btn block" data-act="tplOther">Ostatní šablony</button>';
     }
     h += "</div></section>";
     return h;
