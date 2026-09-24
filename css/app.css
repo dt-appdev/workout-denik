@@ -2258,6 +2258,9 @@ textarea.inp {
   gap: 6px 12px;
   margin: 14px 2px 0;
 }
+.hm-lg > .xs {
+  flex-basis: 100%;
+}
 .hm-li {
   display: flex;
   align-items: center;
