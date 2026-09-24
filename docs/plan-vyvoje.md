@@ -108,6 +108,22 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F4-08** Sdílení souhrnu tréninku jako obrázek.
 - [ ] **F4-09** Export do CSV pro Excel.
 
+
+### Fáze 5 – Motivace
+
+Předpoklad: F3-02 (oslava rekordu). Vše se počítá z uložených tréninků, nic nového se neukládá (kromě nastavení). Každá funkce jde vypnout, volby patří do jedné sekce Nastavení „Motivace“ (viz F3-09). Žádná oznámení na pozadí a žádné výčitky („ztratíš streak“).
+
+- [ ] **F5-01** Kolik chybí na rekord: u série v rozdělaném tréninku drobná nápověda, co je potřeba na nový rekord (např. „🏅 8 opak. = nový 1RM“, „85 kg = max. zátěž“). Navazuje na F4-01.
+- [ ] **F5-02** Týdenní cíl: v Nastavení počet tréninků za týden (např. 3), na obrazovce Trénink kolečko „2 / 3 tento týden“, streak počítá týdny se splněným cílem (dnes `calStreak` = týdny aspoň s 1 tréninkem).
+- [ ] **F5-03** Milníky (odznaky): 10./50./100. trénink, N týdnů v řadě, celkem zvednuto 10/100 t, první trénink v novém fitku… Při dosažení oslava jako u rekordu (odznak místo medaile), ve Statistikách nástěnka se získanými i zamčenými odznaky.
+- [ ] **F5-04** Pokrok v čase: karta „Před rokem jsi na bench dal 60 kg, dnes 85 kg (+42 %)“ u nejčastějších cviků (Statistiky, případně stránka cviku).
+- [ ] **F5-05** Měsíční shrnutí: na začátku měsíce karta za minulý měsíc (tréninky, rekordy, nejlepší cvik, porovnání s předchozím měsícem), na konci roku „Rok v posilovně“.
+- [ ] **F5-06** Kluby síly: odznaky „Klub 100 kg bench“, „bench = tělesná hmotnost“ apod. (tělesnou hmotnost appka zná).
+- [ ] **F5-07** Objem obrazně: „Tento měsíc jsi zvedl 42 t, to jsou 3 autobusy.“
+- [ ] **F5-08** Osobní výzvy: appka navrhne výzvu podle průměru (např. „12 tréninků v říjnu“, „+10 % objemu nohou“), průběh na obrazovce Trénink.
+- [ ] **F5-09** Zanedbaná partie: nenápadná informace na obrazovce Trénink („Nohy naposledy před 10 dny“), jen v appce, bez oznámení. Navazuje na skupiny partií (F3-01) a radar (F3-04).
+
+
 ## Co neděláme
 
 | Nápad | Proč ne |
@@ -116,6 +132,7 @@ Předpoklad: F0-02 (svalové partie).
 | Sledování jídla a příjmu kalorií | Samostatná velká aplikace, na to existují specializované appky. |
 | Napojení na hodinky / Health Connect | Z webové appky nedostupné, jen z nativní aplikace. |
 | Cloud, server, synchronizace dat | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01. (GitHub slouží jen pro kód a hosting.) |
+| XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
 
 Odloženo (vrátit se, až bude fáze 3 hotová):
 
@@ -147,6 +164,9 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
 | F3-04 | 6 hlavních partií, nebo jemnější dělení? | 6 partií |
 | vše | Co z původního zadání už appka umí (tmavý režim, časovač, měření)? | Ověřeno 23. 9.: tmavý režim, časovač se zvukem a ±15 s i tělesná měření appka už umí |
+| F5-02 | Počítat do týdenního cíle všechna fitka? Co když cíl změním v průběhu? | Všechna fitka; změna cíle platí od aktuálního týdne, starší týdny se hodnotí podle cíle, který tehdy platil (nebo zjednodušeně podle aktuálního). |
+| F5-03 | Které milníky a kolik jich? Ukazovat zamčené odznaky? | Začít s 10–15 odznaky; zamčené ukazovat šedě i s tím, kolik zbývá. |
+| F5-09 | Po kolika dnech je partie „zanedbaná“? | 7 dní u hlavních skupin, jde vypnout. |
 
 ## Log
 
