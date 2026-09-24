@@ -2198,6 +2198,77 @@ textarea.inp {
   color: var(--ink);
 }
 
+/* ---------- roční heatmapa (F3-07) ---------- */
+/* --hm = barva (barva appky nebo fitka), odstíny hm1–hm4 se míchají s pozadím karty */
+.hm {
+  padding: 8px 10px 12px;
+}
+.hm-y {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 12px;
+}
+.hm-t {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin: 0 0 4px 1px;
+}
+.hm-t small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.hm-g {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.hm-d {
+  display: block;
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  border-radius: 3px;
+  background: var(--line);
+}
+.hm-d.fut {
+  background: none;
+}
+.hm-d.today {
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+.hm-d.hm1 {
+  background: color-mix(in srgb, var(--hm) 36%, var(--surface));
+}
+.hm-d.hm2 {
+  background: color-mix(in srgb, var(--hm) 60%, var(--surface));
+}
+.hm-d.hm3 {
+  background: color-mix(in srgb, var(--hm) 82%, var(--surface));
+}
+.hm-d.hm4 {
+  background: var(--hm);
+}
+.hm-lg {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 14px 2px 0;
+}
+.hm-li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.hm-li .hm-d {
+  width: 13px;
+}
+
 /* ---------- oslava rekordu (F3-02) ---------- */
 .cel {
   position: fixed;
