@@ -862,8 +862,6 @@
     bodyRange: "all",
     histView: lsGet("histView", "cal") === "list" ? "list" : "cal",
     calM: 0, // Historie: kalendář (výchozí) / seznam (F3-06), zobrazený měsíc kalendáře (0 = aktuální)
-    heatOff: 0, // Statistiky: roční heatmapa (F3-07), o kolik let zpět (0 = posledních 12 měsíců)
-    heatM: lsGet("heatM", "vol"), // údaj heatmapy (HEAT_M)
     selGym: null,
   };
   let downloads = null,
@@ -3989,10 +3987,9 @@
     </div>`;
     return h;
   }
-  // klepnutí na den: jedna věc se otevře rovnou, víc (tréninky, měření) = výběr;
-  // g = filtr fitek (kalendář v Historii, heatmapa ve Statistikách)
-  function sheetCalDay(k, noanim, g = S.histGym) {
-    const ws = wByDay(derive().all.filter((w) => g === "all" || w.gymId === g))[k] || [],
+  // klepnutí na den: jedna věc se otevře rovnou, víc (tréninky, měření) = výběr
+  function sheetCalDay(k, noanim) {
+    const ws = wByDay(derive().all.filter((w) => S.histGym === "all" || w.gymId === S.histGym))[k] || [],
       bs = bodyByDay()[k] || [];
     if (!ws.length && !bs.length) {
       closeSheet();
@@ -4008,8 +4005,7 @@
     }
     let b = '<div class="stack" style="gap:8px">';
     for (const w of ws) {
-      b += `<button class="hw" data-act="calW" data-v="${esc(w.id)}" data-m="${w.mk}" data-k="${k}"
-          data-g="${esc(g)}">
+      b += `<button class="hw" data-act="calW" data-v="${esc(w.id)}" data-m="${w.mk}" data-k="${k}">
         <div class="row">
           <h3 class="grow">${esc(w.title)}</h3>
           <span class="pill">
@@ -4026,8 +4022,7 @@
       </button>`;
     }
     for (const x of bs) {
-      b += `<button class="hw" data-act="calBody" data-v="${esc(x.id)}" data-k="${k}"
-          data-g="${esc(g)}">
+      b += `<button class="hw" data-act="calBody" data-v="${esc(x.id)}" data-k="${k}">
         <div class="row"><h3 class="grow"><i class="cal-b"></i> Měření</h3></div>
         <div class="line num">
           ${BODY_F.filter(([f]) => x[f] !== undefined && x[f] !== null && x[f] !== "")
@@ -4080,225 +4075,6 @@
       },
       { passive: true },
     );
-  }
-
-  /* ---------- ROČNÍ HEATMAPA (F3-07) ----------
-     Statistiky → Rok v tréninku: 12 malých měsíců (3 × 4), čtvereček = den, barva podle počtu pracovních
-     sérií (víc tréninků v jednom dni se sečte, zahřívací série se nepočítají). 4 odstíny podle čtvrtin
-     vlastních dní s tréninkem v zobrazeném období (heatLevel), legenda ukáže, kolik sérií který odstín
-     znamená. Řídí se filtrem fitek Statistik, na volbě období nezávisí. Výchozí posledních 12 měsíců
-     (S.heatOff = 0, při příchodu do Statistik se vynuluje), šipky posunou o rok. Klepnutí na den otevře
-     trénink jako v kalendáři (sheetCalDay s fitkem ze Statistik). Barva: všechna fitka = barva appky,
-     vybrané fitko = jeho barva. */
-  // údaje, podle kterých se barví: hodnota za trénink, číslo v legendě, nadpis legendy, celkem za období
-  const HEAT_M = {
-    sets: {
-      tab: "Série",
-      of: (w) => wSets(w),
-      lg: (v) => fmtInt(v),
-      title: "Sérií za den",
-      total: (v) => `<b>${fmtInt(v)}</b> ${plural(v, "série", "série", "sérií")}`,
-    },
-    vol: {
-      tab: "Objem",
-      of: (w) => wVol(w),
-      lg: (v) => fmtKg(Math.round(v / 100) / 10),
-      title: "Objem za den (t)",
-      total: (v) => `<b>${fmtVol(v)}</b> zvednuto`,
-    },
-    dur: {
-      tab: "Čas",
-      of: (w) => wDur(w),
-      lg: (v) => fmtInt(Math.round(v / 60000)),
-      title: "Minut za den",
-      total: (v) => `<b>${fmtHours(v)}</b> v posilovně`,
-    },
-    reps: {
-      tab: "Opak.",
-      of: (w) => wReps(w),
-      lg: (v) => fmtInt(v),
-      title: "Opakování za den",
-      total: (v) => `<b>${fmtInt(v)}</b> opakování`,
-    },
-  };
-  // počet opakování v pracovních sériích (cviky na čas a vzdálenost opakování nemají)
-  function wReps(w) {
-    let n = 0;
-    for (const e of w.ex || []) {
-      for (const x of e.sets) {
-        if (isWork(x.t)) {
-          n += +x.reps || 0;
-        }
-      }
-    }
-    return n;
-  }
-  // odstín 1–4 pro počet sérií: horní hranice 1.–3. odstínu jsou čtvrtiny, nejvíc sérií = vždy nejsytější
-  function heatLevel(vals) {
-    const sorted = vals.filter((v) => v > 0).sort((a, b) => a - b);
-    if (!sorted.length) return () => 1;
-    const quart = (p) => sorted[Math.max(0, Math.ceil(p * sorted.length) - 1)];
-    const edges = [quart(0.25), quart(0.5), quart(0.75)],
-      max = sorted[sorted.length - 1];
-    return (v) => {
-      if (v >= max) return 4;
-      if (v <= edges[0]) return 1;
-      if (v <= edges[1]) return 2;
-      if (v <= edges[2]) return 3;
-      return 4;
-    };
-  }
-  function vHeat(ws, g) {
-    const now = new Date(),
-      off = S.heatOff || 0,
-      y = now.getFullYear() - off,
-      mo = now.getMonth();
-    const start = new Date(y, mo - 11, 1).getTime(),
-      end = new Date(y, mo + 1, 1).getTime(),
-      endToday = dayStart(now) + DAY,
-      today = dayKey(now);
-    const byDay = wByDay(ws.filter((w) => w.start >= start && w.start < end));
-    const metric = HEAT_M[S.heatM] || HEAT_M.sets;
-    const sets = {};
-    for (const k in byDay) {
-      sets[k] = byDay[k].reduce((n, w) => n + metric.of(w), 0);
-    }
-    const level = heatLevel(Object.values(sets));
-    const color = g === "all" ? "var(--accent)" : gymColor(g);
-    const older = ws.length && ws[ws.length - 1].start < start;
-    const period = (t) => MONTHS[new Date(t).getMonth()] + " " + new Date(t).getFullYear();
-    const title = off
-      ? `<button class="cal-t" data-act="heatY" data-v="0" title="Zpět na posledních 12 měsíců">
-          ${period(start)} – ${period(end - DAY)} <small>↺</small>
-        </button>`
-      : '<b class="cal-t">Posledních 12 měsíců</b>';
-    let h = `<div class="card hm" data-heat="1" style="--hm:${color}">
-      <div class="cal-nav">
-        <button class="iconbtn" data-act="heatY" data-v="1" aria-label="O rok zpět"
-            ${older ? "" : "disabled"}>
-          ‹
-        </button>
-        ${title}
-        <button class="iconbtn" data-act="heatY" data-v="-1" aria-label="O rok dopředu"
-            ${off ? "" : "disabled"}>
-          ›
-        </button>
-      </div>
-      <div class="hm-y">`;
-    for (let i = 0; i < 12; i++) {
-      const m0 = new Date(y, mo - 11 + i, 1),
-        dim = new Date(m0.getFullYear(), m0.getMonth() + 1, 0).getDate();
-      // rok u prvního měsíce a u ledna
-      const yr = i === 0 || m0.getMonth() === 0 ? ` <small>${m0.getFullYear()}</small>` : "";
-      h += `<div class="hm-m">
-        <div class="hm-t">${MONTHS[m0.getMonth()]}${yr}</div>
-        <div class="hm-g">`;
-      for (let j = (m0.getDay() + 6) % 7; j > 0; j--) {
-        h += '<i class="hm-d fut"></i>';
-      }
-      for (let d = 1; d <= dim; d++) {
-        const t = new Date(m0.getFullYear(), m0.getMonth(), d).getTime(),
-          k = dayKey(t),
-          cls = "hm-d" + (k === today ? " today" : "");
-        if (t >= endToday) {
-          h += '<i class="hm-d fut"></i>';
-        } else if (byDay[k]) {
-          const n = sets[k];
-          const aria =
-            `${fmtDay(t)} ${m0.getFullYear()}: ${metric.title.toLowerCase()} ${metric.lg(n)}, ` +
-            byDay[k].map((w) => w.title).join(", ");
-          h +=
-            `<button class="${cls} hm${level(n)}" data-act="calDay" data-v="${k}" data-g="${esc(g)}"
-              aria-label="${esc(aria)}"></button>`;
-        } else {
-          h += `<i class="${cls}"></i>`;
-        }
-      }
-      h += "</div></div>";
-    }
-    h += "</div>";
-    // legenda: skutečné rozsahy sérií ve dnech s daným odstínem
-    const ranges = [1, 2, 3, 4].map(() => null);
-    for (const n of Object.values(sets)) {
-      const r = ranges[level(n) - 1] || (ranges[level(n) - 1] = [n, n]);
-      r[0] = Math.min(r[0], n);
-      r[1] = Math.max(r[1], n);
-    }
-    h +=
-      `<div class="hm-lg">
-      <span class="xs muted">${metric.title}</span>
-      ${ranges
-        .map(
-          (r, i) =>
-            `<span class="hm-li num">
-              <i class="hm-d hm${i + 1}"></i>${r ? heatRange(metric, r) : "–"}
-            </span>`,
-        )
-        .join("")}
-    </div>`;
-    const nW = Object.values(byDay).reduce((n, x) => n + x.length, 0),
-      nS = Object.values(sets).reduce((n, x) => n + x, 0),
-      nD = Object.keys(byDay).length;
-    h +=
-      `<div class="small muted num cal-sum">
-      ${
-        nW
-          ? `<b>${nW}</b> ${plural(nW, "trénink", "tréninky", "tréninků")} · <b>${nD}</b> ` +
-            `${plural(nD, "den", "dny", "dní")} s tréninkem · ${metric.total(nS)}`
-          : "V tomto období žádný trénink."
-      }
-    </div>`;
-    return h + "</div>";
-  }
-  // rozsah v legendě („5–11“), stejná čísla po zaokrouhlení jen jednou
-  function heatRange(metric, r) {
-    const lo = metric.lg(r[0]),
-      hi = metric.lg(r[1]);
-    return lo === hi ? lo : lo + "–" + hi;
-  }
-  function heatShift(v) {
-    S.heatOff = v ? Math.max(0, (S.heatOff || 0) + v) : 0;
-    scheduleRender();
-  }
-
-  // swipe po heatmapě: doleva novější rok, doprava starší (jako kalendář)
-  {
-    let x0 = null,
-      y0 = 0;
-    document.addEventListener(
-      "touchstart",
-      (e) => {
-        x0 =
-          e.touches.length === 1 && e.target.closest && e.target.closest("[data-heat]")
-            ? e.touches[0].clientX
-            : null;
-        if (x0 != null) {
-          y0 = e.touches[0].clientY;
-        }
-      },
-      { passive: true },
-    );
-    document.addEventListener(
-      "touchend",
-      (e) => {
-        if (x0 == null) return;
-        const t = e.changedTouches[0],
-          dx = t.clientX - x0,
-          dy = t.clientY - y0;
-        x0 = null;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-          heatSwipe(dx < 0 ? -1 : 1);
-        }
-      },
-      { passive: true },
-    );
-  }
-  // posun swipem jen tam, kam vedou šipky (starší rok jen se staršími tréninky)
-  function heatSwipe(v) {
-    const btn = document.querySelector(`[data-act="heatY"][data-v="${v}"]`);
-    if (btn && !btn.disabled) {
-      heatShift(v);
-    }
   }
 
   /* ---------- STATISTIKY ---------- */
@@ -4598,21 +4374,6 @@
           180,
         )}
       </div>
-    </section>`;
-    // roční heatmapa (F3-07)
-    h += `<section class="sec">
-      <div class="sec-h">
-        <h2>Rok v tréninku</h2>
-        <div class="seg">
-          ${Object.entries(HEAT_M)
-            .map(
-              ([k, x]) =>
-                `<button data-act="heatM" data-v="${k}" aria-pressed="${S.heatM === k}">${x.tab}</button>`,
-            )
-            .join("")}
-        </div>
-      </div>
-      ${vHeat(wsAll, g)}
     </section>`;
     // partie
     const mv = Object.entries(s.mus).sort((a, b) => b[1] - a[1]);
@@ -8719,15 +8480,7 @@
         calShift(+v);
         break;
       case "calDay":
-        sheetCalDay(v, false, t.dataset.g);
-        break;
-      case "heatM":
-        S.heatM = v;
-        lsSet("heatM", v);
-        scheduleRender();
-        break;
-      case "heatY":
-        heatShift(+v);
+        sheetCalDay(v);
         break;
       case "calActive":
         go("train");
@@ -8735,11 +8488,11 @@
       case "calW":
         sheetWorkout(Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]), false, {
           lv: 2,
-          back: () => sheetCalDay(t.dataset.k, true, t.dataset.g),
+          back: () => sheetCalDay(t.dataset.k, true),
         });
         break;
       case "calBody":
-        sheetBody(v, { lv: 2, back: () => sheetCalDay(t.dataset.k, true, t.dataset.g) });
+        sheetBody(v, { lv: 2, back: () => sheetCalDay(t.dataset.k, true) });
         break;
       case "histMore":
         S.histLimit = (S.histLimit || 40) + 40;
@@ -9372,9 +9125,6 @@
     S.editDraft = null;
     if (v === "hist" && S.route !== "hist") {
       S.calM = 0;
-    }
-    if (v === "stats" && S.route !== "stats") {
-      S.heatOff = 0;
     }
     if (v === "ex" && S.route !== "ex" && S.route !== "exd") {
       S.exlQ = "";

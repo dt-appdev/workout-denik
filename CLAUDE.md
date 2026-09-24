@@ -63,6 +63,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 | `icons/` | Ikony appky (PNG 192/512, maskable 512, apple-touch, SVG). `icons/test/` = oranžové ikony TEST pro testovací verze. |
 | `fonts/` | Písma Barlow a Barlow Condensed (OFL), lokálně kvůli offline. |
 | `docs/plan-vyvoje.md` | Plán vývoje, otevřené otázky, log. |
+| `docs/navrhy/` | Odložené návrhy: diskuse, rozhodnutí a náhledy úloh, ke kterým se možná vrátíme (např. `F3-07-heatmapa.md`). Při znovuotevření úlohy nejdřív přečíst. |
 | `puvodni/workout-denik.html` | Poslední verze artefaktu (verze 9). Jen pro referenci, needitovat. |
 | `.nojekyll` | GitHub Pages servíruje soubory tak, jak jsou (bez Jekyllu). |
 | `.git-blame-ignore-revs` | Commity, které jen přeformátovaly kód (F0-10); GitHub je v historii řádků přeskočí. |
@@ -191,10 +192,6 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   Pod kolečkem název tréninku, streak `calStreak` a volné dny `calRest` vždy ze všech fitek. Klepnutí `sheetCalDay`:
   jedna věc rovnou, víc = výběr, z něj `sheetWorkout`/`sheetBody` s `nav` zpět do výběru. Budoucí dny jsou neaktivní
   (místo pro F4-07).
-- Roční heatmapa (F3-07, sekce „ROČNÍ HEATMAPA“): oddíl „Rok v tréninku“ ve Statistikách, `vHeat(ws, g)` (tréninky
-  a fitko ze Statistik, na `S.statsRange` nezávisí). 12 měsíců končících `S.heatOff` let zpět (0 = posledních 12 měsíců,
-  `heatShift`, `goTab("stats")` ho vynuluje). Série za den přes `wByDay` + `wSets`, odstín `heatLevel` (čtvrtiny, maximum
-  vždy `hm4`), barva v CSS proměnné `--hm` (`--accent` / `gymColor`). Klepnutí `calDay` s `data-g` → `sheetCalDay(k, noanim, g)`.
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
   konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restAlert`
