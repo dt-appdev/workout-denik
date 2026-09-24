@@ -311,7 +311,7 @@ const Store={
 
 /* ---------- state ---------- */
 const S={
-  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCelEx:true,recCelW:true,recSnd:"fanfara"},
+  cfg:{gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,screenOn:false,screenDim:true,recCelEx:true,recCelW:true,recSnd:"fanfara"},
   exLib:exLoad({}), exV:0, exLegacy:null, templates:{}, months:{}, body:{},
   bk:{last:null,points:[]}, // config/backup: datum poslední zálohy do souboru + body obnovy
   active:Store.loadActive(),
@@ -381,7 +381,7 @@ const gymIdx=id=>{const i=S.cfg.gyms.findIndex(g=>g.id===id);return i<0?0:i};
 const gymColor=id=>{const g=S.cfg.gyms.find(g=>g.id===id);return "var(--s"+(g&&g.col?g.col:(gymIdx(id)%GYM_COLORS)+1)+")"};
 /* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
 function cfgNorm(c){
-  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,recCelEx:true,recCelW:true,recSnd:"fanfara"},c&&typeof c==="object"?c:{});
+  c=Object.assign({gyms:[],defaultGymId:null,restSec:120,restAlert:"both",restOver:true,restNotify:true,screenOn:false,screenDim:true,recCelEx:true,recCelW:true,recSnd:"fanfara"},c&&typeof c==="object"?c:{});
   c.gyms=(Array.isArray(c.gyms)?c.gyms:[]).filter(g=>g&&g.id).map((g,i)=>g.col>=1&&g.col<=GYM_COLORS?g:Object.assign({},g,{col:i%GYM_COLORS+1}));
   return c;
 }
@@ -1997,6 +1997,7 @@ function restSettings(){
     else if(ns==="default")h+='<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
     else h+='<div class="row"><span class="grow xs muted">Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.</span><button class="btn sm" data-act="notifTest">Vyzkoušet</button></div>';
     }
+  h+=wakeSettings();
   return h+'</div></section>';
 }
 
@@ -2052,7 +2053,11 @@ function restClearNotif(){if(notifState()!=="none")navigator.serviceWorker.ready
 /* zkouška z Nastavení: oznámení za 10 s, i když je appka na očích */
 function restTest(){navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage({type:"rest",end:Date.now()+10000,tag:REST_TAG+"-test",always:true,title:"Zkouška oznámení",body:"Takhle tě appka upozorní na konec pauzy.",vib:S.cfg.restAlert!=="sound"?REST_VIB:null})).catch(()=>{});toast("Oznámení přijde za 10 s")}
 function notifAsk(){if(notifState()!=="default")return;Local.set("notifAsked",true);Notification.requestPermission().then(()=>{restPost();scheduleRender()}).catch(()=>{})}
-function restSave(post){Local.set("rest",S.restEnd?{end:S.restEnd,total:S.restTotal,fired:!!S.restFired}:null);if(post!==false)restPost()}
+function restSave(post){
+  Local.set("rest",S.restEnd?{end:S.restEnd,total:S.restTotal,fired:!!S.restFired}:null);
+  if(post!==false)restPost();
+  wakeSync(); // pauza začala / skončila → zámek displeje (F1-02)
+}
 function restStart(){
   audioUnlock(); // klepnutí = povolení zvuku na později
   S.restTotal=S.cfg.restSec||120;S.restEnd=Date.now()+S.restTotal*1000;S.restFired=false;
@@ -2089,12 +2094,189 @@ function restTick(){
   if(left<=0&&!document.querySelector(".rest-in.over")){renderRest();return}
   if(c)c.textContent=restClock(left);if(b)b.style.width=Math.max(0,left/S.restTotal*100)+"%";
 }
-setInterval(restTick,500);
+setInterval(()=>{
+  restTick();
+  wakeSync(); // pojistka 10 min a ztmavení po 30 s (F1-02)
+},500);
 document.addEventListener("visibilitychange",()=>{
   if(S.restEnd&&S.active&&!S.restFired)restLog(document.hidden?"appka na pozadí / zhasnutý displej":"appka zpět na očích");
   if(document.hidden){visibleSince=Infinity;return}
   visibleSince=Date.now();restClearNotif();restTick(); // po návratu hned správný čas, staré oznámení pryč
 });
+
+/* ---------- displej během pauzy (F1-02) ----------
+   S.cfg.screenOn: během odpočinkové pauzy (i přečasu) v rozdělaném tréninku displej nezhasne
+   (Screen Wake Lock, jen když je appka na očích; Chrome zámek při skrytí appky sám pustí,
+   po návratu ho appka vezme znovu). Pojistka: po WAKE_IDLE bez dotyku se zámek pustí.
+   Baterie pod WAKE_BATT bez nabíječky: funkce dočasně neplatí, Nastavení to ukáže.
+   S.cfg.screenDim: po WAKE_DIM bez dotyku černá obrazovka jen s odpočtem (jas webová appka
+   měnit neumí; na OLED displeji černá šetří baterii). Klepnutí ji schová a nic pod ní nezmáčkne. */
+const WAKE_IDLE=10*60*1000, WAKE_DIM=30*1000, WAKE_BATT=0.15, WAKE_RETRY=30*1000;
+const wakeApi=!!(navigator.wakeLock&&navigator.wakeLock.request);
+let wakeLock=null;      // držený zámek (WakeLockSentinel)
+let wakeBusy=false;     // žádost o zámek právě běží
+let wakeFailAt=0;       // kdy telefon zámek naposledy odmítl
+let wakeTouch=Date.now(); // poslední dotyk (pro pojistku a ztmavení)
+let battery=null;       // stav baterie (navigator.getBattery), když ho prohlížeč umí
+let dimEl=null;         // černá obrazovka se odpočtem
+
+// baterie pod 15 % a telefon se nenabíjí
+const batteryLow=()=>!!battery&&!battery.charging&&battery.level<WAKE_BATT;
+
+// pauza v rozdělaném tréninku se zapnutou volbou, appka na očích, baterie v pořádku
+function wakeActive(){
+  return !!(S.cfg.screenOn&&S.active&&S.restEnd&&!document.hidden&&!batteryLow());
+}
+
+// srovná zámek displeje a ztmavení se stavem appky; volá se při změně pauzy a z restTick
+function wakeSync(){
+  const on=wakeActive();
+  const idle=Date.now()-wakeTouch;
+  const want=on&&idle<WAKE_IDLE;
+  if(want&&!wakeLock&&!wakeBusy&&wakeApi&&Date.now()-wakeFailAt>WAKE_RETRY){
+    wakeRequest();
+  }
+  if(!want&&wakeLock){
+    wakeRelease();
+  }
+  // ztmavení zůstane i po pojistce, displej pak zhasne podle Androidu
+  if(on&&S.cfg.screenDim&&idle>=WAKE_DIM){
+    dimShow();
+  }
+  else if(!on){
+    dimHide();
+  }
+  dimUpdate();
+}
+
+// požádá Chrome, aby displej nezhasl
+async function wakeRequest(){
+  wakeBusy=true;
+  try{
+    const lock=await navigator.wakeLock.request("screen");
+    wakeLock=lock;
+    lock.addEventListener("release",()=>{
+      if(wakeLock===lock)wakeLock=null;
+    });
+    restLog("displej: zámek zapnutý");
+    // mezitím se stav mohl změnit (pauza skončila, appka šla na pozadí)
+    if(!wakeActive())wakeRelease();
+  }catch(e){
+    wakeFailAt=Date.now();
+    restLog("displej: telefon zámek odmítl ("+(e&&e.name||"chyba")+")");
+  }
+  wakeBusy=false;
+}
+
+function wakeRelease(){
+  const lock=wakeLock;
+  wakeLock=null;
+  if(!lock)return;
+  lock.release().catch(()=>{});
+  restLog("displej: zámek puštěný");
+}
+
+// černá obrazovka se odpočtem (po WAKE_DIM bez dotyku)
+function dimShow(){
+  if(dimEl)return;
+  const el=document.createElement("div");
+  el.className="dim";
+  el.setAttribute("role","button");
+  el.setAttribute("aria-label","Zpět do appky");
+  el.innerHTML=`
+    <b class="dim-clock"></b>
+    <span class="dim-lab"></span>
+    <span class="dim-next"></span>
+    <span class="dim-hint">Klepni pro návrat</span>`;
+  // klepnutí jen schová ztmavení, do appky pod ním neprojde
+  el.addEventListener("click",ev=>{
+    ev.stopPropagation();
+    ev.preventDefault();
+    wakeTouch=Date.now();
+    dimHide();
+  });
+  el.addEventListener("touchmove",ev=>ev.preventDefault(),{passive:false});
+  document.body.appendChild(el);
+  dimEl=el;
+  dimUpdate();
+}
+
+function dimHide(){
+  if(!dimEl)return;
+  dimEl.remove();
+  dimEl=null;
+}
+
+// odpočet na černé obrazovce; po konci pauzy se zesvětlí
+function dimUpdate(){
+  if(!dimEl||!S.restEnd)return;
+  const left=(S.restEnd-Date.now())/1000;
+  const over=left<=0;
+  dimEl.classList.toggle("over",over);
+  dimEl.querySelector(".dim-clock").textContent=restClock(left);
+  dimEl.querySelector(".dim-lab").textContent=over?"Odpočinek skončil":"Odpočinek";
+  const next=restNext();
+  const nextEl=dimEl.querySelector(".dim-next");
+  if(nextEl.textContent!==next)nextEl.textContent=next;
+}
+
+// každý dotyk (i Zpět) = aktivita: obnoví pojistku a odloží ztmavení
+function wakeActivity(){
+  wakeTouch=Date.now();
+}
+document.addEventListener("pointerdown",wakeActivity,true);
+document.addEventListener("keydown",wakeActivity,true);
+window.addEventListener("popstate",()=>{
+  wakeActivity();
+  dimHide();
+});
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden)wakeActivity(); // návrat do appky = aktivita, ať hned nezčerná
+  wakeSync();
+});
+
+// stav baterie: pod 15 % se funkce dočasně vypne, v Nastavení je upozornění
+if(navigator.getBattery){
+  navigator.getBattery().then(b=>{
+    battery=b;
+    const onChange=()=>{
+      wakeSync();
+      if(S.route==="set")scheduleRender();
+    };
+    b.addEventListener("levelchange",onChange);
+    b.addEventListener("chargingchange",onChange);
+    onChange();
+  }).catch(()=>{});
+}
+
+/* Nastavení → vypínače pod Odpočinkem */
+function wakeSettings(){
+  const c=S.cfg;
+  let h=`
+    <label class="switch">
+      <input type="checkbox" data-act="screenOn" ${c.screenOn?"checked":""}${wakeApi?"":" disabled"}>
+      <span><b>Displej nezhasne během pauzy</b><br><span class="xs muted">Během odpočinku a přečasu
+        v rozdělaném tréninku zůstane displej zapnutý, pokud máš appku otevřenou. Když se ho 10 minut
+        nedotkneš, zhasne jako obvykle. Displej navíc spotřebuje trochu baterie.</span></span>
+    </label>`;
+  if(!wakeApi){
+    h+='<div class="xs muted">Tento prohlížeč neumí držet displej zapnutý.</div>';
+    return h;
+  }
+  if(!c.screenOn)return h;
+  h+=`
+    <label class="switch">
+      <input type="checkbox" data-act="screenDim" ${c.screenDim?"checked":""}>
+      <span><b>Po 30 s ztmavit obrazovku</b><br><span class="xs muted">Když se displeje 30 s nedotkneš,
+        zčerná a ukáže jen odpočet. Na displeji OLED to šetří baterii. Klepnutí vrátí appku.</span></span>
+    </label>`;
+  if(batteryLow()){
+    h+=`
+      <div class="banner" style="margin-top:0">Baterie je pod ${WAKE_BATT*100} %, displej teď během pauzy zhasne
+        jako obvykle. Znovu to začne fungovat nad ${WAKE_BATT*100} % nebo při nabíjení.</div>`;
+  }
+  return h;
+}
 
 /* ---------- charts ---------- */
 const CH={};let chN=0;
@@ -2376,6 +2558,10 @@ document.addEventListener("click",ev=>{
     case "restSec":{const cfg=Object.assign({},S.cfg,{restSec:+v});put("config/main",cfg);break}
     case "restAlert":put("config/main",Object.assign({},S.cfg,{restAlert:v}));restPost();break;
     case "restOver":put("config/main",Object.assign({},S.cfg,{restOver:t.checked}));break;
+    case "screenOn":case "screenDim":
+      put("config/main",Object.assign({},S.cfg,{[act]:t.checked}));
+      wakeSync();
+      break;
     case "restNotify":put("config/main",Object.assign({},S.cfg,{restNotify:t.checked}));if(t.checked)notifAsk();restPost();break;
     case "notifAsk":notifAsk();break;
     case "recCelEx":case "recCelW":put("config/main",Object.assign({},S.cfg,{[act]:t.checked}));break;
