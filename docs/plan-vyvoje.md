@@ -1,12 +1,4 @@
-# Workout deník – plán vývoje
-
-*Převedeno z dokumentu na claude.ai 23. 9. 2026 při přechodu na PWA + GitHub.*
-
-## Jak s plánem pracovat
-
-Jedna session v Claude Code = jedna úloha z plánu, označená ID (např. F1-01). Tento soubor je jediný zdroj pravdy o tom, co je hotové a co je na řadě.
-
-1. V Claude Code otevři repo a napiš ID úlohy, např. „Udělej F0-02 z docs/plan-vyvoje.md".
+ V Claude Code otevři repo a napiš ID úlohy, např. „Udělej F0-02 z docs/plan-vyvoje.md".
 2. Claude udělá změny ve vlastní větvi a otevře pull request.
 3. Otestuješ v telefonu, dáš Merge.
 4. Claude v rámci téhož PR zaškrtne úlohu a přidá řádek do logu na konci tohoto souboru.
@@ -96,6 +88,8 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F3-05** Radar v souhrnu po tréninku: volitelné, přepínatelné doplnění ke schématu postavy (F3-03), ne jeho náhrada.
 - [x] **F3-06** Kalendář (měsíc): kolečko v barvě fitka, pod ním název šablony, týdenní streak, počet volných dnů, klepnutí otevře detail, ikona u dne s měřením.
 - [ ] **F3-07** Roční heatmapa tréninků (barva podle počtu sérií).
+- [ ] **F3-08** Jednotky v grafech statistik na Y-ose, čas v hodinách (0:00), objem v kg. 
+
 
 ### Fáze 4 – Chytré funkce
 
