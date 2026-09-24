@@ -862,6 +862,17 @@ tr.done .cell {
   background: var(--fail-bg);
   color: var(--fail);
 }
+/* F0-09: co je špatně na hodnotě, pod polem ve formuláři (label.f) */
+.fmsg {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fail);
+}
+.fmsg:empty {
+  display: none;
+}
 .okb {
   width: 38px;
   height: 34px;
