@@ -436,6 +436,73 @@ a.btn {
 .gymmv .iconbtn {
   width: 34px;
 }
+/* rozcestník Nastavení (F3-09): řádek = skupina, oranžový = je čas zálohovat */
+.setlist {
+  padding: 0;
+  overflow: hidden;
+}
+.setrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.setrow + .setrow {
+  border-top: 1px solid var(--line);
+}
+.setrow:active {
+  background: var(--surface-2);
+}
+.setrow b {
+  display: block;
+  font-size: 16px;
+}
+.setrow .xs {
+  display: block;
+  margin-top: 2px;
+}
+.setrow-ic {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.setrow-go {
+  flex: none;
+  display: flex;
+  color: var(--ink-3);
+}
+.setrow-ic svg,
+.setrow-go svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.setrow-ic svg .fill {
+  fill: currentColor;
+}
+.setrow.warn .setrow-ic {
+  background: var(--warm-bg);
+  color: var(--warm);
+}
+.setrow.warn .xs {
+  color: var(--warm);
+}
 /* výběr barvy fitka (F3-01): pod obsazenou barvou název fitka */
 .cpick {
   display: grid;
