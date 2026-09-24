@@ -234,6 +234,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `go("train")` z jiné záložky a start appky nastaví `render.toEx` a `render` posune na kartu přes `edScroll`
   (`render.restoreY` má přednost). Nový způsob změny cviku mimo `data-i` (např. F2-03 swipe) má volat `edMark`.
   Enter v jednořádkovém textovém poli (ne `data-num`) schová klávesnici (globální `keydown`).
+- Zahřívací série z minula (F1-08, sekce „ZAHŘÍVACÍ SÉRIE Z MINULA“): v krokovači u zahřívací série cviku `wr` tlačítko
+  `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
+  série z minula bez zahřívacích (`warmMax`, přes `draftLast`), zaokrouhleno na krok `kkStep` (`warmKg`). Zápis přes
+  `kkSet` (stejně jako − / +), bez záznamu z minula se tlačítko neukáže.
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
