@@ -111,14 +111,16 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Tlačítka (F2-07): akce v nadpisu sekce (`.sec-h`) jen jako ikona v rámečku malého tlačítka `icoBtn(act, ikona,
   popis, v)` (ikony v `IC`, popis pro čtečku). Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách
   a panelech. Krátký formulář (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu
-  cviků (trénink, šablona, Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“.
+  cviků (trénink, šablona, Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“. Zobrazení
+  jedné věci (cvik, uložený trénink F3-19) = stránka se šipkou ←. Stejné akce vypadají všude stejně (výběr cviků
+  má + a zeměkouli jako záložka Cviky, F3-18).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
   dostane `nav.lv` (hloubka) a `nav.back` (krok o úroveň), dynamický panel `nav.re`
-  (znovu otevření). Nová podstránka (jako `exd`, `edit`, `exed`) uloží místo návratu
-  `S.nav.push(navFrame())` a musí se doplnit do `navBack` a `navDepth`. Šipky ←
-  v appce volají `navBack()`. Záznamy historie se přidávají jen po klepnutí (`navEnsure`).
+  (znovu otevření). Nová podstránka (jako `exd`, `edit`, `exed`, `wd`) uloží místo návratu
+  `S.nav.push(navFrame())` a musí se doplnit do `navBack`, `navDepth` a `go` (stránky, které nemažou `S.nav`).
+  Šipky ← v appce volají `navBack()`. Záznamy historie se přidávají jen po klepnutí (`navEnsure`).
 
 ## Datová vrstva (js/app.js, sekce „DATOVÁ VRSTVA")
 
@@ -220,17 +222,19 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `.btn.off`, klepnout jde, ukáže hlášku); stará šablona s duplikátem projde bez změny názvu
   a fitek). Uložit jako šablonu (`wToTpl`) při shodě `sheetTplClash` (stav `tplAsk`: `tplAskNew` / `tplAskOver` /
   `tplAskBack`). Každé nové místo, které vytváří šablonu, má volný název hlídat stejně; stávající duplikáty zůstávají.
-- Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“): panel `sheetWorkout(w, justSaved, nav)` po uložení
-  i z Historie. Minulý běh stejného tréninku `prevRun` (pravidlo `sameRun`: šablona, jinak název bez
-  automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné fitko), u cviku poslední výskyt `prevEx`
-  (vázaný cvik jen ve stejném fitku). Klepnutí na „Porovnáno s…“ = panel v panelu (`prevW`, `wOpen`,
-  `wBack`). Procvičené partie `wMuscles` (pomocná partie = půl série), postava přes `musFigs`
-  (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
+- Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“ a „STRÁNKA TRÉNINKU“): od F3-19 stránka (route `wd`, `vWorkout`,
+  obsah `wSummary`), otevírat jen přes `openWorkout(w, justSaved)` (po uložení „Hotovo · …“ s Dokončit, z Historie,
+  kalendáře, „Porovnáno s…“ = `prevW`). `S.wDetail` = `{id, mk, saved}`, `navFrame` si ho pamatuje (`f.wd`), takže Zpět
+  vrátí i předchozí trénink; po uložení úpravy (`saveEdit`) zpět na stránku s novým `mk`. Minulý běh stejného tréninku
+  `prevRun` (pravidlo `sameRun`: šablona, jinak název bez automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné
+  fitko), u cviku poslední výskyt `prevEx` (vázaný cvik jen ve stejném fitku). Procvičené partie `wMuscles` (pomocná
+  partie = půl série), postava přes `musFigs` (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
 - Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`cal` výchozí / `list`, `Local` `histView`),
   `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
   Tréninky podle dne přes `wByDay` (klíč `dayKey`, použít i pro heatmapu F3-07), měření `bodyByDay`.
   Pod kolečkem název tréninku, streak `calStreak` a volné dny `calRest` vždy ze všech fitek. Klepnutí `sheetCalDay`:
-  jedna věc rovnou, víc = výběr, z něj `sheetWorkout`/`sheetBody` s `nav` zpět do výběru. Budoucí dny jsou neaktivní
+  jedna věc rovnou, víc = výběr, z něj stránka tréninku `openWorkout` (Zpět
+  výběr znovu otevře přes `navFrame`) nebo `sheetBody` s `nav` zpět do výběru. Budoucí dny jsou neaktivní
   (místo pro F4-07).
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
