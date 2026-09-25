@@ -229,7 +229,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Sdílení souhrnu (F4-08, sekce „SDÍLENÍ SOUHRNU“): tlačítko `wShare` v patičce `sheetWorkout` (řádek `.frow`) otevře
   panel v panelu `sheetShare` (stav `shr`, `shareOpen`, Zpět přes `shrBack`; třída `shr` na `.scrim` = pevná výška, náhled
   `.shr-prev` vyplní zbytek, ovládání v řádcích `.shr-row` je vždy vidět, Postava = tlačítko `.shr-tog` s `aria-pressed`). Obrázek kreslí `shrDraw(ctx, shrData(w, en),
-  volby)` na `<canvas id="shrCv">` (náhled = canvas zmenšený přes CSS), 1080 px, `SHR_H` story 1920 / post 1350, písmo
+  volby)` na `<canvas id="shrCv">` (náhled = canvas zmenšený přes CSS), 1080 px, `SHR_H` story 1920 / post 1350 (story
+  nechává nahoře a dole `SHR_SAFE` 250 px bez textu, Instagram je překrývá; řádek s logem `footY`), písmo
   v pevných px (na `fontK` nezávisí), barvy `SHR_PAL` (skupiny partií stejné jako `--g-*`), texty `SHR_TXT` (cs / en;
   anglicky `name` cviku, česky `cz`). Postava přes `shrFigures` z obrysů `ATLAS` (Path2D), ne jako obrázek, takže CSP beze
   změny. Volby v `Local` `shr` (`fmt`, `theme`, `lang`, `fig`), fotka jen v paměti (`shr.img`, ImageBitmap, políčko

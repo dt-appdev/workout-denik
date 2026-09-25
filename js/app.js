@@ -4462,6 +4462,7 @@
      Sdílení přes systémovou nabídku Androidu (navigator.share se souborem), jinak jen Uložit obrázek. */
   const SHR_W = 1080;
   const SHR_H = { story: 1920, post: 1350 };
+  const SHR_SAFE = 250; // příběh: okraj nahoře a dole, který překrývá Instagram (viz shrDraw)
   const SHR_D = "Barlow Condensed",
     SHR_B = "Barlow";
   const SHR_MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -4925,16 +4926,19 @@
       shrGlow(ctx, W - 80, 60, 760, P.glowA);
       shrGlow(ctx, 60, H - 120, 820, P.glowB);
     }
+    /* příběh: Instagram (i WhatsApp) přes horní okraj kreslí profilovou fotku, jméno a pruh průběhu a přes
+       spodní pole pro odpověď, proto nahoře a dole zůstává SHR_SAFE px bez textu (doporučení Instagramu) */
+    const footY = story ? H - SHR_SAFE - 40 : H - 84; // střed řádku s logem
     // hlavička: TRÉNINK, datum, název
-    let y = story ? 130 : 100;
+    let y = story ? SHR_SAFE + 40 : 100;
     shrText(ctx, X.kind, L, y, shrFont(600, 26, SHR_B), P.ink2, "left", 7);
     ctx.fillStyle = P.accent;
     ctx.fillRect(L, y + 22, 60, 4);
     shrText(ctx, D.date, L, y + 72, shrFont(500, 26, SHR_B), P.ink2, "left", 3);
-    y += story ? 250 : 200;
+    y += story ? 215 : 200;
     const colW = img ? 330 : W - 2 * L;
     y += shrTitle(ctx, D.title, L - 3, y, img ? 520 : W - 2 * L, img ? 120 : 150, P.ink);
-    y += story ? 80 : 60;
+    y += story ? 70 : 60;
     const divider = (yy) => {
       ctx.fillStyle = P.line;
       ctx.fillRect(L, yy, colW, 2);
@@ -4942,15 +4946,15 @@
       ctx.fillRect(L, yy - 1, 90, 4);
     };
     divider(y);
-    y += story ? 90 : 70;
+    y += story ? 80 : 70;
     const fig = o.fig && G.length;
     // příspěvek s fotkou a postavou: postava místo řádku s názvy partií; aby se vešla (i pod název
     // na 2 řádky), řádky s údaji se podle potřeby přiblíží (nejvýš na 86 px)
     const figMin = 170;
     const postFig = img && fig && !story;
-    const room = H - 84 - 60 - 30 - figMin - (y + 36);
+    const room = footY - 60 - 30 - figMin - (y + 36);
     // údaje s ikonami: pod sebou (s fotkou nebo s postavou vpravo), jinak ve dvou sloupcích
-    const step = story ? 128 : postFig ? Math.max(86, Math.min(106, Math.floor(room / 5))) : 106;
+    const step = story ? 104 : postFig ? Math.max(86, Math.min(106, Math.floor(room / 5))) : 106;
     const stat = (s, x, yy) => {
       shrIcon(ctx, s.ic, x, yy - 4, 50, P.accent);
       shrText(ctx, s.lab, x + 76, yy + 6, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
@@ -4981,7 +4985,7 @@
     if (G.length) {
       divider(y - 30);
       y += 14;
-      const postFh = H - 84 - 60 - y - 30;
+      const postFh = footY - 60 - y - 30;
       if (postFig && postFh >= 120) {
         // příspěvek s fotkou: postava místo řádku s názvy partií, pruh pod ní
         shrFigures(ctx, P, L - 6, y - 16, postFh, D.mus);
@@ -4997,7 +5001,7 @@
         y += 110;
         if (fig && story) {
           // příběh s fotkou: postava vlevo pod partiemi
-          const fh = Math.min(H - 84 - 56 - y, 360);
+          const fh = Math.min(footY - 56 - y, 360);
           if (fh >= 140) {
             shrFigures(ctx, P, L - 6, y, fh, D.mus);
           }
@@ -5012,7 +5016,7 @@
     if (!img) {
       const rowH = 66,
         w = W - 2 * L;
-      const room = Math.min(4, Math.floor((H - 200 - y) / rowH));
+      const room = Math.min(4, Math.floor((footY - 116 - y) / rowH));
       const list = D.recs.length ? D.recs : D.ex;
       if (room >= 2 && list.length) {
         shrText(ctx, D.recs.length ? X.recs : X.ex, L, y + 10, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
@@ -5055,8 +5059,8 @@
     }
     // podpis: logo a název appky
     const ls = 56;
-    shrLogo(ctx, L, H - 84 - ls / 2, ls);
-    shrText(ctx, "WORKOUT DENÍK", L + ls + 20, H - 84 + 11, shrFont(700, 32, SHR_D), P.ink, "left", 3);
+    shrLogo(ctx, L, footY - ls / 2, ls);
+    shrText(ctx, "WORKOUT DENÍK", L + ls + 20, footY + 11, shrFont(700, 32, SHR_D), P.ink, "left", 3);
     return cov;
   }
 
