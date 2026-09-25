@@ -111,13 +111,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Tlačítka (F2-07): akce v nadpisu sekce (`.sec-h`) jen jako ikona v rámečku malého tlačítka `icoBtn(act, ikona,
   popis, v)` (ikony v `IC`, popis pro čtečku). Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách
   a panelech. Krátký formulář (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu
-  cviků (trénink, šablona) = stránka se šipkou ← a dotazem „Zahodit změny?“ (Nový / Upravit cvik přejde na stránku
-  v F3-14).
+  cviků (trénink, šablona, Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“.
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
   dostane `nav.lv` (hloubka) a `nav.back` (krok o úroveň), dynamický panel `nav.re`
-  (znovu otevření). Nová podstránka (jako `exd`, `edit`) uloží místo návratu
+  (znovu otevření). Nová podstránka (jako `exd`, `edit`, `exed`) uloží místo návratu
   `S.nav.push(navFrame())` a musí se doplnit do `navBack` a `navDepth`. Šipky ←
   v appce volají `navBack()`. Záznamy historie se přidávají jen po klepnutí (`navEnsure`).
 
@@ -179,10 +178,16 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `statsOver` (Přehled), `statsMus` (Partie, sem radar F3-04), `statsEx` (Cviky). Otevřená část `S.statsPart`
   (`Local` `statsPart`, výchozí `over`, akce `statsPart` posune nahoru). Fitko `S.statsGym` a období `S.statsRange`
   jsou společné pro všechny části. Nová sekce Statistik patří do jedné z částí, ne pod ně.
+- Nový / Upravit cvik (F3-14, sekce „NOVÝ A UPRAVIT CVIK“): stránka route `exed` (`vExEdit`), otevírá se jen přes
+  `exEdOpen(id, from, fx)` (`from`: `list`, `detail`, `info`, `picker`; `fx` = záznam z online hledání), který uloží
+  `navFrame()` i s otevřeným panelem (výběr cviků, info, výsledky hledání). Hodnoty formuláře drží `exEd.f` (posluchače
+  `input`/`change` volají `exEdCollect`, stránka přežije překreslení), neuložené změny `exEdChanged` (Zpět i záložka se
+  zeptají, akce `exDiscard`). Odchod vždy přes `exEdLeave(re)` (`re` = jiný panel než uložený, např. výběr cviků po
+  uložení z výsledků hledání). Route `exed` se neukládá do `Local` `route` (po restartu se neobnoví, F3-16).
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
   stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
-  předvyplní `sheetExEdit(null, from, fx)` a vlastní cvik dostane `src:"fedb:<id>"`.
+  předvyplní `exEdOpen(null, from, fx)` a vlastní cvik dostane `src:"fedb:<id>"`.
   Fotky jen jako náhled z GitHubu (`FEDB_IMG`), nic se neukládá. Změna českých názvů
   nebo shod: upravit TSV v `tools/fedb/` a spustit `python3 tools/fedb/build.py`.
 - Minule a předvyplnění (F1-01, sekce „MINULE A PŘEDVYPLNĚNÍ“): „minule“ = `lastSession`
