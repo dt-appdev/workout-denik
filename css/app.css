@@ -44,6 +44,8 @@ img {
   --warm-bg: #fcefd4;
   --drop: #5646bd;
   --drop-bg: #ebe8fb;
+  --ss: #0b7a86; /* proužek a štítek supersérie (F4-05) */
+  --ss-bg: #dcf1f3;
   --fail: #c0322b;
   --fail-bg: #fbe4e2;
   --good: #1b7a48;
@@ -107,6 +109,8 @@ img {
     --warm-bg: #352810;
     --drop: #a197f2;
     --drop-bg: #26223f;
+    --ss: #4cc2cf;
+    --ss-bg: #173b3f;
     --fail: #f0736a;
     --fail-bg: #3a1a18;
     --good: #52c48d;
@@ -145,6 +149,8 @@ img {
   --warm-bg: #352810;
   --drop: #a197f2;
   --drop-bg: #26223f;
+  --ss: #4cc2cf;
+  --ss-bg: #173b3f;
   --fail: #f0736a;
   --fail-bg: #3a1a18;
   --good: #52c48d;
@@ -428,6 +434,20 @@ a.btn {
 .btn:disabled {
   opacity: 0.45;
 }
+/* akce v nadpisu sekce jen s ikonou (icoBtn): stejný rámeček jako .btn.sm, velikost podle písma */
+.btn.sm.ico {
+  min-width: 2.6em;
+  padding: 6px 0;
+}
+.btn.ico svg {
+  width: 1.35em;
+  height: 1.35em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .iconbtn {
   border: 0;
   background: transparent;
@@ -451,12 +471,55 @@ a.btn {
 .iconbtn:disabled {
   opacity: 0.3;
 }
-.gymmv {
-  display: flex;
+/* přetažení (F2-07): úchyt, zvednutá položka jede s prstem, ostatní uhýbají */
+.dnd-h {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75em;
+  height: 2.75em;
+  margin: -0.4em -0.5em -0.4em 0;
+  color: var(--ink-3);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
 }
-.gymmv .iconbtn {
-  width: 34px;
+.dnd-h svg {
+  width: 1.4em;
+  height: 1.4em;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+.dnd-act .dnd-it {
+  transition: transform 0.15s ease;
+}
+.dnd-act .dnd-it.dnd-on {
+  transition: none;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.dnd-on .dnd-h {
+  color: var(--accent);
+  cursor: grabbing;
+}
+.dnd-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.dnd-row b {
+  overflow-wrap: anywhere;
+}
+.sec-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
 }
 /* rozcestník Nastavení (F3-09): řádek = skupina, oranžový = je čas zálohovat */
 .setlist {
@@ -825,6 +888,33 @@ select.inp {
   color: var(--ink-3);
   font-weight: 600;
 }
+/* supersérie (F4-05): proužek vlevo uvnitř karty (rozměry karty se nemění), štítek „supersérie 1/2“,
+   karty jedné supersérie (.ssg) blíž k sobě */
+.ssg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* proužek jako vrstva nad obsahem, aby ho nepřekrylo zelené pozadí hotové série; overflow ořízne rohy */
+.ss-on {
+  position: relative;
+  overflow: hidden;
+}
+.ss-on::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--ss);
+  z-index: 1;
+  pointer-events: none;
+}
+.pill.ssp {
+  background: var(--ss-bg);
+  color: var(--ss);
+}
 .exc {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -894,20 +984,46 @@ select.inp {
   width: 48px;
   padding-left: 10px;
 }
+/* hodnoty sloupce Minule; nadpis sloupce (th) má stejné písmo jako ostatní nadpisy */
 .sets .c-prev {
-  font-size: var(--fs-sm);
   color: var(--ink-3);
   white-space: nowrap;
+}
+.sets td.c-prev {
+  font-size: var(--fs-sm);
 }
 .sets .c-in {
   width: 74px;
 }
 .sets .c-ok {
-  width: 46px;
+  width: 54px;
 }
-.sets .c-x {
-  width: 34px;
-  padding-right: 6px;
+/* poslední sloupec (✓, v šabloně a úpravě tréninku poslední políčko) s okrajem karty */
+.sets th:last-child,
+.sets td:last-child {
+  padding-right: 8px;
+}
+/* F2-03: tah doleva po řádku série odkryje tlačítko Smazat (leží za posledním sloupcem, karta ho ořízne) */
+.sets tr.sw td {
+  touch-action: pan-y;
+}
+.sets tr.sw-anim {
+  transition: transform 0.18s ease;
+}
+.sets .sw-cell {
+  position: relative;
+}
+.sw-del {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 6.5em;
+  border: 0;
+  background: var(--fail);
+  color: var(--surface);
+  font-weight: 700;
+  font-size: var(--fs-md);
 }
 .stype {
   width: 34px;
@@ -991,7 +1107,7 @@ tr.done .cell {
   display: none;
 }
 .okb {
-  width: 38px;
+  width: 44px;
   height: 34px;
   border-radius: 8px;
   border: 1px solid var(--line-2);
@@ -1014,14 +1130,6 @@ tr.done .okb {
   background: var(--good);
   border-color: var(--good);
   color: var(--surface);
-}
-.xb {
-  border: 0;
-  background: none;
-  color: var(--ink-3);
-  width: 28px;
-  height: 32px;
-  font-size: var(--fs-lg);
 }
 /* krokovač: tlačítka +/− místo klávesnice (F1-03) */
 .cell[readonly] {
@@ -1065,6 +1173,10 @@ tr.done .okb {
   gap: 6px;
 }
 .warm-set.off {
+  opacity: 0.5;
+}
+/* volby odpočinku s vypnutým časovačem pauzy (restOn) */
+.rest-set.off {
   opacity: 0.5;
 }
 .range {
@@ -1644,6 +1756,23 @@ tr.done .okb {
     visibility: hidden;
     opacity: 0;
   }
+}
+/* hláška s tlačítkem Vrátit (F2-03) */
+.toast.has-undo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 6px;
+}
+.toast-undo {
+  border: 1.5px solid currentColor;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  padding: 4px 12px;
+  white-space: nowrap;
 }
 .toast {
   position: fixed;

@@ -108,6 +108,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
     nemůže změnit vzhled (mezi atributy, vedle blokového prvku, mezi prvky flex/grid),
     jinak šablonu rozdělit na dvě spojené přes `+` (F0-10).
 - Kliknutí se řeší delegací přes `data-act` / `data-v` (jeden velký `switch`).
+- Tlačítka (F2-07): akce v nadpisu sekce (`.sec-h`) jen jako ikona v rámečku malého tlačítka `icoBtn(act, ikona,
+  popis, v)` (ikony v `IC`, popis pro čtečku). Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách
+  a panelech. Krátký formulář (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu
+  cviků (trénink, šablona) = stránka se šipkou ← a dotazem „Zahodit změny?“ (Nový / Upravit cvik přejde na stránku
+  v F3-14).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
@@ -149,7 +154,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v `localStorage`. Stránka cviku (route `exd`, `vExDetail`) má části Popis
   a Statistiky (`S.exPart`); `openEx` volí část podle toho, odkud se přišlo
   (`data-p` ji vynutí). Hledání přes `exMatch` ignoruje diakritiku.
-- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (šipky v Nastavení, akce `gymMove`).
+- Fitka (F0-07): pořadí = pořadí v `S.cfg.gyms` (přetažením v Nastavení, F2-07).
   Barva je uložená v `g.col` (1–`GYM_COLORS` = 12, CSS proměnná `--sN`), doplňuje ji
   `cfgNorm` při načtení; nová barva přes `freeGymCol`. Barvu nikdy nepočítat z pořadí.
   Výběr barvy v `sheetGym` (F3-01, akce `gymCol`). Grafy, které nepatří fitku, mají `var(--chart)`, ne `--s1`.
@@ -201,7 +206,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (místo pro F4-07).
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
-  konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restAlert`
+  konec přes `restStop()`. Nastavení v `config/main`: `restOn` (hlavní vypínač, vypnuto = po ✓ žádná pauza, F4-05), `restSec`,
+  `restSs` (po pracovní supersérii, F4-05), `restAlert`
   (`both`/`sound`/`vib`), `restOver` (přečas), `restNotify`. Oznámení na pozadí ukazuje
   service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
   na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
@@ -210,6 +216,14 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`sheetRestLog`). Ve vydané verzi nic takového být nemá (přání uživatele).
   Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
   vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
+- Supersérie (F4-05, sekce „SUPERSÉRIE“): cviky se stejnou značkou `e.ss` hned za sebou (rozdělaný i uložený trénink,
+  šablona; `ssRun` = rozsah, aspoň 2 cviky), osamělou nebo rozdělenou značku uklidí `ssNorm` (po odebrání, přetažení
+  `ssMoved`, v `draftToWorkout`, při uložení šablony). Menu cviku `ssOn` (`ssLink`) / `ssOff` (`ssUnlink`), karty jedné supersérie
+  obaluje `ssWrap` (`.ssg` = menší mezera), karta má třídu `ss-on` (proužek vlevo přes `::before`, rozměry karty
+  beze změny) a štítek `ssPill` / `ssLabel` („supersérie 1/2“; editor, souhrn, panel Pořadí cviků). Každé nové místo, které kopíruje cviky (šablona ↔ trénink), přenáší
+  značku přes `ssOf(e)`. Pauza po ✓ (`toggleSetDone`) podle `ssRest`: série se párují podle `setGrp` a pořadí,
+  nehotová dvojice = bez pauzy a hláška `restNext()`, hotové pracovní kolo = `restStart(S.cfg.restSs)`, jinak výchozí
+  `S.cfg.restSec`. `restNext` v supersérii vybírá další kolo.
 - Displej během pauzy (F1-02, sekce „displej během pauzy“): `S.cfg.screenOn` (výchozí vypnuto) = Screen Wake Lock jen
   během pauzy (`S.restEnd`, i přečas) v rozdělaném tréninku, appka na očích. Vše řídí `wakeSync()` (volá ho `restSave`,
   `visibilitychange`, baterie a interval s `restTick`). Pojistka `WAKE_IDLE` 10 min bez dotyku (`wakeTouch`), baterie pod
@@ -240,12 +254,24 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Návrat do tréninku (F1-11, sekce „NÁVRAT DO TRÉNINKU“): `edMark(d, e)` zapíše klíč `e.k` naposledy změněného cviku
   rozdělaného tréninku (`Local` `edLast`; volá se z posluchačů `click`/`input` pro prvky s `data-i` a po přidání cviku),
   `go("train")` z jiné záložky a start appky nastaví `render.toEx` a `render` posune na kartu přes `edScroll`
-  (`render.restoreY` má přednost). Nový způsob změny cviku mimo `data-i` (např. F2-03 swipe) má volat `edMark`.
+  (`render.restoreY` má přednost). Nový způsob změny cviku mimo `data-i` má volat `edMark` (tlačítko Smazat v řádku série i Vrátit ho volají).
   Enter v jednořádkovém textovém poli (ne `data-num`) schová klávesnici (globální `keydown`).
 - Zahřívací série z minula (F1-08, sekce „ZAHŘÍVACÍ SÉRIE Z MINULA“): v krokovači u zahřívací série cviku `wr` tlačítko
   `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
   série z minula bez zahřívacích (`warmMax`, přes `draftLast`), zaokrouhleno na krok `kkStep` (`warmKg`). Zápis přes
   `kkSet` (stejně jako − / +), bez záznamu z minula se tlačítko neukáže.
+- Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
+  Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
+  uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona
+  `tplNextOrder`). Vysoké položky (karty cviků) se netahají na stránce, ale v panelu s krátkým seznamem
+  (`sheetExOrder`, `sheetTplOrder`). V panelu se posouvá `.sheet-b`, jinak stránka (`dndView` bez lišt).
+- Mazání série a Vrátit (F2-03, sekce „SMAZÁNÍ SÉRIE TAHEM“ a „VRÁTIT CVIK“): řádek série `tr.sw` se tahem doleva
+  odsune (`sw`, `swOpen`, jen jeden řádek) a odkryje `.sw-del` (akce `delSet`, leží v poslední buňce `.sw-cell` za
+  okrajem tabulky, karta `.exc` ho ořízne); buňky mají `touch-action: pan-y`, po tahu se klepnutí zahodí
+  (`swEatUntil`). Tah doprava, klepnutí jinam nebo scroll řádek vrátí. Tlačítko × ani swipe na ✓ nejsou (tah od
+  levého okraje je v Chromu Zpět). `toast(msg, cls, undo)` s funkcí `undo` ukáže tlačítko „Vrátit“ (akce `undo`,
+  `UNDO_MS`); `exUndoOffer` po `exRemove` a nahrazení cviku (`pickDone`) vrátí původní cvik, jen když je otevřená
+  stejná úprava (`curDraft()`). Smazání série „Vrátit“ nemá (přání uživatele).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
