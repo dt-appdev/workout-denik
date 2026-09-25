@@ -44,7 +44,8 @@ img {
   --warm-bg: #fcefd4;
   --drop: #5646bd;
   --drop-bg: #ebe8fb;
-  --ss: #0b7a86; /* pruh supersérie (F4-05) */
+  --ss: #0b7a86; /* proužek a štítek supersérie (F4-05) */
+  --ss-bg: #dcf1f3;
   --fail: #c0322b;
   --fail-bg: #fbe4e2;
   --good: #1b7a48;
@@ -109,6 +110,7 @@ img {
     --drop: #a197f2;
     --drop-bg: #26223f;
     --ss: #4cc2cf;
+    --ss-bg: #173b3f;
     --fail: #f0736a;
     --fail-bg: #3a1a18;
     --good: #52c48d;
@@ -148,6 +150,7 @@ img {
   --drop: #a197f2;
   --drop-bg: #26223f;
   --ss: #4cc2cf;
+  --ss-bg: #173b3f;
   --fail: #f0736a;
   --fail-bg: #3a1a18;
   --good: #52c48d;
@@ -885,24 +888,32 @@ select.inp {
   color: var(--ink-3);
   font-weight: 600;
 }
-/* supersérie (F4-05): cviky obalené rámečkem s pruhem vlevo a štítkem */
+/* supersérie (F4-05): proužek vlevo uvnitř karty (rozměry karty se nemění), štítek „supersérie 1/2“,
+   karty jedné supersérie (.ssg) blíž k sobě */
 .ssg {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding-left: 8px;
-  border-left: 4px solid var(--ss);
-  border-radius: 4px;
 }
-.ssg-h {
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+/* proužek jako vrstva nad obsahem, aby ho nepřekrylo zelené pozadí hotové série; overflow ořízne rohy */
+.ss-on {
+  position: relative;
+  overflow: hidden;
+}
+.ss-on::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--ss);
+  z-index: 1;
+  pointer-events: none;
+}
+.pill.ssp {
+  background: var(--ss-bg);
   color: var(--ss);
-}
-.dnd-row.ssr {
-  border-left: 4px solid var(--ss);
 }
 .exc {
   background: var(--surface);

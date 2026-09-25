@@ -217,8 +217,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
 - Supersérie (F4-05, sekce „SUPERSÉRIE“): cviky se stejnou značkou `e.ss` hned za sebou (rozdělaný i uložený trénink,
   šablona; `ssRun` = rozsah, aspoň 2 cviky), osamělou nebo rozdělenou značku uklidí `ssNorm` (po odebrání, přetažení
-  `ssMoved`, v `draftToWorkout`, při uložení šablony). Menu cviku `ssOn` (`ssLink`) / `ssOff` (`ssUnlink`), karty obaluje
-  `ssWrap` (`.ssg`, `--ss`; editor i souhrn). Každé nové místo, které kopíruje cviky (šablona ↔ trénink), přenáší
+  `ssMoved`, v `draftToWorkout`, při uložení šablony). Menu cviku `ssOn` (`ssLink`) / `ssOff` (`ssUnlink`), karty jedné supersérie
+  obaluje `ssWrap` (`.ssg` = menší mezera), karta má třídu `ss-on` (proužek vlevo přes `::before`, rozměry karty
+  beze změny) a štítek `ssPill` / `ssLabel` („supersérie 1/2“; editor, souhrn, panel Pořadí cviků). Každé nové místo, které kopíruje cviky (šablona ↔ trénink), přenáší
   značku přes `ssOf(e)`. Pauza po ✓ (`toggleSetDone`) podle `ssRest`: série se párují podle `setGrp` a pořadí,
   nehotová dvojice = bez pauzy a hláška `restNext()`, hotové pracovní kolo = `restStart(S.cfg.restSs)`, jinak výchozí
   `S.cfg.restSec`. `restNext` v supersérii vybírá další kolo.

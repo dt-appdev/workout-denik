@@ -3193,7 +3193,18 @@
     }
     ssNorm(list);
   }
-  // karty cviků (cards[i] patří list[i]); cviky v supersérii obalí společným rámečkem s pruhem a štítkem
+  // štítek cviku v supersérii „supersérie 1/2“ ("" = cvik není v supersérii)
+  function ssLabel(list, i) {
+    const run = ssRun(list, i);
+    return run ? `supersérie ${i - run[0] + 1}/${run[1] - run[0] + 1}` : "";
+  }
+  // štítek jako pill do hlavičky karty cviku
+  function ssPill(list, i) {
+    const label = ssLabel(list, i);
+    return label ? `<span class="pill ssp">${esc(label)}</span>` : "";
+  }
+  // karty cviků (cards[i] patří list[i]); karty jedné supersérie obalí kvůli menší mezeře mezi nimi.
+  // Proužek vlevo má každá karta sama (třída ss-on), rozměry karty se nemění.
   function ssWrap(list, cards) {
     let h = "";
     for (let i = 0; i < list.length; i++) {
@@ -3202,10 +3213,7 @@
         h += cards[i];
         continue;
       }
-      h += `<div class="ssg">
-        <div class="ssg-h">Supersérie</div>
-        ${cards.slice(run[0], run[1] + 1).join("")}
-      </div>`;
+      h += `<div class="ssg">${cards.slice(run[0], run[1] + 1).join("")}</div>`;
       i = run[1];
     }
     return h;
@@ -3491,7 +3499,8 @@
     const kind = kindOf(e.exId),
       flds = kFields(kind);
     const lr = mode === "active" ? liveRecords(d, i) : { sets: {}, ex: [] };
-    let h = `<article class="exc" data-i="${i}">
+    const ssLbl = ssPill(d.ex, i); // supersérie (F4-05): štítek a proužek vlevo
+    let h = `<article class="exc${ssLbl ? " ss-on" : ""}" data-i="${i}">
       <div class="exc-h">
         <div class="grow">
           <h3>
@@ -3500,6 +3509,7 @@
           ${ex.cz ? `<div class="cz">${esc(ex.cz)}</div>` : ""}`;
     h +=
       `<div class="row wrap-r" style="margin-top:4px;gap:6px">
+        ${ssLbl}
         ${
           ex.gymDep
             ? `<span class="pill gd" title="Progres se počítá zvlášť pro každé fitko">
@@ -4092,13 +4102,15 @@
     b += sumMuscles(w);
     const seen = {};
     const cards = []; // karta každého cviku, supersérie (F4-05) je obalí rámečkem
-    for (const e of w.ex || []) {
+    (w.ex || []).forEach((e, i) => {
       let wn = 0;
       const er = R.filter((r) => r.exId === e.exId);
       const c = seen[e.exId] ? null : sumEx(w, e.exId);
       seen[e.exId] = true;
+      const ssLbl = ssPill(w.ex, i);
       cards.push(
-        `<div class="card">
+        `<div class="card${ssLbl ? " ss-on" : ""}">
+        ${ssLbl ? `<div class="row" style="margin-bottom:4px">${ssLbl}</div>` : ""}
         <div style="font-weight:700;color:var(--accent-2)">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
           `</button>${er.length ? ` <span class="medals">🏅 ${er.length}</span>` : ""}` +
@@ -4131,7 +4143,7 @@
         </div>
         </div>`,
       );
-    }
+    });
     b += ssWrap(w.ex || [], cards);
     openSheet(
       (justSaved ? "Hotovo · " : "") + w.title,
@@ -7348,12 +7360,12 @@
       .map((e, i) => {
         const n = e.sets.length;
         const name = exName(e.exId);
-        const ss = ssRun(d.ex, i); // cvik v supersérii (F4-05): pruh vlevo
-        return `<div class="card dnd-it dnd-row${ss ? " ssr" : ""}">
+        const ss = ssLabel(d.ex, i); // cvik v supersérii (F4-05): proužek vlevo a „supersérie 1/2“
+        return `<div class="card dnd-it dnd-row${ss ? " ss-on" : ""}">
             <div class="grow">
               <b>${esc(name)}</b>
               <div class="xs muted">
-                ${n} ${plural(n, "série", "série", "sérií")}${ss ? " · supersérie" : ""}
+                ${n} ${plural(n, "série", "série", "sérií")}${ss ? " · " + esc(ss) : ""}
               </div>
             </div>
             ${dndGrip(name)}
