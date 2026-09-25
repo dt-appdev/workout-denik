@@ -1703,18 +1703,29 @@ tr.done .okb {
   gap: 8px;
 }
 
-/* sdílení souhrnu jako obrázek (F4-08): náhled je canvas v plném rozlišení zmenšený na obrazovku */
+/* sdílení souhrnu jako obrázek (F4-08): panel má pevnou výšku, ovládání dole je vždy vidět a náhled
+   (canvas v plném rozlišení zmenšený na obrazovku) vyplní zbylé místo nad ním */
+.scrim.shr .sheet {
+  height: 92%;
+}
+.scrim.shr .sheet-b {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 .shr-prev {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
-  flex: none;
 }
 .shr-cv {
   display: block;
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 50vh;
+  max-height: 100%;
   border-radius: 12px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
 }
@@ -1723,14 +1734,24 @@ tr.done .okb {
   touch-action: none;
   cursor: grab;
 }
-.shr-hint {
-  text-align: center;
-  margin-top: -6px;
-}
 .sheet-b > .seg,
-.sheet-b > .shr-ph,
-.sheet-b > .switch {
+.shr-row {
   flex: none;
+}
+/* dva přepínače nebo tlačítka vedle sebe (Tmavý | Světlý a CZ | EN; fotka a Postava) */
+.shr-row {
+  display: flex;
+  gap: 8px;
+}
+.shr-row > * {
+  flex: 1;
+  min-width: 0;
+}
+/* Postava: zapnutá jako vybraná volba v přepínači */
+.shr-tog[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
 }
 /* celý obrázek přes obrazovku (klepnutí na náhled) */
 .shr-full-b {

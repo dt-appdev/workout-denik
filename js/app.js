@@ -5130,43 +5130,44 @@
         )
         .join("")}
     </div>`;
-  // tlačítka pro fotku (Android sám nabídne fotoaparát nebo galerii)
+  // řádek s fotkou (Android sám nabídne fotoaparát nebo galerii) a přepínacím tlačítkem Postava
   function shrPhotoBtns() {
-    return shr.img
-      ? `<label class="btn grow" for="shrPhotoIn">Změnit fotku</label>
-        <button class="btn grow" data-act="shrPhotoDel">Odebrat fotku</button>`
-      : '<label class="btn grow" for="shrPhotoIn">Přidat fotku</label>';
+    return (
+      (shr.img
+        ? `<label class="btn grow" for="shrPhotoIn">Změnit fotku</label>
+          <button class="btn grow" data-act="shrPhotoDel">Odebrat</button>`
+        : '<label class="btn grow" for="shrPhotoIn">Přidat fotku</label>') +
+      `<button class="btn grow shr-tog" data-act="shrFig" aria-pressed="${!!shr.fig}">Postava</button>`
+    );
   }
   function sheetShare(noanim) {
     if (!shr) return;
     shrInput();
+    // náhled vyplní místo nad ovládáním (panel má pevnou výšku, nic se neposouvá)
     const b = `<div class="shr-prev"><canvas id="shrCv" class="shr-cv${shr.img ? " drag" : ""}"
         width="${SHR_W}" height="${SHR_H[shr.fmt]}" aria-label="Náhled obrázku"></canvas></div>
-      <div class="xs muted shr-hint" id="shrHint">${shrHintText()}</div>
       ${shrSeg("fmt", [
         ["post", "Příspěvek 4:5"],
         ["story", "Příběh 9:16"],
       ])}
-      ${shrSeg("theme", [
-        ["dark", "Tmavý"],
-        ["light", "Světlý"],
-      ])}
-      ${shrSeg("lang", [
-        ["cs", "Čeština"],
-        ["en", "English"],
-      ])}
-      <div class="row shr-ph" id="shrPh">${shrPhotoBtns()}</div>
-      <label class="switch">
-        <input type="checkbox" data-act="shrFig" ${shr.fig ? "checked" : ""}>
-        <span><b>Postava s partiemi</b></span>
-      </label>`;
+      <div class="shr-row">
+        ${shrSeg("theme", [
+          ["dark", "Tmavý"],
+          ["light", "Světlý"],
+        ])}
+        ${shrSeg("lang", [
+          ["cs", "CZ"],
+          ["en", "EN"],
+        ])}
+      </div>
+      <div class="shr-row" id="shrPh">${shrPhotoBtns()}</div>`;
     openSheet(
       "Sdílet trénink",
       b,
       `<button class="btn grow" data-act="shrSave">Uložit obrázek</button>
       <button class="btn primary grow" data-act="shrShare">Sdílet</button>`,
       noanim,
-      Object.assign({}, shr.nav, { re: () => sheetShare(true) }),
+      Object.assign({}, shr.nav, { re: () => sheetShare(true), cls: "shr" }),
     );
     shrRender();
   }
@@ -5182,10 +5183,6 @@
       if (!shr) return;
       shr.blob = null;
       shr.cov = shrDraw(c.getContext("2d"), shrData(shr.w, shr.lang === "en"), shr);
-      const hint = document.getElementById("shrHint");
-      if (hint) {
-        hint.textContent = shrHintText();
-      }
     });
   }
   // změna volby: přepne tlačítko a překreslí, panel se neotvírá znovu
@@ -5255,32 +5252,17 @@
     shr.img = null;
     shrPhotoUi();
   }
-  // po změně fotky: tlačítka, nápověda a posouvání v náhledu
+  // po změně fotky: tlačítka a posouvání v náhledu
   function shrPhotoUi() {
     const ph = document.getElementById("shrPh"),
-      c = document.getElementById("shrCv"),
-      hint = document.getElementById("shrHint");
+      c = document.getElementById("shrCv");
     if (ph) {
       ph.innerHTML = shrPhotoBtns();
     }
     if (c) {
       c.classList.toggle("drag", !!shr.img);
     }
-    if (hint) {
-      hint.textContent = shrHintText();
-    }
     shrRender();
-  }
-  // nápověda pod náhledem (u malé fotky, kterou nejde ostře přiblížit, jen posun)
-  function shrHintText() {
-    if (!shr.img) return "Klepnutím zobrazíš celý obrázek.";
-    if (shr.cov && shr.cov.zMax <= 1) {
-      return (
-        "Tažením fotku posuneš (přiblížit nejde, fotka má malé rozlišení). " +
-        "Klepnutím zobrazíš celý obrázek."
-      );
-    }
-    return "Tažením fotku posuneš, dvěma prsty přiblížíš. Klepnutím zobrazíš celý obrázek.";
   }
   /* gesta v náhledu: jeden prst posouvá výřez fotky, dva prsty přibližují (kolem místa mezi prsty),
      klepnutí otevře celý obrázek přes obrazovku, dvojí klepnutí vrátí fotku do výchozí velikosti a polohy */
@@ -10687,7 +10669,8 @@
         break;
       case "shrFig":
         if (shr) {
-          shr.fig = t.checked;
+          shr.fig = !shr.fig;
+          t.setAttribute("aria-pressed", shr.fig);
           shrSavePrefs();
           shrRender();
         }
