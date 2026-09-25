@@ -833,6 +833,7 @@
     cfg: {
       gyms: [],
       defaultGymId: null,
+      restOn: true,
       restSec: 120,
       restSs: 180,
       restAlert: "both",
@@ -1041,6 +1042,7 @@
       {
         gyms: [],
         defaultGymId: null,
+        restOn: true,
         restSec: 120,
         restSs: 180,
         restAlert: "both",
@@ -1640,12 +1642,15 @@
     }
     s.done = true;
     s.at = Date.now();
-    // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05)
+    // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05),
+    // s vypnutým časovačem pauzy (S.cfg.restOn) žádná
     if (d === S.active) {
       const rest = ssRest(d, i, j);
       if (rest === "none") {
         restStop();
         toast(restNext());
+      } else if (S.cfg.restOn === false) {
+        restStop();
       } else {
         restStart(rest === "ss" ? S.cfg.restSs : S.cfg.restSec);
       }
@@ -3256,7 +3261,7 @@
      Nový trénink podle tréninku z historie: stejný název a cviky, počet a druh sérií z něj,
      hodnoty jen šedě z minula v zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen
      ve stejném fitku. Vazba na šablonu zůstane (když šablona ještě existuje), „Aktualizovat šablonu“
-     je ale nezaškrtnuté (d.again).
+     je nezaškrtnuté (od F4-05 vždy, u každého tréninku ze šablony).
      d.again = id původního tréninku, uloží se jako w.againOf (souhrn F3-03 s ním pak porovnává). */
   let again = null; // {w, gym}: otevřené okno Cvičit znovu
   const againEx = (w) => (w.ex || []).filter((e) => S.exLib[e.exId]);
@@ -7623,6 +7628,14 @@
             `</button>`,
         ).join("")}
       </div>`;
+    // hlavní vypínač: vypnuto = po ✓ žádná pauza, ostatní volby zešednou (zůstanou uložené)
+    const on = c.restOn !== false;
+    h += `<label class="switch">
+      <input type="checkbox" data-act="restOn" ${on ? "checked" : ""}>
+      <span><b>Časovač pauzy</b><br><span class="xs muted">Po odškrtnutí série se spustí odpočinek.
+          Vypnuto = po sérii žádná pauza, pípnutí ani oznámení.</span></span>
+    </label>`;
+    h += `<div class="stack rest-set${on ? "" : " off"}"${on ? "" : " inert"}>`;
     h += `<div class="stack" style="gap:6px">
       <span>Výchozí časovač</span>
       ${secSeg("restSec", c.restSec)}
@@ -7680,7 +7693,7 @@
       }
     }
     h += wakeSettings();
-    return `${h}</div></section>`;
+    return `${h}</div></div></section>`;
   }
 
   /* ---------- odpočinek mezi sériemi (F1-04) ----------
@@ -9133,7 +9146,7 @@
         if (d.tplId && S.templates[d.tplId]) {
           b +=
             `<label class="switch">
-            <input type="checkbox" id="updTpl"${d.again ? "" : " checked"}> Aktualizovat šablonu „` +
+            <input type="checkbox" id="updTpl"> Aktualizovat šablonu „` +
             `${esc(S.templates[d.tplId].name)}“ (cviky a váhy)
           </label>`;
         }
@@ -9641,6 +9654,12 @@
         break;
       case "restOver":
         put("config/main", Object.assign({}, S.cfg, { restOver: t.checked }));
+        break;
+      case "restOn":
+        put("config/main", Object.assign({}, S.cfg, { restOn: t.checked }));
+        if (!t.checked) {
+          restStop(); // běžící pauzu vypnutí hned ukončí
+        }
         break;
       case "stepper":
         put("config/main", Object.assign({}, S.cfg, { stepper: t.checked }));

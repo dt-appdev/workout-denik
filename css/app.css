@@ -1175,6 +1175,10 @@ tr.done .okb {
 .warm-set.off {
   opacity: 0.5;
 }
+/* volby odpočinku s vypnutým časovačem pauzy (restOn) */
+.rest-set.off {
+  opacity: 0.5;
+}
 .range {
   width: 100%;
   margin: 4px 0;

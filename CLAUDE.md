@@ -206,7 +206,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (místo pro F4-07).
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
-  konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restSs` (po pracovní supersérii, F4-05), `restAlert`
+  konec přes `restStop()`. Nastavení v `config/main`: `restOn` (hlavní vypínač, vypnuto = po ✓ žádná pauza, F4-05), `restSec`,
+  `restSs` (po pracovní supersérii, F4-05), `restAlert`
   (`both`/`sound`/`vib`), `restOver` (přečas), `restNotify`. Oznámení na pozadí ukazuje
   service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
   na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
