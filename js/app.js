@@ -2838,7 +2838,7 @@
       galReset();
     } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
-    const base = (r) => (r === "edit" || r === "exd" ? "train" : r);
+    const base = (r) => (r === "edit" || r === "exd" ? "train" : r === "exed" ? "ex" : r);
     // formulář cviku (F3-14) se po restartu neobnoví, zůstane uložené místo, odkud se na něj přišlo
     if (route !== "exed") {
       lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
@@ -7077,6 +7077,7 @@
   // from: odkud se přišlo – list (záložka Cviky), detail (stránka cviku), info (info o cviku ve výběru),
   // picker (výběr cviků); fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
   function exEdOpen(id, from, fx) {
+    const prev = exEd; // formulář pod stránkou cviku otevřenou z formuláře (F3-17), vrátí se po odchodu
     const e = id
       ? S.exLib[id]
       : fx
@@ -7124,6 +7125,7 @@
       return;
     }
     const f = navFrame();
+    f.exEd = prev;
     closeSheet();
     S.nav.push(f);
     go("exed");
@@ -7136,8 +7138,8 @@
   // opustí formulář tam, odkud se přišlo; re = jiné znovu otevření panelu než uložené (např. výběr cviků
   // místo výsledků hledání), null = žádný panel
   function exEdLeave(re) {
-    exEd = null;
     const f = S.nav.pop();
+    exEd = (f && f.exEd) || null;
     if (!f) {
       go("ex");
       return;
@@ -7196,6 +7198,76 @@
       </div>
     </div>`;
   }
+  /* ---------- JEDINEČNÉ NÁZVY CVIKŮ (F3-17) ----------
+     Anglický (hlavní) název nesmí mít dva cviky, český název jen upozorní (výchozí databáze má dva různé cviky
+     se stejným českým názvem). Porovnává se bez velkých písmen, diakritiky a mezer (exKey), i se skrytými cviky.
+     Cvik, který už duplikát má (starší data), projde, dokud se jeho anglický název nezmění. */
+  const exKey = (s) => fold(s).replace(/\s+/g, "");
+  // jiný cvik se stejným názvem v poli field ("name" / "cz"), jinak null
+  function exClash(field, value, selfId) {
+    const key = exKey(value);
+    if (!key) return null;
+    for (const id in S.exLib) {
+      if (id !== selfId && exKey(S.exLib[id][field]) === key) return id;
+    }
+    return null;
+  }
+  // cvik, kvůli kterému formulář nejde uložit (stejný anglický název), jinak null
+  function exNameBlock() {
+    const f = exEd.f;
+    const clash = exClash("name", f.name, exEd.id);
+    if (!clash) return null;
+    const old = exEd.id && S.exLib[exEd.id];
+    if (old && exKey(old.name) === exKey(f.name)) return null; // starý duplikát beze změny názvu
+    return clash;
+  }
+  // text pod políčkem: cvik se stejným názvem, klepnutím se otevře jeho stránka
+  function exClashMsg(id, lead) {
+    const e = S.exLib[id];
+    return (
+      `${esc(lead)} <button type="button" class="link" data-act="exClashOpen" data-v="${esc(id)}">` +
+      `${esc(e.cz ? e.name + " · " + e.cz : e.name)}</button>` +
+      `${e.archived ? esc(". Je skrytý, zobrazíš ho na jeho stránce přes Upravit cvik → Zobrazit ve výběru.") : ""}`
+    );
+  }
+  // hlášky pod názvy: block = cvik, kvůli kterému nejde uložit
+  function exNameMsgs() {
+    const f = exEd.f;
+    const block = exNameBlock();
+    const sameName = block || exClash("name", f.name, exEd.id);
+    const sameCz = exClash("cz", f.cz, exEd.id);
+    return {
+      block,
+      name: sameName
+        ? exClashMsg(sameName, block ? "Cvik s tímto názvem už máš:" : "Stejný název má i cvik:")
+        : "",
+      cz: sameCz ? exClashMsg(sameCz, "Stejný český název má i cvik:") : "",
+    };
+  }
+  // hned při psaní: červený anglický název a šedé Uložit cvik, u českého názvu jen upozornění
+  function exNameMark() {
+    if (!exEd) return null;
+    const m = exNameMsgs();
+    const input = document.getElementById("x-name");
+    if (input) {
+      input.classList.toggle("bad", !!m.block);
+    }
+    const nameMsg = document.getElementById("x-name-msg");
+    if (nameMsg) {
+      nameMsg.innerHTML = m.name;
+      nameMsg.classList.toggle("warn", !m.block);
+    }
+    const czMsg = document.getElementById("x-cz-msg");
+    if (czMsg) {
+      czMsg.innerHTML = m.cz;
+    }
+    const save = document.getElementById("ex-save");
+    if (save) {
+      save.classList.toggle("off", !!m.block);
+      save.setAttribute("aria-disabled", String(!!m.block));
+    }
+    return m.block;
+  }
   // stránka formuláře Nový / Upravit cvik
   function vExEdit() {
     if (!exEd) {
@@ -7207,6 +7279,7 @@
       e = id ? S.exLib[id] || {} : {};
     const fx = exEd.fx,
       have = fx && fedbHave(fx);
+    const names = exNameMsgs(); // F3-17: shoda názvu s jiným cvikem
     let h = topbar(
       id ? "Upravit cvik" : "Nový cvik",
       id ? e.name || "" : "",
@@ -7228,9 +7301,14 @@
       }${fx && !id && !fx.ni ? exEdPhotos(fx) : ""}
       <label class="f">
         Název (anglicky, jako v Hevy)
-        <input class="inp" id="x-name" value="${esc(f.name)}">
+        <input class="inp${names.block ? " bad" : ""}" id="x-name" value="${esc(f.name)}">
+        <span class="fmsg${names.block ? "" : " warn"}" id="x-name-msg">${names.name}</span>
       </label>
-      <label class="f">Český název<input class="inp" id="x-cz" value="${esc(f.cz)}"></label>
+      <label class="f">
+        Český název
+        <input class="inp" id="x-cz" value="${esc(f.cz)}">
+        <span class="fmsg warn" id="x-cz-msg">${names.cz}</span>
+      </label>
       <div>
         <div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div>
         <div class="mpick">
@@ -7279,7 +7357,8 @@
       </label>
     </div>`;
     h += `<div class="stack" style="margin-top:12px">
-      <button class="btn primary block" data-act="saveEx" data-v="${esc(id || "")}">Uložit cvik</button>`;
+      <button class="btn primary block${names.block ? " off" : ""}" id="ex-save" data-act="saveEx"
+          data-v="${esc(id || "")}" aria-disabled="${!!names.block}">Uložit cvik</button>`;
     if (id && exChanged(id)) {
       h += `<button class="btn block" data-act="resetEx" data-v="${esc(id)}">Vrátit na výchozí</button>`;
     }
@@ -9128,6 +9207,13 @@
               .slice(0, 40) +
             "-" +
             Date.now().toString(36).slice(-4);
+        // F3-17: stejný anglický název jako jiný cvik nepustí (upozornění je pod názvem)
+        const clash = exNameMark();
+        if (clash) {
+          toast("Cvik s tímto názvem už máš: " + S.exLib[clash].name + ".");
+          document.getElementById("x-name").scrollIntoView({ block: "center", behavior: "smooth" });
+          break;
+        }
         if (!fm.pri.length) {
           toast("Vyber aspoň jednu hlavní partii.");
           break;
@@ -9388,6 +9474,19 @@
       case "exEdBack":
         navBack();
         break;
+      case "exClashOpen": {
+        // F3-17: stránka cviku se stejným názvem; Zpět vrátí formulář i s napsaným textem
+        const f = navFrame();
+        closeSheet();
+        S.nav.push(f);
+        S.exPart = "info";
+        S.exDetail = v;
+        S.detailGym = "all";
+        S.exHistLimit = 25;
+        S.prevRoute = "exed";
+        go("exd");
+        break;
+      }
       case "exDiscard":
         closeSheet();
         navBack(true);
@@ -10130,6 +10229,9 @@
     } // F0-09: opravený odkaz už není červený
     if (exEd && t.id && t.id.startsWith("x-")) {
       exEdCollect();
+      if (t.id === "x-name" || t.id === "x-cz") {
+        exNameMark();
+      } // F3-17: shoda názvu s jiným cvikem hned při psaní
     } // F3-14: formulář cviku přežije překreslení stránky
     const f = t.dataset && t.dataset.f;
     if (!f) return;

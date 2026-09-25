@@ -184,6 +184,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `input`/`change` volají `exEdCollect`, stránka přežije překreslení), neuložené změny `exEdChanged` (předvyplnění z online
   databáze se počítá jako změna; Zpět i záložka se zeptají, akce `exDiscard`). Odchod vždy přes `exEdLeave(re)` (`re` = jiný panel než uložený, např. výběr cviků po
   uložení z výsledků hledání). Route `exed` se neukládá do `Local` `route` (po restartu se neobnoví, F3-16).
+- Jedinečné názvy cviků (F3-17, sekce „JEDINEČNÉ NÁZVY CVIKŮ“): klíč `exKey` (bez velkých písmen, diakritiky a mezer),
+  shoda s jiným cvikem (i skrytým) `exClash(pole, hodnota, vlastníId)`. Stejný anglický název nepustí (`exNameBlock`;
+  starý duplikát beze změny názvu projde), stejný český jen upozorní (`.fmsg.warn`). Hlášky `exNameMsgs` / `exNameMark`
+  (hned při psaní, `#x-name-msg`, `#x-cz-msg`, `#ex-save` s `.btn.off`), odkaz `exClashOpen` otevře stránku cviku
+  a Zpět vrátí formulář (formulář pod ní si drží navFrame v `f.exEd`, vrací ho `exEdLeave`). Každé nové místo, které
+  vytváří nebo přejmenovává cvik, má názvy hlídat stejně.
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
   stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
