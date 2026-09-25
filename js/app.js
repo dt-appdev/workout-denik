@@ -2990,8 +2990,17 @@
     if (msgEl) {
       msgEl.textContent = msg;
     }
+    const save = document.getElementById("tpl-save");
+    if (save) {
+      const off = tplSaveOff(d);
+      save.classList.toggle("off", off);
+      save.setAttribute("aria-disabled", String(off));
+    }
     return msg;
   }
+  // tlačítko Uložit šablonu vypadá neaktivní (šedé) při shodě názvu nebo prázdném názvu; klepnout na něj jde
+  // dál (hláška a posun k názvu), jinak by u dlouhé šablony nebylo vidět proč
+  const tplSaveOff = (d) => !tplClean(d.title) || !!tplNameProblem(d);
   // cviky a série šablony z uloženého tréninku (i supersérie)
   function tplItemsOf(w) {
     return (w.ex || []).map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e)));
@@ -3740,8 +3749,10 @@
       h += `<button class="btn primary block" data-act="saveEdit">Uložit změny</button>
         <button class="btn ghost danger block" data-act="delWorkout">Smazat trénink</button>`;
     } else {
+      const off = tplSaveOff(d); // F2-08: šedé při shodě nebo prázdném názvu
       h +=
-        `<button class="btn primary block" data-act="saveTpl">Uložit šablonu</button>` +
+        `<button class="btn primary block${off ? " off" : ""}" id="tpl-save" data-act="saveTpl"
+            aria-disabled="${off}">Uložit šablonu</button>` +
         `${d.id ? '<button class="btn ghost danger block" data-act="delTpl">Smazat šablonu</button>' : ""}`;
     }
     h += "</div>";
@@ -9471,6 +9482,7 @@
         const name = tplClean(d.title);
         if (!name) {
           toast("Zadej název šablony.");
+          window.scrollTo({ top: 0, behavior: "smooth" });
           break;
         }
         // F2-08: stejný název ve stejném fitku nepustí (upozornění je pod názvem nahoře)
