@@ -2678,11 +2678,25 @@
       render();
     });
   }
-  function toast(msg, cls) {
+  /* hláška nahoře; s funkcí undo má tlačítko „Vrátit“ (F2-03, akce undo), které platí,
+     jen dokud je hláška vidět (UNDO_MS) */
+  const UNDO_MS = 5000;
+  function toast(msg, cls, undo) {
     const r = document.getElementById("toastRoot");
-    r.innerHTML = `<div class="toast${cls ? " " + cls : ""}" role="status">${esc(msg)}</div>`;
+    toast.undo = undo || null;
+    r.innerHTML =
+      `<div class="toast${cls ? " " + cls : ""}${undo ? " has-undo" : ""}" role="status">` +
+      `<span>${esc(msg)}</span>` +
+      `${undo ? '<button class="toast-undo" data-act="undo">Vrátit</button>' : ""}` +
+      `</div>`;
     clearTimeout(toast.t);
-    toast.t = setTimeout(() => (r.innerHTML = ""), 2600);
+    toast.t = setTimeout(
+      () => {
+        r.innerHTML = "";
+        toast.undo = null;
+      },
+      undo ? UNDO_MS : 2600,
+    );
   }
 
   function renderTabs() {
@@ -3248,6 +3262,132 @@
     window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - under - 8);
   }
 
+  /* ---------- VRÁTIT CVIK (F2-03) ----------
+     Po odebrání nebo nahrazení cviku (šablona, rozdělaný i ukončený trénink) nabídne hláška „Vrátit“.
+     Vrátí původní cvik se sériemi a poznámkou na stejné místo (u nahrazení místo nového cviku newK).
+     Platí jen pro stejnou úpravu, která je pořád otevřená. Smazání série „Vrátit“ nemá. */
+  function exUndoOffer(d, idx, entry, newK, msg) {
+    toast(msg, "", () => {
+      if (curDraft() !== d) {
+        toast("Cvik už nejde vrátit.");
+        return;
+      }
+      const at = newK ? d.ex.findIndex((e) => e.k === newK) : -1;
+      if (at >= 0) {
+        d.ex[at] = entry;
+      } else {
+        d.ex.splice(Math.min(idx, d.ex.length), 0, entry);
+      }
+      edMark(d, entry);
+      touchDraft();
+      scheduleRender();
+    });
+  }
+
+  /* ---------- SMAZÁNÍ SÉRIE TAHEM (F2-03) ----------
+     Tah doleva po řádku série (tr.sw) odsune řádek a vpravo odkryje tlačítko „Smazat“ (.sw-del, akce
+     delSet, leží za posledním sloupcem a karta cviku ho jinak ořízne). Série se smaže až klepnutím na
+     něj. Tah doprava, klepnutí jinam nebo posunutí stránky řádek vrátí. Odsunutý je nejvýš jeden řádek
+     (swOpen). Svislý pohyb posouvá stránku (touch-action: pan-y u buněk). Po tahu se klepnutí zahodí,
+     aby se neotevřel krokovač ani neodškrtla série. */
+  const SW_SLOP = 10; // px: pohyb, po kterém se rozhodne, jestli jde o tah do strany, nebo o posun stránky
+  const SW_OPEN = 0.4; // část šířky tlačítka Smazat, po které řádek po puštění zůstane odsunutý
+  const SW_EAT_MS = 350; // ms: jak dlouho po tahu zahodit klepnutí
+  let swOpen = null; // odsunutý řádek
+  let sw = null; // rozběhnutý tah: {row, pid, x0, y0, base, dx, horiz, w}
+  let swEatUntil = 0;
+
+  function swWidth(row) {
+    const btn = row.querySelector(".sw-del");
+    return btn ? btn.offsetWidth : 0;
+  }
+  function swSet(row, x, anim) {
+    row.classList.toggle("sw-anim", !!anim);
+    row.style.transform = x ? `translateX(${x}px)` : "";
+  }
+  function swClose() {
+    if (swOpen && swOpen.isConnected) {
+      swSet(swOpen, 0, true);
+    }
+    swOpen = null;
+  }
+  document.addEventListener("pointerdown", (ev) => {
+    if (sw || (ev.pointerType === "mouse" && ev.button !== 0)) return;
+    const row = ev.target.closest && ev.target.closest("tr.sw");
+    if (swOpen && !swOpen.isConnected) {
+      swOpen = null;
+    }
+    if (swOpen && row !== swOpen) {
+      swClose();
+    }
+    if (!row || ev.target.closest(".sw-del")) return;
+    sw = {
+      row,
+      pid: ev.pointerId,
+      x0: ev.clientX,
+      y0: ev.clientY,
+      base: row === swOpen ? -swWidth(row) : 0,
+      dx: 0,
+      horiz: null,
+      w: 0,
+    };
+  });
+  document.addEventListener("pointermove", (ev) => {
+    if (!sw || ev.pointerId !== sw.pid) return;
+    const dx = ev.clientX - sw.x0;
+    const dy = ev.clientY - sw.y0;
+    if (sw.horiz === null) {
+      if (Math.abs(dx) < SW_SLOP && Math.abs(dy) < SW_SLOP) return;
+      sw.horiz = Math.abs(dx) > Math.abs(dy);
+      if (!sw.horiz) {
+        sw = null;
+        return;
+      }
+      sw.w = swWidth(sw.row);
+    }
+    sw.dx = dx;
+    swSet(sw.row, Math.max(-sw.w, Math.min(0, sw.base + dx)), false);
+  });
+  function swEnd(ev, cancel) {
+    if (!sw || ev.pointerId !== sw.pid) return;
+    const g = sw;
+    sw = null;
+    if (!g.horiz) {
+      // klepnutí na odsunutý řádek ho jen vrátí
+      if (g.row === swOpen) {
+        swClose();
+        swEatUntil = Date.now() + SW_EAT_MS;
+      }
+      return;
+    }
+    swEatUntil = Date.now() + SW_EAT_MS;
+    const x = g.base + g.dx;
+    const open = !cancel && g.w > 0 && x < -g.w * SW_OPEN;
+    swSet(g.row, open ? -g.w : 0, true);
+    swOpen = open ? g.row : null;
+  }
+  document.addEventListener("pointerup", (ev) => swEnd(ev, false));
+  document.addEventListener("pointercancel", (ev) => swEnd(ev, true));
+  document.addEventListener(
+    "click",
+    (ev) => {
+      if (Date.now() >= swEatUntil) return;
+      swEatUntil = 0;
+      ev.stopPropagation();
+      ev.preventDefault();
+    },
+    true,
+  );
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (swOpen && !sw) {
+        swClose();
+      }
+    },
+    { passive: true },
+  );
+
   function vEditor(d) {
     const mode = d.mode;
     let h = "";
@@ -3417,7 +3557,6 @@
           ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
           ${flds.map((f) => `<th class="c-in">${FLD[f].lab}</th>`).join("")}
           ${mode === "active" ? '<th class="c-ok"><span aria-label="Hotovo">✓</span></th>' : ""}
-          <th class="c-x"></th>
         </tr>
       </thead>
       <tbody>`;
@@ -3438,8 +3577,12 @@
       const p = hints[j].p,
         hn = hints[j].h;
       const marked = kk && d === S.active && kk.i === i && kk.j === j;
+      // tlačítko Smazat za posledním sloupcem, odkryje ho tah doleva (F2-03)
+      const delBtn = `<button class="sw-del" data-act="delSet" data-i="${i}" data-j="${j}" tabindex="-1">
+        Smazat
+      </button>`;
       h +=
-        `<tr class="${s.done ? "done" : ""}${marked ? " kk-on" : ""}">
+        `<tr class="sw${s.done ? " done" : ""}${marked ? " kk-on" : ""}">
         <td class="c-type">
           <button class="stype ${s.t}" data-act="cycType" data-i="${i}" data-j="${j}"
               title="${TYPE_NAME[s.t]} — klepnutím změníš">
@@ -3454,32 +3597,30 @@
       if (mode !== "template") {
         h += `<td class="c-prev num">${p ? esc(setStr(kind, p)) : "–"}</td>`;
       }
-      for (const f of flds) {
+      flds.forEach((f, n) => {
         const fld = f === "plus" || f === "minus" ? "kg" : f;
         const id = kkInputId(e, j, f);
         // krokovač (F1-03): políčko jen ke čtení, klepnutí otevře panel s +/−
         const stepper = useStepper && kkKbd !== id ? ` readonly data-act="kk" data-v="${f}"` : "";
-        h += `<td class="c-in">
+        const last = mode !== "active" && n === flds.length - 1;
+        h += `<td class="c-in${last ? " sw-cell" : ""}">
           <input class="cell${numCls(fld, fval(s, fld))}" id="${id}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
               value="${esc(fval(s, fld))}" placeholder="${esc(phOf(hn, fld))}"
               aria-label="${FLD[f].lab}"${stepper}>
+          ${last ? delBtn : ""}
         </td>`;
-      }
+      });
       if (mode === "active") {
-        h += `<td class="c-ok">
+        h += `<td class="c-ok sw-cell">
           <button class="okb" data-act="done" data-i="${i}" data-j="${j}" aria-pressed="${!!s.done}"
               aria-label="Série hotová">
             ${IC.check}
           </button>
+          ${delBtn}
         </td>`;
       }
-      h += `<td class="c-x">
-        <button class="xb" data-act="delSet" data-i="${i}" data-j="${j}" aria-label="Smazat sérii">
-          ×
-        </button>
-      </td>
-      </tr>`;
+      h += `</tr>`;
     });
     h += `</tbody></table>
     <div class="exc-f">
@@ -8208,10 +8349,21 @@
         toggleSetDone(d, i, j);
         break;
       case "delSet":
+        swOpen = null;
         d.ex[i].sets.splice(j, 1);
         touchDraft();
         scheduleRender();
         break;
+      case "undo": {
+        const fn = toast.undo;
+        toast.undo = null;
+        clearTimeout(toast.t);
+        document.getElementById("toastRoot").innerHTML = "";
+        if (fn) {
+          fn();
+        }
+        break;
+      }
       case "addSet": {
         const ss = d.ex[i].sets;
         const l = [...ss].reverse().find((s) => s.t !== "w");
@@ -8271,12 +8423,14 @@
       case "exOrder":
         sheetExOrder();
         break;
-      case "exRemove":
-        d.ex.splice(i, 1);
+      case "exRemove": {
+        const old = d.ex.splice(i, 1)[0];
         touchDraft();
         closeSheet();
         scheduleRender();
+        exUndoOffer(d, i, old, null, "Cvik odebrán");
         break;
+      }
       case "exReplace":
         openPicker("replace", i);
         break;
@@ -8321,8 +8475,10 @@
           closeSheet();
           break;
         }
+        let replaced = null;
         if (pick.mode === "replace") {
           const e = exEntryFor(pick.sel[0], dd.gymId);
+          replaced = { i: pick.replaceI, old: dd.ex[pick.replaceI], k: e.k };
           dd.ex[pick.replaceI] = e;
           edMark(dd, e);
         } else {
@@ -8343,6 +8499,9 @@
         touchDraft();
         closeSheet();
         scheduleRender();
+        if (replaced && replaced.old) {
+          exUndoOffer(dd, replaced.i, replaced.old, replaced.k, "Cvik nahrazen");
+        }
         break;
       }
       case "newEx":
