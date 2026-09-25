@@ -4878,6 +4878,7 @@
             label: lab[m],
             unit: "",
             fmt: m === "vol" ? "vol" : m === "dur" ? "min" : "",
+            whole: m === "count" || m === "sets",
             bars: bars.map((b) => ({ x: b.x, label: b.label, tip: b.tip, v: b[m] })),
           },
           180,
@@ -5329,6 +5330,7 @@
             unit: M[S.detailMetric][2],
             yUnit: M[S.detailMetric][2].trim(),
             fmt: M[S.detailMetric][2] === " s" ? "sec" : S.detailMetric === "vol" ? "vol" : "",
+            whole: S.detailMetric === "reps",
             series,
           },
           200,
@@ -8225,7 +8227,8 @@
 
   /* ---------- grafy (SVG) ----------
      spec grafu: type ("bar" / "line"), label, unit (přípona hodnoty v bublině), yUnit (jednotka u čísel
-     na ose Y, F3-08), fmt (druh hodnot podle CH_FMT, jinak obyčejná čísla) a data (bars / series). */
+     na ose Y, F3-08), fmt (druh hodnot podle CH_FMT, jinak obyčejná čísla), whole (jen celá čísla na ose)
+     a data (bars / series). */
   const CH = {};
   let chN = 0;
   function chartPh(spec, h) {
@@ -8233,8 +8236,9 @@
     CH[id] = Object.assign({ h }, spec);
     return `<div class="chart" id="${id}" data-chart="${id}" style="height:${h}px"></div>`;
   }
-  // hodnoty na ose: asi n kulatých kroků (1, 2, 5 × 10ⁿ), u času kroky ze seznamu steps (F3-08)
-  function niceTicks(min, max, n, steps) {
+  // hodnoty na ose: asi n kulatých kroků (1, 2, 5 × 10ⁿ), u času kroky ze seznamu steps (F3-08),
+  // whole = počty (opakování, tréninky, série), krok aspoň 1
+  function niceTicks(min, max, n, steps, whole) {
     if (min === max) {
       min = min - 1;
       max = max + 1;
@@ -8249,6 +8253,9 @@
       const mag = Math.pow(10, Math.floor(Math.log10(step0))),
         r = step0 / mag;
       step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag;
+    }
+    if (whole && step < 1) {
+      step = 1;
     }
     const lo = Math.floor(min / step) * step,
       hi = Math.ceil(max / step) * step;
@@ -8292,7 +8299,7 @@
   // osa Y grafu: hodnoty (ticks) a jejich popisky i s jednotkou
   function chartAxis(sp, min, max) {
     const f = CH_FMT[sp.fmt];
-    const ticks = niceTicks(min, max, 4, f && f.steps);
+    const ticks = niceTicks(min, max, 4, f && f.steps, sp.whole);
     const top = ticks[ticks.length - 1];
     const unit = f ? f.unit(top) : sp.yUnit || "";
     return {

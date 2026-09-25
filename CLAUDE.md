@@ -171,7 +171,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   s poměrem skupin. Stránka cviku (`exFigures`, `exTags`) zůstává červená.
 - Grafy (F3-08, sekce „grafy (SVG)“): `chartPh(spec, výška)`, kreslí `drawCharts`. Jednotka je u každého čísla na ose Y
   (`spec.yUnit`, opakování „10×“ bez mezery přes `withUnit`), v bublině přípona `spec.unit`. Čas a objem přes `spec.fmt`
-  (`CH_FMT`: `min` = minuty jako „2:00 h“, `sec` = sekundy jako „1:30 min“, `vol` = kg, od 10 000 tuny jako `fmtVol`).
+  (`CH_FMT`: `min` = minuty jako „2:00 h“, `sec` = sekundy jako „1:30 min“, `vol` = kg, od 10 000 tuny jako `fmtVol`),
+  počty (opakování, tréninky, série) `spec.whole` = na ose jen celá čísla.
   Graf je přes celou šířku karty: levý okraj = změřená šířka nejdelšího popisku (`chartTextWidth`), vpravo bez okraje.
   Popisky pod sloupci se při nedostatku místa pravidelně vynechají (poslední zůstane). Nový graf s jednotkou jen přes tato pole.
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
