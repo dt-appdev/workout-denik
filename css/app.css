@@ -1706,15 +1706,6 @@ tr.done .okb {
 .sheet-f > .full {
   flex: 1 0 100%;
 }
-/* řádek tlačítek přes celou šířku patičky (souhrn tréninku: Sdílet + Dokončit / Cvičit znovu, F4-08) */
-.sheet-f:has(> .frow) {
-  flex-wrap: wrap;
-}
-.sheet-f > .frow {
-  flex: 1 0 100%;
-  display: flex;
-  gap: 8px;
-}
 
 /* sdílení souhrnu jako obrázek (F4-08): panel má pevnou výšku, ovládání dole je vždy vidět a náhled
    (canvas v plném rozlišení zmenšený na obrazovku) vyplní zbylé místo nad ním */

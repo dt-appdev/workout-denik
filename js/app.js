@@ -863,6 +863,7 @@
     setPage: lsGet("setPage", ""), // otevřená podstránka Nastavení, "" = rozcestník (F3-09)
     nav: [], // kam se vrátit ze stránky cviku / úpravy (F0-06), viz navBack
     exDetail: null,
+    wDetail: null, // otevřená stránka tréninku {id, mk, saved} (F3-19)
     exPart: "info",
     exlQ: "",
     exlM: lsGet("exlM", "all"),
@@ -2729,7 +2730,7 @@
     // formulář cviku (F3-14) pod záložku, odkud se na něj přišlo
     const top = S.nav[S.nav.length - 1];
     const r = S.route === "exed" ? (top ? top.route : "ex") : S.route;
-    const cur = r === "exd" ? (S.prevRoute === "stats" ? "stats" : "ex") : r;
+    const cur = r === "exd" ? (S.prevRoute === "stats" ? "stats" : "ex") : r === "wd" ? "hist" : r;
     document.getElementById("tabs").innerHTML = t
       .map(
         ([k, l]) =>
@@ -2774,6 +2775,8 @@
         h = vExDetail();
       } else if (S.route === "exed") {
         h = vExEdit();
+      } else if (S.route === "wd") {
+        h = vWorkout();
       } else if (S.route === "body") {
         h = vBody();
       } else if (S.route === "set") {
@@ -2829,7 +2832,7 @@
     navEnsure();
   }
   function go(route) {
-    if (route !== "exd" && route !== "edit" && route !== "exed") {
+    if (route !== "exd" && route !== "edit" && route !== "exed" && route !== "wd") {
       S.nav = [];
     }
     if (route === "train" && S.route !== "train") {
@@ -2839,7 +2842,8 @@
       galReset();
     } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
-    const base = (r) => (r === "edit" || r === "exd" ? "train" : r === "exed" ? "ex" : r);
+    const base = (r) =>
+      r === "edit" || r === "exd" ? "train" : r === "exed" ? "ex" : r === "wd" ? "hist" : r;
     // formulář cviku (F3-14) se po restartu neobnoví, zůstane uložené místo, odkud se na něj přišlo
     if (route !== "exed") {
       lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
@@ -3030,7 +3034,7 @@
     closeSheet();
     toast("Šablona „" + name + "“ vytvořena");
   }
-  // Uložit jako šablonu při shodě názvu: přepsat šablonu, nebo uložit s dalším číslem (panel v panelu souhrnu)
+  // Uložit jako šablonu při shodě názvu: přepsat šablonu, nebo uložit s dalším číslem (panel nad stránkou tréninku)
   function sheetTplClash(w, gyms, clash) {
     const [id, t] = clash;
     tplAsk = { w, gyms, id, name: tplFreeName(w.title, gyms, null) };
@@ -3044,8 +3048,6 @@
       `<button class="btn primary full" data-act="tplAskNew">Uložit jako „${esc(tplAsk.name)}“</button>
       <button class="btn full" data-act="tplAskOver">Přepsat šablonu „${esc(t.name)}“</button>
       <button class="btn full" data-act="tplAskBack">Zrušit</button>`,
-      false,
-      { lv: wOpen && wOpen.nav.lv ? wOpen.nav.lv + 1 : 2, back: wBack(wOpen) },
     );
   }
 
@@ -3420,8 +3422,6 @@
       b,
       `<button class="btn grow" data-act="againBack">Zpět</button>
       <button class="btn primary grow" data-act="againOk">Začít</button>`,
-      false,
-      { lv: wOpen && wOpen.nav.lv ? wOpen.nav.lv + 1 : 2, back: wBack(wOpen) },
     );
   }
   function startAgain() {
@@ -4101,11 +4101,11 @@
     return h;
   }
   /* ---------- SOUHRN TRÉNINKU (F3-03) ----------
-     Panel tréninku (po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem
+     Stránka tréninku (F3-19, po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem
      proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
      (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
      (prevEx: i z jiné šablony, cvik vázaný na fitko jen ze stejného fitka). Vše se počítá z uložených dat.
-     Dole po uložení červené Dokončit (zavře panel, F3-12), z Historie Cvičit znovu. */
+     Dole po uložení červené Dokončit (do Historie, F3-12), z Historie Cvičit znovu. */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
@@ -4352,11 +4352,59 @@
       </span>`,
     };
   }
-  let wOpen = null; // otevřený panel tréninku {w, justSaved, nav} – pro panel v panelu a krok zpět
-  const wBack = (o) => (o ? () => sheetWorkout(o.w, o.justSaved, o.nav, true) : closeSheet);
-  function sheetWorkout(w, justSaved, nav, noanim) {
-    nav = nav || {};
-    wOpen = { w, justSaved, nav };
+  /* ---------- STRÁNKA TRÉNINKU (F3-19) ----------
+     Uložený trénink se otevírá jako stránka (route "wd", jako stránka cviku), ne panel: z Historie (seznam
+     i kalendář), z porovnání „Porovnáno s…“ a po uložení tréninku. S.wDetail = {id, mk, saved}, saved =
+     právě uložený („Hotovo · …“ a Dokončit). Zpět vede tam, odkud se přišlo (navFrame si pamatuje
+     i předchozí trénink a otevřený výběr dne v kalendáři). Otevírat jen přes openWorkout. */
+  function openWorkout(w, justSaved) {
+    const f = navFrame();
+    closeSheet();
+    S.nav.push(f);
+    S.wDetail = { id: w.id, mk: w.mk, saved: !!justSaved };
+    go("wd");
+  }
+  function vWorkout() {
+    const o = S.wDetail;
+    const x = o && S.months[o.mk] && S.months[o.mk][o.id];
+    if (!x) {
+      // trénink mezitím zmizel (smazaný, obnova zálohy): zpět do Historie
+      S.route = "hist";
+      S.nav = [];
+      return vHist();
+    }
+    const w = Object.assign({ id: o.id, mk: o.mk }, x);
+    let h = topbar(
+      (o.saved ? "Hotovo · " : "") + w.title,
+      "",
+      `<button class="iconbtn" data-act="wBack" aria-label="Zpět">${IC.back}</button>`,
+    );
+    h += wSummary(w, o.saved);
+    // Sdílet vlevo od hlavního tlačítka (F4-08)
+    h += `<div class="stack" style="margin-top:12px">
+      <div class="row" style="align-items:stretch">
+        <button class="btn" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
+        ${
+          o.saved
+            ? '<button class="btn primary grow" data-act="wBack">Dokončit</button>'
+            : `<button class="btn primary grow" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
+              Cvičit znovu
+            </button>`
+        }
+      </div>
+      <div class="row" style="align-items:stretch">
+        <button class="btn grow" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
+          Uložit jako šablonu
+        </button>
+        <button class="btn grow" data-act="editW" data-v="${esc(w.id)}" data-m="${w.mk}">
+          Upravit
+        </button>
+      </div>
+    </div>`;
+    return h;
+  }
+  // obsah stránky tréninku: fitko a čas, karty, porovnání, rekordy, partie, cviky se sériemi
+  function wSummary(w, justSaved) {
     const p = prevRun(w);
     let b = `<div class="row wrap-r small muted num">
       <span class="pill">
@@ -4429,32 +4477,11 @@
       );
     });
     b += ssWrap(w.ex || [], cards);
-    openSheet(
-      (justSaved ? "Hotovo · " : "") + w.title,
-      b,
-      `<div class="frow">
-        <button class="btn" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
-        ${
-          justSaved
-            ? '<button class="btn primary grow" data-act="closeSheet">Dokončit</button>'
-            : `<button class="btn primary grow" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
-              Cvičit znovu
-            </button>`
-        }
-      </div>
-      <button class="btn grow" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
-        Uložit jako šablonu
-      </button>
-      <button class="btn grow" data-act="editW" data-v="${esc(w.id)}" data-m="${w.mk}">
-        Upravit
-      </button>`,
-      noanim,
-      nav,
-    );
+    return b;
   }
 
   /* ---------- SDÍLENÍ SOUHRNU (F4-08) ----------
-     Tlačítko Sdílet v souhrnu tréninku (sheetWorkout) otevře panel „Sdílet trénink“ (sheetShare) s náhledem
+     Tlačítko Sdílet na stránce tréninku (vWorkout, F3-19) otevře panel „Sdílet trénink“ (sheetShare) s náhledem
      obrázku. Obrázek se kreslí na <canvas> (shrDraw), vždy 1080 px široký, Příběh 9:16 nebo Příspěvek 4:5,
      tmavý nebo světlý, česky nebo anglicky, volitelně s fotkou (jen do obrázku, nikam se neukládá) a s postavou.
      Písmo v pevných px, na volbě Velikost písma (F3-11) nezávisí. Postava se kreslí přímo z obrysů atlasu
@@ -5099,16 +5126,15 @@
   function shrSavePrefs() {
     Local.set("shr", { fmt: shr.fmt, theme: shr.theme, lang: shr.lang, fig: shr.fig });
   }
-  // otevře panel pro trénink w (z panelu tréninku, Zpět se do něj vrátí)
+  // otevře panel pro trénink w (ze stránky tréninku F3-19, Zpět panel zavře a fotku zahodí přes closeSheet)
   function shareOpen(w) {
     if (shr && shr.img && shr.img.close) {
       shr.img.close();
     }
-    const o = wOpen;
     shr = Object.assign(
       {
         w,
-        nav: { lv: ((o && o.nav.lv) || 1) + 1, back: shrBack(o) },
+        nav: { lv: 1, back: closeSheet },
         img: null,
         fx: 0.5,
         fy: 0.25,
@@ -5118,14 +5144,6 @@
       shrPrefs(),
     );
     sheetShare();
-  }
-  // krok zpět z panelu: zahodí fotku a vrátí panel tréninku
-  function shrBack(o) {
-    const back = wBack(o);
-    return () => {
-      shrClose();
-      back();
-    };
   }
   // uvolní fotku (a náhled přes obrazovku) z paměti; volá se při zavření panelu i kroku zpět
   function shrClose() {
@@ -5637,7 +5655,7 @@
     }
     if (ws.length + bs.length === 1) {
       if (ws.length) {
-        sheetWorkout(ws[0]);
+        openWorkout(ws[0]);
       } else {
         sheetBody(bs[0].id);
       }
@@ -7948,7 +7966,7 @@
     </div>
     <div class="chips" data-ck="pickEq">
       <button class="chip" data-act="pickEq" data-v="all" aria-pressed="${pick.eq === "all"}">
-        Vše
+        Všechno vybavení
       </button>
       ${Object.entries(EQUIP)
         .map(
@@ -7959,13 +7977,13 @@
         )
         .join("")}
     </div>
-    <div class="row wrap-r" style="justify-content:space-between">
-      <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
-      <span class="xs muted">${n} ${plural(n, "cvik", "cviky", "cviků")}</span>
-    </div>
     <div class="row wrap-r" style="gap:8px">
-      <button class="btn sm" data-act="newEx">+ Vytvořit vlastní cvik</button>
-      <button class="btn sm" data-act="fedbOpen" data-v="picker">Hledat v online databázi</button>
+      <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
+      <span class="row" style="margin-left:auto">
+        <span class="xs muted">${n} ${plural(n, "cvik", "cviky", "cviků")}</span>
+        ${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "picker")}
+        ${icoBtn("newEx", "plus", "Nový cvik")}
+      </span>
     </div>
     <div class="stack" id="pickList" style="gap:6px">${pickerList()}</div>`;
   }
@@ -10593,8 +10611,8 @@
         restStop();
         closeSheet();
         toast("Trénink uložen");
-        go("hist");
-        sheetWorkout(Object.assign({ id, mk: monthKey(w.start) }, w), true);
+        go("hist"); // Dokončit i Zpět ze stránky „Hotovo“ vedou do Historie
+        openWorkout({ id, mk: monthKey(w.start) }, true);
         if (S.cfg.recCelW) {
           const R = wRecs({ id });
           if (R.length) {
@@ -10650,7 +10668,14 @@
         saveWorkout(d.id, w, d.mk);
         S.editDraft = null;
         toast("Změny uloženy");
-        go("hist");
+        // F3-19: zpět na stránku tréninku (s novými údaji, trénink mohl změnit měsíc), jinak do Historie
+        const back = S.nav[S.nav.length - 1];
+        if (back && back.route === "wd" && back.wd) {
+          back.wd = Object.assign({}, back.wd, { mk: monthKey(w.start) });
+          navBack(true);
+        } else {
+          go("hist");
+        }
         break;
       }
       case "delWorkout":
@@ -10767,11 +10792,9 @@
       case "calActive":
         go("train");
         break;
+      // Zpět ze stránky tréninku znovu otevře výběr dne (navFrame si pamatuje otevřený panel)
       case "calW":
-        sheetWorkout(Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]), false, {
-          lv: 2,
-          back: () => sheetCalDay(t.dataset.k, true),
-        });
+        openWorkout({ id: v, mk: t.dataset.m });
         break;
       case "calBody":
         sheetBody(v, { lv: 2, back: () => sheetCalDay(t.dataset.k, true) });
@@ -10810,19 +10833,17 @@
           startAgain();
         }
         break;
-      case "prevW": {
-        const o = wOpen;
-        const x = S.months[t.dataset.m] && S.months[t.dataset.m][v];
-        if (!x) break;
-        sheetWorkout(Object.assign({ id: v, mk: t.dataset.m }, x), false, {
-          lv: ((o && o.nav.lv) || 1) + 1,
-          back: wBack(o),
-        });
+      // porovnání v souhrnu: stránka minulého tréninku, Zpět vrátí na tento
+      case "prevW":
+        if (S.months[t.dataset.m] && S.months[t.dataset.m][v]) {
+          openWorkout({ id: v, mk: t.dataset.m });
+        }
         break;
-      }
+      case "openW":
+        openWorkout({ id: v, mk: t.dataset.m });
+        break;
       case "wShare": {
-        // otevřený trénink (i hned po uložení), jinak z dat
-        const x = wOpen && wOpen.w.id === v ? wOpen.w : S.months[t.dataset.m] && S.months[t.dataset.m][v];
+        const x = S.months[t.dataset.m] && S.months[t.dataset.m][v];
         if (x) {
           shareOpen(Object.assign({ id: v, mk: t.dataset.m }, x));
         }
@@ -10851,11 +10872,9 @@
       case "shrFullBack":
         navBack();
         break;
-      case "openW": {
-        const w = Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]);
-        sheetWorkout(w);
+      case "wBack":
+        navBack();
         break;
-      }
       case "editW": {
         const w = Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]);
         S.editDraft = workoutToDraft(w, "edit");
@@ -11477,7 +11496,7 @@
     const r = S.route,
       top = S.nav[S.nav.length - 1];
     let page = 1; // jiná záložka: jeden krok na Trénink
-    if (r === "exd" || r === "edit" || r === "exed") {
+    if (r === "exd" || r === "edit" || r === "exed" || r === "wd") {
       page = 1 + (top ? top.d : 1);
     } else if (r === "train") {
       page = 0;
@@ -11489,7 +11508,11 @@
   // místo, kam se vrátit ze stránky cviku, z úpravy nebo z formuláře cviku (i s otevřeným panelem a posunem
   // stránky)
   function navFrame() {
-    return { route: S.route, re: sheetNav && sheetNav.re, y: window.scrollY, d: navDepth() };
+    const f = { route: S.route, re: sheetNav && sheetNav.re, y: window.scrollY, d: navDepth() };
+    if (S.route === "wd") {
+      f.wd = S.wDetail; // stránka tréninku (F3-19): který trénink
+    }
+    return f;
   }
   // úprava tréninku/šablony má neuložené změny
   const edChanged = () => !!S.editDraft && JSON.stringify(S.editDraft) !== S.editOrig;
@@ -11498,6 +11521,7 @@
   function goTab(v) {
     S.exDetail = null;
     S.editDraft = null;
+    S.wDetail = null;
     exEd = null;
     if (v === "hist" && S.route !== "hist") {
       S.calM = 0;
@@ -11520,8 +11544,8 @@
     S.editOrig = JSON.stringify(S.editDraft);
     go("edit");
   }
-  /* jeden krok zpět: medaile, panel, stránka cviku / úprava (tam, odkud se přišlo), podstránka Nastavení →
-     rozcestník, jiná záložka → Trénink;
+  /* jeden krok zpět: medaile, panel, stránka cviku / tréninku / úprava (tam, odkud se přišlo), podstránka
+     Nastavení → rozcestník, jiná záložka → Trénink;
      force = zahodit neuložené změny bez ptaní; false = už není kam (hlavní obrazovka Tréninku) */
   function navBack(force) {
     if (celEl) {
@@ -11545,7 +11569,7 @@
       exEdLeave();
       return true;
     }
-    if (r === "exd" || r === "edit") {
+    if (r === "exd" || r === "edit" || r === "wd") {
       const d = S.editDraft;
       if (r === "edit") {
         S.editDraft = null;
@@ -11557,11 +11581,16 @@
             ? d && d.mode === "template"
               ? "train"
               : "hist"
-            : S.prevRoute && S.prevRoute !== "exd" && S.prevRoute !== "edit"
-              ? S.prevRoute
-              : "ex",
+            : r === "wd"
+              ? "hist"
+              : S.prevRoute && S.prevRoute !== "exd" && S.prevRoute !== "edit" && S.prevRoute !== "wd"
+                ? S.prevRoute
+                : "ex",
         );
         return true;
+      }
+      if (f.wd) {
+        S.wDetail = f.wd; // zpět na předchozí trénink (porovnání, F3-19)
       }
       go(f.route);
       render.restoreY = f.y;
