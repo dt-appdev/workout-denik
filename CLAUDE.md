@@ -215,6 +215,14 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (vázaný cvik jen ve stejném fitku). Klepnutí na „Porovnáno s…“ = panel v panelu (`prevW`, `wOpen`,
   `wBack`). Procvičené partie `wMuscles` (pomocná partie = půl série), postava přes `musFigs`
   (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
+- Sdílení souhrnu (F4-08, sekce „SDÍLENÍ SOUHRNU“): tlačítko `wShare` v patičce `sheetWorkout` (řádek `.frow`) otevře
+  panel v panelu `sheetShare` (stav `shr`, `shareOpen`, Zpět přes `shrBack`). Obrázek kreslí `shrDraw(ctx, shrData(w, en),
+  volby)` na `<canvas id="shrCv">` (náhled = canvas zmenšený přes CSS), 1080 px, `SHR_H` story 1920 / post 1350, písmo
+  v pevných px (na `fontK` nezávisí), barvy `SHR_PAL` (skupiny partií stejné jako `--g-*`), texty `SHR_TXT` (cs / en;
+  anglicky `name` cviku, česky `cz`). Postava přes `shrFigures` z obrysů `ATLAS` (Path2D), ne jako obrázek, takže CSP beze
+  změny. Volby v `Local` `shr` (`fmt`, `theme`, `lang`, `fig`), fotka jen v paměti (`shr.img`, ImageBitmap, políčko
+  `#shrPhotoIn` mimo panel), výřez `fx`/`fy` tahem v náhledu. Sdílení `navigator.share({files})`, jinak
+  `LocalDownloads.save` (umí i Blob s `type`). Nový údaj na obrázku přidat do `shrData` a oba jazyky do `SHR_TXT`.
 - Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`cal` výchozí / `list`, `Local` `histView`),
   `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
   Tréninky podle dne přes `wByDay` (klíč `dayKey`, použít i pro heatmapu F3-07), měření `bodyByDay`.
