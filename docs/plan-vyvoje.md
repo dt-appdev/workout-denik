@@ -129,7 +129,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F4-03** Kalkulačka kotoučů na osu.
 - [ ] **F4-04** RIR/RPE u série (volitelné).
 - [x] **F4-05** Supersérie se společnou pauzou.
-- [ ] **F4-06** Upozornění na stagnaci (3–4 tréninky bez zlepšení).
+- [x] **F4-06** Upozornění na stagnaci (3–4 tréninky bez zlepšení).
 - [ ] **F4-07** Plánované tréninky v kalendáři.
 - [ ] **F4-08** Sdílení souhrnu tréninku jako obrázek. Pokud se bude kreslit přes obrázek z `blob:`/`data:` (např. postava ze SVG), povolit ho v `img-src` v `index.html` (F0-08). Obrázek kreslit vždy v normální velikosti písma, bez ohledu na volbu Velikost písma (F3-11).
 - [ ] **F4-09** Export do CSV pro Excel.
@@ -137,7 +137,7 @@ Předpoklad: F0-02 (svalové partie).
 
 ### Fáze 5 – Motivace
 
-Předpoklad: F3-02 (oslava rekordu). Vše se počítá z uložených tréninků, nic nového se neukládá (kromě nastavení). Každá funkce jde vypnout, volby patří do skupiny Nastavení → Rekordy (případně ji přejmenovat na „Rekordy a motivace“, viz F3-09). Žádná oznámení na pozadí a žádné výčitky („ztratíš streak“).
+Předpoklad: F3-02 (oslava rekordu). Vše se počítá z uložených tréninků, nic nového se neukládá (kromě nastavení). Každá funkce jde vypnout, volby patří do skupiny Nastavení → Rekordy a pokrok (přejmenovaná z „Rekordy“ v F4-06). Žádná oznámení na pozadí a žádné výčitky („ztratíš streak“).
 
 - [ ] **F5-01** Kolik chybí na rekord: u série v rozdělaném tréninku drobná nápověda, co je potřeba na nový rekord (např. „🏅 8 opak. = nový 1RM“, „85 kg = max. zátěž“). Navazuje na F4-01.
 - [ ] **F5-02** Týdenní cíl: v Nastavení počet tréninků za týden (např. 3), na obrazovce Trénink kolečko „2 / 3 tento týden“, streak počítá týdny se splněným cílem (dnes `calStreak` = týdny aspoň s 1 tréninkem).
@@ -203,6 +203,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
 | F3-04 | 6 hlavních partií, nebo jemnější dělení? | 6 partií |
 | vše | Co z původního zadání už appka umí (tmavý režim, časovač, měření)? | Ověřeno 23. 9.: tmavý režim, časovač se zvukem a ±15 s i tělesná měření appka už umí |
+| F4-06 | Co je zlepšení, po kolika trénincích, kde ukázat, jde to vypnout? | Vyřešeno 25. 9.: zlepšení = kterýkoli ukazatel pracovních sérií lepší (váha, 1RM, nejlepší série, objem, opakování, výdrž, čas, vzdálenost, tempo; přidaná série se počítá; u vlastní váhy jen opakování); stagnace = posledních N tréninků po sobě nepřekonalo trénink těsně před nimi ani sebe navzájem (ne rekord z celé historie, po pauze by strašil); N = 3 / 4 / 5, výchozí 4; ukázat v kartě cviku v probíhajícím tréninku, na stránce cviku → Statistiky a ve Statistikách → Cviky (jen cviky z posledních 30 dní); věcný text bez rad a výčitek; vypínač v Nastavení → Rekordy a pokrok (výchozí zapnuto); i cviky na čas a vzdálenost; skrývání u jednotlivého cviku zatím ne. |
 | F5-02 | Počítat do týdenního cíle všechna fitka? Co když cíl změním v průběhu? | Všechna fitka; změna cíle platí od aktuálního týdne, starší týdny se hodnotí podle cíle, který tehdy platil (nebo zjednodušeně podle aktuálního). |
 | F5-03 | Které milníky a kolik jich? Ukazovat zamčené odznaky? | Začít s 10–15 odznaky; zamčené ukazovat šedě i s tím, kolik zbývá. |
 | F5-09 | Po kolika dnech je partie „zanedbaná“? | 7 dní u hlavních skupin, jde vypnout. |
@@ -213,6 +214,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek.
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 25. 9. 2026 | F4-06 | Upozornění na stagnaci: když se cvik 4 tréninky po sobě nezlepší v ničem (váha, opakování, objem, čas, vzdálenost…) proti tréninku před nimi, ukáže se „📉 4 tréninky bez zlepšení od 16. 8. (80×8)“ v kartě cviku při tréninku (klepnutí = Statistiky cviku), na stránce cviku → Statistiky a v nové sekci Bez zlepšení ve Statistikách → Cviky (cviky z posledních 30 dní). Vázaný cvik se hodnotí zvlášť pro každé fitko. Skupina Nastavení „Rekordy“ přejmenovaná na „Rekordy a pokrok“, v ní vypínač a volba 3 / 4 / 5 tréninků. Nic se neukládá kromě nastavení (`stagOn`, `stagN` s výchozí hodnotou), formát zálohy beze změny. |
 | 25. 9. 2026 | F3-13 | Statistiky rozdělené na tři části přepínačem Přehled / Partie / Cviky nad filtrem fitek (stejný jako Kalendář / Seznam v Historii). Přehled: období, dlaždice, Průběh, Podle fitek, Souhrn; Partie: období, postava a pruhy podle partií; Cviky: období, Nejčastější cviky, seznam cviků s hledáním a filtrem partie. Fitko a období jsou společné pro všechny části, otevřená část se pamatuje i po zavření appky (napoprvé Přehled), po přepnutí se stránka posune nahoru, po návratu ze stránky cviku zůstane stejná část na stejném místě. Data ani formát zálohy beze změny. |
 | 25. 9. 2026 | – | Do plánu přidána úloha F3-15 (Zajímavosti ve Statistikách), nápady a otevřené otázky v `docs/navrhy/F3-15-zajimavosti.md`. V části Priority a pořadí odstraněny hotové úlohy (F3-10, F1-10, F1-02, F0-10, F1-03, F0-08, F0-09, F3-09, F3-11), do diagramu fází doplněna fáze 5. |
 | 25. 9. 2026 | F2-08 | Jedinečné názvy šablon: stejný název nesmí mít šablony, které se ukazují ve stejném fitku (šablona bez fitka se ukazuje ve všech, s jedním fitkem tedy platí pro všechny šablony; „Nohy“ jen pro fitko A a „Nohy“ jen pro fitko B smějí být). Názvy se porovnávají bez ohledu na velká písmena, diakritiku a mezery („Nohy A“ = „nohy a“ = „NohyA“), uložený název je bez mezer na okrajích a zdvojených mezer. V úpravě šablony se při shodě hned při psaní (i po změně fitek) název zbarví červeně a pod ním je „Šablonu „Nohy“ už máš ve stejném fitku, změň název nebo fitka“; Tlačítko Uložit šablonu je při shodě (i při prázdném názvu) šedé, klepnout na něj ale jde: šablonu neuloží, ukáže hlášku a posune stránku nahoru k názvu (tlačítko je dole pod cviky, u dlouhé šablony by jinak nebylo vidět proč). Nová šablona má předvyplněný volný název („Nová šablona 2“, …). Uložit jako šablonu v souhrnu tréninku se při shodě zeptá: „Uložit jako „Nohy 2““ (další volné číslo, „Nohy 2“ → „Nohy 3“), „Přepsat šablonu „Nohy““ (jen cviky a série, název, fitka a pořadí zůstanou, jako Aktualizovat šablonu; při víc starých duplikátech ta první v pořadí) nebo Zrušit (i Zpět vrátí do souhrnu). Stávající duplikáty zůstanou: úprava staré šablony, která už duplikát má, projde, dokud se nezmění název ani fitka. Formát dat ani zálohy beze změny. |

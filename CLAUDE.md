@@ -140,8 +140,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`window.PWA.check()` z `js/pwa.js`), v testu `copyFromMain`, ve vydané verzi
   `scanTestData` / `deleteTestData`. Pruh `testBar()` je součástí `topbar()`.
 - Drobná nastavení zobrazení jsou v `localStorage` s prefixem `zd1:`.
-- Nastavení (F3-09, sekce „NASTAVENÍ“): rozcestník `vSettingsHub` se skupinami `SET_PAGES` (Fitka, Trénink, Rekordy,
-  Vzhled, Data a záloha, O aplikaci), každá na vlastní podstránce `S.setPage` (`""` = rozcestník, `Local` `setPage`,
+- Nastavení (F3-09, sekce „NASTAVENÍ“): rozcestník `vSettingsHub` se skupinami `SET_PAGES` (Fitka, Trénink, Rekordy
+  a pokrok, Vzhled, Data a záloha, O aplikaci), každá na vlastní podstránce `S.setPage` (`""` = rozcestník, `Local` `setPage`,
   po reloadu se vrátí; otevření jen přes `setPageOpen`). Záložka Nastavení vždy otevře rozcestník, Zpět z podstránky
   vede na rozcestník (`navBack`, `navDepth`). Na rozcestníku jen názvy skupin, výjimka: oranžový řádek Data a záloha
   s textem, když `backupDue()` (stejné pravidlo jako připomínka na úvodní obrazovce). Nová volba patří do existující
@@ -253,6 +253,15 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `wRecs`. Zlatá, když je v seznamu velký rekord (`REC_BIG`). Nastavení v `config/main`: `recCelEx` (po cviku; vypnuto =
   hláška po sérii jako dřív), `recCelW` (po tréninku), `recSnd` (id z `CEL_SOUNDS`, `"off"`). Medaile se zavírá jen
   klepnutím (Pokračovat, mimo kartu) nebo Zpět, sama nezmizí. Zvuky se skládají přes Web Audio (`celTone`), žádné soubory.
+- Stagnace (F4-06, sekce „STAGNACE“): cvik stagnuje, když posledních `S.cfg.stagN` (`STAG_N` 3/4/5, výchozí 4)
+  uložených tréninků s cvikem po sobě nepřekonalo trénink těsně před nimi ani sebe navzájem v žádném ukazateli
+  (`stagMetrics` = `exMetrics` jako u rekordů, u vlastní váhy jen opakování; nový ukazatel = zlepšení). Porovnává se jen
+  s tréninky těsně před nimi, ne s rekordem z celé historie. Kontext `recCtx` (vázaný cvik zvlášť pro fitko). Výpočet
+  `computeStag` jednou po změně dat (`stags()`: `ok[k]` = `stagHolds`), dotaz `stagInfo(exId, gymId)` / `stagOfCtx`
+  (`n` = tréninků bez zlepšení, `ref` = trénink, od kterého nic lepšího), texty `stagCount`, `stagSince`. Ukazuje se jen
+  v rozdělaném tréninku (`.exc-stag` pod „Minule“, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce
+  Bez zlepšení) a ve Statistikách → Cviky (`statsStag`, jen cviky cvičené posledních 30 dní, `STAG_RECENT`). Vypínač
+  `S.cfg.stagOn` a počet `stagN` v `config/main`, Nastavení → Rekordy a pokrok (`stagSettings`). Nic dalšího se neukládá.
 - Kontrola čísel (F1-10, sekce „KONTROLA ČÍSEL“ a „UPOZORNĚNÍ NA VELKÝ SKOK“): každé číselné políčko má
   `data-num="<pravidlo>"` (`NUM_RULES`: `kg`, `reps`, `sec`, `km`, `min`, `body`, `pct`, `kcal`, `bw`), při vykreslení
   třídu `numCls(pravidlo, hodnota)`. Znaky filtruje `numInput` (globální posluchač `input`; číslici navíc podle

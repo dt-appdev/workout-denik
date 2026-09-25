@@ -949,6 +949,16 @@ select.inp {
   font-size: var(--fs-sm);
   color: var(--ink-3);
 }
+/* stagnace (F4-06): řádek pod „Minule“ */
+.exc-stag {
+  all: unset;
+  display: flex;
+  gap: 6px;
+  margin: -4px 14px 8px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
 .exc-note {
   margin: 0 14px 8px;
   width: calc(100% - 28px);
