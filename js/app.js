@@ -4536,7 +4536,9 @@
           {
             type: "bar",
             label: lab[m],
-            unit: m === "vol" ? " kg" : m === "dur" ? " min" : "",
+            unit: m === "vol" ? " kg" : "",
+            yUnit: m === "vol" ? "kg" : "",
+            fmt: m === "dur" ? "min" : "",
             bars: bars.map((b) => ({ x: b.x, label: b.label, tip: b.tip, v: b[m] })),
           },
           180,
@@ -4981,7 +4983,17 @@
       </div>`;
     h +=
       `<div class="card">
-        ${chartPh({ type: "line", label: M[S.detailMetric][0], unit: M[S.detailMetric][2], series }, 200)}` +
+        ${chartPh(
+          {
+            type: "line",
+            label: M[S.detailMetric][0],
+            unit: M[S.detailMetric][2],
+            yUnit: M[S.detailMetric][2].trim() || "opak.",
+            fmt: M[S.detailMetric][2] === " s" ? "sec" : "",
+            series,
+          },
+          200,
+        )}` +
       `${
         series.length > 1
           ? `<div class="legend">${series
@@ -6050,6 +6062,7 @@
             type: "line",
             label: f[1],
             unit: unit,
+            yUnit: f[2],
             series: [
               { name: "Měření", color: "var(--ink-3)", pts, noLine: true, dots: true },
               { name: "Klouzavý průměr 7 dní", color: "var(--chart)", pts: avg, noDots: true, w: 2.4 },
@@ -7578,7 +7591,9 @@
     return h;
   }
 
-  /* ---------- grafy (SVG) ---------- */
+  /* ---------- grafy (SVG) ----------
+     spec grafu: type ("bar" / "line"), label, unit (přípona hodnoty v bublině), yUnit (jednotka nad osou Y,
+     F3-08), fmt (druh hodnot podle CH_FMT, jinak obyčejná čísla) a data (bars / series). */
   const CH = {};
   let chN = 0;
   function chartPh(spec, h) {
@@ -7586,16 +7601,23 @@
     CH[id] = Object.assign({ h }, spec);
     return `<div class="chart" id="${id}" data-chart="${id}" style="height:${h}px"></div>`;
   }
-  function niceTicks(min, max, n) {
+  // hodnoty na ose: asi n kulatých kroků (1, 2, 5 × 10ⁿ), u času kroky ze seznamu steps (F3-08)
+  function niceTicks(min, max, n, steps) {
     if (min === max) {
       min = min - 1;
       max = max + 1;
     }
     const span = max - min,
-      step0 = span / n,
-      mag = Math.pow(10, Math.floor(Math.log10(step0))),
-      r = step0 / mag;
-    const step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag;
+      step0 = span / n;
+    let step;
+    if (steps) {
+      const last = steps[steps.length - 1];
+      step = steps.find((x) => x >= step0) || Math.ceil(step0 / last) * last;
+    } else {
+      const mag = Math.pow(10, Math.floor(Math.log10(step0))),
+        r = step0 / mag;
+      step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag;
+    }
     const lo = Math.floor(min / step) * step,
       hi = Math.ceil(max / step) * step;
     const t = [];
@@ -7604,8 +7626,44 @@
     }
     return t;
   }
+  // číslo na ose: celé od tisíce s mezerou („12 500“, F3-08), menší i s desetinami
   function yFmt(v) {
-    return Math.abs(v) >= 10000 ? fmtKg(Math.round(v / 100) / 10) + "k" : fmtKg(v);
+    return Math.abs(v) >= 1000 ? fmtInt(v) : fmtKg(v);
+  }
+  // minuty jako hodiny „1:30“ (osa času v Průběhu)
+  const fmtHM = (m) => Math.floor(Math.round(m) / 60) + ":" + d2(Math.round(m) % 60);
+  /* Druhy hodnot grafu (spec.fmt, F3-08): kroky osy, číslo na ose, jednotka nad osou a hodnota v bublině.
+     min = minuty zobrazené v hodinách (0:30, 1:00…), sec = sekundy jako m:ss (výdrž, čas cviku). */
+  const CH_FMT = {
+    min: {
+      steps: [5, 10, 15, 30, 60, 120, 180, 300, 600, 1200, 3000, 6000],
+      tick: fmtHM,
+      unit: () => "h",
+      tip: (v) => fmtDurS(v * 60000),
+    },
+    sec: {
+      steps: [5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200],
+      tick: fmtSec,
+      unit: (top) => (top >= 3600 ? "h" : "min"),
+      tip: (v) => fmtSec(v) + (v >= 3600 ? " h" : " min"),
+    },
+  };
+  // popisky osy Y grafu: hodnoty (ticks), texty čísel a jednotka nad osou
+  function chartAxis(sp, min, max) {
+    const f = CH_FMT[sp.fmt];
+    const ticks = niceTicks(min, max, 4, f && f.steps);
+    const top = ticks[ticks.length - 1];
+    return {
+      ticks,
+      labels: ticks.map((t) => (f ? f.tick(t) : yFmt(t))),
+      unit: f ? f.unit(top) : sp.yUnit || "",
+    };
+  }
+  // hodnota v bublině po klepnutí (bez jednotky u času, ten má formát m:ss / h:mm)
+  function chartTip(sp, v) {
+    const f = CH_FMT[sp.fmt];
+    if (f) return f.tip(v);
+    return (v >= 1000 ? fmtInt(v) : fmtKg(Math.round(v * 10) / 10)) + sp.unit;
   }
   function drawCharts() {
     document.querySelectorAll("[data-chart]").forEach((el) => {
@@ -7613,26 +7671,60 @@
       if (!sp) return;
       const W = el.clientWidth || 320,
         H = sp.h;
-      // okraje pro popisky os rostou s písmem (F3-11)
+      // osa Y podle dat (u čáry i rozsah osy X)
+      let axis, pts, x0, x1;
+      if (sp.type === "bar") {
+        axis = chartAxis(sp, 0, Math.max(1, ...sp.bars.map((b) => b.v)));
+      } else {
+        pts = sp.series.flatMap((s) => s.pts);
+        if (!pts.length) {
+          el.innerHTML = `<div class="muted small" style="padding-top:60px;text-align:center">
+            V tomto období žádná data.
+          </div>`;
+          return;
+        }
+        x0 = Math.min(...pts.map((p) => p.x));
+        x1 = Math.max(...pts.map((p) => p.x));
+        if (x1 - x0 < DAY) {
+          x0 -= 3 * DAY;
+          x1 += 3 * DAY;
+        }
+        const y0 = Math.min(...pts.map((p) => p.y)),
+          y1 = Math.max(...pts.map((p) => p.y));
+        const pad = (y1 - y0) * 0.08 || 1;
+        axis = chartAxis(sp, Math.max(0, y0 - pad), y1 + pad);
+      }
+      const ticks = axis.ticks;
+      // okraje pro popisky os rostou s písmem (F3-11); vlevo podle nejdelšího čísla, nahoře místo
+      // pro jednotku (F3-08)
       const textScale = fontK();
-      const padL = Math.round(40 * textScale),
+      const longest = Math.max(...axis.labels.map((l) => l.length));
+      const padL = Math.round(Math.max(40, longest * 6.2 + 8) * textScale),
         padR = 12,
-        padT = 12,
+        padT = Math.round((axis.unit ? 24 : 12) * textScale),
         padB = Math.round(24 * textScale);
       const iw = W - padL - padR,
         ih = H - padT - padB;
       let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
           aria-label="${esc(sp.label)}">`;
+      if (axis.unit) {
+        svg += `<text class="unit" x="${padL - 6}" y="${padT - 10 * textScale}" text-anchor="end">
+          ${esc(axis.unit)}
+        </text>`;
+      }
+      // vodorovné čáry a čísla na ose Y
+      const yLines = (Y) => {
+        ticks.forEach((t, i) => {
+          svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
+          <text x="${padL - 6}" y="${Y(t) + 4 * textScale}" text-anchor="end">${axis.labels[i]}</text>`;
+        });
+      };
       if (sp.type === "bar") {
-        const vals = sp.bars.map((b) => b.v);
-        const ticks = niceTicks(0, Math.max(1, ...vals), 4);
         const ymax = ticks[ticks.length - 1];
         const Y = (v) => padT + ih - (v / ymax) * ih;
-        for (const t of ticks) {
-          svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
-          <text x="${padL - 6}" y="${Y(t) + 4 * textScale}" text-anchor="end">${yFmt(t)}</text>`;
-        }
+        yLines(Y);
         const bw = iw / sp.bars.length;
+        const xLabels = [];
         sp.hit = [];
         sp.bars.forEach((b, i) => {
           const x = padL + i * bw + 1,
@@ -7648,43 +7740,31 @@
           if (
             b.tip !== undefined ? b.label : i % 4 === 3 || (i === sp.bars.length - 1 && sp.bars.length < 5)
           ) {
-            svg += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${b.label}</text>`;
+            xLabels.push({ x: x + w / 2, text: String(b.label) });
           }
           sp.hit.push({
             x: x + w / 2,
             y: Math.min(y, padT + ih - 2),
             html:
-              `<b>${b.v >= 1000 ? fmtInt(b.v) : fmtKg(Math.round(b.v))}${sp.unit}</b><br>` +
+              `<b>${chartTip(sp, Math.round(b.v))}</b><br>` +
               `${b.tip || "týden od " + b.label}`,
           });
         });
+        // popisky pod sloupci: když se nevejdou vedle sebe, jen každý k-tý (poslední zůstane vždy)
+        const longestX = Math.max(0, ...xLabels.map((l) => l.text.length));
+        const gap = xLabels.length > 1 ? xLabels[1].x - xLabels[0].x : iw;
+        const every = Math.max(1, Math.ceil((longestX * 6.2 * textScale + 6) / gap));
+        xLabels.forEach((l, i) => {
+          if ((xLabels.length - 1 - i) % every) return;
+          svg += `<text x="${l.x}" y="${H - 6}" text-anchor="middle">${esc(l.text)}</text>`;
+        });
         svg += `<line class="axis" x1="${padL}" x2="${W - padR}" y1="${padT + ih}" y2="${padT + ih}"/>`;
       } else {
-        const pts = sp.series.flatMap((s) => s.pts);
-        if (!pts.length) {
-          el.innerHTML = `<div class="muted small" style="padding-top:60px;text-align:center">
-            V tomto období žádná data.
-          </div>`;
-          return;
-        }
-        let x0 = Math.min(...pts.map((p) => p.x)),
-          x1 = Math.max(...pts.map((p) => p.x));
-        if (x1 - x0 < DAY) {
-          x0 -= 3 * DAY;
-          x1 += 3 * DAY;
-        }
-        let y0 = Math.min(...pts.map((p) => p.y)),
-          y1 = Math.max(...pts.map((p) => p.y));
-        const pad = (y1 - y0) * 0.08 || 1;
-        const ticks = niceTicks(Math.max(0, y0 - pad), y1 + pad, 4);
         const ya = ticks[0],
           yb = ticks[ticks.length - 1];
         const X = (x) => padL + ((x - x0) / (x1 - x0)) * iw,
           Y = (y) => padT + ih - ((y - ya) / (yb - ya)) * ih;
-        for (const t of ticks) {
-          svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
-          <text x="${padL - 6}" y="${Y(t) + 4 * textScale}" text-anchor="end">${yFmt(t)}</text>`;
-        }
+        yLines(Y);
         // x ticks: months
         const span = x1 - x0;
         const stepM = span > 730 * DAY ? 6 : span > 365 * DAY ? 3 : span > 150 * DAY ? 2 : 1;
@@ -7741,8 +7821,7 @@
                     ? `<span class="sw" style="background:${s.color}"></span>${esc(s.name)}<br>`
                     : ""
                 }` +
-                `<b>${fmtKg(Math.round(p.y * 10) / 10)}` +
-                `${sp.unit}</b> · ${fmtDate(p.x)}${p.n > 1 ? " (" + p.n + " měření)" : ""}` +
+                `<b>${chartTip(sp, p.y)}</b> · ${fmtDate(p.x)}${p.n > 1 ? " (" + p.n + " měření)" : ""}` +
                 `${
                   p.s && p.s.bestSet && S.detailMetric === "e1rm"
                     ? `<br>${fmtKg(p.s.bestSet.kg)}×${p.s.bestSet.reps}`

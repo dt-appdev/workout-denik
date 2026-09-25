@@ -1353,6 +1353,10 @@ tr.done .okb {
   font-size: var(--fs-2xs);
   font-family: var(--body);
 }
+/* jednotka nad osou Y (F3-08) */
+.chart .unit {
+  font-weight: 600;
+}
 .chart .grid {
   stroke: var(--line);
   stroke-width: 1;
