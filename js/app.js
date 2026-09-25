@@ -7901,7 +7901,12 @@
     { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
     { id: "data", name: "Data a záloha", icon: "backup", body: () => backupSettings() },
-    { id: "about", name: "O aplikaci", icon: "info", body: () => versionSettings() + aboutSettings() },
+    {
+      id: "about",
+      name: "O aplikaci",
+      icon: "info",
+      body: () => versionSettings() + fakeSettings() + aboutSettings(),
+    },
   ];
   // otevře podstránku Nastavení ("" = rozcestník)
   function setPageOpen(id) {
@@ -11419,6 +11424,12 @@
       case "restLog":
         sheetRestLog();
         break;
+      case "fakeAdd":
+        fakeAdd();
+        break;
+      case "fakeDel":
+        fakeRemove();
+        break;
       case "restLogClear":
         if (window.caches) {
           caches.delete(REST_LOG).then(sheetRestLog);
@@ -12500,6 +12511,177 @@
       h += '<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>';
     } // jen pro vývoj (F1-04)
     return `${h}</div></section>`;
+  }
+  /* ---------- ZKUŠEBNÍ DATA (jen vývoj) ----------
+     Jen v testovací verzi PR a lokálně (DEV), ve vydané verzi se karta neukáže. „Přidat“ založí fitko
+     „Zkušební fitko“ (FAKE_GYM) a FAKE_DAYS.length tréninků s id začínajícím FAKE_ID, data počítaná od dneška,
+     takže jsou pořád čerstvá. Cviky a série podle FAKE_PLAN (scénáře pro stagnaci F4-06, další úlohy můžou
+     přidat své). „Smazat“ odebere jen fitko FAKE_GYM a tréninky s FAKE_ID, nic jiného. Cviky, které nejsou
+     vázané na fitko (plank, shyby, bicepsový zdvih), se sčítají se skutečnými tréninky v testovací verzi. */
+  const FAKE_GYM = "fake-gym";
+  const FAKE_ID = "fake-";
+  const FAKE_DAYS = [36, 30, 24, 18, 12, 6]; // před kolika dny byl každý zkušební trénink (od nejstaršího)
+  // n pracovních sérií kg × opakování (warm = zahřívací série navíc)
+  function fakeSets(kg, reps, n, warm) {
+    const sets = warm ? [{ t: "w", kg: warm, reps: 10 }] : [];
+    for (let k = 0; k < n; k++) {
+      sets.push({ t: "n", kg, reps });
+    }
+    return sets;
+  }
+  /* série cviku v každém zkušebním tréninku (pořadí jako FAKE_DAYS), null = cvik v tréninku není;
+     note = co má appka ukázat (jen pro přehled v kódu) */
+  const FAKE_PLAN = [
+    {
+      exId: "bench-press-barbell",
+      note: "vázaný na fitko, 4 tréninky bez zlepšení",
+      sets: [
+        fakeSets(70, 8, 2, 40),
+        fakeSets(80, 8, 2, 40),
+        fakeSets(80, 8, 2, 40),
+        fakeSets(80, 7, 2, 40),
+        fakeSets(80, 8, 2, 40),
+        fakeSets(80, 8, 2, 40),
+      ],
+    },
+    {
+      exId: "leg-press-machine",
+      note: "vázaný na fitko, 3 tréninky bez zlepšení (ukáže se jen při volbě 3)",
+      sets: [
+        null,
+        fakeSets(100, 10, 3),
+        fakeSets(110, 10, 3),
+        fakeSets(110, 10, 3),
+        fakeSets(110, 9, 3),
+        fakeSets(110, 10, 3),
+      ],
+    },
+    {
+      exId: "plank",
+      note: "na čas, 5 tréninků bez zlepšení",
+      sets: FAKE_DAYS.map(() => [{ t: "n", kg: 0, reps: 0, sec: 60 }]),
+    },
+    {
+      exId: "pull-up",
+      note: "vlastní váha, pořád se zlepšuje (nic)",
+      sets: FAKE_DAYS.map((_, i) => fakeSets(0, 6 + i, 3)),
+    },
+    {
+      exId: "bicep-curl-dumbbell",
+      note: "stejná váha a opakování, v posledním tréninku série navíc = zlepšení (nic)",
+      sets: [
+        null,
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 4),
+      ],
+    },
+  ];
+  // zkušební tréninky podle měsíců {"2026-09": {id: trénink}}
+  function fakeWorkouts() {
+    const byMonth = {};
+    const today = new Date();
+    today.setHours(17, 30, 0, 0);
+    FAKE_DAYS.forEach((daysAgo, i) => {
+      const start = today.getTime() - daysAgo * DAY;
+      const ex = FAKE_PLAN.filter((x) => x.sets[i] && S.exLib[x.exId]).map((x) => ({
+        exId: x.exId,
+        sets: x.sets[i],
+      }));
+      const w = { title: "Zkušební trénink " + (i + 1), start, end: start + 3600000, gymId: FAKE_GYM, ex };
+      const mk = monthKey(start);
+      (byMonth[mk] = byMonth[mk] || {})[FAKE_ID + (i + 1)] = w;
+    });
+    return byMonth;
+  }
+  // počet zkušebních tréninků v appce
+  function fakeCount() {
+    let n = 0;
+    for (const mk in S.months) {
+      n += Object.keys(S.months[mk]).filter((id) => id.startsWith(FAKE_ID)).length;
+    }
+    return n;
+  }
+  // přidá (nebo obnoví na dnešní data) zkušební fitko a tréninky
+  function fakeAdd() {
+    fakeRemoveWorkouts();
+    const cfg = JSON.parse(JSON.stringify(S.cfg));
+    if (!cfg.gyms.some((g) => g.id === FAKE_GYM)) {
+      cfg.gyms.push({ id: FAKE_GYM, name: "Zkušební fitko", col: freeGymCol(cfg.gyms) });
+    }
+    if (!cfg.defaultGymId) {
+      cfg.defaultGymId = FAKE_GYM;
+    }
+    put("config/main", cfg);
+    const byMonth = fakeWorkouts();
+    for (const mk in byMonth) {
+      put("workouts/" + mk, { items: Object.assign({}, S.months[mk] || {}, byMonth[mk]) });
+    }
+    S.selGym = FAKE_GYM;
+    toast("Zkušební data přidána, vybrané je Zkušební fitko.");
+  }
+  // odebere zkušební tréninky ze všech měsíců
+  function fakeRemoveWorkouts() {
+    for (const mk of Object.keys(S.months)) {
+      const ids = Object.keys(S.months[mk]);
+      if (!ids.some((id) => id.startsWith(FAKE_ID))) continue;
+      const items = {};
+      for (const id of ids) {
+        if (!id.startsWith(FAKE_ID)) {
+          items[id] = S.months[mk][id];
+        }
+      }
+      put("workouts/" + mk, Object.keys(items).length ? { items } : null);
+    }
+  }
+  // smaže zkušební tréninky i fitko (ne během rozdělaného tréninku ve zkušebním fitku)
+  function fakeRemove() {
+    if (S.active && S.active.gymId === FAKE_GYM) {
+      toast("Nejdřív dokonči nebo zahoď rozdělaný trénink ve Zkušebním fitku.");
+      return;
+    }
+    fakeRemoveWorkouts();
+    const cfg = JSON.parse(JSON.stringify(S.cfg));
+    cfg.gyms = cfg.gyms.filter((g) => g.id !== FAKE_GYM);
+    if (cfg.defaultGymId === FAKE_GYM) {
+      cfg.defaultGymId = cfg.gyms[0] ? cfg.gyms[0].id : null;
+    }
+    put("config/main", cfg);
+    if (S.selGym === FAKE_GYM) {
+      S.selGym = null;
+    }
+    toast("Zkušební data smazána.");
+  }
+  // Nastavení → O aplikaci: karta Zkušební data (jen DEV)
+  function fakeSettings() {
+    if (!DEV) return "";
+    const n = fakeCount();
+    const has = n || S.cfg.gyms.some((g) => g.id === FAKE_GYM);
+    return `<section class="sec">
+      <div class="sec-h"><h2>Zkušební data</h2></div>
+      <div class="card stack">
+        <div class="small muted">
+          Jen v testovací verzi. Přidá fitko „Zkušební fitko“ a ${FAKE_DAYS.length} tréninků za posledních
+          ${FAKE_DAYS[0]} dní (bench press, leg press, plank, shyby, bicepsový zdvih) pro vyzkoušení
+          upozornění na stagnaci. Smazat odebere jen tato zkušební data.
+        </div>
+        ${
+          has
+            ? `<div class="small">
+              V appce: ${n} ${plural(n, "zkušební trénink", "zkušební tréninky", "zkušebních tréninků")}
+            </div>`
+            : ""
+        }
+        <div class="row">
+          <button class="btn grow" data-act="fakeAdd">
+            ${has ? "Obnovit data" : "Přidat zkušební data"}
+          </button>
+          ${has ? '<button class="btn danger grow" data-act="fakeDel">Smazat</button>' : ""}
+        </div>
+      </div>
+    </section>`;
   }
   async function checkUpdate() {
     if (!window.PWA) {

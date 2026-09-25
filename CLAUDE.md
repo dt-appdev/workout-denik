@@ -289,6 +289,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v rozdělaném tréninku (`.exc-stag` pod „Minule“, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce
   Bez zlepšení) a ve Statistikách → Cviky (`statsStag`, jen cviky cvičené posledních 30 dní, `STAG_RECENT`). Vypínač
   `S.cfg.stagOn` a počet `stagN` v `config/main`, Nastavení → Rekordy a pokrok (`stagSettings`). Nic dalšího se neukládá.
+- Zkušební data (sekce „ZKUŠEBNÍ DATA“, jen `DEV` = testovací verze a lokálně): Nastavení → O aplikaci, karta
+  `fakeSettings`. `fakeAdd` založí fitko `FAKE_GYM` a tréninky s id `FAKE_ID…` před `FAKE_DAYS` dny (od dneška, znovu
+  klepnutím se obnoví), cviky a série v `FAKE_PLAN`; `fakeRemove` smaže jen je. Nová úloha může do `FAKE_PLAN` přidat
+  své scénáře (a doplnit popis v PR). Ve vydané verzi se karta nikdy neukáže.
 - Kontrola čísel (F1-10, sekce „KONTROLA ČÍSEL“ a „UPOZORNĚNÍ NA VELKÝ SKOK“): každé číselné políčko má
   `data-num="<pravidlo>"` (`NUM_RULES`: `kg`, `reps`, `sec`, `km`, `min`, `body`, `pct`, `kcal`, `bw`), při vykreslení
   třídu `numCls(pravidlo, hodnota)`. Znaky filtruje `numInput` (globální posluchač `input`; číslici navíc podle
