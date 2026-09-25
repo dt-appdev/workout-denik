@@ -677,8 +677,9 @@
 
   /* stažení souboru do telefonu (dřív downloads artefaktu) — Chrome ho uloží do složky Stažené */
   const LocalDownloads = {
-    async save({ filename, data }) {
-      const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    // data = text zálohy, nebo soubor / Blob (obrázek souhrnu, F4-08)
+    async save({ filename, data, type }) {
+      const url = URL.createObjectURL(new Blob([data], { type: type || "application/json" }));
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -4379,14 +4380,18 @@
       `<button class="iconbtn" data-act="wBack" aria-label="Zpět">${IC.back}</button>`,
     );
     h += wSummary(w, o.saved);
+    // Sdílet vlevo od hlavního tlačítka (F4-08)
     h += `<div class="stack" style="margin-top:12px">
-      ${
-        o.saved
-          ? '<button class="btn primary block" data-act="wBack">Dokončit</button>'
-          : `<button class="btn primary block" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
-            Cvičit znovu
-          </button>`
-      }
+      <div class="row" style="align-items:stretch">
+        <button class="btn" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
+        ${
+          o.saved
+            ? '<button class="btn primary grow" data-act="wBack">Dokončit</button>'
+            : `<button class="btn primary grow" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
+              Cvičit znovu
+            </button>`
+        }
+      </div>
       <div class="row" style="align-items:stretch">
         <button class="btn grow" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
           Uložit jako šablonu
@@ -4473,6 +4478,997 @@
     });
     b += ssWrap(w.ex || [], cards);
     return b;
+  }
+
+  /* ---------- SDÍLENÍ SOUHRNU (F4-08) ----------
+     Tlačítko Sdílet na stránce tréninku (vWorkout, F3-19) otevře panel „Sdílet trénink“ (sheetShare) s náhledem
+     obrázku. Obrázek se kreslí na <canvas> (shrDraw), vždy 1080 px široký, Příběh 9:16 nebo Příspěvek 4:5,
+     tmavý nebo světlý, česky nebo anglicky, volitelně s fotkou (jen do obrázku, nikam se neukládá) a s postavou.
+     Písmo v pevných px, na volbě Velikost písma (F3-11) nezávisí. Postava se kreslí přímo z obrysů atlasu
+     (Path2D), ne přes obrázek, takže pravidla zabezpečení (CSP) se nemění. Volby panelu se pamatují v Local "shr".
+     Sdílení přes systémovou nabídku Androidu (navigator.share se souborem), jinak jen Uložit obrázek. */
+  const SHR_W = 1080;
+  const SHR_H = { story: 1920, post: 1350 };
+  const SHR_SAFE = 250; // příběh: okraj nahoře a dole, který překrývá Instagram (viz shrDraw)
+  const SHR_D = "Barlow Condensed",
+    SHR_B = "Barlow";
+  const SHR_MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  // texty obrázku; název tréninku a podpis „WORKOUT DENÍK“ se nepřekládají
+  const SHR_TXT = {
+    cs: {
+      kind: "TRÉNINK",
+      time: "ČAS",
+      vol: "OBJEM",
+      sets: "SÉRIE",
+      setsReps: "SÉRIE / OPAKOVÁNÍ",
+      ex: "CVIKY",
+      recs: "NOVÉ REKORDY",
+      mus: "PARTIE",
+      reps: "opak.",
+      pc: (n) => n + " %",
+      grp: MGRP,
+      rec: REC,
+    },
+    en: {
+      kind: "WORKOUT",
+      time: "DURATION",
+      vol: "VOLUME",
+      sets: "SETS",
+      setsReps: "SETS / REPS",
+      ex: "EXERCISES",
+      recs: "NEW RECORDS",
+      mus: "MUSCLES",
+      reps: "reps",
+      pc: (n) => n + "%",
+      grp: { chest: "Chest", back: "Back", sh: "Shoulders", arms: "Arms", legs: "Legs", core: "Core" },
+      rec: {
+        maxKg: "Max weight",
+        e1rm: "Est. 1RM",
+        bestSet: "Best set",
+        vol: "Exercise volume",
+        reps: "Max reps",
+        maxSec: "Longest hold",
+        totSec: "Total time",
+        maxKm: "Longest distance",
+        totKm: "Distance",
+        speed: "Top speed",
+      },
+    },
+  };
+  /* barvy obrázku (nezávislé na motivu appky); barvy skupin partií stejné jako --g-* v css/app.css,
+     fade = barva přechodu přes fotku (RGB), box = rámeček dlaždic, gold = hodnota rekordu */
+  const SHR_PAL = {
+    dark: {
+      bg: "#0c0e12",
+      glowA: "rgba(238,91,81,0.42)",
+      glowB: "rgba(57,135,229,0.22)",
+      accent: "#ee5b51",
+      ink: "#ffffff",
+      ink2: "rgba(255,255,255,.72)",
+      ink3: "rgba(255,255,255,.6)",
+      line: "rgba(255,255,255,.22)",
+      rowLine: "rgba(255,255,255,.10)",
+      fade: "5,7,9",
+      gold: "#ffe08a",
+      sil: "#262b33",
+      idle: "#3a414c",
+      mline: "#0c0e12",
+      glow: true,
+      g: {
+        chest: "#e66767",
+        back: "#3987e5",
+        sh: "#c98500",
+        arms: "#9085e9",
+        legs: "#199e70",
+        core: "#e87ba4",
+      },
+    },
+    light: {
+      bg: "#f4f1ec",
+      glowA: "rgba(207,58,49,0.20)",
+      glowB: "rgba(42,120,214,0.14)",
+      accent: "#cf3a31",
+      ink: "#13161b",
+      ink2: "rgba(19,22,27,.66)",
+      ink3: "rgba(19,22,27,.55)",
+      line: "rgba(19,22,27,.18)",
+      rowLine: "rgba(19,22,27,.10)",
+      fade: "246,244,240",
+      gold: "#a86b00",
+      sil: "#c9cfd8",
+      idle: "#9ea7b3",
+      mline: "#ffffff",
+      glow: false,
+      g: {
+        chest: "#e34948",
+        back: "#2a78d6",
+        sh: "#eda100",
+        arms: "#4a3aa7",
+        legs: "#1baf7a",
+        core: "#e87ba4",
+      },
+    },
+  };
+  // ikony údajů (obrys, mřížka 24 × 24)
+  const SHR_ICONS = {
+    time: "M20 13.5a8 8 0 1 1-16 0 8 8 0 1 1 16 0M12 9.5v4l2.6 1.8M9.5 2.5h5M12 2.5v3",
+    vol: "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11",
+    sets: "M12 3 3 8l9 5 9-5-9-5M3 12.5l9 5 9-5M3 17l9 5 9-5",
+    ex: "M9 6h12M9 12h12M9 18h12M4 6h.5M4 12h.5M4 18h.5",
+    rec: "M18 15a6 6 0 1 1-12 0 6 6 0 1 1 12 0M8.8 10 5.5 3h4l2.5 5M15.2 10l3.3-7h-4l-1.4 3",
+  };
+  // otevřený panel: {w, nav, fmt, theme, lang, fig, img (ImageBitmap fotky), fx, fy (výřez 0–1), blob, cov}
+  let shr = null;
+  let shrFullUrl = ""; // adresa (blob:) obrázku přes celou obrazovku, uvolní se při zavření
+
+  /* data obrázku z uloženého tréninku (vše se počítá, nic se neukládá) */
+  // číslo podle jazyka: „12 480“, „82,5“ / „12,480“, „82.5“
+  const shrNum = (v, en, dec) =>
+    (Math.round(v * 100) / 100).toLocaleString(en ? "en-US" : "cs-CZ", { maximumFractionDigits: dec || 0 });
+  // název cviku: česky český název z databáze (cz), anglicky původní (name)
+  function shrExName(exId, en) {
+    const e = exOf(exId);
+    return (en ? e.name : e.cz || e.name) || exId;
+  }
+  // série jako text („85 kg × 5“, „14 opak.“, „1:30“, „5 km · 25:00“)
+  function shrSetStr(kind, s, en) {
+    const X = SHR_TXT[en ? "en" : "cs"];
+    const kg = (v) => shrNum(v, en, 2) + " kg";
+    if (kind === "time") return fmtSec(s.sec || 0);
+    if (kind === "timew") return (s.kg ? kg(s.kg) + " · " : "") + fmtSec(s.sec || 0);
+    if (kind === "dist") return (s.km ? shrNum(s.km, en, 2) + " km · " : "") + fmtSec(s.sec || 0);
+    if (kind === "bw") return (s.reps || 0) + " " + X.reps;
+    if (kind === "bwplus") return (s.kg ? "+" + kg(s.kg) + " × " : "") + (s.reps || 0);
+    if (kind === "assist") return (s.kg ? "−" + kg(s.kg) + " × " : "") + (s.reps || 0);
+    return (s.kg ? kg(s.kg) + " × " : "") + (s.reps || 0);
+  }
+  // hodnota rekordu jako text (jako recFmt, ale podle jazyka)
+  function shrRecFmt(type, v, set, en) {
+    const X = SHR_TXT[en ? "en" : "cs"];
+    if (type === "reps") return shrNum(v, en) + " " + X.reps;
+    if (type === "bestSet" && set) {
+      return shrNum(set.load != null ? set.load : set.kg, en, 2) + " kg × " + set.reps;
+    }
+    if (type === "e1rm") return shrNum(v, en, 1) + " kg";
+    if (type === "vol") return shrNum(v, en) + " kg";
+    if (type === "maxSec" || type === "totSec") return fmtSec(v);
+    if (type === "maxKm" || type === "totKm") return shrNum(v, en, 2) + " km";
+    if (type === "speed") return shrNum(v, en, 1) + " km/h";
+    return shrNum(v, en, 2) + " kg";
+  }
+  function shrData(w, en) {
+    const X = SHR_TXT[en ? "en" : "cs"];
+    const d = new Date(w.start);
+    const date = en
+      ? d.getDate() + " " + SHR_MONTHS_EN[d.getMonth()] + " " + d.getFullYear()
+      : fmtDate(w.start);
+    let reps = 0;
+    for (const e of w.ex || []) {
+      const k = kindOf(e.exId);
+      if (!hasReps(k)) continue;
+      for (const s of e.sets) {
+        if (isWork(s.t)) {
+          reps += +s.reps || 0;
+        }
+      }
+    }
+    const sets = wSets(w);
+    const ids = [...new Set((w.ex || []).map((e) => e.exId))];
+    // rekordy: nejdřív velké (REC_BIG), pak podle pořadí druhů
+    const rank = (t) => (REC_BIG[t] ? 0 : 100) + REC_ORDER.indexOf(t);
+    const R = wRecs(w)
+      .slice()
+      .sort((a, b) => rank(a.type) - rank(b.type));
+    return {
+      title: w.title || "Trénink",
+      date: date + " · " + fmtTime(w.start),
+      stats: [
+        { ic: "time", lab: X.time, v: fmtSec(wDur(w) / 1000), u: "" },
+        { ic: "vol", lab: X.vol, v: shrNum(wVol(w), en), u: "kg" },
+        reps
+          ? { ic: "sets", lab: X.setsReps, v: sets + " / " + reps, u: "" }
+          : { ic: "sets", lab: X.sets, v: String(sets), u: "" },
+        { ic: "ex", lab: X.ex, v: String(ids.length), u: "" },
+        { ic: "rec", lab: X.recs, v: String(R.length), u: R.length ? "🏅" : "" },
+      ],
+      recs: R.map((r) => ({
+        ex: shrExName(r.exId, en),
+        t: X.rec[r.type] || r.type,
+        v: shrRecFmt(r.type, r.v, r.set, en),
+      })),
+      ex: ids.map((id) => {
+        const kind = kindOf(id),
+          sets = exSetsIn(w, id);
+        const b = bestOf(kind, sets);
+        return {
+          n: shrExName(id, en),
+          s: sets.filter((s) => isWork(s.t)).length,
+          best: b ? shrSetStr(kind, b.s, en) : "",
+          ss: (w.ex || []).some((e) => e.exId === id && e.ss),
+        };
+      }),
+      mus: wMuscles(w),
+    };
+  }
+
+  /* kreslení na canvas */
+  const shrFont = (weight, size, fam) => weight + " " + size + 'px "' + fam + '"';
+  function shrText(ctx, s, x, y, f, color, align, spacing) {
+    ctx.font = f;
+    ctx.fillStyle = color;
+    ctx.textAlign = align || "left";
+    ctx.letterSpacing = (spacing || 0) + "px";
+    ctx.fillText(s, x, y);
+    ctx.letterSpacing = "0px";
+  }
+  function shrWidth(ctx, s, f, spacing) {
+    ctx.font = f;
+    ctx.letterSpacing = (spacing || 0) + "px";
+    const w = ctx.measureText(s).width;
+    ctx.letterSpacing = "0px";
+    return w;
+  }
+  // zkrátí text na šířku s „…“
+  function shrFit(ctx, s, f, max, spacing) {
+    if (shrWidth(ctx, s, f, spacing) <= max) return s;
+    while (s.length > 1 && shrWidth(ctx, s + "…", f, spacing) > max) {
+      s = s.slice(0, -1);
+    }
+    return s.trimEnd() + "…";
+  }
+  function shrRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+  }
+  // smíchá dvě barvy #rrggbb (t = podíl první)
+  function shrMix(a, b, t) {
+    const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const A = p(a),
+      Bc = p(b);
+    const hex = (v) => Math.round(v).toString(16).padStart(2, "0");
+    return "#" + A.map((v, i) => hex(v * t + Bc[i] * (1 - t))).join("");
+  }
+  function shrGlow(ctx, x, y, r, color) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // logo appky: červený čtverec s činkou (jako icons/icon.svg)
+  function shrLogo(ctx, x, y, s) {
+    shrRect(ctx, x, y, s, s, s * 0.22);
+    ctx.fillStyle = "#cf3a31";
+    ctx.fill();
+    ctx.save();
+    ctx.translate(x + s / 2, y + s / 2);
+    ctx.scale((s * 12) / 512, (s * 12) / 512);
+    ctx.translate(-12, -12);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2.1;
+    ctx.lineCap = "round";
+    ctx.stroke(new Path2D("M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"));
+    ctx.restore();
+  }
+  function shrIcon(ctx, name, x, y, s, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s / 24, s / 24);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.7;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke(new Path2D(SHR_ICONS[name]));
+    ctx.restore();
+  }
+  // obrysy postavy z atlasu (js/atlas.js) jako Path2D, připraví se jednou
+  const shrAtlas = {};
+  function shrAtlasOf(view) {
+    if (shrAtlas[view]) return shrAtlas[view];
+    const s = ATLAS[view];
+    const vb = s.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+    const list = [...s.matchAll(/<path d="([^"]+)"([^>]*)\/>/g)].map((m) => {
+      const a = m[2];
+      const fill = (a.match(/fill="([^"]+)"/) || [])[1] || "none";
+      const key = (fill.match(/--f-([a-z_]+)/) || [])[1] || null;
+      return {
+        p: new Path2D(m[1]),
+        fill,
+        key: key && key.startsWith("delt") ? "delts" : key,
+        stroke: /stroke=/.test(a),
+        sw: +((a.match(/stroke-width="([^"]+)"/) || [])[1] || 1),
+        even: /evenodd/.test(a),
+      };
+    });
+    shrAtlas[view] = { w: +vb[1], h: +vb[2], list };
+    return shrAtlas[view];
+  }
+  // postava (view = front / back) výšky h, partie v barvě skupiny, sytější = víc sérií; vrací šířku
+  function shrFigure(ctx, P, view, x, y, h, m) {
+    const A = shrAtlasOf(view);
+    const k = h / A.h;
+    const mx = Math.max(0, ...Object.values(m)) || 1;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(k, k);
+    for (const it of A.list) {
+      const g = it.key && m[it.key] ? P.g[MGRP_OF[it.key]] : null;
+      let col = null;
+      if (it.fill.startsWith("var(--sil")) {
+        col = P.sil;
+      } else if (g) {
+        col = shrMix(g, P.idle, 0.45 + (0.55 * m[it.key]) / mx);
+      } else if (it.fill !== "none") {
+        col = P.idle;
+      }
+      if (col) {
+        ctx.fillStyle = col;
+        if (g && P.glow) {
+          ctx.shadowColor = g;
+          ctx.shadowBlur = 28 / k;
+        }
+        ctx.fill(it.p, it.even ? "evenodd" : "nonzero");
+        ctx.shadowBlur = 0;
+      }
+      if (it.stroke) {
+        ctx.strokeStyle = P.mline;
+        ctx.lineWidth = it.sw;
+        ctx.stroke(it.p);
+      }
+    }
+    ctx.restore();
+    return A.w * k;
+  }
+  // postava zepředu a zezadu vedle sebe
+  function shrFigures(ctx, P, x, y, h, m) {
+    const fw = shrFigure(ctx, P, "front", x, y, h, m);
+    shrFigure(ctx, P, "back", x + fw - h * 0.03, y, h, m);
+  }
+  // skupiny partií seřazené podle podílu: [{k, v, pc}]
+  function shrGroups(m) {
+    const g = {};
+    for (const k in m) {
+      const x = MGRP_OF[k];
+      if (x) {
+        g[x] = (g[x] || 0) + m[k];
+      }
+    }
+    const tot = Object.values(g).reduce((a, b) => a + b, 0);
+    return Object.keys(g)
+      .sort((a, b) => g[b] - g[a])
+      .map((k) => ({ k, v: g[k], pc: Math.round((g[k] / tot) * 100) }));
+  }
+  // pruh s poměrem skupin partií
+  function shrStack(ctx, P, x, y, w, h, G) {
+    const tot = G.reduce((a, b) => a + b.v, 0);
+    const gap = 6;
+    const free = w - gap * (G.length - 1);
+    let cx = x;
+    for (const g of G) {
+      const gw = (free * g.v) / tot;
+      shrRect(ctx, cx, y, gw, h, h / 2);
+      ctx.fillStyle = P.g[g.k];
+      ctx.fill();
+      cx += gw + gap;
+    }
+  }
+  // legenda skupin („● Hrudník 35 %“), zalomí se na další řádek; vrací výšku
+  function shrLegend(ctx, P, X, x, y, w, G) {
+    const fN = shrFont(500, 28, SHR_B),
+      fP = shrFont(700, 28, SHR_B);
+    let cx = x,
+      cy = y;
+    for (const g of G) {
+      const name = X.grp[g.k],
+        pc = X.pc(g.pc);
+      const iw = 28 + shrWidth(ctx, name, fN) + 10 + shrWidth(ctx, pc, fP);
+      if (cx > x && cx + iw > x + w) {
+        cx = x;
+        cy += 46;
+      }
+      ctx.beginPath();
+      ctx.arc(cx + 9, cy - 9, 9, 0, 7);
+      ctx.fillStyle = P.g[g.k];
+      ctx.fill();
+      shrText(ctx, name, cx + 28, cy, fN, P.ink2);
+      shrText(ctx, pc, cx + 28 + shrWidth(ctx, name, fN) + 10, cy, fP, P.ink);
+      cx += iw + 34;
+    }
+    return cy - y + 46;
+  }
+  /* fotka přes celou plochu (jako object-fit: cover), fx / fy = poloha výřezu 0–1, zoom = přiblížení;
+     přiblížit jde jen do SHR_ZOOM_MAX a jen dokud na bod obrázku připadá aspoň jeden bod fotky (ostrost) */
+  const SHR_ZOOM_MAX = 3;
+  const shrZoomMax = (img, w, h) =>
+    Math.max(1, Math.min(SHR_ZOOM_MAX, 1 / Math.max(w / img.width, h / img.height)));
+  function shrCover(ctx, img, w, h, fx, fy, zoom) {
+    const zMax = shrZoomMax(img, w, h);
+    const k = Math.max(w / img.width, h / img.height) * Math.min(zoom || 1, zMax);
+    const sw = w / k,
+      sh = h / k;
+    ctx.drawImage(img, (img.width - sw) * fx, (img.height - sh) * fy, sw, sh, 0, 0, w, h);
+    return { k, zMax, slackX: img.width - sw, slackY: img.height - sh };
+  }
+  // název tréninku velkým písmem: zmenší se, aby se vešel, dlouhý se zalomí na 2 řádky (a pak zkrátí);
+  // y = účaří prvního řádku, vrací výšku druhého řádku (0 = jeden řádek)
+  function shrTitle(ctx, s, x, y, maxW, size, color) {
+    s = s.toUpperCase();
+    const fits = (t, sz) => shrWidth(ctx, t, shrFont(700, sz, SHR_D), 1) <= maxW;
+    const min1 = Math.round(size * 0.66);
+    let sz = size;
+    while (!fits(s, sz) && sz > min1) {
+      sz -= 4;
+    }
+    if (fits(s, sz) || s.indexOf(" ") < 0) {
+      const f = shrFont(700, sz, SHR_D);
+      shrText(ctx, shrFit(ctx, s, f, maxW, 1), x, y, f, color, "left", 1);
+      return 0;
+    }
+    // dva řádky: první co nejdelší, zbytek na druhý (zmenšuje se nejvýš na 64 px)
+    sz = Math.round(size * 0.8);
+    let lines;
+    for (;;) {
+      const words = s.split(" ");
+      let a = words.shift();
+      while (words.length && fits(a + " " + words[0], sz)) {
+        a += " " + words.shift();
+      }
+      lines = [a, words.join(" ")];
+      if ((fits(lines[0], sz) && fits(lines[1], sz)) || sz <= 64) break;
+      sz -= 4;
+    }
+    const f = shrFont(700, sz, SHR_D);
+    const lh = Math.round(sz * 0.98);
+    shrText(ctx, shrFit(ctx, lines[0], f, maxW, 1), x, y, f, color, "left", 1);
+    shrText(ctx, shrFit(ctx, lines[1], f, maxW, 1), x, y + lh, f, color, "left", 1);
+    return lh;
+  }
+  /* nakreslí celý obrázek: D = shrData, o = volby panelu {fmt, theme, lang, fig, img, fx, fy} */
+  function shrDraw(ctx, D, o) {
+    const P = SHR_PAL[o.theme === "light" ? "light" : "dark"];
+    const X = SHR_TXT[o.lang === "en" ? "en" : "cs"];
+    const W = SHR_W,
+      H = SHR_H[o.fmt] || SHR_H.story;
+    const story = o.fmt !== "post";
+    const img = o.img;
+    const L = 72;
+    const G = shrGroups(D.mus);
+    let cov = null;
+    ctx.canvas.width = W;
+    ctx.canvas.height = H;
+    ctx.textBaseline = "alphabetic";
+    // pozadí: fotka s přechodem zleva (pod údaji), jinak barva appky se září
+    if (img) {
+      cov = shrCover(ctx, img, W, H, o.fx, o.fy, o.zoom);
+      let g = ctx.createLinearGradient(0, 0, W, 0);
+      g.addColorStop(0, "rgba(" + P.fade + ",.94)");
+      g.addColorStop(0.36, "rgba(" + P.fade + ",.8)");
+      g.addColorStop(0.62, "rgba(" + P.fade + ",.15)");
+      g.addColorStop(1, "rgba(" + P.fade + ",0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      ctx.fillStyle = P.bg;
+      ctx.fillRect(0, 0, W, H);
+      shrGlow(ctx, W - 80, 60, 760, P.glowA);
+      shrGlow(ctx, 60, H - 120, 820, P.glowB);
+    }
+    /* příběh: Instagram (i WhatsApp) přes horní okraj kreslí profilovou fotku, jméno a pruh průběhu a přes
+       spodní pole pro odpověď, proto nahoře a dole zůstává SHR_SAFE px bez textu (doporučení Instagramu) */
+    const footY = story ? H - SHR_SAFE - 40 : H - 84; // střed řádku s logem
+    // hlavička: TRÉNINK, datum, název
+    let y = story ? SHR_SAFE + 40 : 100;
+    shrText(ctx, X.kind, L, y, shrFont(600, 26, SHR_B), P.ink2, "left", 7);
+    ctx.fillStyle = P.accent;
+    ctx.fillRect(L, y + 22, 60, 4);
+    shrText(ctx, D.date, L, y + 72, shrFont(500, 26, SHR_B), P.ink2, "left", 3);
+    y += story ? 215 : 200;
+    const colW = img ? 330 : W - 2 * L;
+    y += shrTitle(ctx, D.title, L - 3, y, img ? 520 : W - 2 * L, img ? 120 : 150, P.ink);
+    y += story ? 70 : 60;
+    const divider = (yy) => {
+      ctx.fillStyle = P.line;
+      ctx.fillRect(L, yy, colW, 2);
+      ctx.fillStyle = P.ink;
+      ctx.fillRect(L, yy - 1, 90, 4);
+    };
+    divider(y);
+    y += story ? 80 : 70;
+    const fig = o.fig && G.length;
+    // příspěvek s fotkou a postavou: postava místo řádku s názvy partií; aby se vešla (i pod název
+    // na 2 řádky), řádky s údaji se podle potřeby přiblíží (nejvýš na 86 px)
+    const figMin = 170;
+    const postFig = img && fig && !story;
+    const room = footY - 60 - 30 - figMin - (y + 36);
+    // údaje s ikonami: pod sebou (s fotkou nebo s postavou vpravo), jinak ve dvou sloupcích
+    const step = story ? 104 : postFig ? Math.max(86, Math.min(106, Math.floor(room / 5))) : 106;
+    const stat = (s, x, yy) => {
+      shrIcon(ctx, s.ic, x, yy - 4, 50, P.accent);
+      shrText(ctx, s.lab, x + 76, yy + 6, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
+      const fv = shrFont(700, 58, SHR_D);
+      shrText(ctx, s.v, x + 74, yy + 64, fv, P.ink);
+      if (s.u) {
+        shrText(ctx, s.u, x + 74 + shrWidth(ctx, s.v, fv) + 10, yy + 64, shrFont(500, 34, SHR_B), P.ink3);
+      }
+    };
+    if (img || fig) {
+      const top = y;
+      for (const s of D.stats) {
+        stat(s, L, y);
+        y += step;
+      }
+      if (!img) {
+        const fh = Math.min(step * 5 - 20, 550);
+        shrFigures(ctx, P, W - L - (1.042 * fh - 40), top - 30, fh, D.mus);
+      }
+    } else {
+      D.stats.forEach((s, i) => {
+        stat(s, L + (i % 2) * 470, y + Math.floor(i / 2) * (step + 20));
+      });
+      y += 3 * (step + 20);
+    }
+    y += story ? 6 : 22;
+    // partie
+    if (G.length) {
+      divider(y - 30);
+      y += 14;
+      const postFh = footY - 60 - y - 30;
+      if (postFig && postFh >= 120) {
+        // příspěvek s fotkou: postava místo řádku s názvy partií, pruh pod ní
+        shrFigures(ctx, P, L - 6, y - 16, postFh, D.mus);
+        shrStack(ctx, P, L, y - 16 + postFh + 14, colW, 8, G);
+      } else if (img) {
+        shrText(ctx, X.mus, L, y, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
+        const names = G.slice(0, 3)
+          .map((g) => X.grp[g.k].toUpperCase())
+          .join(" · ");
+        const fN = shrFont(700, 30, SHR_D);
+        shrText(ctx, shrFit(ctx, names, fN, colW, 2), L, y + 40, fN, P.ink, "left", 2);
+        shrStack(ctx, P, L, y + 62, colW, 8, G);
+        y += 110;
+        if (fig && story) {
+          // příběh s fotkou: postava vlevo pod partiemi
+          const fh = Math.min(footY - 56 - y, 360);
+          if (fh >= 140) {
+            shrFigures(ctx, P, L - 6, y, fh, D.mus);
+          }
+        }
+      } else {
+        shrText(ctx, X.mus, L, y, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
+        shrStack(ctx, P, L, y + 26, colW, 12, G);
+        y += 86 + shrLegend(ctx, P, X, L, y + 86, colW, G) + 18;
+      }
+    }
+    // bez fotky: nejvýš 4 zlaté rekordy (bez „+ N dalších“), bez rekordu nejvýš 4 cviky
+    if (!img) {
+      const rowH = 66,
+        w = W - 2 * L;
+      const room = Math.min(4, Math.floor((footY - 116 - y) / rowH));
+      const list = D.recs.length ? D.recs : D.ex;
+      if (room >= 2 && list.length) {
+        shrText(ctx, D.recs.length ? X.recs : X.ex, L, y + 10, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
+        list.slice(0, room).forEach((r, i) => {
+          const ry = y + 22 + i * rowH;
+          const by = ry + rowH * 0.64;
+          if (i) {
+            ctx.fillStyle = P.rowLine;
+            ctx.fillRect(L, ry, w, 2);
+          }
+          if (D.recs.length) {
+            const fv = shrFont(700, 36, SHR_D),
+              fN = shrFont(600, 29, SHR_B),
+              fT = shrFont(500, 25, SHR_B);
+            const vw = shrWidth(ctx, r.v, fv);
+            shrText(ctx, "🏅", L + 18, ry + rowH * 0.66, shrFont(400, 32, SHR_B), "#000", "center");
+            const name = shrFit(ctx, r.ex, fN, w - vw - 260);
+            const nw = shrWidth(ctx, name, fN);
+            shrText(ctx, name, L + 52, by, fN, P.ink);
+            shrText(ctx, shrFit(ctx, r.t, fT, w - vw - 90 - nw), L + 52 + nw + 14, by, fT, P.ink3);
+            shrText(ctx, r.v, L + w, ry + rowH * 0.66, fv, P.gold, "right");
+          } else {
+            const fB = shrFont(700, 30, SHR_D),
+              fN = shrFont(600, 28, SHR_B),
+              fS = shrFont(500, 21, SHR_B);
+            const bw = shrWidth(ctx, r.best, fB);
+            const nx = L + (r.ss ? 22 : 0);
+            if (r.ss) {
+              // supersérie (F4-05): tyrkysový proužek
+              shrRect(ctx, L, ry + rowH * 0.2, 6, rowH * 0.6, 3);
+              ctx.fillStyle = "#14b8a6";
+              ctx.fill();
+            }
+            shrText(ctx, r.best, L + w, ry + rowH * 0.66, fB, P.ink, "right");
+            shrText(ctx, r.s + "×", L + w - bw - 22, by, fS, P.ink3, "right");
+            shrText(ctx, shrFit(ctx, r.n, fN, w - bw - 110 - (nx - L)), nx, by, fN, P.ink);
+          }
+        });
+      }
+    }
+    // podpis: logo a název appky
+    const ls = 56;
+    shrLogo(ctx, L, footY - ls / 2, ls);
+    shrText(ctx, "WORKOUT DENÍK", L + ls + 20, footY + 11, shrFont(700, 32, SHR_D), P.ink, "left", 3);
+    return cov;
+  }
+
+  /* panel „Sdílet trénink“ */
+  // načte písma obrázku (i znaky s háčky a čárkami), jinak by canvas kreslil náhradním písmem
+  let shrFontsOk = null;
+  function shrFonts() {
+    if (!shrFontsOk) {
+      const t = "AaŽžČčŘřŠšĚěŮůÍíÁáÉéÚúÝýŤťĎďŇň0123456789";
+      shrFontsOk = Promise.all(
+        [
+          shrFont(500, 40, SHR_B),
+          shrFont(600, 40, SHR_B),
+          shrFont(700, 40, SHR_B),
+          shrFont(700, 40, SHR_D),
+        ].map((f) => document.fonts.load(f, t)),
+      ).catch(() => null);
+    }
+    return shrFontsOk;
+  }
+  // výchozí motiv obrázku podle motivu appky
+  function shrAppTheme() {
+    const t = themePref();
+    if (t === "light" || t === "dark") return t;
+    return matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+  function shrPrefs() {
+    const p = Local.get("shr", {});
+    return {
+      fmt: p.fmt === "post" ? "post" : "story",
+      theme: p.theme === "light" || p.theme === "dark" ? p.theme : shrAppTheme(),
+      lang: p.lang === "en" ? "en" : "cs",
+      fig: !!p.fig,
+    };
+  }
+  function shrSavePrefs() {
+    Local.set("shr", { fmt: shr.fmt, theme: shr.theme, lang: shr.lang, fig: shr.fig });
+  }
+  // otevře panel pro trénink w (ze stránky tréninku F3-19, Zpět panel zavře a fotku zahodí přes closeSheet)
+  function shareOpen(w) {
+    if (shr && shr.img && shr.img.close) {
+      shr.img.close();
+    }
+    shr = Object.assign(
+      {
+        w,
+        nav: { lv: 1, back: closeSheet },
+        img: null,
+        fx: 0.5,
+        fy: 0.25,
+        zoom: 1,
+        blob: null,
+      },
+      shrPrefs(),
+    );
+    sheetShare();
+  }
+  // uvolní fotku (a náhled přes obrazovku) z paměti; volá se při zavření panelu i kroku zpět
+  function shrClose() {
+    if (shr && shr.img && shr.img.close) {
+      shr.img.close();
+    }
+    if (shrFullUrl) {
+      URL.revokeObjectURL(shrFullUrl);
+      shrFullUrl = "";
+    }
+    shr = null;
+  }
+  const shrSeg = (k, opts) =>
+    `<div class="seg seg-wide">
+      ${opts
+        .map(
+          ([v, l]) =>
+            `<button data-act="shrOpt" data-k="${k}" data-v="${v}" aria-pressed="${shr[k] === v}">` +
+            `${esc(l)}</button>`,
+        )
+        .join("")}
+    </div>`;
+  // řádek s fotkou (Android sám nabídne fotoaparát nebo galerii) a přepínacím tlačítkem Postava
+  function shrPhotoBtns() {
+    return (
+      (shr.img
+        ? `<label class="btn grow" for="shrPhotoIn">Změnit fotku</label>
+          <button class="btn grow" data-act="shrPhotoDel">Odebrat</button>`
+        : '<label class="btn grow" for="shrPhotoIn">Přidat fotku</label>') +
+      `<button class="btn grow shr-tog" data-act="shrFig" aria-pressed="${!!shr.fig}">Postava</button>`
+    );
+  }
+  function sheetShare(noanim) {
+    if (!shr) return;
+    shrInput();
+    // náhled vyplní místo nad ovládáním (panel má pevnou výšku, nic se neposouvá)
+    const b = `<div class="shr-prev"><canvas id="shrCv" class="shr-cv${shr.img ? " drag" : ""}"
+        width="${SHR_W}" height="${SHR_H[shr.fmt]}" aria-label="Náhled obrázku"></canvas></div>
+      ${shrSeg("fmt", [
+        ["post", "Příspěvek 4:5"],
+        ["story", "Příběh 9:16"],
+      ])}
+      <div class="shr-row">
+        ${shrSeg("theme", [
+          ["dark", "Tmavý"],
+          ["light", "Světlý"],
+        ])}
+        ${shrSeg("lang", [
+          ["cs", "CZ"],
+          ["en", "EN"],
+        ])}
+      </div>
+      <div class="shr-row" id="shrPh">${shrPhotoBtns()}</div>`;
+    openSheet(
+      "Sdílet trénink",
+      b,
+      `<button class="btn grow" data-act="shrSave">Uložit obrázek</button>
+      <button class="btn primary grow" data-act="shrShare">Sdílet</button>`,
+      noanim,
+      Object.assign({}, shr.nav, { re: () => sheetShare(true), cls: "shr" }),
+    );
+    shrRender();
+  }
+  // překreslí náhled (obrázek v plném rozlišení, na obrazovce zmenšený přes CSS)
+  let shrFrame = 0;
+  function shrRender() {
+    if (shrFrame) return;
+    shrFrame = requestAnimationFrame(async () => {
+      shrFrame = 0;
+      const c = document.getElementById("shrCv");
+      if (!c || !shr) return;
+      await shrFonts();
+      if (!shr) return;
+      shr.blob = null;
+      shr.cov = shrDraw(c.getContext("2d"), shrData(shr.w, shr.lang === "en"), shr);
+    });
+  }
+  // změna volby: přepne tlačítko a překreslí, panel se neotvírá znovu
+  function shrOpt(k, v) {
+    if (!shr) return;
+    shr[k] = v;
+    shrSavePrefs();
+    document
+      .querySelectorAll('[data-act="shrOpt"][data-k="' + k + '"]')
+      .forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+    shrRender();
+  }
+  // políčko pro výběr fotky je mimo panel (jako photoInputs), aby přežilo překreslení
+  function shrInput() {
+    if (document.getElementById("shrPhotoIn")) return;
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      '<input type="file" id="shrPhotoIn" accept="image/*" hidden>',
+    );
+  }
+  /* vybraná fotka: v plném rozlišení (kvůli ostrosti při přiblížení), jen obří fotky (50 Mpx a víc)
+     se zmenší na SHR_PH_MAX px, aby Chrome nedošla paměť; otočená podle EXIF, jen v paměti */
+  const SHR_PH_MAX = 4096;
+  async function shrPhoto(input) {
+    const f = input.files && input.files[0];
+    input.value = "";
+    if (!f || !shr) return;
+    let bmp;
+    try {
+      bmp = await createImageBitmap(f, { imageOrientation: "from-image" });
+    } catch (e) {
+      try {
+        bmp = await createImageBitmap(f);
+      } catch (e2) {
+        toast("Fotku se nepodařilo načíst.", "err");
+        return;
+      }
+    }
+    const k = Math.min(1, SHR_PH_MAX / Math.max(bmp.width, bmp.height));
+    if (k < 1) {
+      const small = await createImageBitmap(bmp, {
+        resizeWidth: Math.round(bmp.width * k),
+        resizeHeight: Math.round(bmp.height * k),
+        resizeQuality: "high",
+      });
+      bmp.close();
+      bmp = small;
+    }
+    if (!shr) {
+      bmp.close();
+      return;
+    }
+    if (shr.img && shr.img.close) {
+      shr.img.close();
+    }
+    shr.img = bmp;
+    shr.fx = 0.5;
+    shr.fy = 0.25;
+    shr.zoom = 1;
+    shrPhotoUi();
+  }
+  function shrPhotoDel() {
+    if (!shr) return;
+    if (shr.img && shr.img.close) {
+      shr.img.close();
+    }
+    shr.img = null;
+    shrPhotoUi();
+  }
+  // po změně fotky: tlačítka a posouvání v náhledu
+  function shrPhotoUi() {
+    const ph = document.getElementById("shrPh"),
+      c = document.getElementById("shrCv");
+    if (ph) {
+      ph.innerHTML = shrPhotoBtns();
+    }
+    if (c) {
+      c.classList.toggle("drag", !!shr.img);
+    }
+    shrRender();
+  }
+  /* gesta v náhledu: jeden prst posouvá výřez fotky, dva prsty přibližují (kolem místa mezi prsty),
+     klepnutí otevře celý obrázek přes obrazovku, dvojí klepnutí vrátí fotku do výchozí velikosti a polohy */
+  const shrPt = new Map(); // prsty na náhledu: pointerId → {x, y}
+  let shrGest = null; // začátek gesta: {fx, fy, zoom, x, y, d (vzdálenost prstů), moved}
+  let shrTapAt = 0,
+    shrTapTimer = 0;
+  // bod náhledu v px obrázku
+  function shrCanvasPt(c, x, y) {
+    const r = c.getBoundingClientRect();
+    return { x: ((x - r.left) * SHR_W) / r.width, y: ((y - r.top) * SHR_W) / r.width };
+  }
+  // střed mezi prsty (u jednoho prstu prst) a jejich vzdálenost
+  function shrPtMid() {
+    const ps = [...shrPt.values()];
+    if (ps.length < 2) return { x: ps[0].x, y: ps[0].y, d: 0 };
+    return {
+      x: (ps[0].x + ps[1].x) / 2,
+      y: (ps[0].y + ps[1].y) / 2,
+      d: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y),
+    };
+  }
+  // výchozí stav gesta (znovu i po přidání nebo zvednutí prstu); moved a t zůstávají z celého dotyku
+  function shrGestStart() {
+    const m = shrPtMid();
+    shrGest = {
+      fx: shr.fx,
+      fy: shr.fy,
+      zoom: shr.zoom,
+      cov: shr.cov,
+      x: m.x,
+      y: m.y,
+      d: m.d,
+      moved: shrGest ? shrGest.moved : false,
+      t: shrGest ? shrGest.t : Date.now(),
+    };
+  }
+  document.addEventListener("pointerdown", (ev) => {
+    if (!shr || ev.target.id !== "shrCv") return;
+    shrPt.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    ev.target.setPointerCapture(ev.pointerId);
+    if (shrPt.size === 1) {
+      shrGest = null;
+    }
+    shrGestStart();
+  });
+  document.addEventListener("pointermove", (ev) => {
+    if (!shrPt.has(ev.pointerId) || !shr || !shrGest) return;
+    shrPt.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    const c = document.getElementById("shrCv");
+    const g = shrGest,
+      cov = g.cov;
+    const mid = shrPtMid();
+    if (Math.hypot(mid.x - g.x, mid.y - g.y) > 8 || shrPt.size > 1) {
+      g.moved = true;
+    }
+    if (!c || !shr.img || !cov || !g.moved) return;
+    // nové přiblížení podle roztažení prstů
+    let zoom = g.zoom;
+    if (mid.d > 0 && g.d > 0) {
+      zoom = Math.max(1, Math.min(cov.zMax, (g.zoom * mid.d) / g.d));
+    }
+    // bod fotky, který byl na začátku pod prsty, zůstane pod prsty
+    const W = SHR_W,
+      H = SHR_H[shr.fmt] || SHR_H.story;
+    const img = shr.img;
+    const k0 = Math.max(W / img.width, H / img.height);
+    const a = shrCanvasPt(c, g.x, g.y),
+      b = shrCanvasPt(c, mid.x, mid.y);
+    const srcX = cov.slackX * g.fx + a.x / cov.k,
+      srcY = cov.slackY * g.fy + a.y / cov.k;
+    const k = k0 * zoom;
+    const slackX = img.width - W / k,
+      slackY = img.height - H / k;
+    const clamp = (v) => Math.max(0, Math.min(1, v));
+    shr.zoom = zoom;
+    shr.fx = slackX > 0 ? clamp((srcX - b.x / k) / slackX) : 0.5;
+    shr.fy = slackY > 0 ? clamp((srcY - b.y / k) / slackY) : 0.5;
+    shrRender();
+  });
+  const shrGestEnd = (ev) => {
+    if (!shrPt.has(ev.pointerId)) return;
+    shrPt.delete(ev.pointerId);
+    const g = shrGest;
+    if (shrPt.size) {
+      // zbyl jeden prst: pokračuje posun od aktuálního stavu
+      shrGestStart();
+      return;
+    }
+    shrGest = null;
+    if (!g || g.moved || ev.type === "pointercancel" || Date.now() - g.t > 500 || !shr) return;
+    // klepnutí: s fotkou počká, jestli nepřijde druhé (dvojí klepnutí = výchozí velikost)
+    clearTimeout(shrTapTimer);
+    if (shr.img && Date.now() - shrTapAt < 320) {
+      shrTapAt = 0;
+      shr.zoom = 1;
+      shr.fx = 0.5;
+      shr.fy = 0.25;
+      shrRender();
+      return;
+    }
+    shrTapAt = Date.now();
+    shrTapTimer = setTimeout(shrFull, shr.img ? 320 : 0);
+  };
+  document.addEventListener("pointerup", shrGestEnd);
+  document.addEventListener("pointercancel", shrGestEnd);
+  /* celý obrázek přes obrazovku (jako prohlížení fotek u cviku), Zpět vrátí panel */
+  async function shrFull() {
+    if (!shr || !document.getElementById("shrCv")) return;
+    const f = await shrFile();
+    if (!f || !shr) return;
+    shrFullUrl = URL.createObjectURL(f);
+    kkEnd();
+    document.getElementById("sheetRoot").innerHTML =
+      `<div class="pv shr-full" role="dialog" aria-modal="true" aria-label="Náhled obrázku">
+      <div class="pv-h">
+        <button class="iconbtn" data-act="shrFullBack" aria-label="Zpět">${IC.back}</button>
+        <b>Náhled obrázku</b>
+      </div>
+      <div class="shr-full-b" data-act="shrFullBack"><img src="${shrFullUrl}" alt="Obrázek tréninku"></div>
+      <div class="pv-f row">
+        <button class="btn grow" data-act="shrSave">Uložit obrázek</button>
+        <button class="btn primary grow" data-act="shrShare">Sdílet</button>
+      </div>
+    </div>`;
+    document.body.style.overflow = "hidden";
+    sheetNav = { lv: shr.nav.lv + 1, back: shrFullClose, re: shrFull };
+  }
+  function shrFullClose() {
+    if (shrFullUrl) {
+      URL.revokeObjectURL(shrFullUrl);
+      shrFullUrl = "";
+    }
+    sheetShare(true);
+  }
+  // hotový obrázek jako PNG soubor (připravený se pamatuje do další změny)
+  async function shrFile() {
+    const c = document.getElementById("shrCv");
+    if (!shr || (!c && !shr.blob)) return null;
+    if (!shr.blob) {
+      shr.blob = await new Promise((ok) => c.toBlob(ok, "image/png"));
+    }
+    if (!shr.blob) return null;
+    const d = new Date(shr.w.start);
+    const name = FILE_P + "-trenink-" + d.getFullYear() + "-" + d2(d.getMonth() + 1) + "-" + d2(d.getDate());
+    return new File([shr.blob], name + ".png", { type: "image/png" });
+  }
+  async function shrSave() {
+    const f = await shrFile();
+    if (!f) return;
+    await LocalDownloads.save({ filename: f.name, data: f, type: "image/png" });
+    toast("Obrázek uložen do Stažených souborů");
+  }
+  // sdílení přes systémovou nabídku; kde nejde, obrázek se uloží
+  async function shrShare() {
+    const f = await shrFile();
+    if (!f) return;
+    if (!navigator.canShare || !navigator.canShare({ files: [f] })) {
+      toast("Sdílení tady nejde, obrázek se uloží.");
+      shrSave();
+      return;
+    }
+    try {
+      await navigator.share({ files: [f] });
+    } catch (e) {
+      if (e && e.name === "NotAllowedError") {
+        // příprava obrázku trvala moc dlouho; podruhé je hotový a sdílení se otevře hned
+        toast("Klepni na Sdílet ještě jednou.");
+      }
+    }
   }
 
   /* ---------- KALENDÁŘ (F3-06) ----------
@@ -7908,6 +8904,7 @@
   }
   function closeSheet() {
     kkEnd();
+    shrClose(); // zavřený panel sdílení: fotka se uvolní z paměti (F4-08)
     document.getElementById("sheetRoot").innerHTML = "";
     document.body.style.overflow = "";
     sheetNav = null;
@@ -9845,6 +10842,36 @@
       case "openW":
         openWorkout({ id: v, mk: t.dataset.m });
         break;
+      case "wShare": {
+        const x = S.months[t.dataset.m] && S.months[t.dataset.m][v];
+        if (x) {
+          shareOpen(Object.assign({ id: v, mk: t.dataset.m }, x));
+        }
+        break;
+      }
+      case "shrOpt":
+        shrOpt(t.dataset.k, v);
+        break;
+      case "shrFig":
+        if (shr) {
+          shr.fig = !shr.fig;
+          t.setAttribute("aria-pressed", shr.fig);
+          shrSavePrefs();
+          shrRender();
+        }
+        break;
+      case "shrPhotoDel":
+        shrPhotoDel();
+        break;
+      case "shrSave":
+        shrSave();
+        break;
+      case "shrShare":
+        shrShare();
+        break;
+      case "shrFullBack":
+        navBack();
+        break;
       case "wBack":
         navBack();
         break;
@@ -10367,6 +11394,10 @@
     }
     if (t.id === "phCamIn" || t.id === "phPickIn") {
       photoFiles(t);
+      return;
+    }
+    if (t.id === "shrPhotoIn") {
+      shrPhoto(t);
       return;
     }
     if (t.id === "x-url") {
