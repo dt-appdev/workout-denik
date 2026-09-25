@@ -7592,8 +7592,8 @@
   }
 
   /* ---------- grafy (SVG) ----------
-     spec grafu: type ("bar" / "line"), label, unit (přípona hodnoty v bublině), yUnit (jednotka nad osou Y,
-     F3-08), fmt (druh hodnot podle CH_FMT, jinak obyčejná čísla) a data (bars / series). */
+     spec grafu: type ("bar" / "line"), label, unit (přípona hodnoty v bublině), yUnit (jednotka u čísel
+     na ose Y, F3-08), fmt (druh hodnot podle CH_FMT, jinak obyčejná čísla) a data (bars / series). */
   const CH = {};
   let chN = 0;
   function chartPh(spec, h) {
@@ -7632,7 +7632,7 @@
   }
   // minuty jako hodiny „1:30“ (osa času v Průběhu)
   const fmtHM = (m) => Math.floor(Math.round(m) / 60) + ":" + d2(Math.round(m) % 60);
-  /* Druhy hodnot grafu (spec.fmt, F3-08): kroky osy, číslo na ose, jednotka nad osou a hodnota v bublině.
+  /* Druhy hodnot grafu (spec.fmt, F3-08): kroky osy, číslo na ose, jednotka na ose a hodnota v bublině.
      min = minuty zobrazené v hodinách (0:30, 1:00…), sec = sekundy jako m:ss (výdrž, čas cviku). */
   const CH_FMT = {
     min: {
@@ -7648,16 +7648,24 @@
       tip: (v) => fmtSec(v) + (v >= 3600 ? " h" : " min"),
     },
   };
-  // popisky osy Y grafu: hodnoty (ticks), texty čísel a jednotka nad osou
+  // osa Y grafu: hodnoty (ticks) a jejich popisky i s jednotkou („80 kg“, „2:00 h“)
   function chartAxis(sp, min, max) {
     const f = CH_FMT[sp.fmt];
     const ticks = niceTicks(min, max, 4, f && f.steps);
-    const top = ticks[ticks.length - 1];
+    const unit = f ? f.unit(ticks[ticks.length - 1]) : sp.yUnit || "";
     return {
       ticks,
-      labels: ticks.map((t) => (f ? f.tick(t) : yFmt(t))),
-      unit: f ? f.unit(top) : sp.yUnit || "",
+      labels: ticks.map((t) => (f ? f.tick(t) : yFmt(t)) + (unit ? " " + unit : "")),
     };
+  }
+  // šířka nejdelšího z textů v grafu el v px (změří prohlížeč, takže sedí i s větším písmem F3-11)
+  function chartTextWidth(el, texts) {
+    el.innerHTML = `<svg width="1" height="1">${texts.map((t) => `<text>${esc(t)}</text>`).join("")}</svg>`;
+    let max = 0;
+    for (const t of el.querySelectorAll("text")) {
+      max = Math.max(max, t.getComputedTextLength());
+    }
+    return Math.ceil(max);
   }
   // hodnota v bublině po klepnutí (bez jednotky u času, ten má formát m:ss / h:mm)
   function chartTip(sp, v) {
@@ -7695,24 +7703,19 @@
         axis = chartAxis(sp, Math.max(0, y0 - pad), y1 + pad);
       }
       const ticks = axis.ticks;
-      // okraje pro popisky os rostou s písmem (F3-11); vlevo podle nejdelšího čísla, nahoře místo
-      // pro jednotku (F3-08)
+      // okraje pro popisky os rostou s písmem (F3-11); graf je přes celou šířku karty: nejdelší popisek
+      // osy Y začíná na levém okraji textu, čáry končí na pravém (F3-08)
       const textScale = fontK();
-      const longest = Math.max(...axis.labels.map((l) => l.length));
-      const padL = Math.round(Math.max(40, longest * 6.2 + 8) * textScale),
-        padR = 12,
-        padT = Math.round((axis.unit ? 24 : 12) * textScale),
+      const xLabelW = sp.type === "bar" ? chartTextWidth(el, sp.bars.map((b) => String(b.label))) : 0;
+      const padL = chartTextWidth(el, axis.labels) + 6,
+        padR = 0,
+        padT = 12,
         padB = Math.round(24 * textScale);
       const iw = W - padL - padR,
         ih = H - padT - padB;
       let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
           aria-label="${esc(sp.label)}">`;
-      if (axis.unit) {
-        svg += `<text class="unit" x="${padL - 6}" y="${padT - 10 * textScale}" text-anchor="end">
-          ${esc(axis.unit)}
-        </text>`;
-      }
-      // vodorovné čáry a čísla na ose Y
+      // vodorovné čáry a popisky osy Y
       const yLines = (Y) => {
         ticks.forEach((t, i) => {
           svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(t)}" y2="${Y(t)}"/>
@@ -7751,9 +7754,8 @@
           });
         });
         // popisky pod sloupci: když se nevejdou vedle sebe, jen každý k-tý (poslední zůstane vždy)
-        const longestX = Math.max(0, ...xLabels.map((l) => l.text.length));
         const gap = xLabels.length > 1 ? xLabels[1].x - xLabels[0].x : iw;
-        const every = Math.max(1, Math.ceil((longestX * 6.2 * textScale + 6) / gap));
+        const every = Math.max(1, Math.ceil((xLabelW + 4) / gap));
         xLabels.forEach((l, i) => {
           if ((xLabels.length - 1 - i) % every) return;
           svg += `<text x="${l.x}" y="${H - 6}" text-anchor="middle">${esc(l.text)}</text>`;
