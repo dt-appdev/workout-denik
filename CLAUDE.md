@@ -111,15 +111,16 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Tlačítka (F2-07): akce v nadpisu sekce (`.sec-h`) jen jako ikona v rámečku malého tlačítka `icoBtn(act, ikona,
   popis, v)` (ikony v `IC`, popis pro čtečku). Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách
   a panelech. Krátký formulář (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu
-  cviků (trénink, šablona) = stránka se šipkou ← a dotazem „Zahodit změny?“ (Nový / Upravit cvik přejde na stránku
-  v F3-14).
+  cviků (trénink, šablona, Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“. Zobrazení
+  jedné věci (cvik, uložený trénink F3-19) = stránka se šipkou ←. Stejné akce vypadají všude stejně (výběr cviků
+  má + a zeměkouli jako záložka Cviky, F3-18).
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
   dostane `nav.lv` (hloubka) a `nav.back` (krok o úroveň), dynamický panel `nav.re`
-  (znovu otevření). Nová podstránka (jako `exd`, `edit`) uloží místo návratu
-  `S.nav.push(navFrame())` a musí se doplnit do `navBack` a `navDepth`. Šipky ←
-  v appce volají `navBack()`. Záznamy historie se přidávají jen po klepnutí (`navEnsure`).
+  (znovu otevření). Nová podstránka (jako `exd`, `edit`, `exed`, `wd`) uloží místo návratu
+  `S.nav.push(navFrame())` a musí se doplnit do `navBack`, `navDepth` a `go` (stránky, které nemažou `S.nav`).
+  Šipky ← v appce volají `navBack()`. Záznamy historie se přidávají jen po klepnutí (`navEnsure`).
 
 ## Datová vrstva (js/app.js, sekce „DATOVÁ VRSTVA")
 
@@ -179,10 +180,22 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `statsOver` (Přehled), `statsMus` (Partie, sem radar F3-04), `statsEx` (Cviky). Otevřená část `S.statsPart`
   (`Local` `statsPart`, výchozí `over`, akce `statsPart` posune nahoru). Fitko `S.statsGym` a období `S.statsRange`
   jsou společné pro všechny části. Nová sekce Statistik patří do jedné z částí, ne pod ně.
+- Nový / Upravit cvik (F3-14, sekce „NOVÝ A UPRAVIT CVIK“): stránka route `exed` (`vExEdit`), otevírá se jen přes
+  `exEdOpen(id, from, fx)` (`from`: `list`, `detail`, `info`, `picker`; `fx` = záznam z online hledání), který uloží
+  `navFrame()` i s otevřeným panelem (výběr cviků, info, výsledky hledání). Hodnoty formuláře drží `exEd.f` (posluchače
+  `input`/`change` volají `exEdCollect`, stránka přežije překreslení), neuložené změny `exEdChanged` (předvyplnění z online
+  databáze se počítá jako změna; Zpět i záložka se zeptají, akce `exDiscard`). Odchod vždy přes `exEdLeave(re)` (`re` = jiný panel než uložený, např. výběr cviků po
+  uložení z výsledků hledání). Route `exed` se neukládá do `Local` `route` (po restartu se neobnoví, F3-16).
+- Jedinečné názvy cviků (F3-17, sekce „JEDINEČNÉ NÁZVY CVIKŮ“): klíč `exKey` (bez velkých písmen, diakritiky a mezer),
+  shoda s jiným cvikem (i skrytým) `exClash(pole, hodnota, vlastníId)`. Stejný anglický název nepustí (`exNameBlock`;
+  starý duplikát beze změny názvu projde), stejný český jen upozorní (`.fmsg.warn`). Hlášky `exNameMsgs` / `exNameMark`
+  (hned při psaní, `#x-name-msg`, `#x-cz-msg`, `#ex-save` s `.btn.off`), odkaz `exClashOpen` otevře stránku cviku
+  a Zpět vrátí formulář (formulář pod ní si drží navFrame v `f.exEd`, vrací ho `exEdLeave`). Každé nové místo, které
+  vytváří nebo přejmenovává cvik, má názvy hlídat stejně.
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
   stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
-  předvyplní `sheetExEdit(null, from, fx)` a vlastní cvik dostane `src:"fedb:<id>"`.
+  předvyplní `exEdOpen(null, from, fx)` a vlastní cvik dostane `src:"fedb:<id>"`.
   Fotky jen jako náhled z GitHubu (`FEDB_IMG`), nic se neukládá. Změna českých názvů
   nebo shod: upravit TSV v `tools/fedb/` a spustit `python3 tools/fedb/build.py`.
 - Minule a předvyplnění (F1-01, sekce „MINULE A PŘEDVYPLNĚNÍ“): „minule“ = `lastSession`
@@ -190,7 +203,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   podle druhu (`setGrp`: zahřívací zvlášť), `exHints` vrátí pro každou sérii minulou sérii
   (sloupec Minule) a šedé předvyplnění (placeholder), ✓ ho převezme. Nový cvik v tréninku má
   prázdné hodnoty; `s.ph` = hodnoty ze šablony jen u nikdy necvičeného cviku (jen v rozdělaném tréninku).
-- Cvičit znovu (F2-01, sekce „CVIČIT ZNOVU“): tlačítko `wAgain` v `sheetWorkout` otevře `sheetAgain`
+- Cvičit znovu (F2-01, sekce „CVIČIT ZNOVU“): tlačítko `wAgain` na stránce tréninku `vWorkout` otevře `sheetAgain`
   (volba fitka, stav `again`), `startAgain` založí trénink přes `exEntryFor` se sériemi vybraného
   tréninku (jako šablona). Rozdělaný trénink má `again` = id původního tréninku (kvůli nezaškrtnutému
   „Aktualizovat šablonu“), uložený trénink ho má jako `againOf` (porovnání v souhrnu, F3-03; starší
@@ -209,17 +222,31 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `.btn.off`, klepnout jde, ukáže hlášku); stará šablona s duplikátem projde bez změny názvu
   a fitek). Uložit jako šablonu (`wToTpl`) při shodě `sheetTplClash` (stav `tplAsk`: `tplAskNew` / `tplAskOver` /
   `tplAskBack`). Každé nové místo, které vytváří šablonu, má volný název hlídat stejně; stávající duplikáty zůstávají.
-- Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“): panel `sheetWorkout(w, justSaved, nav)` po uložení
-  i z Historie. Minulý běh stejného tréninku `prevRun` (pravidlo `sameRun`: šablona, jinak název bez
-  automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné fitko), u cviku poslední výskyt `prevEx`
-  (vázaný cvik jen ve stejném fitku). Klepnutí na „Porovnáno s…“ = panel v panelu (`prevW`, `wOpen`,
-  `wBack`). Procvičené partie `wMuscles` (pomocná partie = půl série), postava přes `musFigs`
-  (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
+- Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“ a „STRÁNKA TRÉNINKU“): od F3-19 stránka (route `wd`, `vWorkout`,
+  obsah `wSummary`), otevírat jen přes `openWorkout(w, justSaved)` (po uložení „Hotovo · …“ s Dokončit, z Historie,
+  kalendáře, „Porovnáno s…“ = `prevW`). `S.wDetail` = `{id, mk, saved}`, `navFrame` si ho pamatuje (`f.wd`), takže Zpět
+  vrátí i předchozí trénink; po uložení úpravy (`saveEdit`) zpět na stránku s novým `mk`. Minulý běh stejného tréninku
+  `prevRun` (pravidlo `sameRun`: šablona, jinak název bez automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné
+  fitko), u cviku poslední výskyt `prevEx` (vázaný cvik jen ve stejném fitku). Procvičené partie `wMuscles` (pomocná
+  partie = půl série), postava přes `musFigs` (sdílí ji i Statistiky). Nic se neukládá, vše se počítá z tréninků.
+- Sdílení souhrnu (F4-08, sekce „SDÍLENÍ SOUHRNU“): tlačítko `wShare` dole na stránce tréninku `vWorkout`
+  (F3-19) otevře panel `sheetShare` (stav `shr`, `shareOpen`, Zpět = `closeSheet`; třída `shr` na `.scrim` = pevná výška, náhled
+  `.shr-prev` vyplní zbytek, ovládání v řádcích `.shr-row` je vždy vidět, Postava = tlačítko `.shr-tog` s `aria-pressed`). Obrázek kreslí `shrDraw(ctx, shrData(w, en),
+  volby)` na `<canvas id="shrCv">` (náhled = canvas zmenšený přes CSS), 1080 px, `SHR_H` story 1920 / post 1350 (story
+  nechává nahoře a dole `SHR_SAFE` 250 px bez textu, Instagram je překrývá; řádek s logem `footY`), písmo
+  v pevných px (na `fontK` nezávisí), barvy `SHR_PAL` (skupiny partií stejné jako `--g-*`), texty `SHR_TXT` (cs / en;
+  anglicky `name` cviku, česky `cz`). Postava přes `shrFigures` z obrysů `ATLAS` (Path2D), ne jako obrázek, takže CSP beze
+  změny. Volby v `Local` `shr` (`fmt`, `theme`, `lang`, `fig`), fotka jen v paměti (`shr.img`, ImageBitmap, políčko
+  `#shrPhotoIn` mimo panel, plné rozlišení do `SHR_PH_MAX`; `closeSheet` ji uvolní přes `shrClose`), výřez `fx`/`fy`
+  a přiblížení `zoom` (do `shrZoomMax`: nejvýš 3× a jen dokud je fotka ostrá) gesty v náhledu (`shrPt`, `shrGest`),
+  klepnutí = celý obrázek přes obrazovku `shrFull` (`sheetNav` o úroveň hlouběji), dvojí klepnutí = výchozí výřez. Sdílení `navigator.share({files})`, jinak
+  `LocalDownloads.save` (umí i Blob s `type`). Nový údaj na obrázku přidat do `shrData` a oba jazyky do `SHR_TXT`.
 - Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`cal` výchozí / `list`, `Local` `histView`),
   `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
   Tréninky podle dne přes `wByDay` (klíč `dayKey`, použít i pro heatmapu F3-07), měření `bodyByDay`.
   Pod kolečkem název tréninku, streak `calStreak` a volné dny `calRest` vždy ze všech fitek. Klepnutí `sheetCalDay`:
-  jedna věc rovnou, víc = výběr, z něj `sheetWorkout`/`sheetBody` s `nav` zpět do výběru. Budoucí dny jsou neaktivní
+  jedna věc rovnou, víc = výběr, z něj stránka tréninku `openWorkout` (Zpět
+  výběr znovu otevře přes `navFrame`) nebo `sheetBody` s `nav` zpět do výběru. Budoucí dny jsou neaktivní
   (místo pro F4-07).
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
