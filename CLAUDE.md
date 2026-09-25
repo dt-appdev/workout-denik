@@ -206,7 +206,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (místo pro F4-07).
 - Odpočinek (F1-04, sekce „odpočinek mezi sériemi" v `js/app.js`): konec pauzy
   `S.restEnd`, uložený v `Local` `rest` (přežije reload), start jen přes `restStart()`,
-  konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restAlert`
+  konec přes `restStop()`. Nastavení v `config/main`: `restSec`, `restSs` (po pracovní supersérii, F4-05), `restAlert`
   (`both`/`sound`/`vib`), `restOver` (přečas), `restNotify`. Oznámení na pozadí ukazuje
   service worker (`sw.js`, zpráva `{type:"rest"}` z `restPost()`), jen když appka není
   na očích (viditelná a aktivní); drží se vzhůru přes `waitUntil`, Chrome to dovolí asi 5 min.
@@ -215,6 +215,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   (`sheetRestLog`). Ve vydané verzi nic takového být nemá (přání uživatele).
   Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
   vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
+- Supersérie (F4-05, sekce „SUPERSÉRIE“): cviky se stejnou značkou `e.ss` hned za sebou (rozdělaný i uložený trénink,
+  šablona; `ssRun` = rozsah, aspoň 2 cviky), osamělou nebo rozdělenou značku uklidí `ssNorm` (po odebrání, přetažení
+  `ssMoved`, v `draftToWorkout`, při uložení šablony). Menu cviku `ssOn` (`ssLink`) / `ssOff` (`ssUnlink`), karty obaluje
+  `ssWrap` (`.ssg`, `--ss`; editor i souhrn). Každé nové místo, které kopíruje cviky (šablona ↔ trénink), přenáší
+  značku přes `ssOf(e)`. Pauza po ✓ (`toggleSetDone`) podle `ssRest`: série se párují podle `setGrp` a pořadí,
+  nehotová dvojice = bez pauzy a hláška `restNext()`, hotové pracovní kolo = `restStart(S.cfg.restSs)`, jinak výchozí
+  `S.cfg.restSec`. `restNext` v supersérii vybírá další kolo.
 - Displej během pauzy (F1-02, sekce „displej během pauzy“): `S.cfg.screenOn` (výchozí vypnuto) = Screen Wake Lock jen
   během pauzy (`S.restEnd`, i přečas) v rozdělaném tréninku, appka na očích. Vše řídí `wakeSync()` (volá ho `restSave`,
   `visibilitychange`, baterie a interval s `restTick`). Pojistka `WAKE_IDLE` 10 min bez dotyku (`wakeTouch`), baterie pod

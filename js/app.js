@@ -834,6 +834,7 @@
       gyms: [],
       defaultGymId: null,
       restSec: 120,
+      restSs: 180,
       restAlert: "both",
       restOver: true,
       restNotify: true,
@@ -1041,6 +1042,7 @@
         gyms: [],
         defaultGymId: null,
         restSec: 120,
+        restSs: 180,
         restAlert: "both",
         restOver: true,
         restNotify: true,
@@ -1638,9 +1640,16 @@
     }
     s.done = true;
     s.at = Date.now();
+    // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05)
     if (d === S.active) {
-      restStart();
-    } // v úpravě staršího tréninku bez časovače
+      const rest = ssRest(d, i, j);
+      if (rest === "none") {
+        restStop();
+        toast(restNext());
+      } else {
+        restStart(rest === "ss" ? S.cfg.restSs : S.cfg.restSec);
+      }
+    }
     const lr = liveRecords(d, i);
     const types = lr.sets[j];
     if (S.cfg.recCelEx && d === S.active) {
@@ -3087,14 +3096,140 @@
     };
     if (t) {
       for (const it of t.items || []) {
-        d.ex.push(exEntryFor(it.exId, gymId, it.sets));
+        d.ex.push(Object.assign(exEntryFor(it.exId, gymId, it.sets), ssOf(it)));
       }
+      ssNorm(d.ex);
     }
     S.active = d;
     saveActive();
     restStop();
     go("train");
   }
+
+  /* ---------- SUPERSÉRIE (F4-05) ----------
+     Cviky v supersérii mají stejnou značku e.ss (rozdělaný trénink, uložený trénink i šablona) a stojí
+     v seznamu hned za sebou. Supersérie = aspoň 2 sousední cviky se stejnou značkou (ssRun); osamělá
+     značka se nebere v úvahu a ssNorm ji zahodí. Vytváří se v menu cviku (ssOn = s dalším cvikem,
+     ssOff = zrušit), přenáší se ze šablony, přes Cvičit znovu, Uložit jako šablonu i Aktualizovat šablonu.
+     Série se párují podle druhu jako u Minule (setGrp: zahřívací se zahřívacími, ostatní s pracovními)
+     a podle pořadí. Po ✓ série rozhodne ssRest o pauze:
+     - dvojice v jiném cviku supersérie ještě není hotová → bez pauzy, jen hláška „Další: …“,
+     - kolo je hotové → pracovní kolo S.cfg.restSs (Časovač po pracovní supersérii), zahřívací výchozí,
+     - série nemá v jiném cviku dvojici (série navíc) → výchozí časovač. */
+  // značka supersérie cviku pro Object.assign (prázdný objekt = cvik není v supersérii)
+  const ssOf = (e) => (e && e.ss ? { ss: e.ss } : {});
+  // rozsah [od, do] supersérie, do které patří cvik na místě i (null = není v supersérii)
+  function ssRun(list, i) {
+    const tag = list[i] && list[i].ss;
+    if (!tag) return null;
+    let from = i;
+    let to = i;
+    while (from > 0 && list[from - 1].ss === tag) {
+      from--;
+    }
+    while (to < list.length - 1 && list[to + 1].ss === tag) {
+      to++;
+    }
+    return to > from ? [from, to] : null;
+  }
+  // uklidí značky: osamělý cvik ze supersérie vypadne, rozdělená supersérie dostane pro další část novou
+  function ssNorm(list) {
+    const seen = new Set();
+    let i = 0;
+    while (i < list.length) {
+      const tag = list[i].ss;
+      let to = i;
+      while (tag && to < list.length - 1 && list[to + 1].ss === tag) {
+        to++;
+      }
+      if (tag && to === i) {
+        delete list[i].ss;
+      } else if (tag && seen.has(tag)) {
+        const fresh = uid("s");
+        for (let k = i; k <= to; k++) {
+          list[k].ss = fresh;
+        }
+      }
+      if (tag) {
+        seen.add(tag);
+      }
+      i = to + 1;
+    }
+    return list;
+  }
+  // spojí cvik i s cvikem pod ním (i s jeho případnou supersérií)
+  function ssLink(list, i) {
+    const a = list[i];
+    const b = list[i + 1];
+    if (!a || !b) return;
+    const tag = a.ss || b.ss || uid("s");
+    const other = b.ss && b.ss !== tag ? b.ss : null;
+    for (const e of list) {
+      if (other && e.ss === other) {
+        e.ss = tag;
+      }
+    }
+    a.ss = tag;
+    b.ss = tag;
+    ssNorm(list);
+  }
+  // zruší celou supersérii, do které patří cvik i
+  function ssUnlink(list, i) {
+    const run = ssRun(list, i);
+    if (!run) return;
+    for (let k = run[0]; k <= run[1]; k++) {
+      delete list[k].ss;
+    }
+  }
+  // po přetažení cviku na místo k: mezi dvěma cviky stejné supersérie se k ní přidá, jinak ze své vypadne
+  function ssMoved(list, k) {
+    const e = list[k];
+    const prev = list[k - 1];
+    const next = list[k + 1];
+    if (prev && next && prev.ss && prev.ss === next.ss) {
+      e.ss = prev.ss;
+    } else if (e.ss && !(prev && prev.ss === e.ss) && !(next && next.ss === e.ss)) {
+      delete e.ss;
+    }
+    ssNorm(list);
+  }
+  // karty cviků (cards[i] patří list[i]); cviky v supersérii obalí společným rámečkem s pruhem a štítkem
+  function ssWrap(list, cards) {
+    let h = "";
+    for (let i = 0; i < list.length; i++) {
+      const run = ssRun(list, i);
+      if (!run) {
+        h += cards[i];
+        continue;
+      }
+      h += `<div class="ssg">
+        <div class="ssg-h">Supersérie</div>
+        ${cards.slice(run[0], run[1] + 1).join("")}
+      </div>`;
+      i = run[1];
+    }
+    return h;
+  }
+  // pauza po ✓ série j cviku i: "none" = kolo supersérie pokračuje, "ss" = časovač po pracovní supersérii,
+  // "def" = výchozí časovač
+  function ssRest(d, i, j) {
+    const run = ssRun(d.ex, i);
+    if (!run) return "def";
+    const grp = setGrp(d.ex[i].sets[j].t);
+    const pos = d.ex[i].sets.slice(0, j).filter((s) => setGrp(s.t) === grp).length;
+    const pairs = [];
+    for (let k = run[0]; k <= run[1]; k++) {
+      if (k === i) continue;
+      const pair = d.ex[k].sets.filter((s) => setGrp(s.t) === grp)[pos];
+      if (pair) {
+        pairs.push(pair);
+      }
+    }
+    if (!pairs.length) return "def";
+    if (pairs.some((s) => !s.done)) return "none";
+    return grp === "w" ? "def" : "ss";
+  }
+
   /* ---------- CVIČIT ZNOVU (F2-01) ----------
      Nový trénink podle tréninku z historie: stejný název a cviky, počet a druh sérií z něj,
      hodnoty jen šedě z minula v zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen
@@ -3155,12 +3290,13 @@
       ex: [],
     };
     for (const e of againEx(w)) {
-      const x = exEntryFor(e.exId, gymId, e.sets);
+      const x = Object.assign(exEntryFor(e.exId, gymId, e.sets), ssOf(e));
       if (e.note && gymId === w.gymId) {
         x.note = e.note;
       }
       d.ex.push(x);
     }
+    ssNorm(d.ex); // cvik, který už v appce není, mohl supersérii rozdělit
     again = null;
     S.selGym = gymId;
     S.active = d;
@@ -3327,9 +3463,10 @@
     }
     h += "</div>";
     h += '<div class="stack" style="margin-top:12px">';
-    d.ex.forEach((e, i) => {
-      h += vExCard(d, e, i);
-    });
+    h += ssWrap(
+      d.ex,
+      d.ex.map((e, i) => vExCard(d, e, i)),
+    );
     h += "</div>";
     h += `<div class="stack" style="margin-top:12px">
         <button class="btn block" data-act="addEx">+ Přidat cvik</button>`;
@@ -3541,14 +3678,14 @@
         sets.push(o);
       }
       if (sets.length) {
-        const o = { exId: e.exId, sets };
+        const o = Object.assign({ exId: e.exId, sets }, ssOf(e));
         if (e.note) {
           o.note = e.note;
         }
         ex.push(o);
       }
     }
-    return ex;
+    return ssNorm(ex); // cvik bez uložené série ze supersérie vypadne
   }
   function saveWorkout(id, w, oldMk) {
     const mk = monthKey(w.start);
@@ -3576,6 +3713,7 @@
       ex: (w.ex || []).map((e) => ({
         k: uid("e"),
         exId: e.exId,
+        ...ssOf(e),
         note: e.note || "",
         sets: e.sets.map((s) => ({
           t: s.t,
@@ -3953,20 +4091,21 @@
     }
     b += sumMuscles(w);
     const seen = {};
+    const cards = []; // karta každého cviku, supersérie (F4-05) je obalí rámečkem
     for (const e of w.ex || []) {
       let wn = 0;
       const er = R.filter((r) => r.exId === e.exId);
       const c = seen[e.exId] ? null : sumEx(w, e.exId);
       seen[e.exId] = true;
-      b +=
+      cards.push(
         `<div class="card">
         <div style="font-weight:700;color:var(--accent-2)">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
-        `</button>${er.length ? ` <span class="medals">🏅 ${er.length}</span>` : ""}` +
-        `${typeof c === "string" ? c : ""}
+          `</button>${er.length ? ` <span class="medals">🏅 ${er.length}</span>` : ""}` +
+          `${typeof c === "string" ? c : ""}
         </div>
         ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}` +
-        `${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
+          `${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
         <div class="dset">
           ${(() => {
             const k = kindOf(e.exId);
@@ -3990,8 +4129,10 @@
               .join("");
           })()}
         </div>
-        </div>`;
+        </div>`,
+      );
     }
+    b += ssWrap(w.ex || [], cards);
     openSheet(
       (justSaved ? "Hotovo · " : "") + w.title,
       b,
@@ -7176,9 +7317,21 @@
     } else if (kind === "ex") {
       const d = curDraft();
       if (!d) return;
+      const tags = d.ex.map((e) => e.ss || "");
       move(d.ex);
+      ssMoved(d.ex, to);
       touchDraft();
       scheduleRender();
+      // změnila se supersérie (F4-05)? překreslit panel, aby ukazoval nové pruhy
+      if (tags.some(Boolean)) {
+        const box = document.querySelector(".sheet-b");
+        const top = box ? box.scrollTop : 0;
+        sheetExOrder(true);
+        const fresh = document.querySelector(".sheet-b");
+        if (fresh) {
+          fresh.scrollTop = top;
+        }
+      }
     } else if (kind === "tpl") {
       const ids = tplSorted().map(([id]) => id);
       move(ids);
@@ -7192,13 +7345,16 @@
     const d = curDraft();
     if (!d) return;
     const rows = d.ex
-      .map((e) => {
+      .map((e, i) => {
         const n = e.sets.length;
         const name = exName(e.exId);
-        return `<div class="card dnd-it dnd-row">
+        const ss = ssRun(d.ex, i); // cvik v supersérii (F4-05): pruh vlevo
+        return `<div class="card dnd-it dnd-row${ss ? " ssr" : ""}">
             <div class="grow">
               <b>${esc(name)}</b>
-              <div class="xs muted">${n} ${plural(n, "série", "série", "sérií")}</div>
+              <div class="xs muted">
+                ${n} ${plural(n, "série", "série", "sérií")}${ss ? " · supersérie" : ""}
+              </div>
             </div>
             ${dndGrip(name)}
           </div>`;
@@ -7206,7 +7362,14 @@
       .join("");
     openSheet(
       "Pořadí cviků",
-      `<p class="xs muted" style="margin:0">Cvik přesuneš tažením za úchyt vpravo.</p>
+      `<p class="xs muted" style="margin:0">
+        Cvik přesuneš tažením za úchyt vpravo.` +
+        `${
+          d.ex.some((e, i) => ssRun(d.ex, i))
+            ? " Cvik přetažený mezi cviky supersérie se k ní přidá, přetažený pryč z ní vypadne."
+            : ""
+        }
+      </p>
       <div class="stack dnd-list" data-dnd="ex">${rows}</div>`,
       '<button class="btn primary grow" data-act="closeSheet">Hotovo</button>',
       noanim,
@@ -7289,17 +7452,23 @@
     let h = `<section class="sec">
         <div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div>
         <div class="card stack">`;
+    // volba délky pauzy: act = akce tlačítek, cur = uložená délka (s)
+    const secSeg = (act, cur) =>
+      `<div class="seg seg-wide">
+        ${REST_SECS.map(
+          (s) =>
+            `<button data-act="${act}" data-v="${s}" aria-pressed="${cur === s}">${fmtClock(s)}` +
+            `</button>`,
+        ).join("")}
+      </div>`;
     h += `<div class="stack" style="gap:6px">
       <span>Výchozí časovač</span>
-      <div class="seg seg-wide">
-        ${[60, 90, 120, 150, 180]
-          .map(
-            (s) =>
-              `<button data-act="restSec" data-v="${s}" aria-pressed="${c.restSec === s}">${fmtClock(s)}` +
-              `</button>`,
-          )
-          .join("")}
-      </div>
+      ${secSeg("restSec", c.restSec)}
+    </div>`;
+    // F4-05: po dokončení kola pracovních sérií supersérie
+    h += `<div class="stack" style="gap:6px">
+      <span>Časovač po pracovní supersérii</span>
+      ${secSeg("restSs", c.restSs)}
     </div>`;
     h += `<div class="stack" style="gap:6px">
       <span>Na konci pauzy</span>
@@ -7361,6 +7530,7 @@
      - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
        (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
      S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série. */
+  const REST_SECS = [60, 90, 120, 150, 180]; // volby délky pauzy v Nastavení (výchozí i po supersérii)
   const REST_VIB = [700, 300, 700],
     REST_OVER_MAX = 15 * 60; // 2 dlouhé vibrace; přečas zmizí po 15 min
   let audioCtx = null,
@@ -7408,7 +7578,8 @@
   const notifState = () =>
     "Notification" in window && "serviceWorker" in navigator ? Notification.permission : "none";
   const REST_TAG = "rest-" + (TEST_PR ? "pr" + TEST_PR : "main");
-  /* co je na řadě po pauze: první nehotová série za naposledy odškrtnutou, jinak kdekoli */
+  /* co je na řadě po pauze: první nehotová série za naposledy odškrtnutou, jinak kdekoli
+     (v supersérii další kolo, F4-05) */
   function restNext() {
     const d = S.active;
     if (!d) return "";
@@ -7427,14 +7598,25 @@
     const all = [];
     d.ex.forEach((e, i) => {
       let wn = 0;
+      const cnt = { w: 0, n: 0 };
       e.sets.forEach((s, j) => {
         const n = s.t === "n" ? ++wn : 0;
+        const grp = setGrp(s.t);
+        const pos = cnt[grp]++; // pořadí série mezi zahřívacími / pracovními (kolo supersérie)
         if (!s.done) {
-          all.push({ i, j, e, s, n });
+          all.push({ i, j, e, s, n, grp: grp === "w" ? 0 : 1, pos });
         }
       });
     });
-    const x = all.find((a) => a.i > li || (a.i === li && a.j > lj)) || all[0];
+    // v supersérii (F4-05) další nehotová série podle kol: zahřívací, pak pracovní, v kole podle pořadí cviků
+    const run = li >= 0 ? ssRun(d.ex, li) : null;
+    const inRun = run
+      ? all
+          .filter((a) => a.i >= run[0] && a.i <= run[1])
+          .sort((a, b) => a.grp - b.grp || a.pos - b.pos || a.i - b.i)
+      : [];
+    const after = run ? all.find((a) => a.i > run[1]) : all.find((a) => a.i > li || (a.i === li && a.j > lj));
+    const x = inRun[0] || after || all[0];
     if (!x) return "Všechny série jsou hotové";
     return (
       "Další: " +
@@ -7549,9 +7731,10 @@
     }
     wakeSync(); // pauza začala / skončila → zámek displeje (F1-02)
   }
-  function restStart() {
+  // sec = délka pauzy (výchozí časovač, po pracovní supersérii S.cfg.restSs)
+  function restStart(sec) {
     audioUnlock(); // klepnutí = povolení zvuku na později
-    S.restTotal = S.cfg.restSec || 120;
+    S.restTotal = sec || S.cfg.restSec || 120;
     S.restEnd = Date.now() + S.restTotal * 1000;
     S.restFired = false;
     if (S.cfg.restNotify && notifState() === "default" && !Local.get("notifAsked", false)) {
@@ -8146,6 +8329,7 @@
           ex: (t.items || []).map((it) => ({
             k: uid("e"),
             exId: it.exId,
+            ...ssOf(it),
             note: "",
             sets: (it.sets || []).map(newSetFrom),
           })),
@@ -8237,6 +8421,13 @@
       }
       case "exMenu": {
         const e = d.ex[i];
+        const run = ssRun(d.ex, i);
+        // supersérie (F4-05): spojit s dalším cvikem, pokud už s ním není; zrušit celou supersérii
+        const ssBtns =
+          (i < d.ex.length - 1 && !(run && run[1] > i)
+            ? `<button class="btn block" data-act="ssOn" data-i="${i}">Supersérie s dalším cvikem</button>`
+            : "") +
+          (run ? `<button class="btn block" data-act="ssOff" data-i="${i}">Zrušit supersérii</button>` : "");
         openSheet(
           exName(e.exId),
           `<div class="stack">
@@ -8244,6 +8435,7 @@
               ${e.note || e.showNote ? "Upravit poznámku" : "Přidat poznámku"}
             </button>
             <button class="btn block" data-act="exReplace" data-i="${i}">Nahradit jiným cvikem</button>
+            ${ssBtns}
             ${
               d.ex.length > 1
                 ? '<button class="btn block" data-act="exOrder">Změnit pořadí cviků</button>'
@@ -8271,8 +8463,23 @@
       case "exOrder":
         sheetExOrder();
         break;
+      case "ssOn":
+        ssLink(d.ex, i);
+        edMark(d, d.ex[i]);
+        touchDraft();
+        closeSheet();
+        scheduleRender();
+        break;
+      case "ssOff":
+        ssUnlink(d.ex, i);
+        edMark(d, d.ex[i]);
+        touchDraft();
+        closeSheet();
+        scheduleRender();
+        break;
       case "exRemove":
         d.ex.splice(i, 1);
+        ssNorm(d.ex);
         touchDraft();
         closeSheet();
         scheduleRender();
@@ -8322,7 +8529,8 @@
           break;
         }
         if (pick.mode === "replace") {
-          const e = exEntryFor(pick.sel[0], dd.gymId);
+          // nahrazený cvik zůstává v supersérii
+          const e = Object.assign(exEntryFor(pick.sel[0], dd.gymId), ssOf(dd.ex[pick.replaceI]));
           dd.ex[pick.replaceI] = e;
           edMark(dd, e);
         } else {
@@ -8776,7 +8984,7 @@
         if (upd && upd.checked) {
           const items = Object.assign({}, S.templates);
           items[d.tplId] = Object.assign({}, items[d.tplId], {
-            items: ex.map((e) => ({ exId: e.exId, sets: e.sets.map(tplSet) })),
+            items: ex.map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e))),
           });
           put("config/templates", { items });
         }
@@ -8882,16 +9090,19 @@
           // pořadí 0 (první šablona) se při uložení nesmí změnit
           order: items[id] ? items[id].order || 0 : tplNextOrder(items),
           gyms: tplGyms({ gyms: d.gyms }),
-          items: d.ex.map((e) => ({
-            exId: e.exId,
-            sets: e.sets.map((s) => ({
-              t: s.t,
-              kg: num(s.kg) || 0,
-              reps: num(s.reps) || 0,
-              sec: parseSec(s.sec) || 0,
-              km: num(s.km) || 0,
+          items: ssNorm(
+            d.ex.map((e) => ({
+              exId: e.exId,
+              ...ssOf(e),
+              sets: e.sets.map((s) => ({
+                t: s.t,
+                kg: num(s.kg) || 0,
+                reps: num(s.reps) || 0,
+                sec: parseSec(s.sec) || 0,
+                km: num(s.km) || 0,
+              })),
             })),
-          })),
+          ),
         });
         put("config/templates", { items });
         S.editDraft = null;
@@ -9021,7 +9232,7 @@
           order: tplNextOrder(items),
           // fitko tréninku (F2-02; s jedním fitkem bez přiřazení)
           gyms: S.cfg.gyms.length > 1 ? tplGyms({ gyms: [w.gymId] }) : [],
-          items: (w.ex || []).map((e) => ({ exId: e.exId, sets: e.sets.map(tplSet) })),
+          items: (w.ex || []).map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e))),
         };
         put("config/templates", { items });
         closeSheet();
@@ -9240,6 +9451,9 @@
         put("config/main", cfg);
         break;
       }
+      case "restSs":
+        put("config/main", Object.assign({}, S.cfg, { restSs: +v }));
+        break;
       case "restAlert":
         put("config/main", Object.assign({}, S.cfg, { restAlert: v }));
         restPost();

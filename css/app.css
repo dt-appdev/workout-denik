@@ -44,6 +44,7 @@ img {
   --warm-bg: #fcefd4;
   --drop: #5646bd;
   --drop-bg: #ebe8fb;
+  --ss: #0b7a86; /* pruh supersérie (F4-05) */
   --fail: #c0322b;
   --fail-bg: #fbe4e2;
   --good: #1b7a48;
@@ -107,6 +108,7 @@ img {
     --warm-bg: #352810;
     --drop: #a197f2;
     --drop-bg: #26223f;
+    --ss: #4cc2cf;
     --fail: #f0736a;
     --fail-bg: #3a1a18;
     --good: #52c48d;
@@ -145,6 +147,7 @@ img {
   --warm-bg: #352810;
   --drop: #a197f2;
   --drop-bg: #26223f;
+  --ss: #4cc2cf;
   --fail: #f0736a;
   --fail-bg: #3a1a18;
   --good: #52c48d;
@@ -881,6 +884,25 @@ select.inp {
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
+}
+/* supersérie (F4-05): cviky obalené rámečkem s pruhem vlevo a štítkem */
+.ssg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 4px solid var(--ss);
+  border-radius: 4px;
+}
+.ssg-h {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ss);
+}
+.dnd-row.ssr {
+  border-left: 4px solid var(--ss);
 }
 .exc {
   background: var(--surface);
