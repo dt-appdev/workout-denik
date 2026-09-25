@@ -1113,6 +1113,19 @@ tr.done .cell {
 .fmsg:empty {
   display: none;
 }
+/* F3-17: upozornění (stejný český název), uložit jde; odkaz na cvik se stejným názvem */
+.fmsg.warn {
+  color: var(--warm);
+}
+.fmsg .link {
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  background: none;
+}
 .okb {
   width: 44px;
   height: 34px;
@@ -2479,6 +2492,10 @@ tr.done .okb {
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--warm);
+}
+/* formulář Nový / Upravit cvik na stránce (F3-14): stejné mezery jako dřív v panelu */
+.ex-form {
+  gap: 12px;
 }
 .mpick {
   display: flex;

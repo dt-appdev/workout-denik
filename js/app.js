@@ -2725,8 +2725,11 @@
       ["body", "Tělo"],
       ["set", "Nastavení"],
     ];
-    // stránka cviku patří pod Statistiky, jen když se na ni přišlo odtamtud, jinak pod Cviky
-    const cur = S.route === "exd" ? (S.prevRoute === "stats" ? "stats" : "ex") : S.route;
+    // stránka cviku patří pod Statistiky, jen když se na ni přišlo odtamtud, jinak pod Cviky;
+    // formulář cviku (F3-14) pod záložku, odkud se na něj přišlo
+    const top = S.nav[S.nav.length - 1];
+    const r = S.route === "exed" ? (top ? top.route : "ex") : S.route;
+    const cur = r === "exd" ? (S.prevRoute === "stats" ? "stats" : "ex") : r;
     document.getElementById("tabs").innerHTML = t
       .map(
         ([k, l]) =>
@@ -2769,6 +2772,8 @@
         h = vStats();
       } else if (S.route === "exd") {
         h = vExDetail();
+      } else if (S.route === "exed") {
+        h = vExEdit();
       } else if (S.route === "body") {
         h = vBody();
       } else if (S.route === "set") {
@@ -2781,7 +2786,10 @@
       console.error(err);
       h = `${topbar("Chyba")}<div class="banner">${esc(err.message)}</div>`;
     }
-    const focusId = document.activeElement && document.activeElement.id;
+    const act = document.activeElement;
+    const focusId = act && act.id;
+    // popis cviku (F3-14): po překreslení kurzor na stejném místě
+    const areaSel = act && act.tagName === "TEXTAREA" ? [act.selectionStart, act.selectionEnd] : null;
     app.innerHTML = h;
     renderTabs();
     updSync();
@@ -2797,6 +2805,9 @@
           const l = f.value.length;
           f.setSelectionRange(l, l);
         } catch (e) {}
+      } else if (f && f.tagName === "TEXTAREA" && areaSel) {
+        f.focus();
+        f.setSelectionRange(areaSel[0], areaSel[1]);
       }
     }
     if (render.keepScroll) {
@@ -2818,7 +2829,7 @@
     navEnsure();
   }
   function go(route) {
-    if (route !== "exd" && route !== "edit") {
+    if (route !== "exd" && route !== "edit" && route !== "exed") {
       S.nav = [];
     }
     if (route === "train" && S.route !== "train") {
@@ -2828,8 +2839,11 @@
       galReset();
     } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
-    const base = (r) => (r === "edit" || r === "exd" ? "train" : r);
-    lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
+    const base = (r) => (r === "edit" || r === "exd" ? "train" : r === "exed" ? "ex" : r);
+    // formulář cviku (F3-14) se po restartu neobnoví, zůstane uložené místo, odkud se na něj přišlo
+    if (route !== "exed") {
+      lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
+    }
     render.keepScroll = false;
     scheduleRender();
     window.scrollTo(0, 0);
@@ -8053,11 +8067,17 @@
     );
     galRestore(document.getElementById("sheetRoot"));
   }
+  /* ---------- NOVÝ A UPRAVIT CVIK (F3-14) ----------
+     Formulář je samostatná stránka (route "exed") se šipkou ←, ne panel. Otevírá se jen přes exEdOpen,
+     který si uloží místo návratu (navFrame, i s otevřeným panelem: výběr cviků, info o cviku, výsledky
+     online hledání). Zpět i Uložit vrací přes exEdLeave. Hodnoty políček se průběžně ukládají do exEd.f
+     (posluchač input/change), takže formulář přežije překreslení; neuložené změny = exEdChanged. */
+  // exEd = {id, from, fx, fxPh, f: hodnoty formuláře, orig: f a fxPh při otevření}
   let exEd = null;
-  // úprava otevřená mimo výběr cviků
-  const exEdOut = () => exEd && (exEd.from === "detail" || exEd.from === "list");
-  // fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
-  function sheetExEdit(id, from, fx) {
+  // from: odkud se přišlo – list (záložka Cviky), detail (stránka cviku), info (info o cviku ve výběru),
+  // picker (výběr cviků); fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
+  function exEdOpen(id, from, fx) {
+    const prev = exEd; // formulář pod stránkou cviku otevřenou z formuláře (F3-17), vrátí se po odchodu
     const e = id
       ? S.exLib[id]
       : fx
@@ -8081,12 +8101,81 @@
     exEd = {
       id,
       from: from || "picker",
-      pri: exPri(e).slice(),
-      sec: (e.sec || []).slice(),
       fx: fx || null,
       fxPh: [], // vybrané fotky z online databáze (F2-05), stáhnou se po uložení cviku
+      f: {
+        name: e.name || "",
+        cz: e.cz || "",
+        pri: exPri(e).slice(),
+        sec: (e.sec || []).slice(),
+        kind: KIND[e.kind] ? e.kind : "wr",
+        equip: e.equip,
+        gd: !!e.gymDep,
+        desc: e.desc || "",
+        url: e.url || "",
+      },
     };
-    renderExEdit(e);
+    exEd.orig = exEdSnap();
+    // výběr z online hledání otevřeného ve formuláři: stejná stránka, jen nový obsah
+    if (S.route === "exed") {
+      closeSheet();
+      render.keepScroll = false;
+      scheduleRender();
+      window.scrollTo(0, 0);
+      return;
+    }
+    const f = navFrame();
+    f.exEd = prev;
+    closeSheet();
+    S.nav.push(f);
+    go("exed");
+  }
+  const exEdSnap = () => JSON.stringify([exEd.f, exEd.fxPh]);
+  // formulář má neuložené změny; nový cvik předvyplněný z online databáze je rozepsaný vždy (vybraný záznam,
+  // fotky a předvyplněné hodnoty by se ztratily)
+  const exEdChanged = () =>
+    !!exEd && S.route === "exed" && (exEdSnap() !== exEd.orig || (!!exEd.fx && !exEd.id));
+  // opustí formulář tam, odkud se přišlo; re = jiné znovu otevření panelu než uložené (např. výběr cviků
+  // místo výsledků hledání), null = žádný panel
+  function exEdLeave(re) {
+    const f = S.nav.pop();
+    exEd = (f && f.exEd) || null;
+    if (!f) {
+      go("ex");
+      return;
+    }
+    go(f.route);
+    render.restoreY = f.y;
+    const again = re !== undefined ? re : f.re;
+    if (again) {
+      again();
+    }
+  }
+  // hodnoty políček formuláře do exEd.f (volá se při psaní a změně výběru)
+  function exEdCollect() {
+    if (!exEd) return;
+    const val = (k) => {
+      const el = document.getElementById(k);
+      return el ? el.value : null;
+    };
+    const f = exEd.f;
+    for (const [k, id] of [
+      ["name", "x-name"],
+      ["cz", "x-cz"],
+      ["kind", "x-kind"],
+      ["equip", "x-equip"],
+      ["desc", "x-desc"],
+      ["url", "x-url"],
+    ]) {
+      const x = val(id);
+      if (x !== null) {
+        f[k] = x;
+      }
+    }
+    const gd = document.getElementById("x-gd");
+    if (gd) {
+      f.gd = gd.checked;
+    }
   }
   // výběr fotek z online databáze ve formuláři Nový cvik (F2-05); nic není předvybrané
   function exEdPhotos(fx) {
@@ -8109,138 +8198,177 @@
       </div>
     </div>`;
   }
-  function renderExEdit(e) {
-    const v = (k) => {
-      const el = document.getElementById(k);
-      return el ? el.value : null;
+  /* ---------- JEDINEČNÉ NÁZVY CVIKŮ (F3-17) ----------
+     Anglický (hlavní) název nesmí mít dva cviky, český název jen upozorní (výchozí databáze má dva různé cviky
+     se stejným českým názvem). Porovnává se bez velkých písmen, diakritiky a mezer (exKey), i se skrytými cviky.
+     Cvik, který už duplikát má (starší data), projde, dokud se jeho anglický název nezmění. */
+  const exKey = (s) => fold(s).replace(/\s+/g, "");
+  // jiný cvik se stejným názvem v poli field ("name" / "cz"), jinak null
+  function exClash(field, value, selfId) {
+    const key = exKey(value);
+    if (!key) return null;
+    for (const id in S.exLib) {
+      if (id !== selfId && exKey(S.exLib[id][field]) === key) return id;
+    }
+    return null;
+  }
+  // cvik, kvůli kterému formulář nejde uložit (stejný anglický název), jinak null
+  function exNameBlock() {
+    const f = exEd.f;
+    const clash = exClash("name", f.name, exEd.id);
+    if (!clash) return null;
+    const old = exEd.id && S.exLib[exEd.id];
+    if (old && exKey(old.name) === exKey(f.name)) return null; // starý duplikát beze změny názvu
+    return clash;
+  }
+  // text pod políčkem: cvik se stejným názvem, klepnutím se otevře jeho stránka
+  function exClashMsg(id, lead) {
+    const e = S.exLib[id];
+    return (
+      `${esc(lead)} <button type="button" class="link" data-act="exClashOpen" data-v="${esc(id)}">` +
+      `${esc(e.cz ? e.name + " · " + e.cz : e.name)}</button>` +
+      `${e.archived ? esc(". Je skrytý, zobrazíš ho na jeho stránce přes Upravit cvik → Zobrazit ve výběru.") : ""}`
+    );
+  }
+  // hlášky pod názvy: block = cvik, kvůli kterému nejde uložit
+  function exNameMsgs() {
+    const f = exEd.f;
+    const block = exNameBlock();
+    const sameName = block || exClash("name", f.name, exEd.id);
+    const sameCz = exClash("cz", f.cz, exEd.id);
+    return {
+      block,
+      name: sameName
+        ? exClashMsg(sameName, block ? "Cvik s tímto názvem už máš:" : "Stejný název má i cvik:")
+        : "",
+      cz: sameCz ? exClashMsg(sameCz, "Stejný český název má i cvik:") : "",
     };
-    const name = v("x-name") != null ? v("x-name") : e.name,
-      cz = v("x-cz") != null ? v("x-cz") : e.cz || "",
-      desc = v("x-desc") != null ? v("x-desc") : e.desc || "",
-      url = v("x-url") != null ? v("x-url") : e.url || "",
-      equip = v("x-equip") || e.equip,
-      kind = v("x-kind") || (KIND[e.kind] ? e.kind : "wr"),
-      gd = document.getElementById("x-gd") ? document.getElementById("x-gd").checked : !!e.gymDep;
+  }
+  // hned při psaní: červený anglický název a šedé Uložit cvik, u českého názvu jen upozornění
+  function exNameMark() {
+    if (!exEd) return null;
+    const m = exNameMsgs();
+    const input = document.getElementById("x-name");
+    if (input) {
+      input.classList.toggle("bad", !!m.block);
+    }
+    const nameMsg = document.getElementById("x-name-msg");
+    if (nameMsg) {
+      nameMsg.innerHTML = m.name;
+      nameMsg.classList.toggle("warn", !m.block);
+    }
+    const czMsg = document.getElementById("x-cz-msg");
+    if (czMsg) {
+      czMsg.innerHTML = m.cz;
+    }
+    const save = document.getElementById("ex-save");
+    if (save) {
+      save.classList.toggle("off", !!m.block);
+      save.setAttribute("aria-disabled", String(!!m.block));
+    }
+    return m.block;
+  }
+  // stránka formuláře Nový / Upravit cvik
+  function vExEdit() {
+    if (!exEd) {
+      S.route = "ex";
+      return vExList();
+    }
+    const id = exEd.id,
+      f = exEd.f,
+      e = id ? S.exLib[id] || {} : {};
     const fx = exEd.fx,
       have = fx && fedbHave(fx);
-    const b = `${
-      exEd.id
-        ? ""
-        : fx
-          ? `<div class="banner" style="margin-top:0">
-              Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
-              název je jen návrh.` +
-            `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
-            </div>`
-          : `<button class="btn sm" data-act="fedbOpen" data-v="form">
-              Předvyplnit z online databáze
-            </button>`
-    }${fx && !exEd.id && !fx.ni ? exEdPhotos(fx) : ""}
+    const names = exNameMsgs(); // F3-17: shoda názvu s jiným cvikem
+    let h = topbar(
+      id ? "Upravit cvik" : "Nový cvik",
+      id ? e.name || "" : "",
+      `<button class="iconbtn" data-act="exEdBack" aria-label="Zpět">${IC.back}</button>`,
+    );
+    h += `<div class="card stack ex-form">
+      ${
+        id
+          ? ""
+          : fx
+            ? `<div class="banner" style="margin-top:0">
+                Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
+                název je jen návrh.` +
+              `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
+              </div>`
+            : `<button class="btn sm" data-act="fedbOpen" data-v="form">
+                Předvyplnit z online databáze
+              </button>`
+      }${fx && !id && !fx.ni ? exEdPhotos(fx) : ""}
       <label class="f">
         Název (anglicky, jako v Hevy)
-        <input class="inp" id="x-name" value="${esc(name)}">
+        <input class="inp${names.block ? " bad" : ""}" id="x-name" value="${esc(f.name)}">
+        <span class="fmsg${names.block ? "" : " warn"}" id="x-name-msg">${names.name}</span>
       </label>
-      <label class="f">Český název<input class="inp" id="x-cz" value="${esc(cz)}"></label>
+      <label class="f">
+        Český název
+        <input class="inp" id="x-cz" value="${esc(f.cz)}">
+        <span class="fmsg warn" id="x-cz-msg">${names.cz}</span>
+      </label>
       <div>
         <div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div>
         <div class="mpick">
           ${MKEYS.map(
             (k) =>
               `<button type="button"
-                  class="${exEd.pri.includes(k) ? "p" : exEd.sec.includes(k) ? "s" : ""}"
+                  class="${f.pri.includes(k) ? "p" : f.sec.includes(k) ? "s" : ""}"
                   data-act="xMus" data-v="${k}">${esc(MUSCLE_MAP.NAMES[k])}</button>`,
           ).join("")}
         </div>
       </div>
-      ${exFigures({ pri: exEd.pri, sec: exEd.sec }, true)}
+      ${exFigures({ pri: f.pri, sec: f.sec }, true)}
       <label class="f">
         Typ zápisu
         <select class="inp" id="x-kind">
           ${KIND_ORDER.map(
-            (k) => `<option value="${k}"${kind === k ? " selected" : ""}>${esc(KIND[k].l)}</option>`,
+            (k) => `<option value="${k}"${f.kind === k ? " selected" : ""}>${esc(KIND[k].l)}</option>`,
           ).join("")}
         </select>
         <span class="xs muted" style="text-transform:none;letter-spacing:0;font-weight:500">
-          ${esc(KIND[kind].ex)}
+          ${esc(KIND[f.kind].ex)}
         </span>
       </label>
       <label class="f">
         Vybavení
         <select class="inp" id="x-equip" data-f="xEquip">
           ${Object.entries(EQUIP)
-            .map(([k, l]) => `<option value="${k}"${equip === k ? " selected" : ""}>${l}</option>`)
+            .map(([k, l]) => `<option value="${k}"${f.equip === k ? " selected" : ""}>${l}</option>`)
             .join("")}
         </select>
       </label>
       <label class="switch">
-        <input type="checkbox" id="x-gd" ${gd ? "checked" : ""}>
+        <input type="checkbox" id="x-gd" ${f.gd ? "checked" : ""}>
         <span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku
             mají jiný odpor.</span></span>
       </label>
       <label class="f">
         Popis provedení
-        <textarea class="inp" id="x-desc" rows="4">${esc(desc)}</textarea>
+        <textarea class="inp" id="x-desc" rows="4">${esc(f.desc)}</textarea>
       </label>
       <label class="f">
         Odkaz (Hevy nebo video)
-        <input class="inp${urlProblem(url) ? " bad" : ""}" id="x-url" inputmode="url" value="${esc(url)}"
+        <input class="inp${urlProblem(f.url) ? " bad" : ""}" id="x-url" inputmode="url" value="${esc(f.url)}"
             placeholder="prázdné = vyhledat video podle názvu">
-        <span class="fmsg" id="x-url-msg">${esc(urlProblem(url))}</span>
-      </label>`;
-    const id = exEd.id;
-    // Zpět o úroveň: do výsledků online databáze, do info o cviku, do výběru, nebo zavřít (úprava mimo výběr)
-    const nav =
-      fx && fs
-        ? {
-            lv: fsLv() + 1,
-            back: () => {
-              exEd = null;
-              renderFs();
-            },
-          }
-        : exEdOut()
-          ? {}
-          : exEd.from === "info"
-            ? { lv: 3, back: () => sheetExInfo(id) }
-            : {
-                lv: 2,
-                back: () => {
-                  exEd = null;
-                  renderPicker(true);
-                },
-              };
-    const sb = document.querySelector(".sheet-b");
-    const st = sb ? sb.scrollTop : null;
-    openSheet(
-      id ? "Upravit cvik" : "Nový cvik",
-      b,
-      `${
-        id
-          ? `<button class="btn danger" data-act="archEx" data-v="${esc(id)}">
-            ${e.archived ? "Zobrazit" : "Skrýt"}
-          </button>`
-          : ""
-      }
-      <button class="btn grow" data-act="backPicker">Zpět</button>
-      ${
-        id && exChanged(id)
-          ? `<button class="btn" data-act="resetEx" data-v="${esc(id)}">Výchozí</button>`
-          : ""
-      }
-      <button class="btn primary grow" data-act="saveEx" data-v="${esc(id || "")}">Uložit</button>`,
-      false,
-      nav,
-    );
-    if (st !== null) {
-      const sh = document.querySelector(".sheet");
-      if (sh) {
-        sh.classList.add("noanim");
-      }
-      const nb = document.querySelector(".sheet-b");
-      if (nb) {
-        nb.scrollTop = st;
-      }
+        <span class="fmsg" id="x-url-msg">${esc(urlProblem(f.url))}</span>
+      </label>
+    </div>`;
+    h += `<div class="stack" style="margin-top:12px">
+      <button class="btn primary block${names.block ? " off" : ""}" id="ex-save" data-act="saveEx"
+          data-v="${esc(id || "")}" aria-disabled="${!!names.block}">Uložit cvik</button>`;
+    if (id && exChanged(id)) {
+      h += `<button class="btn block" data-act="resetEx" data-v="${esc(id)}">Vrátit na výchozí</button>`;
     }
+    if (id) {
+      h += `<button class="btn ghost danger block" data-act="archEx" data-v="${esc(id)}">
+        ${e.archived ? "Zobrazit ve výběru" : "Skrýt z výběru"}
+      </button>`;
+    }
+    h += "</div>";
+    return h;
   }
 
   /* ---------- hledání v databázi free-exercise-db (F0-03) ----------
@@ -8358,11 +8486,12 @@
       inp.focus();
     }
   }
-  // tlačítko Zpět (F0-06): hledání je o úroveň pod výběrem cviků, resp. pod formulářem Nový cvik
-  const fsLv = () => (fs.from === "picker" ? 2 : 1) + (fs.form ? 1 : 0);
+  // tlačítko Zpět (F0-06): hledání je o úroveň pod výběrem cviků; nad stránkou Nový cvik (F3-14) je
+  // jediný panel a Zpět vrátí stránku i s napsaným textem
+  const fsLv = () => (fs.form ? 1 : fs.from === "picker" ? 2 : 1);
   function fsBack() {
     if (fs.form) {
-      sheetExEdit(null, fs.from);
+      closeSheet();
       return;
     }
     if (fs.from === "picker") {
@@ -9693,7 +9822,7 @@
     switch (act) {
       // přepnutí záložky z rozdělané úpravy (i ze stránky cviku otevřené z úpravy) se zeptá jako Zpět
       case "tab":
-        if (edChanged()) {
+        if (edChanged() || exEdChanged()) {
           confirmSheet("Zahodit změny?", "Neuložené změny se ztratí.", "Zahodit", "tabDiscard", v);
           break;
         }
@@ -9992,7 +10121,7 @@
         break;
       }
       case "newEx":
-        sheetExEdit(null);
+        exEdOpen(null, "picker");
         break;
       case "backPicker":
         navBack();
@@ -10000,8 +10129,8 @@
       case "fedbOpen": {
         // v = odkud: picker (výběr cviků), list (záložka Cviky), form (formulář Nový cvik)
         if (v === "form") {
-          const n = document.getElementById("x-name");
-          fedbOpen(exEd ? exEd.from : "picker", n ? n.value.trim() : "", true);
+          exEdCollect();
+          fedbOpen(exEd ? exEd.from : "picker", exEd ? exEd.f.name.trim() : "", true);
         } else {
           fedbOpen(v, v === "list" ? S.exlQ : pick.q);
         }
@@ -10025,7 +10154,7 @@
       case "fsPick": {
         const x = typeof FEDB !== "undefined" && FEDB.find((o) => o.id === v);
         if (x) {
-          sheetExEdit(null, fs.from, x);
+          exEdOpen(null, fs.from, x);
         }
         break;
       }
@@ -10036,7 +10165,12 @@
           } else if (!pick.sel.includes(v)) {
             pick.sel.push(v);
           }
-          renderPicker();
+          if (S.route === "exed") {
+            // hledání z formuláře Nový cvik: místo nového cviku ten, který už mám
+            exEdLeave(() => renderPicker());
+          } else {
+            renderPicker();
+          }
           toast("Vybráno: " + exOf(v).name);
           break;
         }
@@ -10055,7 +10189,10 @@
           break;
         }
       case "saveEx": {
-        const name = document.getElementById("x-name").value.trim();
+        if (!exEd) break;
+        exEdCollect();
+        const fm = exEd.f;
+        const name = fm.name.trim();
         if (!name) {
           toast("Zadej název cviku.");
           break;
@@ -10071,13 +10208,21 @@
               .slice(0, 40) +
             "-" +
             Date.now().toString(36).slice(-4);
-        if (!exEd.pri.length) {
+        // F3-17: stejný anglický název jako jiný cvik nepustí (upozornění je pod názvem)
+        const clash = exNameMark();
+        if (clash) {
+          toast("Cvik s tímto názvem už máš: " + S.exLib[clash].name + ".");
+          document.getElementById("x-name").scrollIntoView({ block: "center", behavior: "smooth" });
+          break;
+        }
+        if (!fm.pri.length) {
           toast("Vyber aspoň jednu hlavní partii.");
           break;
         }
         // F0-09: odkaz jen https://… (http://…), jinak se cvik neuloží
         const urlInput = document.getElementById("x-url");
         urlInput.value = urlNormalize(urlInput.value);
+        fm.url = urlInput.value;
         if (urlMark(urlInput)) {
           urlInput.scrollIntoView({ block: "center", behavior: "smooth" });
           break;
@@ -10085,14 +10230,14 @@
         const items = Object.assign({}, S.exLib);
         const o = Object.assign({}, items[id] || { custom: true }, {
           name,
-          cz: document.getElementById("x-cz").value.trim(),
-          pri: exEd.pri.slice(),
-          sec: exEd.sec.slice(),
-          muscle: GROUP_OF[exEd.pri[0]],
-          equip: document.getElementById("x-equip").value,
-          kind: document.getElementById("x-kind").value,
-          gymDep: document.getElementById("x-gd").checked,
-          desc: document.getElementById("x-desc").value.trim(),
+          cz: fm.cz.trim(),
+          pri: fm.pri.slice(),
+          sec: fm.sec.slice(),
+          muscle: GROUP_OF[fm.pri[0]],
+          equip: fm.equip,
+          kind: fm.kind,
+          gymDep: fm.gd,
+          desc: fm.desc.trim(),
         });
         if (!v && exEd.fx) {
           o.src = "fedb:" + exEd.fx.id;
@@ -10133,44 +10278,49 @@
               scheduleRender();
             });
         }
-        if (exEd.from === "detail") {
-          closeSheet();
-          toast("Cvik uložen");
-          break;
-        }
-        if (exEd.from === "info") {
-          exEd = null;
-          renderPicker(true);
-          toast("Cvik uložen");
-          break;
-        }
-        if (exEd.from === "list") {
-          closeSheet();
-          if (!v) {
-            S.nav.push(navFrame());
-            S.exDetail = id;
-            S.exPart = "info";
-            S.detailGym = "all";
-            S.exHistLimit = 25;
-            S.prevRoute = "ex";
-            go("exd");
-          }
-          toast("Cvik uložen");
-          break;
-        }
-        if (!v) {
-          if (pick.mode === "replace") {
-            pick.sel = [id];
-          } else {
-            pick.sel.push(id);
-          }
-        }
-        pick.q = "";
-        renderPicker();
         toast("Cvik uložen");
+        // F3-14: zpět tam, odkud se přišlo (stránka cviku, info o cviku, záložka Cviky, výběr cviků)
+        if (exEd.from === "list" && !v) {
+          // nový cvik ze záložky Cviky: rovnou jeho stránka, Zpět z ní vede na seznam cviků
+          const f = S.nav.pop();
+          exEd = null;
+          S.nav.push({ route: "ex", y: f ? f.y : 0, d: 1 });
+          S.exDetail = id;
+          S.exPart = "info";
+          S.detailGym = "all";
+          S.exHistLimit = 25;
+          S.prevRoute = "ex";
+          go("exd");
+          break;
+        }
+        if (exEd.from === "picker") {
+          // do výběru cviků (i z výsledků online hledání) s novým cvikem vybraným
+          if (!v) {
+            if (pick.mode === "replace") {
+              pick.sel = [id];
+            } else {
+              pick.sel.push(id);
+            }
+          }
+          pick.q = "";
+          exEdLeave(() => renderPicker());
+          break;
+        }
+        exEdLeave();
         break;
       }
-      case "resetEx": {
+      case "resetEx":
+        confirmSheet(
+          "Vrátit cvik na výchozí?",
+          "Tvoje úpravy cviku (názvy, partie, typ zápisu, popis, odkaz…) se nahradí výchozími hodnotami. " +
+            "Tréninky a fotky zůstanou.",
+          "Vrátit",
+          "resetExOk",
+          v,
+        );
+        break;
+      case "resetExOk": {
+        closeSheet();
         const items = Object.assign({}, S.exLib),
           a = items[v].archived;
         items[v] = Object.assign({}, EX_DB[v]);
@@ -10178,13 +10328,7 @@
           items[v].archived = true;
         }
         putEx(items);
-        if (exEdOut()) {
-          closeSheet();
-          toast("Cvik vrácen na výchozí");
-          break;
-        }
-        exEd = null;
-        renderPicker(true);
+        exEdLeave();
         toast("Cvik vrácen na výchozí");
         break;
       }
@@ -10198,11 +10342,7 @@
           items[v].archived = true;
         }
         putEx(items);
-        if (!exEd || exEdOut()) {
-          closeSheet();
-        } else {
-          renderPicker();
-        }
+        exEdLeave();
         toast(was ? "Cvik je znovu ve výběru" : "Cvik skrytý z výběru");
         break;
       }
@@ -10215,7 +10355,7 @@
         } else {
           sel.push(k);
         }
-        renderExEdit(S.exLib[exEd.id] || {});
+        scheduleRender();
         break;
       }
       case "phView":
@@ -10313,8 +10453,8 @@
         break;
       case "xMus": {
         const k = v;
-        const P = exEd.pri,
-          Sx = exEd.sec;
+        const P = exEd.f.pri,
+          Sx = exEd.f.sec;
         if (P.includes(k)) {
           P.splice(P.indexOf(k), 1);
           Sx.push(k);
@@ -10323,14 +10463,34 @@
         } else {
           P.push(k);
         }
-        renderExEdit({});
+        scheduleRender();
         break;
       }
       case "editExDetail":
-        sheetExEdit(v, "detail");
+        exEdOpen(v, "detail");
         break;
       case "editExInfo":
-        sheetExEdit(v, "info");
+        exEdOpen(v, "info");
+        break;
+      case "exEdBack":
+        navBack();
+        break;
+      case "exClashOpen": {
+        // F3-17: stránka cviku se stejným názvem; Zpět vrátí formulář i s napsaným textem
+        const f = navFrame();
+        closeSheet();
+        S.nav.push(f);
+        S.exPart = "info";
+        S.exDetail = v;
+        S.detailGym = "all";
+        S.exHistLimit = 25;
+        S.prevRoute = "exed";
+        go("exd");
+        break;
+      }
+      case "exDiscard":
+        closeSheet();
+        navBack(true);
         break;
       case "statsRange":
         S.statsRange = v;
@@ -10811,7 +10971,7 @@
         scheduleRender();
         break;
       case "exlNew":
-        sheetExEdit(null, "list");
+        exEdOpen(null, "list");
         break;
       case "detailMetric":
         S.detailMetric = v;
@@ -11099,6 +11259,12 @@
     if (t.id === "x-url" && t.classList.contains("bad") && !urlProblem(t.value)) {
       urlMark(t);
     } // F0-09: opravený odkaz už není červený
+    if (exEd && t.id && t.id.startsWith("x-")) {
+      exEdCollect();
+      if (t.id === "x-name" || t.id === "x-cz") {
+        exNameMark();
+      } // F3-17: shoda názvu s jiným cvikem hned při psaní
+    } // F3-14: formulář cviku přežije překreslení stránky
     const f = t.dataset && t.dataset.f;
     if (!f) return;
     const d = curDraft();
@@ -11215,6 +11381,7 @@
       // odkaz u cviku (F0-09): doplnit https://, neplatný zvýraznit s nápovědou pod polem
       t.value = urlNormalize(t.value);
       urlMark(t);
+      exEdCollect();
       return;
     }
     if (f === "xEquip") {
@@ -11222,10 +11389,16 @@
       if (gd) {
         gd.checked = !!GYMDEP_EQUIP[t.value];
       }
+      exEdCollect();
       return;
     }
     if (t.id === "x-kind" && exEd) {
-      renderExEdit(S.exLib[exEd.id] || {});
+      exEdCollect();
+      scheduleRender(); // nápověda pod typem zápisu
+      return;
+    }
+    if (t.id === "x-gd") {
+      exEdCollect();
       return;
     }
     if (!f || !d) return;
@@ -11278,7 +11451,8 @@
 
   /* ---------- tlačítko Zpět (F0-06) ----------
      Každý stisk systémového Zpět (i gesto) = jeden krok navBack() podle toho, co je na obrazovce:
-     panel → o úroveň / zavřít, stránka cviku a úprava → tam, odkud se přišlo, jiná záložka → Trénink.
+     panel → o úroveň / zavřít, stránka cviku, úprava a formulář cviku → tam, odkud se přišlo,
+     jiná záložka → Trénink.
      Na hlavní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
      Historie prohlížeče jen „počítá kroky“: drží se v ní aspoň tolik záznamů, kolik kroků zbývá
      na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
@@ -11299,7 +11473,7 @@
     const r = S.route,
       top = S.nav[S.nav.length - 1];
     let page = 1; // jiná záložka: jeden krok na Trénink
-    if (r === "exd" || r === "edit") {
+    if (r === "exd" || r === "edit" || r === "exed") {
       page = 1 + (top ? top.d : 1);
     } else if (r === "train") {
       page = 0;
@@ -11308,7 +11482,8 @@
     }
     return (celEl ? 1 : 0) + (sheetNav ? sheetNav.lv : 0) + page;
   }
-  // místo, kam se vrátit ze stránky cviku nebo z úpravy (i s otevřeným panelem a posunem stránky)
+  // místo, kam se vrátit ze stránky cviku, z úpravy nebo z formuláře cviku (i s otevřeným panelem a posunem
+  // stránky)
   function navFrame() {
     return { route: S.route, re: sheetNav && sheetNav.re, y: window.scrollY, d: navDepth() };
   }
@@ -11319,6 +11494,7 @@
   function goTab(v) {
     S.exDetail = null;
     S.editDraft = null;
+    exEd = null;
     if (v === "hist" && S.route !== "hist") {
       S.calM = 0;
     }
@@ -11355,6 +11531,14 @@
     const r = S.route;
     if (r === "edit" && !force && edChanged()) {
       confirmSheet("Zahodit změny?", "Neuložené změny se ztratí.", "Zahodit", "edDiscard");
+      return true;
+    }
+    if (r === "exed") {
+      if (!force && exEdChanged()) {
+        confirmSheet("Zahodit změny?", "Neuložené změny cviku se ztratí.", "Zahodit", "exDiscard");
+        return true;
+      }
+      exEdLeave();
       return true;
     }
     if (r === "exd" || r === "edit") {
