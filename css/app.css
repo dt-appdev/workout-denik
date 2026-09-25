@@ -2401,6 +2401,10 @@ tr.done .okb {
   font-weight: 700;
   color: var(--warm);
 }
+/* formulář Nový / Upravit cvik na stránce (F3-14): stejné mezery jako dřív v panelu */
+.ex-form {
+  gap: 12px;
+}
 .mpick {
   display: flex;
   flex-wrap: wrap;
