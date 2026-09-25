@@ -1095,6 +1095,12 @@ tr.done .cell {
 .inp.bad:focus-visible {
   box-shadow: inset 0 0 0 1px var(--fail);
 }
+/* F2-08: název šablony, který už má jiná šablona ve stejném fitku */
+.ed-title.bad,
+.ed-title.bad:focus-visible {
+  color: var(--fail);
+  box-shadow: inset 0 -2px 0 var(--fail);
+}
 /* F0-09: co je špatně na hodnotě, pod polem ve formuláři (label.f) */
 .fmsg {
   font-size: var(--fs-sm);
