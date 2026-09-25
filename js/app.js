@@ -2927,6 +2927,111 @@
   function tplNextOrder(items) {
     return Object.values(items).reduce((m, t) => Math.max(m, (t.order || 0) + 1), 0);
   }
+
+  /* ---------- JEDINEČNÉ NÁZVY ŠABLON (F2-08) ----------
+     Stejný název nesmí mít šablony, které se ukazují ve stejném fitku (tplMeet; bez fitka = ve všech,
+     s jedním fitkem tedy všechny). Názvy se porovnávají bez velkých písmen, diakritiky a mezer (tplKey).
+     Úprava šablony: upozornění pod názvem hned při psaní (tplNameMark), Uložit šablonu při shodě nepustí.
+     Uložit jako šablonu v souhrnu se při shodě zeptá (sheetTplClash): přepsat / uložit jako „Nohy 2“.
+     Stávající duplikáty zůstanou (obnova zálohy, smazané fitko, šablony z dřívějška). */
+  let tplAsk = null; // dotaz Uložit jako šablonu při shodě: {w, gyms, id, name}
+  // název pro porovnání: „Nohy A“ = „nohya“ = „Nohy  á“
+  const tplKey = (name) => fold(name).replace(/\s+/g, "");
+  // název k uložení: bez mezer na okrajích a zdvojených mezer
+  const tplClean = (name) =>
+    String(name || "")
+      .trim()
+      .replace(/\s+/g, " ");
+  // ukazují se šablony s těmito fitky ve stejném fitku? (žádné fitko = všechna fitka)
+  function tplMeet(gymsA, gymsB) {
+    return !gymsA.length || !gymsB.length || gymsA.some((g) => gymsB.includes(g));
+  }
+  // šablony se stejným názvem ve stejném fitku ([id, šablona] v pořadí šablon); skipId = upravovaná šablona
+  function tplClash(name, gyms, skipId) {
+    const key = tplKey(name);
+    const mine = tplGyms({ gyms });
+    return tplSorted().filter(
+      ([id, t]) => id !== skipId && tplKey(t.name) === key && tplMeet(mine, tplGyms(t)),
+    );
+  }
+  // první volný název: „Nohy“, „Nohy 2“, „Nohy 3“…; název končící číslem pokračuje dalším („Nohy 2“ → „Nohy 3“)
+  function tplFreeName(name, gyms, skipId) {
+    name = tplClean(name);
+    if (!tplClash(name, gyms, skipId).length) return name;
+    const numbered = name.match(/^(.*\S)\s+(\d+)$/);
+    const base = numbered ? numbered[1] : name;
+    let n = numbered ? +numbered[2] + 1 : 2;
+    while (tplClash(base + " " + n, gyms, skipId).length) {
+      n++;
+    }
+    return base + " " + n;
+  }
+  // shoda názvu v úpravě šablony: text pod název, "" = v pořádku; stará šablona s duplikátem projde,
+  // dokud se nezmění název ani fitka
+  function tplNameProblem(d) {
+    const gyms = tplGyms({ gyms: d.gyms });
+    const old = d.id && S.templates[d.id];
+    if (old && tplKey(old.name) === tplKey(d.title) && tplGyms(old).join() === gyms.join()) return "";
+    const clash = tplClash(d.title, gyms, d.id);
+    if (!clash.length) return "";
+    const name = clash[0][1].name;
+    return S.cfg.gyms.length > 1
+      ? "Šablonu „" + name + "“ už máš ve stejném fitku, změň název nebo fitka"
+      : "Šablonu „" + name + "“ už máš, změň název";
+  }
+  // zvýrazní název upravované šablony při shodě a napíše pod něj proč (hned při psaní, bez překreslení)
+  function tplNameMark(d) {
+    const msg = tplNameProblem(d);
+    const input = document.getElementById("ed-title");
+    if (input) {
+      input.classList.toggle("bad", !!msg);
+    }
+    const msgEl = document.getElementById("ed-title-msg");
+    if (msgEl) {
+      msgEl.textContent = msg;
+    }
+    const save = document.getElementById("tpl-save");
+    if (save) {
+      const off = tplSaveOff(d);
+      save.classList.toggle("off", off);
+      save.setAttribute("aria-disabled", String(off));
+    }
+    return msg;
+  }
+  // tlačítko Uložit šablonu vypadá neaktivní (šedé) při shodě názvu nebo prázdném názvu; klepnout na něj jde
+  // dál (hláška a posun k názvu), jinak by u dlouhé šablony nebylo vidět proč
+  const tplSaveOff = (d) => !tplClean(d.title) || !!tplNameProblem(d);
+  // cviky a série šablony z uloženého tréninku (i supersérie)
+  function tplItemsOf(w) {
+    return (w.ex || []).map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e)));
+  }
+  // nová šablona z uloženého tréninku (Uložit jako šablonu v souhrnu)
+  function tplFromWorkout(w, name, gyms) {
+    const items = Object.assign({}, S.templates);
+    items[uid("t")] = { name, order: tplNextOrder(items), gyms, items: tplItemsOf(w) };
+    put("config/templates", { items });
+    closeSheet();
+    toast("Šablona „" + name + "“ vytvořena");
+  }
+  // Uložit jako šablonu při shodě názvu: přepsat šablonu, nebo uložit s dalším číslem (panel v panelu souhrnu)
+  function sheetTplClash(w, gyms, clash) {
+    const [id, t] = clash;
+    tplAsk = { w, gyms, id, name: tplFreeName(w.title, gyms, null) };
+    const where = S.cfg.gyms.length > 1 ? " pro stejné fitko" : "";
+    openSheet(
+      "Šablona už existuje",
+      `<p style="margin:0">
+        Šablonu „${esc(t.name)}“ už máš${where}. Můžeš ji přepsat cviky a sériemi z tohoto tréninku
+        (název, fitka a pořadí šablony zůstanou), nebo uložit novou šablonu s jiným názvem.
+      </p>`,
+      `<button class="btn primary full" data-act="tplAskNew">Uložit jako „${esc(tplAsk.name)}“</button>
+      <button class="btn full" data-act="tplAskOver">Přepsat šablonu „${esc(t.name)}“</button>
+      <button class="btn full" data-act="tplAskBack">Zrušit</button>`,
+      false,
+      { lv: wOpen && wOpen.nav.lv ? wOpen.nav.lv + 1 : 2, back: wBack(wOpen) },
+    );
+  }
+
   function vHomeTpls(all) {
     const gymId = curGym();
     const tpls = tplSorted();
@@ -3574,9 +3679,14 @@
         vol += setVol(k, { kg: num(s.kg) || 0, reps: num(s.reps) || 0 }, d.start);
       }
     }
+    // F2-08: shoda názvu šablony s jinou šablonou ve stejném fitku (hned při psaní, tplNameMark)
+    const clash = mode === "template" ? tplNameProblem(d) : "";
     h += `<div class="ed-head">
-      <input class="ed-title" id="ed-title" data-f="title" value="${esc(d.title)}" aria-label="Název"
-          placeholder="Název">`;
+      <input class="ed-title${clash ? " bad" : ""}" id="ed-title" data-f="title" value="${esc(d.title)}"
+          aria-label="Název" placeholder="Název">`;
+    if (mode === "template") {
+      h += `<span class="fmsg" id="ed-title-msg">${esc(clash)}</span>`;
+    }
     if (mode === "template" && S.cfg.gyms.length > 1) {
       h += tplGymPick(d);
     }
@@ -3639,8 +3749,10 @@
       h += `<button class="btn primary block" data-act="saveEdit">Uložit změny</button>
         <button class="btn ghost danger block" data-act="delWorkout">Smazat trénink</button>`;
     } else {
+      const off = tplSaveOff(d); // F2-08: šedé při shodě nebo prázdném názvu
       h +=
-        `<button class="btn primary block" data-act="saveTpl">Uložit šablonu</button>` +
+        `<button class="btn primary block${off ? " off" : ""}" id="tpl-save" data-act="saveTpl"
+            aria-disabled="${off}">Uložit šablonu</button>` +
         `${d.id ? '<button class="btn ghost danger block" data-act="delTpl">Smazat šablonu</button>' : ""}`;
     }
     h += "</div>";
@@ -8582,17 +8694,20 @@
         }
         startWorkout(v);
         break;
-      case "newTpl":
+      case "newTpl": {
+        // předvybrané fitko, kde teď cvičíš (s jedním fitkem bez přiřazení)
+        const gyms = curGym() && S.cfg.gyms.length > 1 ? [curGym()] : [];
         S.editDraft = {
           mode: "template",
           id: null,
-          title: "Nová šablona",
-          // předvybrané fitko, kde teď cvičíš (s jedním fitkem bez přiřazení)
-          gyms: curGym() && S.cfg.gyms.length > 1 ? [curGym()] : [],
+          // jedinečný název (F2-08): „Nová šablona“, když už je, „Nová šablona 2“…
+          title: tplFreeName("Nová šablona", gyms, null),
+          gyms,
           ex: [],
         };
         goEdit();
         break;
+      }
       case "editTpl": {
         const t = S.templates[v];
         S.editDraft = {
@@ -9277,9 +9392,7 @@
         saveWorkout(id, w, null);
         if (upd && upd.checked) {
           const items = Object.assign({}, S.templates);
-          items[d.tplId] = Object.assign({}, items[d.tplId], {
-            items: ex.map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e))),
-          });
+          items[d.tplId] = Object.assign({}, items[d.tplId], { items: tplItemsOf({ ex }) });
           put("config/templates", { items });
         }
         S.active = null;
@@ -9366,9 +9479,17 @@
         break;
       }
       case "saveTpl": {
-        const name = d.title.trim();
+        const name = tplClean(d.title);
         if (!name) {
           toast("Zadej název šablony.");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          break;
+        }
+        // F2-08: stejný název ve stejném fitku nepustí (upozornění je pod názvem nahoře)
+        const clash = tplNameMark(d);
+        if (clash) {
+          toast(clash + ".");
+          window.scrollTo({ top: 0, behavior: "smooth" });
           break;
         }
         const problem = draftProblem(d, false);
@@ -9519,20 +9640,35 @@
       }
       case "wToTpl": {
         const w = S.months[t.dataset.m][v];
-        const items = Object.assign({}, S.templates);
-        const id = uid("t");
-        items[id] = {
-          name: w.title,
-          order: tplNextOrder(items),
-          // fitko tréninku (F2-02; s jedním fitkem bez přiřazení)
-          gyms: S.cfg.gyms.length > 1 ? tplGyms({ gyms: [w.gymId] }) : [],
-          items: (w.ex || []).map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e))),
-        };
-        put("config/templates", { items });
-        closeSheet();
-        toast("Šablona „" + w.title + "“ vytvořena");
+        // fitko tréninku (F2-02; s jedním fitkem bez přiřazení)
+        const gyms = S.cfg.gyms.length > 1 ? tplGyms({ gyms: [w.gymId] }) : [];
+        // stejný název ve stejném fitku: zeptat se (F2-08)
+        const clash = tplClash(w.title, gyms, null);
+        if (clash.length) {
+          sheetTplClash(w, gyms, clash[0]);
+          break;
+        }
+        tplFromWorkout(w, tplClean(w.title) || "Trénink", gyms);
         break;
       }
+      case "tplAskNew":
+        if (tplAsk) {
+          tplFromWorkout(tplAsk.w, tplAsk.name, tplAsk.gyms);
+        }
+        break;
+      case "tplAskOver": {
+        if (!tplAsk || !S.templates[tplAsk.id]) break;
+        const items = Object.assign({}, S.templates);
+        // jen cviky a série, název, fitka a pořadí šablony zůstanou (jako Aktualizovat šablonu)
+        items[tplAsk.id] = Object.assign({}, items[tplAsk.id], { items: tplItemsOf(tplAsk.w) });
+        put("config/templates", { items });
+        closeSheet();
+        toast("Šablona „" + items[tplAsk.id].name + "“ přepsána");
+        break;
+      }
+      case "tplAskBack":
+        navBack();
+        break;
       case "statsGym":
         S.statsGym = v;
         scheduleRender();
@@ -9918,6 +10054,9 @@
     if (f === "title") {
       d.title = t.value;
       touchDraft();
+      if (d.mode === "template") {
+        tplNameMark(d);
+      } // F2-08: shoda názvu šablony hned při psaní
       return;
     }
     if (f === "finEnd") {

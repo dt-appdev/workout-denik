@@ -198,6 +198,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   změna fitka ho vynuluje), karta `tplCard`. Výběr fitek v editoru `tplGymPick` (akce `tplGym`, `d.gyms`).
   Zápis šablony vždy přes `Object.assign` s původní šablonou (zachová pole, která editor nezná). `delGym`
   odebere fitko i ze šablon.
+- Jedinečné názvy šablon (F2-08, sekce „JEDINEČNÉ NÁZVY ŠABLON“): stejný název (`tplKey`: bez velkých písmen, diakritiky
+  a mezer) nesmí mít šablony, které se ukazují ve stejném fitku (`tplMeet`, `[]` = všechna fitka); shody `tplClash`,
+  volný název `tplFreeName` („Nohy 2“), uložený název přes `tplClean`. Editor: `tplNameProblem` / `tplNameMark` (červený
+  název a text `#ed-title-msg` hned při psaní, `saveTpl` nepustí; tlačítko `#tpl-save` je šedé přes `tplSaveOff` (třída
+  `.btn.off`, klepnout jde, ukáže hlášku); stará šablona s duplikátem projde bez změny názvu
+  a fitek). Uložit jako šablonu (`wToTpl`) při shodě `sheetTplClash` (stav `tplAsk`: `tplAskNew` / `tplAskOver` /
+  `tplAskBack`). Každé nové místo, které vytváří šablonu, má volný název hlídat stejně; stávající duplikáty zůstávají.
 - Souhrn tréninku (F3-03, sekce „SOUHRN TRÉNINKU“): panel `sheetWorkout(w, justSaved, nav)` po uložení
   i z Historie. Minulý běh stejného tréninku `prevRun` (pravidlo `sameRun`: šablona, jinak název bez
   automatických `DEF_TITLES`, nebo `againOf`; přednostně stejné fitko), u cviku poslední výskyt `prevEx`
