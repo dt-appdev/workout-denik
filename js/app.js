@@ -4928,8 +4928,14 @@
     };
     divider(y);
     y += story ? 90 : 70;
+    const fig = o.fig && G.length;
+    // příspěvek s fotkou a postavou: postava místo řádku s názvy partií; aby se vešla (i pod název
+    // na 2 řádky), řádky s údaji se podle potřeby přiblíží (nejvýš na 86 px)
+    const figMin = 170;
+    const postFig = img && fig && !story;
+    const room = H - 84 - 60 - 30 - figMin - (y + 36);
     // údaje s ikonami: pod sebou (s fotkou nebo s postavou vpravo), jinak ve dvou sloupcích
-    const step = story ? 128 : 106;
+    const step = story ? 128 : postFig ? Math.max(86, Math.min(106, Math.floor(room / 5))) : 106;
     const stat = (s, x, yy) => {
       shrIcon(ctx, s.ic, x, yy - 4, 50, P.accent);
       shrText(ctx, s.lab, x + 76, yy + 6, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
@@ -4939,7 +4945,6 @@
         shrText(ctx, s.u, x + 74 + shrWidth(ctx, s.v, fv) + 10, yy + 64, shrFont(500, 34, SHR_B), P.ink3);
       }
     };
-    const fig = o.fig && G.length;
     if (img || fig) {
       const top = y;
       for (const s of D.stats) {
@@ -4961,13 +4966,11 @@
     if (G.length) {
       divider(y - 30);
       y += 14;
-      if (img && fig && !story) {
+      const postFh = H - 84 - 60 - y - 30;
+      if (postFig && postFh >= 120) {
         // příspěvek s fotkou: postava místo řádku s názvy partií, pruh pod ní
-        const fh = H - 84 - 60 - y - 30;
-        if (fh >= 110) {
-          shrFigures(ctx, P, L - 6, y - 16, fh, D.mus);
-        }
-        shrStack(ctx, P, L, y - 16 + Math.max(fh, 0) + 14, colW, 8, G);
+        shrFigures(ctx, P, L - 6, y - 16, postFh, D.mus);
+        shrStack(ctx, P, L, y - 16 + postFh + 14, colW, 8, G);
       } else if (img) {
         shrText(ctx, X.mus, L, y, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
         const names = G.slice(0, 3)
@@ -4977,7 +4980,7 @@
         shrText(ctx, shrFit(ctx, names, fN, colW, 2), L, y + 40, fN, P.ink, "left", 2);
         shrStack(ctx, P, L, y + 62, colW, 8, G);
         y += 110;
-        if (fig) {
+        if (fig && story) {
           // příběh s fotkou: postava vlevo pod partiemi
           const fh = Math.min(H - 84 - 56 - y, 360);
           if (fh >= 140) {
