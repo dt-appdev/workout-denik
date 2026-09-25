@@ -4557,6 +4557,7 @@
   };
   // otevřený panel: {w, nav, fmt, theme, lang, fig, img (ImageBitmap fotky), fx, fy (výřez 0–1), blob, cov}
   let shr = null;
+  let shrFullUrl = ""; // adresa (blob:) obrázku přes celou obrazovku, uvolní se při zavření
 
   /* data obrázku z uloženého tréninku (vše se počítá, nic se neukládá) */
   // číslo podle jazyka: „12 480“, „82,5“ / „12,480“, „82.5“
@@ -4833,13 +4834,18 @@
     }
     return cy - y + 46;
   }
-  // fotka přes celou plochu (jako object-fit: cover), fx / fy = poloha výřezu 0–1
-  function shrCover(ctx, img, w, h, fx, fy) {
-    const k = Math.max(w / img.width, h / img.height);
+  /* fotka přes celou plochu (jako object-fit: cover), fx / fy = poloha výřezu 0–1, zoom = přiblížení;
+     přiblížit jde jen do SHR_ZOOM_MAX a jen dokud na bod obrázku připadá aspoň jeden bod fotky (ostrost) */
+  const SHR_ZOOM_MAX = 3;
+  const shrZoomMax = (img, w, h) =>
+    Math.max(1, Math.min(SHR_ZOOM_MAX, 1 / Math.max(w / img.width, h / img.height)));
+  function shrCover(ctx, img, w, h, fx, fy, zoom) {
+    const zMax = shrZoomMax(img, w, h);
+    const k = Math.max(w / img.width, h / img.height) * Math.min(zoom || 1, zMax);
     const sw = w / k,
       sh = h / k;
     ctx.drawImage(img, (img.width - sw) * fx, (img.height - sh) * fy, sw, sh, 0, 0, w, h);
-    return { k, slackX: img.width - sw, slackY: img.height - sh };
+    return { k, zMax, slackX: img.width - sw, slackY: img.height - sh };
   }
   // název tréninku velkým písmem: zmenší se, aby se vešel, dlouhý se zalomí na 2 řádky (a pak zkrátí);
   // y = účaří prvního řádku, vrací výšku druhého řádku (0 = jeden řádek)
@@ -4889,9 +4895,9 @@
     ctx.canvas.width = W;
     ctx.canvas.height = H;
     ctx.textBaseline = "alphabetic";
-    // pozadí: fotka s přechodem zleva a zdola, jinak barva appky se září
+    // pozadí: fotka s přechodem zleva (pod údaji), jinak barva appky se září
     if (img) {
-      cov = shrCover(ctx, img, W, H, o.fx, o.fy);
+      cov = shrCover(ctx, img, W, H, o.fx, o.fy, o.zoom);
       let g = ctx.createLinearGradient(0, 0, W, 0);
       g.addColorStop(0, "rgba(" + P.fade + ",.94)");
       g.addColorStop(0.36, "rgba(" + P.fade + ",.8)");
@@ -4899,11 +4905,6 @@
       g.addColorStop(1, "rgba(" + P.fade + ",0)");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
-      g = ctx.createLinearGradient(0, H - 420, 0, H);
-      g.addColorStop(0, "rgba(" + P.fade + ",0)");
-      g.addColorStop(1, "rgba(" + P.fade + ",.9)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, H - 420, W, 420);
     } else {
       ctx.fillStyle = P.bg;
       ctx.fillRect(0, 0, W, H);
@@ -5093,6 +5094,7 @@
         img: null,
         fx: 0.5,
         fy: 0.25,
+        zoom: 1,
         blob: null,
       },
       shrPrefs(),
@@ -5107,9 +5109,14 @@
       back();
     };
   }
+  // uvolní fotku (a náhled přes obrazovku) z paměti; volá se při zavření panelu i kroku zpět
   function shrClose() {
     if (shr && shr.img && shr.img.close) {
       shr.img.close();
+    }
+    if (shrFullUrl) {
+      URL.revokeObjectURL(shrFullUrl);
+      shrFullUrl = "";
     }
     shr = null;
   }
@@ -5135,9 +5142,7 @@
     shrInput();
     const b = `<div class="shr-prev"><canvas id="shrCv" class="shr-cv${shr.img ? " drag" : ""}"
         width="${SHR_W}" height="${SHR_H[shr.fmt]}" aria-label="Náhled obrázku"></canvas></div>
-      <div class="xs muted shr-hint" id="shrHint"${shr.img ? "" : " hidden"}>
-        Fotku posuneš tažením prstem v náhledu.
-      </div>
+      <div class="xs muted shr-hint" id="shrHint">${shrHintText()}</div>
       ${shrSeg("fmt", [
         ["post", "Příspěvek 4:5"],
         ["story", "Příběh 9:16"],
@@ -5177,6 +5182,10 @@
       if (!shr) return;
       shr.blob = null;
       shr.cov = shrDraw(c.getContext("2d"), shrData(shr.w, shr.lang === "en"), shr);
+      const hint = document.getElementById("shrHint");
+      if (hint) {
+        hint.textContent = shrHintText();
+      }
     });
   }
   // změna volby: přepne tlačítko a překreslí, panel se neotvírá znovu
@@ -5197,7 +5206,9 @@
       '<input type="file" id="shrPhotoIn" accept="image/*" hidden>',
     );
   }
-  // vybraná fotka: načte se zmenšená (nejvýš 2160 px), otočená podle EXIF
+  /* vybraná fotka: v plném rozlišení (kvůli ostrosti při přiblížení), jen obří fotky (50 Mpx a víc)
+     se zmenší na SHR_PH_MAX px, aby Chrome nedošla paměť; otočená podle EXIF, jen v paměti */
+  const SHR_PH_MAX = 4096;
   async function shrPhoto(input) {
     const f = input.files && input.files[0];
     input.value = "";
@@ -5213,7 +5224,7 @@
         return;
       }
     }
-    const k = Math.min(1, 2160 / Math.max(bmp.width, bmp.height));
+    const k = Math.min(1, SHR_PH_MAX / Math.max(bmp.width, bmp.height));
     if (k < 1) {
       const small = await createImageBitmap(bmp, {
         resizeWidth: Math.round(bmp.width * k),
@@ -5233,6 +5244,7 @@
     shr.img = bmp;
     shr.fx = 0.5;
     shr.fy = 0.25;
+    shr.zoom = 1;
     shrPhotoUi();
   }
   function shrPhotoDel() {
@@ -5255,41 +5267,159 @@
       c.classList.toggle("drag", !!shr.img);
     }
     if (hint) {
-      hint.hidden = !shr.img;
+      hint.textContent = shrHintText();
     }
     shrRender();
   }
-  /* posun výřezu fotky tažením v náhledu: posun prstu se přepočte na posun fotky v obrázku */
-  let shrDrag = null;
+  // nápověda pod náhledem (u malé fotky, kterou nejde ostře přiblížit, jen posun)
+  function shrHintText() {
+    if (!shr.img) return "Klepnutím zobrazíš celý obrázek.";
+    if (shr.cov && shr.cov.zMax <= 1) {
+      return (
+        "Tažením fotku posuneš (přiblížit nejde, fotka má malé rozlišení). " +
+        "Klepnutím zobrazíš celý obrázek."
+      );
+    }
+    return "Tažením fotku posuneš, dvěma prsty přiblížíš. Klepnutím zobrazíš celý obrázek.";
+  }
+  /* gesta v náhledu: jeden prst posouvá výřez fotky, dva prsty přibližují (kolem místa mezi prsty),
+     klepnutí otevře celý obrázek přes obrazovku, dvojí klepnutí vrátí fotku do výchozí velikosti a polohy */
+  const shrPt = new Map(); // prsty na náhledu: pointerId → {x, y}
+  let shrGest = null; // začátek gesta: {fx, fy, zoom, x, y, d (vzdálenost prstů), moved}
+  let shrTapAt = 0,
+    shrTapTimer = 0;
+  // bod náhledu v px obrázku
+  function shrCanvasPt(c, x, y) {
+    const r = c.getBoundingClientRect();
+    return { x: ((x - r.left) * SHR_W) / r.width, y: ((y - r.top) * SHR_W) / r.width };
+  }
+  // střed mezi prsty (u jednoho prstu prst) a jejich vzdálenost
+  function shrPtMid() {
+    const ps = [...shrPt.values()];
+    if (ps.length < 2) return { x: ps[0].x, y: ps[0].y, d: 0 };
+    return {
+      x: (ps[0].x + ps[1].x) / 2,
+      y: (ps[0].y + ps[1].y) / 2,
+      d: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y),
+    };
+  }
+  // výchozí stav gesta (znovu i po přidání nebo zvednutí prstu); moved a t zůstávají z celého dotyku
+  function shrGestStart() {
+    const m = shrPtMid();
+    shrGest = {
+      fx: shr.fx,
+      fy: shr.fy,
+      zoom: shr.zoom,
+      cov: shr.cov,
+      x: m.x,
+      y: m.y,
+      d: m.d,
+      moved: shrGest ? shrGest.moved : false,
+      t: shrGest ? shrGest.t : Date.now(),
+    };
+  }
   document.addEventListener("pointerdown", (ev) => {
-    if (!shr || !shr.img || ev.target.id !== "shrCv") return;
-    shrDrag = { x: ev.clientX, y: ev.clientY, fx: shr.fx, fy: shr.fy, id: ev.pointerId };
+    if (!shr || ev.target.id !== "shrCv") return;
+    shrPt.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     ev.target.setPointerCapture(ev.pointerId);
+    if (shrPt.size === 1) {
+      shrGest = null;
+    }
+    shrGestStart();
   });
   document.addEventListener("pointermove", (ev) => {
-    if (!shrDrag || ev.pointerId !== shrDrag.id || !shr || !shr.cov) return;
+    if (!shrPt.has(ev.pointerId) || !shr || !shrGest) return;
+    shrPt.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     const c = document.getElementById("shrCv");
-    if (!c) return;
-    const scale = SHR_W / c.getBoundingClientRect().width; // px náhledu → px obrázku
-    const cov = shr.cov;
-    const dx = ((ev.clientX - shrDrag.x) * scale) / cov.k,
-      dy = ((ev.clientY - shrDrag.y) * scale) / cov.k; // posun ve fotce
+    const g = shrGest,
+      cov = g.cov;
+    const mid = shrPtMid();
+    if (Math.hypot(mid.x - g.x, mid.y - g.y) > 8 || shrPt.size > 1) {
+      g.moved = true;
+    }
+    if (!c || !shr.img || !cov || !g.moved) return;
+    // nové přiblížení podle roztažení prstů
+    let zoom = g.zoom;
+    if (mid.d > 0 && g.d > 0) {
+      zoom = Math.max(1, Math.min(cov.zMax, (g.zoom * mid.d) / g.d));
+    }
+    // bod fotky, který byl na začátku pod prsty, zůstane pod prsty
+    const W = SHR_W,
+      H = SHR_H[shr.fmt] || SHR_H.story;
+    const img = shr.img;
+    const k0 = Math.max(W / img.width, H / img.height);
+    const a = shrCanvasPt(c, g.x, g.y),
+      b = shrCanvasPt(c, mid.x, mid.y);
+    const srcX = cov.slackX * g.fx + a.x / cov.k,
+      srcY = cov.slackY * g.fy + a.y / cov.k;
+    const k = k0 * zoom;
+    const slackX = img.width - W / k,
+      slackY = img.height - H / k;
     const clamp = (v) => Math.max(0, Math.min(1, v));
-    shr.fx = cov.slackX > 0 ? clamp(shrDrag.fx - dx / cov.slackX) : 0.5;
-    shr.fy = cov.slackY > 0 ? clamp(shrDrag.fy - dy / cov.slackY) : 0.5;
+    shr.zoom = zoom;
+    shr.fx = slackX > 0 ? clamp((srcX - b.x / k) / slackX) : 0.5;
+    shr.fy = slackY > 0 ? clamp((srcY - b.y / k) / slackY) : 0.5;
     shrRender();
   });
-  const shrDragEnd = (ev) => {
-    if (shrDrag && ev.pointerId === shrDrag.id) {
-      shrDrag = null;
+  const shrGestEnd = (ev) => {
+    if (!shrPt.has(ev.pointerId)) return;
+    shrPt.delete(ev.pointerId);
+    const g = shrGest;
+    if (shrPt.size) {
+      // zbyl jeden prst: pokračuje posun od aktuálního stavu
+      shrGestStart();
+      return;
     }
+    shrGest = null;
+    if (!g || g.moved || ev.type === "pointercancel" || Date.now() - g.t > 500 || !shr) return;
+    // klepnutí: s fotkou počká, jestli nepřijde druhé (dvojí klepnutí = výchozí velikost)
+    clearTimeout(shrTapTimer);
+    if (shr.img && Date.now() - shrTapAt < 320) {
+      shrTapAt = 0;
+      shr.zoom = 1;
+      shr.fx = 0.5;
+      shr.fy = 0.25;
+      shrRender();
+      return;
+    }
+    shrTapAt = Date.now();
+    shrTapTimer = setTimeout(shrFull, shr.img ? 320 : 0);
   };
-  document.addEventListener("pointerup", shrDragEnd);
-  document.addEventListener("pointercancel", shrDragEnd);
+  document.addEventListener("pointerup", shrGestEnd);
+  document.addEventListener("pointercancel", shrGestEnd);
+  /* celý obrázek přes obrazovku (jako prohlížení fotek u cviku), Zpět vrátí panel */
+  async function shrFull() {
+    if (!shr || !document.getElementById("shrCv")) return;
+    const f = await shrFile();
+    if (!f || !shr) return;
+    shrFullUrl = URL.createObjectURL(f);
+    kkEnd();
+    document.getElementById("sheetRoot").innerHTML =
+      `<div class="pv shr-full" role="dialog" aria-modal="true" aria-label="Náhled obrázku">
+      <div class="pv-h">
+        <button class="iconbtn" data-act="shrFullBack" aria-label="Zpět">${IC.back}</button>
+        <b>Náhled obrázku</b>
+      </div>
+      <div class="shr-full-b" data-act="shrFullBack"><img src="${shrFullUrl}" alt="Obrázek tréninku"></div>
+      <div class="pv-f row">
+        <button class="btn grow" data-act="shrSave">Uložit obrázek</button>
+        <button class="btn primary grow" data-act="shrShare">Sdílet</button>
+      </div>
+    </div>`;
+    document.body.style.overflow = "hidden";
+    sheetNav = { lv: shr.nav.lv + 1, back: shrFullClose, re: shrFull };
+  }
+  function shrFullClose() {
+    if (shrFullUrl) {
+      URL.revokeObjectURL(shrFullUrl);
+      shrFullUrl = "";
+    }
+    sheetShare(true);
+  }
   // hotový obrázek jako PNG soubor (připravený se pamatuje do další změny)
   async function shrFile() {
     const c = document.getElementById("shrCv");
-    if (!c || !shr) return null;
+    if (!shr || (!c && !shr.blob)) return null;
     if (!shr.blob) {
       shr.blob = await new Promise((ok) => c.toBlob(ok, "image/png"));
     }
@@ -8641,6 +8771,7 @@
   }
   function closeSheet() {
     kkEnd();
+    shrClose(); // zavřený panel sdílení: fotka se uvolní z paměti (F4-08)
     document.getElementById("sheetRoot").innerHTML = "";
     document.body.style.overflow = "";
     sheetNav = null;
@@ -10569,6 +10700,9 @@
         break;
       case "shrShare":
         shrShare();
+        break;
+      case "shrFullBack":
+        navBack();
         break;
       case "openW": {
         const w = Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]);

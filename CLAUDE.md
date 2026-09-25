@@ -221,7 +221,9 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   v pevných px (na `fontK` nezávisí), barvy `SHR_PAL` (skupiny partií stejné jako `--g-*`), texty `SHR_TXT` (cs / en;
   anglicky `name` cviku, česky `cz`). Postava přes `shrFigures` z obrysů `ATLAS` (Path2D), ne jako obrázek, takže CSP beze
   změny. Volby v `Local` `shr` (`fmt`, `theme`, `lang`, `fig`), fotka jen v paměti (`shr.img`, ImageBitmap, políčko
-  `#shrPhotoIn` mimo panel), výřez `fx`/`fy` tahem v náhledu. Sdílení `navigator.share({files})`, jinak
+  `#shrPhotoIn` mimo panel, plné rozlišení do `SHR_PH_MAX`; `closeSheet` ji uvolní přes `shrClose`), výřez `fx`/`fy`
+  a přiblížení `zoom` (do `shrZoomMax`: nejvýš 3× a jen dokud je fotka ostrá) gesty v náhledu (`shrPt`, `shrGest`),
+  klepnutí = celý obrázek přes obrazovku `shrFull` (`sheetNav` o úroveň hlouběji), dvojí klepnutí = výchozí výřez. Sdílení `navigator.share({files})`, jinak
   `LocalDownloads.save` (umí i Blob s `type`). Nový údaj na obrázku přidat do `shrData` a oba jazyky do `SHR_TXT`.
 - Kalendář (F3-06, sekce „KALENDÁŘ“): Historie má přepínač `S.histView` (`cal` výchozí / `list`, `Local` `histView`),
   `vCal` vykreslí měsíc `S.calM` (0 = aktuální, `goTab("hist")` ho vynuluje; `calShift`, swipe na `[data-cal]`).
