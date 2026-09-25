@@ -181,8 +181,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Nový / Upravit cvik (F3-14, sekce „NOVÝ A UPRAVIT CVIK“): stránka route `exed` (`vExEdit`), otevírá se jen přes
   `exEdOpen(id, from, fx)` (`from`: `list`, `detail`, `info`, `picker`; `fx` = záznam z online hledání), který uloží
   `navFrame()` i s otevřeným panelem (výběr cviků, info, výsledky hledání). Hodnoty formuláře drží `exEd.f` (posluchače
-  `input`/`change` volají `exEdCollect`, stránka přežije překreslení), neuložené změny `exEdChanged` (Zpět i záložka se
-  zeptají, akce `exDiscard`). Odchod vždy přes `exEdLeave(re)` (`re` = jiný panel než uložený, např. výběr cviků po
+  `input`/`change` volají `exEdCollect`, stránka přežije překreslení), neuložené změny `exEdChanged` (předvyplnění z online
+  databáze se počítá jako změna; Zpět i záložka se zeptají, akce `exDiscard`). Odchod vždy přes `exEdLeave(re)` (`re` = jiný panel než uložený, např. výběr cviků po
   uložení z výsledků hledání). Route `exed` se neukládá do `Local` `route` (po restartu se neobnoví, F3-16).
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním

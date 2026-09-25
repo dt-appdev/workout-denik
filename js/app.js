@@ -7129,8 +7129,10 @@
     go("exed");
   }
   const exEdSnap = () => JSON.stringify([exEd.f, exEd.fxPh]);
-  // formulář má neuložené změny
-  const exEdChanged = () => !!exEd && S.route === "exed" && exEdSnap() !== exEd.orig;
+  // formulář má neuložené změny; nový cvik předvyplněný z online databáze je rozepsaný vždy (vybraný záznam,
+  // fotky a předvyplněné hodnoty by se ztratily)
+  const exEdChanged = () =>
+    !!exEd && S.route === "exed" && (exEdSnap() !== exEd.orig || (!!exEd.fx && !exEd.id));
   // opustí formulář tam, odkud se přišlo; re = jiné znovu otevření panelu než uložené (např. výběr cviků
   // místo výsledků hledání), null = žádný panel
   function exEdLeave(re) {
