@@ -253,7 +253,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Návrat do tréninku (F1-11, sekce „NÁVRAT DO TRÉNINKU“): `edMark(d, e)` zapíše klíč `e.k` naposledy změněného cviku
   rozdělaného tréninku (`Local` `edLast`; volá se z posluchačů `click`/`input` pro prvky s `data-i` a po přidání cviku),
   `go("train")` z jiné záložky a start appky nastaví `render.toEx` a `render` posune na kartu přes `edScroll`
-  (`render.restoreY` má přednost). Nový způsob změny cviku mimo `data-i` (např. F2-03 swipe) má volat `edMark`.
+  (`render.restoreY` má přednost). Nový způsob změny cviku mimo `data-i` má volat `edMark` (tlačítko Smazat v řádku série i Vrátit ho volají).
   Enter v jednořádkovém textovém poli (ne `data-num`) schová klávesnici (globální `keydown`).
 - Zahřívací série z minula (F1-08, sekce „ZAHŘÍVACÍ SÉRIE Z MINULA“): v krokovači u zahřívací série cviku `wr` tlačítko
   `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
@@ -264,6 +264,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona
   `tplNextOrder`). Vysoké položky (karty cviků) se netahají na stránce, ale v panelu s krátkým seznamem
   (`sheetExOrder`, `sheetTplOrder`). V panelu se posouvá `.sheet-b`, jinak stránka (`dndView` bez lišt).
+- Mazání série a Vrátit (F2-03, sekce „SMAZÁNÍ SÉRIE TAHEM“ a „VRÁTIT CVIK“): řádek série `tr.sw` se tahem doleva
+  odsune (`sw`, `swOpen`, jen jeden řádek) a odkryje `.sw-del` (akce `delSet`, leží v poslední buňce `.sw-cell` za
+  okrajem tabulky, karta `.exc` ho ořízne); buňky mají `touch-action: pan-y`, po tahu se klepnutí zahodí
+  (`swEatUntil`). Tah doprava, klepnutí jinam nebo scroll řádek vrátí. Tlačítko × ani swipe na ✓ nejsou (tah od
+  levého okraje je v Chromu Zpět). `toast(msg, cls, undo)` s funkcí `undo` ukáže tlačítko „Vrátit“ (akce `undo`,
+  `UNDO_MS`); `exUndoOffer` po `exRemove` a nahrazení cviku (`pickDone`) vrátí původní cvik, jen když je otevřená
+  stejná úprava (`curDraft()`). Smazání série „Vrátit“ nemá (přání uživatele).
 - Záloha (F0-01): export/import JSON (formát v2), sloučit / nahradit vše,
   body obnovy (automaticky týdně, před obnovou, ručně; drží se 8).
   Stažení souboru přes `LocalDownloads` (odkaz s `download`).
