@@ -4876,9 +4876,8 @@
           {
             type: "bar",
             label: lab[m],
-            unit: m === "vol" ? " kg" : "",
-            yUnit: m === "vol" ? "kg" : "",
-            fmt: m === "dur" ? "min" : "",
+            unit: "",
+            fmt: m === "vol" ? "vol" : m === "dur" ? "min" : "",
             bars: bars.map((b) => ({ x: b.x, label: b.label, tip: b.tip, v: b[m] })),
           },
           180,
@@ -5252,7 +5251,7 @@
               e1rm: ["Odh. 1RM", "best", " kg"],
               max: ["Max zátěž", "maxKg", " kg"],
               vol: ["Objem", "vol", " kg"],
-              reps: ["Max opak.", "maxReps", ""],
+              reps: ["Max opak.", "maxReps", "×"],
             };
     // vybraný graf cvik nemá (např. „Odh. 1RM“ u planku) → první graf, který má
     if (!M[S.detailMetric]) {
@@ -5328,8 +5327,8 @@
             type: "line",
             label: M[S.detailMetric][0],
             unit: M[S.detailMetric][2],
-            yUnit: M[S.detailMetric][2].trim() || "opak.",
-            fmt: M[S.detailMetric][2] === " s" ? "sec" : "",
+            yUnit: M[S.detailMetric][2].trim(),
+            fmt: M[S.detailMetric][2] === " s" ? "sec" : S.detailMetric === "vol" ? "vol" : "",
             series,
           },
           200,
@@ -8265,8 +8264,10 @@
   }
   // minuty jako hodiny „1:30“ (osa času v Průběhu)
   const fmtHM = (m) => Math.floor(Math.round(m) / 60) + ":" + d2(Math.round(m) % 60);
-  /* Druhy hodnot grafu (spec.fmt, F3-08): kroky osy, číslo na ose, jednotka na ose a hodnota v bublině.
-     min = minuty zobrazené v hodinách (0:30, 1:00…), sec = sekundy jako m:ss (výdrž, čas cviku). */
+  /* Druhy hodnot grafu (spec.fmt, F3-08): kroky osy (steps, jinak kulatá čísla), číslo na ose (tick, top =
+     nejvyšší hodnota osy), jednotka na ose a hodnota v bublině.
+     min = minuty zobrazené v hodinách (0:30, 1:00…), sec = sekundy jako m:ss (výdrž, čas cviku),
+     vol = objem v kg, od 10 000 na ose v tunách jako v dlaždicích (fmtVol). */
   const CH_FMT = {
     min: {
       steps: [5, 10, 15, 30, 60, 120, 180, 300, 600, 1200, 3000, 6000],
@@ -8280,15 +8281,23 @@
       unit: (top) => (top >= 3600 ? "h" : "min"),
       tip: (v) => fmtSec(v) + (v >= 3600 ? " h" : " min"),
     },
+    vol: {
+      tick: (v, top) => (top >= 10000 ? fmtKg(v / 1000) : yFmt(v)),
+      unit: (top) => (top >= 10000 ? "t" : "kg"),
+      tip: fmtVol,
+    },
   };
-  // osa Y grafu: hodnoty (ticks) a jejich popisky i s jednotkou („80 kg“, „2:00 h“)
+  // číslo s jednotkou: „80 kg“, „2:00 h“, opakování bez mezery „10×“
+  const withUnit = (text, unit) => (!unit ? text : unit === "×" ? text + unit : text + " " + unit);
+  // osa Y grafu: hodnoty (ticks) a jejich popisky i s jednotkou
   function chartAxis(sp, min, max) {
     const f = CH_FMT[sp.fmt];
     const ticks = niceTicks(min, max, 4, f && f.steps);
-    const unit = f ? f.unit(ticks[ticks.length - 1]) : sp.yUnit || "";
+    const top = ticks[ticks.length - 1];
+    const unit = f ? f.unit(top) : sp.yUnit || "";
     return {
       ticks,
-      labels: ticks.map((t) => (f ? f.tick(t) : yFmt(t)) + (unit ? " " + unit : "")),
+      labels: ticks.map((t) => withUnit(f ? f.tick(t, top) : yFmt(t), unit)),
     };
   }
   // šířka nejdelšího z textů v grafu el v px (změří prohlížeč, takže sedí i s větším písmem F3-11)
@@ -8298,9 +8307,13 @@
     for (const t of el.querySelectorAll("text")) {
       max = Math.max(max, t.getComputedTextLength());
     }
+    // skrytý graf nejde změřit → odhad podle počtu znaků
+    if (!max && texts.length) {
+      max = Math.max(...texts.map((t) => t.length)) * 7 * fontK();
+    }
     return Math.ceil(max);
   }
-  // hodnota v bublině po klepnutí (bez jednotky u času, ten má formát m:ss / h:mm)
+  // hodnota v bublině po klepnutí (podle spec.fmt, jinak číslo s příponou spec.unit)
   function chartTip(sp, v) {
     const f = CH_FMT[sp.fmt];
     if (f) return f.tip(v);
@@ -8339,7 +8352,8 @@
       // okraje pro popisky os rostou s písmem (F3-11); graf je přes celou šířku karty: nejdelší popisek
       // osy Y začíná na levém okraji textu, čáry končí na pravém (F3-08)
       const textScale = fontK();
-      const xLabelW = sp.type === "bar" ? chartTextWidth(el, sp.bars.map((b) => String(b.label))) : 0;
+      const xTexts = sp.type === "bar" ? sp.bars.map((b) => String(b.label)) : [];
+      const xLabelW = chartTextWidth(el, xTexts);
       const padL = chartTextWidth(el, axis.labels) + 6,
         padR = 0,
         padT = 12,
@@ -8381,9 +8395,7 @@
           sp.hit.push({
             x: x + w / 2,
             y: Math.min(y, padT + ih - 2),
-            html:
-              `<b>${chartTip(sp, Math.round(b.v))}</b><br>` +
-              `${b.tip || "týden od " + b.label}`,
+            html: `<b>${chartTip(sp, Math.round(b.v))}</b><br>${b.tip || "týden od " + b.label}`,
           });
         });
         // popisky pod sloupci: když se nevejdou vedle sebe, jen každý k-tý (poslední zůstane vždy)
