@@ -872,6 +872,8 @@
     statsGym: "all",
     statsMetric: "count",
     statsRange: lsGet("statsRange", "30d"),
+    // otevřená část Statistik (F3-13): over = Přehled, mus = Partie, ex = Cviky
+    statsPart: ["over", "mus", "ex"].includes(lsGet("statsPart")) ? lsGet("statsPart") : "over",
     sumPeriod: "month",
     exSearch: "",
     exMuscle: "all",
@@ -4953,6 +4955,12 @@
       dur: b.dur,
     }));
   }
+  // části záložky Statistiky (F3-13): přepínač nad filtrem fitek, fitko a období platí pro všechny
+  const STATS_PARTS = [
+    ["over", "Přehled"],
+    ["mus", "Partie"],
+    ["ex", "Cviky"],
+  ];
   function vStats() {
     const g = S.statsGym,
       range = S.statsRange;
@@ -4961,8 +4969,19 @@
     const ws = wsAll.filter((w) => w.start >= since);
     const s = summarize(ws);
     let h = topbar("Statistiky", g === "all" ? "Všechna fitka" : gymName(g));
+    h += `<div class="seg seg-wide" style="margin-bottom:10px">${STATS_PARTS.map(
+      ([k, l]) =>
+        `<button data-act="statsPart" data-v="${k}" aria-pressed="${S.statsPart === k}">${l}</button>`,
+    ).join("")}</div>`;
     h += gymChips("statsGym", g, true);
-    h += `<section class="sec">
+    const c = { g, range, since, wsAll, ws, s };
+    if (S.statsPart === "mus") return h + statsMus(c);
+    if (S.statsPart === "ex") return h + statsEx(c);
+    return h + statsOver(c);
+  }
+  // Přehled: období s dlaždicemi, Průběh, Podle fitek, souhrn za kalendářní období
+  function statsOver({ g, range, wsAll, ws, s }) {
+    let h = `<section class="sec">
       ${rangeSeg("statsRange", range)}
       <div style="margin-top:10px">${kpiGrid(s)}</div>
     </section>`;
@@ -4997,25 +5016,6 @@
         )}
       </div>
     </section>`;
-    // partie
-    const mv = Object.entries(s.mus).sort((a, b) => b[1] - a[1]);
-    h += `<section class="sec">
-      <div class="sec-h"><h2>Pracovní série podle partie</h2></div>
-      <div class="card">
-        ${
-          mv.length
-            ? musFigs(s.mus, true, true) +
-              mgStack(s.mus) +
-              hbarList(mv.map(([k, v]) => ({ label: MUSCLE_MAP.NAMES[k], v, sw: mgCol(k) })))
-            : '<div class="muted small">V tomto období nic.</div>'
-        }
-        <p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p>
-      </div>
-    </section>`;
-    h += `<section class="sec">
-      <div class="sec-h"><h2>Nejčastější cviky</h2></div>
-      <div class="card">${hbarList(topExRows(s, 8), true)}</div>
-    </section>`;
     if (g === "all") {
       h += `<section class="sec">
         <div class="sec-h"><h2>Podle fitek</h2></div>
@@ -5044,6 +5044,34 @@
             : '<div class="muted small">V tomto období žádný trénink.</div>'
         }
       </div>
+    </section>`;
+    return h;
+  }
+  // Partie: období, postava a pruhy podle partií (později radar F3-04)
+  function statsMus({ range, s }) {
+    let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
+    const mv = Object.entries(s.mus).sort((a, b) => b[1] - a[1]);
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Pracovní série podle partie</h2></div>
+      <div class="card">
+        ${
+          mv.length
+            ? musFigs(s.mus, true, true) +
+              mgStack(s.mus) +
+              hbarList(mv.map(([k, v]) => ({ label: MUSCLE_MAP.NAMES[k], v, sw: mgCol(k) })))
+            : '<div class="muted small">V tomto období nic.</div>'
+        }
+        <p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p>
+      </div>
+    </section>`;
+    return h;
+  }
+  // Cviky: období, Nejčastější cviky, seznam cvičených cviků s hledáním a filtrem partie
+  function statsEx({ g, range, since, s }) {
+    let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
+    h += `<section class="sec">
+      <div class="sec-h"><h2>Nejčastější cviky</h2></div>
+      <div class="card">${hbarList(topExRows(s, 8), true)}</div>
     </section>`;
     // seznam cviků
     const { byEx } = derive();
@@ -9676,6 +9704,14 @@
       case "statsMetric":
         S.statsMetric = v;
         scheduleRender();
+        break;
+      // přepnutí části Statistik (F3-13): nová část začíná nahoře
+      case "statsPart":
+        S.statsPart = v;
+        lsSet("statsPart", v);
+        render.keepScroll = false;
+        scheduleRender();
+        window.scrollTo(0, 0);
         break;
       case "exMuscle":
         S.exMuscle = v;

@@ -175,6 +175,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   počty (opakování, tréninky, série) `spec.whole` = na ose jen celá čísla.
   Graf je přes celou šířku karty: levý okraj = změřená šířka nejdelšího popisku (`chartTextWidth`), vpravo bez okraje.
   Popisky pod sloupci se při nedostatku místa pravidelně vynechají (poslední zůstane). Nový graf s jednotkou jen přes tato pole.
+- Statistiky (F3-13): route `stats`, `vStats` vykreslí přepínač částí `STATS_PARTS` nad filtrem fitek a jednu část:
+  `statsOver` (Přehled), `statsMus` (Partie, sem radar F3-04), `statsEx` (Cviky). Otevřená část `S.statsPart`
+  (`Local` `statsPart`, výchozí `over`, akce `statsPart` posune nahoru). Fitko `S.statsGym` a období `S.statsRange`
+  jsou společné pro všechny části. Nová sekce Statistik patří do jedné z částí, ne pod ně.
 - Hledání v online databázi (F0-03): `js/fedb.js` (`FEDB`) se načte až při prvním
   hledání (`fedbLoad`), není ve `FILES`; service worker ho uloží do cache při prvním
   stažení. Stav hledání `fs`, vykreslení `renderFs`/`refreshFs`. Vybraný záznam
