@@ -149,6 +149,11 @@
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 11v6M12 7.5v.5"/>
     </svg>`,
+    // nápověda sekce „Jak to funguje?“ (F3-21); info = O aplikaci
+    help: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.5M12 16.6v.4"/>
+    </svg>`,
     // týdny v řadě (kalendář)
     flame: `<svg viewBox="0 0 24 24">
       <path
@@ -2172,14 +2177,14 @@
   function stepperSettings() {
     const on = S.cfg.stepper !== false;
     return `<section class="sec">
-      <div class="sec-h"><h2>Zadávání čísel v tréninku</h2></div>
+      <div class="sec-h">
+        <h2>Zadávání čísel v tréninku</h2>
+        ${helpBtn("input")}
+      </div>
       <div class="card stack">
         <label class="switch">
           <input type="checkbox" data-act="stepper" ${on ? "checked" : ""}>
-          <span><b>Tlačítka +/−</b><br><span class="xs muted">Klepnutí na kg, opakování, čas nebo km
-              v rozdělaném tréninku otevře dole panel s tlačítky + a −, ovladatelný jednou rukou.
-              Klávesnice je v panelu pod tlačítkem Napsat. Vypnuto = klepnutí rovnou otevře
-              klávesnici.</span></span>
+          <span><b>Tlačítka +/−</b></span>
         </label>
         <div class="warm-set${on ? "" : " off"}">
           <div class="row">
@@ -2189,11 +2194,7 @@
           <input type="range" class="range" id="warmPct" min="${WARM_PCT.min}" max="${WARM_PCT.max}"
               step="${WARM_PCT.step}" value="${S.cfg.warmPct}" aria-label="Zahřívací série v procentech"
               ${on ? "" : "disabled"}>
-          <div class="xs muted">
-            V panelu s tlačítky +/− u zahřívací série tlačítko, které nastaví váhu na tolik procent
-            nejtěžší série z minula (zaokrouhleno na krok, např. 60 % z 82,5 kg = 50 kg).
-            ${on ? "" : "Funguje jen se zapnutými tlačítky +/−."}
-          </div>
+          ${on ? "" : '<div class="xs muted">Funguje jen se zapnutými tlačítky +/−.</div>'}
         </div>
       </div>
     </section>`;
@@ -2203,22 +2204,14 @@
   function progSettings() {
     const on = !!S.cfg.progAll;
     return `<section class="sec">
-      <div class="sec-h"><h2>Návrh progrese</h2></div>
+      <div class="sec-h">
+        <h2>Návrh progrese</h2>
+        ${helpBtn("prog")}
+      </div>
       <div class="card stack">
-        <div class="xs muted">
-          Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne
-          trénink přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice.
-          U cviku s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule, klepnutím
-          ho použiješ: navržené hodnoty se objeví v šedém předvyplnění sérií
-          a ${icon("check")} je převezme. Když místo toho začneš pracovní série upravovat (hodnoty,
-          ${icon("check")}, přidání, smazání, změna druhu série), návrh zmizí. Zahřívací série na návrh
-          nemají vliv. V Upravit cvik jde u cviku nastavit vlastní rozsah nebo návrh vypnout.
-        </div>
         <label class="switch">
           <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
-          <span><b>U všech cviků</b><br><span class="xs muted">Zapnuto = u cviků s váhou (i vlastní
-              váha se zátěží a s dopomocí) s rozsahem níže. Vypnuto = jen u cviků, kde návrh zapneš
-              v Upravit cvik.</span></span>
+          <span><b>U všech cviků</b></span>
         </label>
         <div class="row">
           <b class="grow">Výchozí rozsah opakování</b>
@@ -2238,15 +2231,6 @@
                   `</button>`,
               )
               .join("")}
-          </div>
-          <div class="xs muted">
-            ${
-              S.cfg.progSets === "first"
-                ? "Váha se přidá jen v 1. sérii. V dalších trénincích se k ní postupně přidávají další " +
-                  "série, jakmile dají horní hranici (vždy jedna série o krok, nejvýš na váhu nejtěžší " +
-                  "série). Až mají všechny série horní hranici, přidá se znovu v 1. sérii."
-                : "Váha se přidá ve všech pracovních sériích najednou."
-            }
           </div>
         </div>
       </div>
@@ -3010,26 +2994,23 @@
   /* Nastavení → Rekordy a pokrok: oslava rekordu */
   function recSettings() {
     const c = S.cfg;
-    let h = '<section class="sec"><div class="sec-h"><h2>Oslava rekordu</h2></div><div class="card stack">';
-    h += `<div class="xs muted">
-      Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování,
-      výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.
-    </div>`;
-    h +=
-      `<label class="switch">
+    let h = `<section class="sec">
+      <div class="sec-h">
+        <h2>Oslava rekordu</h2>
+        ${helpBtn("rec")}
+      </div>
+      <div class="card stack">`;
+    h += `<label class="switch">
       <input type="checkbox" data-act="recCelEx" ${c.recCelEx ? "checked" : ""}>
-      <span><b>Oslava po dokončení cviku</b><br><span class="xs muted">Po odškrtnutí poslední pracovní
-          série cviku. Když ji vypneš, ukáže se po sérii s rekordem jen krátká hláška nahoře.</span>` +
-      `</span>
+      <span><b>Oslava po dokončení cviku</b></span>
     </label>`;
     h += `<label class="switch">
       <input type="checkbox" data-act="recCelW" ${c.recCelW ? "checked" : ""}>
-      <span><b>Oslava po uložení tréninku</b><br><span class="xs muted">Nad souhrnem tréninku, se všemi
-          rekordy po cvicích.</span></span>
+      <span><b>Oslava po uložení tréninku</b></span>
     </label>`;
     if (c.recCelEx || c.recCelW) {
       h += `<div class="stack" style="gap:6px">
-        <span>Zvuk oslavy <span class="xs muted">· hraje přes hlasitost médií</span></span>
+        <span>Zvuk oslavy</span>
         <div class="spick">
           ${[["off", "Vypnuto"]]
             .concat(CEL_SOUNDS.map((x) => [x.id, x.name]))
@@ -3063,13 +3044,14 @@
   function stagSettings() {
     const c = S.cfg;
     let h = `<section class="sec">
-      <div class="sec-h"><h2>Upozornění na stagnaci</h2></div>
+      <div class="sec-h">
+        <h2>Upozornění na stagnaci</h2>
+        ${helpBtn("stag")}
+      </div>
       <div class="card stack">`;
     h += `<label class="switch">
       <input type="checkbox" data-act="stagOn" ${c.stagOn ? "checked" : ""}>
-      <span><b>Upozornit na cvik bez zlepšení</b><br><span class="xs muted">Když se cvik několik tréninků po
-          sobě nezlepší (váha, opakování, objem, čas ani vzdálenost), ukáže se to v kartě cviku při tréninku,
-          na stránce cviku a ve Statistikách → Cviky.</span></span>
+      <span><b>Upozornit na cvik bez zlepšení</b></span>
     </label>`;
     if (c.stagOn) {
       h += `<div class="stack" style="gap:6px">
@@ -6754,17 +6736,15 @@
       ${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "list")}
       ${icoBtn("exlNew", "plus", "Nový cvik")}
     </div>`;
+    // u skrytých cviků vysvětlení pod tlačítkem s otazníkem (F3-21)
     h += `<section class="sec">
     <div class="sec-h">
       <h2>${S.exlHid ? "Skryté cviky" : "Seznam"}</h2>
-      <span class="xs muted">${rows.length}</span>
+      <div class="sec-btns" style="gap:8px">
+        <span class="xs muted">${rows.length}</span>
+        ${S.exlHid ? helpBtn("hidden") : ""}
+      </div>
     </div>`;
-    if (S.exlHid) {
-      h += `<p class="xs muted" style="margin:0 0 8px">
-        Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš
-        je přes Upravit → Zobrazit.
-      </p>`;
-    }
     if (!rows.length) {
       h +=
         `<div class="empty">
@@ -6914,7 +6894,6 @@
       </div>`;
     }
     const kind = kindOf(id);
-    const bw = hasReps(kind) && kind !== "wr";
     const M =
       isTimed(kind) && kind !== "dist"
         ? { sec: ["Nejdelší výdrž", "maxSec", " s"], tsec: ["Čas celkem", "totSec", " s"] }
@@ -7059,7 +7038,10 @@
       ? gymsWith.map((g) => ({ g, name: gymName(g), b: R.best[id + "|" + g] }))
       : [{ g: null, name: "", b: R.best[id + "|*"] }];
     h += `<section class="sec">
-        <div class="sec-h"><h2>Osobní rekordy</h2></div>
+        <div class="sec-h">
+          <h2>Osobní rekordy</h2>
+          ${helpBtn("exRec:" + id)}
+        </div>
         <div class="stack" style="gap:8px">`;
     for (const c of ctxs) {
       if (!c.b) continue;
@@ -7113,19 +7095,7 @@
           .join("")}
       </div>`;
     }
-    h +=
-      `<p class="xs muted">
-      Odhad 1RM podle Epleyho: váha × (1 + opakování / 30). Zahřívací série se nepočítají. První trénink
-      s cvikem${ex.gymDep ? " v každém fitku" : ""} rekord nezakládá.` +
-      `${
-        bw
-          ? " U tohoto typu se zátěž počítá z tvé tělesné hmotnosti (" +
-            fmtKg(bodyWeightAt(Date.now())) +
-            " kg)."
-          : ""
-      }
-    </p>
-    </section>`;
+    h += "</section>"; // jak se rekordy počítají: panel s otazníkem v nadpisu (F3-21)
     // historie
     h += `<section class="sec">
       <div class="sec-h"><h2>Historie cviku</h2><span class="xs muted">${list.length}×</span></div>
@@ -7466,26 +7436,18 @@
     const a = phAdd,
       n = a.items.length,
       size = a.items.reduce((s, it) => s + it.blob.size, 0);
-    const b =
-      `<div class="thumbs">
+    const b = `<div class="thumbs">
         ${a.items.map((it) => `<div class="th"><img src="${it.url}" alt=""></div>`).join("")}
       </div>
       <div class="small" style="font-weight:600">Fitko</div>
       ${phGymChips("phAddGym", a.gym)}
-      <div class="xs muted">
-        ${exOf(a.exId).gymDep ? "Cvik je vázaný na fitko, předvybrané je fitko, kde teď cvičíš. " : ""}` +
-      `„Bez fitka“ = fotka se ukáže stejně ve všech fitkách.
-      </div>
+      <div class="xs muted">„Bez fitka“ = fotka se ukáže ve všech fitkách.</div>
       <label class="switch">
         <input type="checkbox" data-act="phAddFirst" ${a.first ? "checked" : ""}>
-        <span><b>Nastavit jako první</b><br><span class="xs muted">
-          ${n > 1 ? "První z přidaných fotek bude" : "Fotka bude"} hned za postavou, s předností i před
-          fotkami aktuálního fitka.</span></span>
+        <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, před ostatními
+            fotkami.</span></span>
       </label>
-      <div class="xs muted">
-        Po zmenšení ${n > 1 ? "mají fotky" : "má fotka"} ${fmtSize(size)} a uloží se jen v tomto
-        telefonu.
-      </div>`;
+      <div class="xs muted">Po zmenšení ${fmtSize(size)}, uloží se jen v tomto telefonu.</div>`;
     openSheet(
       n > 1 ? "Přidat fotky (" + n + ")" : "Přidat fotku",
       b,
@@ -7601,8 +7563,8 @@
       ${pv.gymOpen ? phGymChips("pvSetGym", p.gymId) : ""}
       <label class="switch">
         <input type="checkbox" data-act="pvFirst" ${p.first ? "checked" : ""}>
-        <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, s předností před
-            ostatními fotkami cviku.</span></span>
+        <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, před ostatními
+            fotkami.</span></span>
       </label>
       </div>`;
     restoreChipScroll(foot);
@@ -8192,6 +8154,228 @@
     );
   }
 
+  /* ---------- NÁPOVĚDY V NADPISU SEKCE (F3-21) ----------
+     Vysvětlení voleb není pod nimi, ale v panelu, který otevře tlačítko s otazníkem v nadpisu sekce
+     (helpBtn, akce "help", sheetHelp). Pod volbou zůstává jen stav nebo varování (co se děje teď).
+     HELP: klíč → nadpis panelu a položky [název, text v HTML]; položky se skládají až při otevření,
+     takže můžou záviset na nastavení. Parametr za dvojtečkou v klíči (např. "exRec:<id cviku>") dostane
+     funkce items. Nová volba = nová položka v panelu své sekce, ne text pod přepínačem. */
+  const HELP = {
+    input: {
+      title: "Zadávání čísel v tréninku",
+      items: () => [
+        [
+          "Tlačítka +/−",
+          "Klepnutí na kg, opakování, čas nebo km v rozdělaném tréninku otevře dole panel s tlačítky + a −, " +
+            "ovladatelný jednou rukou. Klávesnice je v panelu pod tlačítkem Napsat. Vypnuto = klepnutí rovnou " +
+            "otevře klávesnici.",
+        ],
+        [
+          "Zahřívací série",
+          "V panelu s tlačítky +/− má zahřívací série tlačítko, které nastaví váhu na tolik procent nejtěžší " +
+            "série z minula (zaokrouhleno na krok, např. 60 % z 82,5 kg = 50 kg). Funguje jen se zapnutými " +
+            "tlačítky +/−.",
+        ],
+      ],
+    },
+    prog: {
+      title: "Návrh progrese",
+      items: () => [
+        [
+          "Jak to funguje",
+          "Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne trénink " +
+            "přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice. U cviku " +
+            "s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule, klepnutím ho použiješ: " +
+            `navržené hodnoty se objeví v šedém předvyplnění sérií a ${icon("check")} je převezme. Když místo ` +
+            `toho začneš pracovní série upravovat (hodnoty, ${icon("check")}, přidání, smazání, změna druhu ` +
+            "série), návrh zmizí. Zahřívací série na návrh nemají vliv.",
+        ],
+        [
+          "U všech cviků",
+          "Zapnuto = u cviků s váhou (i vlastní váha se zátěží a s dopomocí) s rozsahem níže. Vypnuto = jen " +
+            "u cviků, kde návrh zapneš v Upravit cvik. Tam jde u cviku nastavit i vlastní rozsah nebo návrh " +
+            "vypnout.",
+        ],
+        [
+          "Výchozí rozsah opakování",
+          "Horní hranice = kdy navrhnout víc váhy. Dolní hranice = od kolika opakování začít s novou váhou.",
+        ],
+        [
+          "Přidat váhu",
+          "Všem sériím: váha se přidá ve všech pracovních sériích najednou. Postupně od 1. série: váha se " +
+            "přidá jen v 1. sérii, v dalších trénincích se k ní postupně přidávají další série, jakmile dají " +
+            "horní hranici (vždy jedna série o krok, nejvýš na váhu nejtěžší série). Až mají všechny série " +
+            "horní hranici, přidá se znovu v 1. sérii.",
+        ],
+      ],
+    },
+    rest: {
+      title: "Odpočinek mezi sériemi",
+      items: () => [
+        [
+          "Časovač pauzy",
+          "Po odškrtnutí série se spustí odpočinek. Vypnuto = po sérii žádná pauza, pípnutí ani oznámení.",
+        ],
+        ["Výchozí časovač", "Délka pauzy po běžné sérii."],
+        [
+          "Časovač po pracovní supersérii",
+          "Délka pauzy po dokončení celého kola pracovních sérií supersérie.",
+        ],
+        ["Na konci pauzy", "Jak tě appka upozorní, že pauza skončila, když ji máš na očích."],
+        [
+          "Počítat přečas",
+          "Po konci pauzy lišta zůstane a ukazuje, jak dlouho už odpočíváš (+0:25), dokud neodškrtneš další " +
+            "sérii.",
+        ],
+        [
+          "Oznámení na pozadí",
+          "Když je appka na pozadí nebo máš zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. Zvuk " +
+            "a vibraci oznámení určuje nastavení oznámení v Androidu.",
+        ],
+        [
+          "Displej nezhasne během pauzy",
+          "Během odpočinku a přečasu v rozdělaném tréninku zůstane displej zapnutý, pokud máš appku otevřenou. " +
+            "Když se ho 10 minut nedotkneš, zhasne jako obvykle. Displej navíc spotřebuje trochu baterie.",
+        ],
+        [
+          "Po 30 s ztmavit obrazovku",
+          "Objeví se po zapnutí předchozí volby. Když se displeje 30 s nedotkneš, zčerná a ukáže jen " +
+            "odpočet. Na displeji OLED to šetří baterii. Klepnutí vrátí appku.",
+        ],
+      ],
+    },
+    bw: {
+      title: "Tělesná hmotnost",
+      items: () => [
+        [
+          "K čemu je",
+          "Používá se u cviků s vlastní vahou pro objem a odhad 1RM. Když máš měření v záložce Tělo, bere se " +
+            "k datu tréninku nejbližší dřívější měření a tahle hodnota slouží jen pro tréninky před prvním " +
+            "měřením.",
+        ],
+        [
+          "Teď",
+          Object.values(S.body || {}).some((b) => isFinite(+b.weight))
+            ? "Máš uložená měření v záložce Tělo, takže se bere nejbližší dřívější měření."
+            : "Zatím nemáš žádné měření v záložce Tělo, takže se bere tahle hodnota.",
+        ],
+      ],
+    },
+    rec: {
+      title: "Oslava rekordu",
+      items: () => [
+        [
+          "Medaile",
+          "Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování, " +
+            "výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.",
+        ],
+        [
+          "Oslava po dokončení cviku",
+          "Po odškrtnutí poslední pracovní série cviku. Když ji vypneš, ukáže se po sérii s rekordem jen " +
+            "krátká hláška nahoře.",
+        ],
+        ["Oslava po uložení tréninku", "Nad souhrnem tréninku, se všemi rekordy po cvicích."],
+        ["Zvuk oslavy", "Hraje přes hlasitost médií."],
+      ],
+    },
+    stag: {
+      title: "Upozornění na stagnaci",
+      items: () => [
+        [
+          "Upozornit na cvik bez zlepšení",
+          "Když se cvik několik tréninků po sobě nezlepší (váha, opakování, objem, čas ani vzdálenost), ukáže " +
+            "se to v kartě cviku při tréninku, na stránce cviku a ve Statistikách → Cviky.",
+        ],
+        [
+          "Po kolika trénincích bez zlepšení",
+          "Porovnává se vždy s tréninkem těsně předtím, ne s rekordem z celé historie.",
+        ],
+      ],
+    },
+    backup: {
+      title: "Záloha",
+      items: () => {
+        const list = [
+          [
+            "Co je záloha",
+            "Jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo telefon, " +
+              "třeba na Google Disk. Jak na to, ukáže tlačítko Jak na Disk?",
+          ],
+        ];
+        if (photoStats().n) {
+          list.push([
+            "Zálohovat i fotky",
+            "Fotky u cviků ochrání jen záloha s fotkami. Soubor je pak o tolik větší, kolik ukazuje popis " +
+              "pod volbou.",
+          ]);
+        }
+        return list;
+      },
+    },
+    points: {
+      title: "Body obnovy",
+      items: () => [
+        [
+          "Co jsou body obnovy",
+          "Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy. Chrání před " +
+            `chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. Drží se posledních ` +
+            `${BK_MAX_POINTS}. Fotky u cviků v nich nejsou (zabraly by moc místa).`,
+        ],
+      ],
+    },
+    hidden: {
+      title: "Skryté cviky",
+      items: () => [
+        [
+          "Co znamená skrytý cvik",
+          "Skryté cviky se nenabízejí při přidávání do tréninku. Historie i statistiky zůstávají. Vrátíš je " +
+            "přes Upravit → Zobrazit.",
+        ],
+      ],
+    },
+    exRec: {
+      title: "Osobní rekordy",
+      items: (id) => {
+        const ex = exOf(id),
+          kind = kindOf(id);
+        let text =
+          "Odhad 1RM podle Epleyho: váha × (1 + opakování / 30). Zahřívací série se nepočítají. První " +
+          `trénink s cvikem${ex.gymDep ? " v každém fitku" : ""} rekord nezakládá.`;
+        if (hasReps(kind) && kind !== "wr") {
+          text +=
+            " U tohoto typu se zátěž počítá z tvé tělesné hmotnosti (" +
+            fmtKg(bodyWeightAt(Date.now())) +
+            " kg).";
+        }
+        return [["Jak se počítají", text]];
+      },
+    },
+  };
+  // tlačítko s otazníkem do nadpisu sekce; key = klíč v HELP (u "exRec:<id>" i s parametrem)
+  function helpBtn(key) {
+    const h = HELP[key.split(":")[0]];
+    return icoBtn("help", "help", "Jak to funguje: " + h.title, key);
+  }
+  // panel s vysvětlením voleb sekce (zavírá křížek, Zpět nebo klepnutí mimo)
+  function sheetHelp(key) {
+    const at = key.indexOf(":");
+    const h = HELP[at < 0 ? key : key.slice(0, at)];
+    if (!h) return;
+    const items = h.items(at < 0 ? "" : key.slice(at + 1));
+    openSheet(
+      h.title,
+      items
+        .map(
+          ([name, text]) =>
+            `<div class="hlp">
+              <b>${esc(name)}</b>
+              <p>${text}</p>
+            </div>`,
+        )
+        .join(""),
+    );
+  }
+
   /* ---------- NASTAVENÍ (F3-09) ----------
      Rozcestník se skupinami, každá skupina na vlastní podstránce (S.setPage, "" = rozcestník).
      Otevřená podstránka se pamatuje v Local "setPage" (vrátí se po aktualizaci nebo zavření appky),
@@ -8317,23 +8501,18 @@
   /* Nastavení → Trénink → Tělesná hmotnost */
   function bodyWeightSettings() {
     return `<section class="sec">
-      <div class="sec-h"><h2>Tělesná hmotnost</h2></div>
+      <div class="sec-h">
+        <h2>Tělesná hmotnost</h2>
+        ${helpBtn("bw")}
+      </div>
       <div class="card stack">
         <div class="row">
-          <span class="grow small">Používá se u cviků s vlastní vahou pro objem a odhad 1RM.</span>
+          <span class="grow small">Pro cviky s vlastní vahou.</span>
           <label class="f" style="width:110px">
             kg
             <input class="inp${numCls("bw", S.cfg.bodyWeight || 80)}" id="bwInp" data-f="bodyWeight"
                 data-num="bw" inputmode="decimal" value="${esc(S.cfg.bodyWeight || 80)}">
           </label>
-        </div>
-        <div class="xs muted">
-          ${
-            Object.values(S.body || {}).some((b) => isFinite(+b.weight))
-              ? "Máš uložená měření v záložce Tělo, takže se k datu tréninku bere nejbližší dřívější měření. " +
-                "Tahle hodnota slouží jen pro starší tréninky před prvním měřením."
-              : "Zatím nemáš žádné měření v záložce Tělo. Až nějaké přidáš, bude se brát ono."
-          }
         </div>
       </div>
     </section>`;
@@ -9501,7 +9680,10 @@
     const c = S.cfg,
       ns = notifState();
     let h = `<section class="sec">
-        <div class="sec-h"><h2>Odpočinek mezi sériemi</h2></div>
+        <div class="sec-h">
+          <h2>Odpočinek mezi sériemi</h2>
+          ${helpBtn("rest")}
+        </div>
         <div class="card stack">`;
     // volba délky pauzy: act = akce tlačítek, cur = uložená délka (s)
     const secSeg = (act, cur) =>
@@ -9516,8 +9698,7 @@
     const on = c.restOn !== false;
     h += `<label class="switch">
       <input type="checkbox" data-act="restOn" ${on ? "checked" : ""}>
-      <span><b>Časovač pauzy</b><br><span class="xs muted">Po odškrtnutí série se spustí odpočinek.
-          Vypnuto = po sérii žádná pauza, pípnutí ani oznámení.</span></span>
+      <span><b>Časovač pauzy</b></span>
     </label>`;
     h += `<div class="stack rest-set${on ? "" : " off"}"${on ? "" : " inert"}>`;
     h += `<div class="stack" style="gap:6px">
@@ -9547,15 +9728,12 @@
     </div>`;
     h += `<label class="switch">
       <input type="checkbox" data-act="restOver" ${c.restOver ? "checked" : ""}>
-      <span><b>Počítat přečas</b><br><span class="xs muted">Po konci pauzy lišta zůstane a ukazuje, jak
-          dlouho už odpočíváš (+0:25), dokud neodškrtneš další sérii.</span></span>
+      <span><b>Počítat přečas</b></span>
     </label>`;
     h += `<label class="switch">
       <input type="checkbox" data-act="restNotify"
           ${c.restNotify ? "checked" : ""}${ns === "none" ? " disabled" : ""}>
-      <span><b>Oznámení na pozadí</b><br><span class="xs muted">Když je appka na pozadí nebo máš
-          zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. Zvuk a vibraci oznámení určuje
-          nastavení oznámení v Androidu.</span></span>
+      <span><b>Oznámení na pozadí</b></span>
     </label>`;
     if (c.restNotify) {
       if (ns === "none") {
@@ -10070,21 +10248,16 @@
     let h = `<label class="switch">
       <input type="checkbox" data-act="screenOn"
           ${c.screenOn ? "checked" : ""}${wakeApi ? "" : " disabled"}>
-      <span><b>Displej nezhasne během pauzy</b><br><span class="xs muted">Během odpočinku a přečasu v
-          rozdělaném tréninku zůstane displej zapnutý, pokud máš appku otevřenou. Když se ho 10 minut
-          nedotkneš, zhasne jako obvykle. Displej navíc spotřebuje trochu baterie.</span></span>
+      <span><b>Displej nezhasne během pauzy</b></span>
     </label>`;
     if (!wakeApi) {
       h += '<div class="xs muted">Tento prohlížeč neumí držet displej zapnutý.</div>';
       return h;
     }
     if (!c.screenOn) return h;
-    h +=
-      `<label class="switch">
+    h += `<label class="switch">
       <input type="checkbox" data-act="screenDim" ${c.screenDim ? "checked" : ""}>
-      <span><b>Po 30 s ztmavit obrazovku</b><br><span class="xs muted">Když se displeje 30 s nedotkneš,
-          zčerná a ukáže jen odpočet. Na displeji OLED to šetří baterii. Klepnutí vrátí appku.</span>` +
-      `</span>
+      <span><b>Po 30 s ztmavit obrazovku</b></span>
     </label>`;
     if (batteryLow()) {
       h += `<div class="banner" style="margin-top:0">
@@ -11856,6 +12029,9 @@
       case "bkHelp":
         showBackupHelp(true);
         break;
+      case "help":
+        sheetHelp(v);
+        break;
       case "updCheck":
         checkUpdate();
         break;
@@ -12391,18 +12567,19 @@
   /* Nastavení → Data a záloha */
   function backupSettings() {
     const last = lastBackupAt();
-    let h = '<section class="sec"><div class="sec-h"><h2>Záloha</h2></div><div class="card stack">';
-    h += `<div class="small muted">
-      Záloha je jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo
-      telefon, třeba na Google Disk.
-    </div>`;
+    let h = `<section class="sec">
+      <div class="sec-h">
+        <h2>Záloha</h2>
+        ${helpBtn("backup")}
+      </div>
+      <div class="card stack">`;
     const ps = photoStats();
     if (ps.n) {
       h += `<label class="switch">
         <input type="checkbox" data-act="bkPhotos" ${lsGet("bkPhotos", true) ? "checked" : ""}>
         <span><b>Zálohovat i fotky</b><br><span class="xs muted">Fotky u cviků: ${fmtInt(ps.n)}
             ${plural(ps.n, "fotka", "fotky", "fotek")} · ${fmtSize(ps.size)}, záloha s nimi bude asi o
-            ${fmtSize((ps.size * 4) / 3)} větší. Fotky ochrání jen záloha s fotkami.</span></span>
+            ${fmtSize((ps.size * 4) / 3)} větší.</span></span>
       </label>`;
     }
     h += `<div class="row wrap-r">
@@ -12421,7 +12598,10 @@
     h += `<section class="sec">
       <div class="sec-h">
         <h2>Body obnovy</h2>
-        ${pointsApi ? icoBtn("bkNow", "plus", "Vytvořit bod obnovy teď") : ""}
+        <div class="sec-btns">
+          ${helpBtn("points")}
+          ${pointsApi ? icoBtn("bkNow", "plus", "Vytvořit bod obnovy teď") : ""}
+        </div>
       </div>
       <div class="card">`;
     if (!pointsApi) {
@@ -12429,12 +12609,6 @@
         Body obnovy tady nejsou dostupné (prohlížeč nepovolil úložiště).
       </div>`;
     } else {
-      h +=
-        `<div class="small muted" style="margin-bottom:6px">
-        Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy. Chrání před
-        chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. Drží se posledních ` +
-        `${BK_MAX_POINTS}.${ps.n ? " Fotky u cviků v bodech obnovy nejsou (zabraly by moc místa)." : ""}
-      </div>`;
       const pts = S.bk.points || [];
       if (!pts.length) {
         h += '<div class="xs muted">Zatím žádný bod obnovy.</div>';
