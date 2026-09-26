@@ -35,6 +35,9 @@
   const TYPE_NAME = { n: "Pracovní", w: "Zahřívací", d: "Drop set", f: "Do selhání" };
   // procenta u tlačítka zahřívací série v krokovači (F1-08): výchozí, rozsah a krok posuvníku v Nastavení
   const WARM_PCT = { def: 60, min: 10, max: 90, step: 10 };
+  // upozornění na stagnaci (F4-06): po kolika trénincích bez zlepšení (volba v Nastavení), výchozí
+  const STAG_N = [3, 4, 5];
+  const STAG_DEF = 4;
   const MONTHS = ["led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"];
   const MONTHS_FULL = [
     "leden",
@@ -845,6 +848,8 @@
       recCelEx: true,
       recCelW: true,
       recSnd: "fanfara",
+      stagOn: true,
+      stagN: STAG_DEF,
       stepper: true,
       warmPct: WARM_PCT.def,
     },
@@ -1057,6 +1062,8 @@
         recCelEx: true,
         recCelW: true,
         recSnd: "fanfara",
+        stagOn: true,
+        stagN: STAG_DEF,
         stepper: true,
         warmPct: WARM_PCT.def,
       },
@@ -1064,6 +1071,7 @@
     );
     const pct = Math.round(+c.warmPct / WARM_PCT.step) * WARM_PCT.step;
     c.warmPct = pct >= WARM_PCT.min && pct <= WARM_PCT.max ? pct : WARM_PCT.def;
+    c.stagN = STAG_N.includes(+c.stagN) ? +c.stagN : STAG_DEF;
     c.gyms = (Array.isArray(c.gyms) ? c.gyms : [])
       .filter((g) => g && g.id)
       .map((g, i) =>
@@ -2265,6 +2273,110 @@
   }
   const plural = (n, a, b, c) => (n === 1 ? a : n >= 2 && n <= 4 ? b : c);
 
+  /* ---------- STAGNACE (F4-06) ----------
+     Cvik stagnuje, když posledních N uložených tréninků s cvikem (S.cfg.stagN) po sobě nepřekonalo trénink
+     těsně před nimi ani sebe navzájem v žádném ukazateli pracovních sérií. Ukazatele jsou stejné jako
+     u rekordů (exMetrics: max. zátěž, odh. 1RM, nejlepší série, objem, výdrž, čas, vzdálenost, tempo),
+     u cviku s vlastní vahou jen opakování (nejvíc v sérii a celkem), aby zlepšení nedělala tělesná hmotnost.
+     Nový ukazatel (např. první série se zátěží) se bere jako zlepšení. Porovnává se jen s tréninky těsně
+     před posledními N, ne s rekordem z celé historie (po pauze nebo zranění by hlásil stagnaci pořád).
+     Kontext jako u rekordů (recCtx): cvik vázaný na fitko zvlášť pro každé fitko. Nic se neukládá,
+     počítá se jednou po změně dat (stags). Vypínač S.cfg.stagOn (Nastavení → Rekordy a pokrok). */
+  const STAG_MAX = 30; // nejdelší řada tréninků bez zlepšení, kterou appka počítá
+  const STAG_RECENT = 30 * 86400000; // Statistiky → Cviky: jen cviky cvičené posledních 30 dní
+  // ukazatele jednoho tréninku pro porovnání (exMetrics, u vlastní váhy jen opakování)
+  function stagMetrics(exId, sets, t) {
+    const m = exMetrics(exId, sets, t);
+    if (!m || kindOf(exId) !== "bw") return m;
+    let tot = 0;
+    for (const s of sets) {
+      if (isWork(s.t)) {
+        tot += +s.reps || 0;
+      }
+    }
+    return m.reps ? { reps: m.reps, totReps: { v: tot } } : null;
+  }
+  // platí pro posledních k tréninků ss (od nejstaršího), že nepřekonaly trénink před nimi ani sebe navzájem?
+  function stagHolds(ss, k) {
+    const run = {};
+    const ref = ss[ss.length - k - 1].m;
+    for (const t in ref) {
+      run[t] = ref[t].v;
+    }
+    for (let i = ss.length - k; i < ss.length; i++) {
+      const m = ss[i].m;
+      for (const t in m) {
+        if (run[t] == null || m[t].v > run[t] + EPS) return false;
+      }
+    }
+    return true;
+  }
+  /* pro každý kontext (recCtx) tréninky s cvikem od nejstaršího (ss) a ok[k] = platí stagHolds(ss, k) */
+  function computeStag() {
+    const byCtx = {};
+    const list = derive().all.slice().reverse();
+    for (const w of list) {
+      // sloučit případné duplicitní cviky v tréninku (jako u rekordů)
+      const grouped = {};
+      for (const e of w.ex || []) {
+        (grouped[e.exId] = grouped[e.exId] || []).push(...e.sets);
+      }
+      for (const exId in grouped) {
+        const m = stagMetrics(exId, grouped[exId], w.start);
+        if (!m) continue;
+        const ctx = recCtx(exId, w.gymId);
+        const x = byCtx[ctx] || (byCtx[ctx] = { exId, ctx, ss: [] });
+        x.ss.push({ w, m });
+      }
+    }
+    for (const ctx in byCtx) {
+      const x = byCtx[ctx];
+      x.ok = [];
+      const kMax = Math.min(x.ss.length - 1, STAG_MAX);
+      for (let k = 1; k <= kMax; k++) {
+        x.ok[k] = stagHolds(x.ss, k);
+      }
+    }
+    return byCtx;
+  }
+  // stagnace (computeStag), spočítaná jednou po každé změně dat
+  function stags() {
+    const d = derive();
+    if (!d.stag) {
+      d.stag = computeStag();
+    }
+    return d.stag;
+  }
+  /* stagnace cviku v kontextu fitka gymId: null = nestagnuje (nebo vypnuto), jinak
+     {n: tréninků bez zlepšení, ref: trénink, od kterého se nezlepšil, last: poslední trénink, gymId} */
+  function stagOfCtx(x) {
+    const N = S.cfg.stagN;
+    if (!S.cfg.stagOn || !x || !x.ok[N]) return null;
+    let n = N;
+    while (x.ok[n + 1]) {
+      n++;
+    }
+    const ref = x.ss[x.ss.length - n - 1];
+    const last = x.ss[x.ss.length - 1];
+    return { exId: x.exId, n, ref, last, gymDep: !x.ctx.endsWith("|*"), gymId: last.w.gymId };
+  }
+  function stagInfo(exId, gymId) {
+    return stagOfCtx(stags()[recCtx(exId, gymId)]);
+  }
+  // nejlepší série tréninku, od kterého se cvik nezlepšil („80×8“, „1:30“…)
+  function stagBest(info) {
+    const m = info.ref.m;
+    const t = ["e1rm", "bestSet", "maxKg", "reps", "maxSec", "maxKm"].find((t) => m[t] && m[t].set);
+    return t ? setStr(kindOf(info.exId), m[t].set) : "";
+  }
+  // text „4 tréninky bez zlepšení“
+  const stagCount = (n) => n + " " + plural(n, "trénink", "tréninky", "tréninků") + " bez zlepšení";
+  // text „od 12. 8. (80×8)“ (cap = na začátku věty „Od“)
+  function stagSince(info, cap) {
+    const best = stagBest(info);
+    return (cap ? "Od " : "od ") + fmtDateS(info.ref.w.start) + (best ? " (" + best + ")" : "");
+  }
+
   /* ---------- OSLAVA REKORDU (F3-02) ----------
      Medaile přes celou obrazovku: v rozdělaném tréninku po dokončení cviku (odškrtnuté všechny pracovní
      série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Zlatá = aspoň jeden velký rekord
@@ -2613,7 +2725,7 @@
       x.play(audioCtx.currentTime + 0.05, gold);
     } catch (e) {}
   }
-  /* Nastavení → Rekordy */
+  /* Nastavení → Rekordy a pokrok: oslava rekordu */
   function recSettings() {
     const c = S.cfg;
     let h = '<section class="sec"><div class="sec-h"><h2>Oslava rekordu</h2></div><div class="card stack">';
@@ -2661,6 +2773,33 @@
         </div>
       </div>`;
       h += '<button class="btn block" data-act="recTry">Vyzkoušet</button>';
+    }
+    return `${h}</div></section>`;
+  }
+
+  /* Nastavení → Rekordy a pokrok: upozornění na stagnaci (F4-06) */
+  function stagSettings() {
+    const c = S.cfg;
+    let h = `<section class="sec">
+      <div class="sec-h"><h2>Upozornění na stagnaci</h2></div>
+      <div class="card stack">`;
+    h += `<label class="switch">
+      <input type="checkbox" data-act="stagOn" ${c.stagOn ? "checked" : ""}>
+      <span><b>Upozornit na cvik bez zlepšení</b><br><span class="xs muted">Když se cvik několik tréninků po
+          sobě nezlepší (váha, opakování, objem, čas ani vzdálenost), ukáže se to v kartě cviku při tréninku,
+          na stránce cviku a ve Statistikách → Cviky.</span></span>
+    </label>`;
+    if (c.stagOn) {
+      h += `<div class="stack" style="gap:6px">
+        <span>Po kolika trénincích bez zlepšení</span>
+        <div class="seg seg-wide">
+          ${STAG_N.map(
+            (n) =>
+              `<button data-act="stagN" data-v="${n}" aria-pressed="${c.stagN === n}">` +
+              `${n} ${plural(n, "trénink", "tréninky", "tréninků")}</button>`,
+          ).join("")}
+        </div>
+      </div>`;
     }
     return `${h}</div></section>`;
   }
@@ -3835,6 +3974,14 @@
               : "Zatím bez záznamu"
         }
       </div>`;
+    }
+    // stagnace (F4-06): jen v probíhajícím tréninku, klepnutí otevře Statistiky cviku
+    const stag = mode === "active" ? stagInfo(e.exId, d.gymId) : null;
+    if (stag) {
+      h += `<button class="exc-stag" data-act="openEx" data-v="${esc(e.exId)}" data-p="stats">
+        <span aria-hidden="true">📉</span>
+        <span>${esc(stagCount(stag.n))} ${esc(stagSince(stag))}</span>
+      </button>`;
     }
     if (e.note || e.showNote) {
       h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
@@ -6103,12 +6250,55 @@
     return h;
   }
   // Cviky: období, Nejčastější cviky, seznam cvičených cviků s hledáním a filtrem partie
+  /* Statistiky → Cviky: cviky bez zlepšení (F4-06), jen cvičené posledních 30 dní (ve vybraném fitku).
+     Nezávislé na volbě období, filtr fitka platí. */
+  function statsStag(g) {
+    if (!S.cfg.stagOn) return "";
+    const from = Date.now() - STAG_RECENT;
+    const rows = [];
+    for (const ctx in stags()) {
+      const x = stags()[ctx];
+      // kontext po změně „vázáno na fitko“ u cviku už neplatí
+      if (recCtx(x.exId, x.ss[x.ss.length - 1].w.gymId) !== ctx) continue;
+      if (!x.ss.some((q) => q.w.start >= from && (g === "all" || q.w.gymId === g))) continue;
+      const info = stagOfCtx(x);
+      if (info) {
+        rows.push(info);
+      }
+    }
+    if (!rows.length) return "";
+    rows.sort((a, b) => b.last.w.start - a.last.w.start);
+    return `<section class="sec">
+      <div class="sec-h"><h2>Bez zlepšení</h2><span class="xs muted">${rows.length}</span></div>
+      <div class="stack" style="gap:6px">
+        ${rows
+          .map((r) => {
+            const ex = exOf(r.exId);
+            return (
+              `<button class="exrow" data-act="openEx" data-v="${esc(r.exId)}" data-p="stats">
+              <div class="grow">
+                <div class="n">${esc(ex.name)}</div>
+                ${ex.cz ? `<div class="cz">${esc(ex.cz)}</div>` : ""}
+                <div class="m">
+                  ${esc(stagSince(r))} · naposledy ${esc(fmtDateS(r.last.w.start))}` +
+              `${r.gymDep && g === "all" ? " · " + esc(gymName(r.gymId)) : ""}
+                </div>
+              </div>
+              <div class="r">${r.n}<small>${plural(r.n, "trénink", "tréninky", "tréninků")}</small></div>
+            </button>`
+            );
+          })
+          .join("")}
+      </div>
+    </section>`;
+  }
   function statsEx({ g, range, since, s }) {
     let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
     h += `<section class="sec">
       <div class="sec-h"><h2>Nejčastější cviky</h2></div>
       <div class="card">${hbarList(topExRows(s, 8), true)}</div>
     </section>`;
+    h += statsStag(g);
     // seznam cviků
     const { byEx } = derive();
     let rows = [];
@@ -6520,6 +6710,39 @@
       }
     </div>
     </section>`;
+    // stagnace (F4-06): u vázaného cviku zvlášť pro každé fitko (podle filtru fitka)
+    const stagList = (ex.gymDep ? gymsWith.filter((g) => S.detailGym === "all" || S.detailGym === g) : [null])
+      .map((g) => stagInfo(id, g))
+      .filter(Boolean);
+    if (stagList.length) {
+      h += `<section class="sec">
+        <div class="sec-h"><h2>Bez zlepšení</h2></div>
+        <div class="card stack" style="gap:8px">
+          ${stagList
+            .map(
+              (x) =>
+                `<div class="row" style="gap:8px;align-items:flex-start">
+                  <span aria-hidden="true">📉</span>
+                  <div class="grow">
+                    <b>${esc(stagCount(x.n))}</b>
+                    ${
+                      x.gymDep
+                        ? `<span class="pill">
+                          <span class="sw" style="background:${gymColor(x.gymId)}"></span>
+                          ${esc(gymName(x.gymId))}
+                        </span>`
+                        : ""
+                    }
+                    <div class="xs muted">
+                      ${esc(stagSince(x, true))} nic lepšího · naposledy ${esc(fmtDateS(x.last.w.start))}
+                    </div>
+                  </div>
+                </div>`,
+            )
+            .join("")}
+        </div>
+      </section>`;
+    }
     // rekordy
     const R = recs();
     const ctxs = ex.gymDep
@@ -7671,10 +7894,15 @@
       icon: "train",
       body: () => stepperSettings() + restSettings() + bodyWeightSettings(),
     },
-    { id: "rec", name: "Rekordy", icon: "medal", body: () => recSettings() },
+    { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
     { id: "data", name: "Data a záloha", icon: "backup", body: () => backupSettings() },
-    { id: "about", name: "O aplikaci", icon: "info", body: () => versionSettings() + aboutSettings() },
+    {
+      id: "about",
+      name: "O aplikaci",
+      icon: "info",
+      body: () => versionSettings() + fakeSettings() + aboutSettings(),
+    },
   ];
   // otevře podstránku Nastavení ("" = rozcestník)
   function setPageOpen(id) {
@@ -11168,7 +11396,11 @@
         break;
       case "recCelEx":
       case "recCelW":
+      case "stagOn":
         put("config/main", Object.assign({}, S.cfg, { [act]: t.checked }));
+        break;
+      case "stagN":
+        put("config/main", Object.assign({}, S.cfg, { stagN: +v }));
         break;
       case "recSnd":
         put("config/main", Object.assign({}, S.cfg, { recSnd: v }));
@@ -11187,6 +11419,12 @@
         break;
       case "restLog":
         sheetRestLog();
+        break;
+      case "fakeAdd":
+        fakeAdd();
+        break;
+      case "fakeDel":
+        fakeRemove();
         break;
       case "restLogClear":
         if (window.caches) {
@@ -12269,6 +12507,177 @@
       h += '<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>';
     } // jen pro vývoj (F1-04)
     return `${h}</div></section>`;
+  }
+  /* ---------- ZKUŠEBNÍ DATA (jen vývoj) ----------
+     Jen v testovací verzi PR a lokálně (DEV), ve vydané verzi se karta neukáže. „Přidat“ založí fitko
+     „Zkušební fitko“ (FAKE_GYM) a FAKE_DAYS.length tréninků s id začínajícím FAKE_ID, data počítaná od dneška,
+     takže jsou pořád čerstvá. Cviky a série podle FAKE_PLAN (scénáře pro stagnaci F4-06, další úlohy můžou
+     přidat své). „Smazat“ odebere jen fitko FAKE_GYM a tréninky s FAKE_ID, nic jiného. Cviky, které nejsou
+     vázané na fitko (plank, shyby, bicepsový zdvih), se sčítají se skutečnými tréninky v testovací verzi. */
+  const FAKE_GYM = "fake-gym";
+  const FAKE_ID = "fake-";
+  const FAKE_DAYS = [36, 30, 24, 18, 12, 6]; // před kolika dny byl každý zkušební trénink (od nejstaršího)
+  // n pracovních sérií kg × opakování (warm = zahřívací série navíc)
+  function fakeSets(kg, reps, n, warm) {
+    const sets = warm ? [{ t: "w", kg: warm, reps: 10 }] : [];
+    for (let k = 0; k < n; k++) {
+      sets.push({ t: "n", kg, reps });
+    }
+    return sets;
+  }
+  /* série cviku v každém zkušebním tréninku (pořadí jako FAKE_DAYS), null = cvik v tréninku není;
+     note = co má appka ukázat (jen pro přehled v kódu) */
+  const FAKE_PLAN = [
+    {
+      exId: "bench-press-barbell",
+      note: "vázaný na fitko, 4 tréninky bez zlepšení",
+      sets: [
+        fakeSets(70, 8, 2, 40),
+        fakeSets(80, 8, 2, 40),
+        fakeSets(80, 8, 2, 40),
+        fakeSets(80, 7, 2, 40),
+        fakeSets(80, 8, 2, 40),
+        fakeSets(80, 8, 2, 40),
+      ],
+    },
+    {
+      exId: "leg-press-machine",
+      note: "vázaný na fitko, 3 tréninky bez zlepšení (ukáže se jen při volbě 3)",
+      sets: [
+        null,
+        fakeSets(100, 10, 3),
+        fakeSets(110, 10, 3),
+        fakeSets(110, 10, 3),
+        fakeSets(110, 9, 3),
+        fakeSets(110, 10, 3),
+      ],
+    },
+    {
+      exId: "plank",
+      note: "na čas, 5 tréninků bez zlepšení",
+      sets: FAKE_DAYS.map(() => [{ t: "n", kg: 0, reps: 0, sec: 60 }]),
+    },
+    {
+      exId: "pull-up",
+      note: "vlastní váha, pořád se zlepšuje (nic)",
+      sets: FAKE_DAYS.map((_, i) => fakeSets(0, 6 + i, 3)),
+    },
+    {
+      exId: "bicep-curl-dumbbell",
+      note: "stejná váha a opakování, v posledním tréninku série navíc = zlepšení (nic)",
+      sets: [
+        null,
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 3),
+        fakeSets(12, 10, 4),
+      ],
+    },
+  ];
+  // zkušební tréninky podle měsíců {"2026-09": {id: trénink}}
+  function fakeWorkouts() {
+    const byMonth = {};
+    const today = new Date();
+    today.setHours(17, 30, 0, 0);
+    FAKE_DAYS.forEach((daysAgo, i) => {
+      const start = today.getTime() - daysAgo * DAY;
+      const ex = FAKE_PLAN.filter((x) => x.sets[i] && S.exLib[x.exId]).map((x) => ({
+        exId: x.exId,
+        sets: x.sets[i],
+      }));
+      const w = { title: "Zkušební trénink " + (i + 1), start, end: start + 3600000, gymId: FAKE_GYM, ex };
+      const mk = monthKey(start);
+      (byMonth[mk] = byMonth[mk] || {})[FAKE_ID + (i + 1)] = w;
+    });
+    return byMonth;
+  }
+  // počet zkušebních tréninků v appce
+  function fakeCount() {
+    let n = 0;
+    for (const mk in S.months) {
+      n += Object.keys(S.months[mk]).filter((id) => id.startsWith(FAKE_ID)).length;
+    }
+    return n;
+  }
+  // přidá (nebo obnoví na dnešní data) zkušební fitko a tréninky
+  function fakeAdd() {
+    fakeRemoveWorkouts();
+    const cfg = JSON.parse(JSON.stringify(S.cfg));
+    if (!cfg.gyms.some((g) => g.id === FAKE_GYM)) {
+      cfg.gyms.push({ id: FAKE_GYM, name: "Zkušební fitko", col: freeGymCol(cfg.gyms) });
+    }
+    if (!cfg.defaultGymId) {
+      cfg.defaultGymId = FAKE_GYM;
+    }
+    put("config/main", cfg);
+    const byMonth = fakeWorkouts();
+    for (const mk in byMonth) {
+      put("workouts/" + mk, { items: Object.assign({}, S.months[mk] || {}, byMonth[mk]) });
+    }
+    S.selGym = FAKE_GYM;
+    toast("Zkušební data přidána, vybrané je Zkušební fitko.");
+  }
+  // odebere zkušební tréninky ze všech měsíců
+  function fakeRemoveWorkouts() {
+    for (const mk of Object.keys(S.months)) {
+      const ids = Object.keys(S.months[mk]);
+      if (!ids.some((id) => id.startsWith(FAKE_ID))) continue;
+      const items = {};
+      for (const id of ids) {
+        if (!id.startsWith(FAKE_ID)) {
+          items[id] = S.months[mk][id];
+        }
+      }
+      put("workouts/" + mk, Object.keys(items).length ? { items } : null);
+    }
+  }
+  // smaže zkušební tréninky i fitko (ne během rozdělaného tréninku ve zkušebním fitku)
+  function fakeRemove() {
+    if (S.active && S.active.gymId === FAKE_GYM) {
+      toast("Nejdřív dokonči nebo zahoď rozdělaný trénink ve Zkušebním fitku.");
+      return;
+    }
+    fakeRemoveWorkouts();
+    const cfg = JSON.parse(JSON.stringify(S.cfg));
+    cfg.gyms = cfg.gyms.filter((g) => g.id !== FAKE_GYM);
+    if (cfg.defaultGymId === FAKE_GYM) {
+      cfg.defaultGymId = cfg.gyms[0] ? cfg.gyms[0].id : null;
+    }
+    put("config/main", cfg);
+    if (S.selGym === FAKE_GYM) {
+      S.selGym = null;
+    }
+    toast("Zkušební data smazána.");
+  }
+  // Nastavení → O aplikaci: karta Zkušební data (jen DEV)
+  function fakeSettings() {
+    if (!DEV) return "";
+    const n = fakeCount();
+    const has = n || S.cfg.gyms.some((g) => g.id === FAKE_GYM);
+    return `<section class="sec">
+      <div class="sec-h"><h2>Zkušební data</h2></div>
+      <div class="card stack">
+        <div class="small muted">
+          Jen v testovací verzi. Přidá fitko „Zkušební fitko“ a ${FAKE_DAYS.length} tréninků za posledních
+          ${FAKE_DAYS[0]} dní (bench press, leg press, plank, shyby, bicepsový zdvih) pro vyzkoušení
+          upozornění na stagnaci. Smazat odebere jen tato zkušební data.
+        </div>
+        ${
+          has
+            ? `<div class="small">
+              V appce: ${n} ${plural(n, "zkušební trénink", "zkušební tréninky", "zkušebních tréninků")}
+            </div>`
+            : ""
+        }
+        <div class="row">
+          <button class="btn grow" data-act="fakeAdd">
+            ${has ? "Obnovit data" : "Přidat zkušební data"}
+          </button>
+          ${has ? '<button class="btn danger grow" data-act="fakeDel">Smazat</button>' : ""}
+        </div>
+      </div>
+    </section>`;
   }
   async function checkUpdate() {
     if (!window.PWA) {
