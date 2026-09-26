@@ -4743,7 +4743,8 @@
       "",
       `<button class="iconbtn" data-act="wBack" aria-label="Zpět">${IC.back}</button>`,
     );
-    h += wSummary(w, o.saved);
+    // obal s mezerami mezi rámečky (dřív je dělal panel .sheet-b)
+    h += `<div class="stack wsum">${wSummary(w, o.saved)}</div>`;
     // Sdílet vlevo od hlavního tlačítka (F4-08)
     h += `<div class="stack" style="margin-top:12px">
       <div class="row" style="align-items:stretch">
