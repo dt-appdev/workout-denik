@@ -286,7 +286,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   s tréninky těsně před nimi, ne s rekordem z celé historie. Kontext `recCtx` (vázaný cvik zvlášť pro fitko). Výpočet
   `computeStag` jednou po změně dat (`stags()`: `ok[k]` = `stagHolds`), dotaz `stagInfo(exId, gymId)` / `stagOfCtx`
   (`n` = tréninků bez zlepšení, `ref` = trénink, od kterého nic lepšího), texty `stagCount`, `stagSince`. Ukazuje se jen
-  v rozdělaném tréninku (`.exc-stag` pod „Minule“, ikona `IC.stag` = vodorovná šipka, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce
+  v rozdělaném tréninku (`.exc-stag` pod „Minule“, ikona `IC.stag` = vodorovná čára s tečkami, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce
   Bez zlepšení) a ve Statistikách → Cviky (`statsStag`, jen cviky cvičené posledních 30 dní, `STAG_RECENT`). Vypínač
   `S.cfg.stagOn` a počet `stagN` v `config/main`, Nastavení → Rekordy a pokrok (`stagSettings`). Nic dalšího se neukládá.
 - Zkušební data (sekce „ZKUŠEBNÍ DATA“, jen `DEV` = testovací verze a lokálně): Nastavení → O aplikaci, karta
