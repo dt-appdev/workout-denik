@@ -978,6 +978,16 @@ select.inp {
   width: 3.6em;
   text-align: center;
 }
+/* stagnace (F4-06): řádek pod „Minule“ */
+.exc-stag {
+  all: unset;
+  display: flex;
+  gap: 6px;
+  margin: -4px 14px 8px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
 .exc-note {
   margin: 0 14px 8px;
   width: calc(100% - 28px);
@@ -1141,6 +1151,19 @@ tr.done .cell {
 }
 .fmsg:empty {
   display: none;
+}
+/* F3-17: upozornění (stejný český název), uložit jde; odkaz na cvik se stejným názvem */
+.fmsg.warn {
+  color: var(--warm);
+}
+.fmsg .link {
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 .okb {
   width: 44px;
@@ -1721,6 +1744,76 @@ tr.done .okb {
 }
 .sheet-f > .full {
   flex: 1 0 100%;
+}
+
+/* sdílení souhrnu jako obrázek (F4-08): panel má pevnou výšku, ovládání dole je vždy vidět a náhled
+   (canvas v plném rozlišení zmenšený na obrazovku) vyplní zbylé místo nad ním */
+.scrim.shr .sheet {
+  height: 92%;
+}
+.scrim.shr .sheet-b {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.shr-prev {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shr-cv {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+/* s fotkou se tahem v náhledu posouvá výřez, ne panel */
+.shr-cv.drag {
+  touch-action: none;
+  cursor: grab;
+}
+.sheet-b > .seg,
+.shr-row {
+  flex: none;
+}
+/* dva přepínače nebo tlačítka vedle sebe (Tmavý | Světlý a CZ | EN; fotka a Postava) */
+.shr-row {
+  display: flex;
+  gap: 8px;
+}
+.shr-row > * {
+  flex: 1;
+  min-width: 0;
+}
+/* Postava: zapnutá jako vybraná volba v přepínači */
+.shr-tog[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+/* celý obrázek přes obrazovku (klepnutí na náhled) */
+.shr-full-b {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+}
+.shr-full-b img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.shr-full .pv-f {
+  flex-direction: row;
+  gap: 8px;
 }
 .pick {
   display: flex;
@@ -2429,6 +2522,10 @@ tr.done .okb {
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--warm);
+}
+/* formulář Nový / Upravit cvik na stránce (F3-14): stejné mezery jako dřív v panelu */
+.ex-form {
+  gap: 12px;
 }
 .mpick {
   display: flex;
