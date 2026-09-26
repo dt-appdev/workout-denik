@@ -2610,6 +2610,10 @@ textarea.inp {
 .kpi .dl.loss {
   color: var(--fail);
 }
+/* stránka tréninku (F3-19): mezery mezi rámečky souhrnu jako dřív v panelu */
+.wsum {
+  gap: 12px;
+}
 .cmp {
   all: unset;
   box-sizing: border-box;
