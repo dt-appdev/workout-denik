@@ -6740,10 +6740,6 @@
                 </div>`,
             )
             .join("")}
-          <div class="xs muted">
-            Upozornění se ukáže po ${S.cfg.stagN} trénincích po sobě, které nepřekonaly trénink před sebou
-            (váha, opakování, objem, čas…). Změníš v Nastavení → Rekordy a pokrok.
-          </div>
         </div>
       </section>`;
     }
