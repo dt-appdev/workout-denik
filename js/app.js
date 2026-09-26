@@ -1541,10 +1541,10 @@
       return { p, h: p || s.ph || null };
     });
   }
-  // exHints pro cvik e rozdělaného tréninku d, u pracovních sérií s návrhem progrese (F4-01)
+  // exHints pro cvik e rozdělaného tréninku d, u pracovních sérií s použitým návrhem progrese (F4-01)
   function draftHints(d, e) {
     const hints = exHints(e, draftLast(d, e.exId));
-    const prog = progInfo(d, e);
+    const prog = e.progUse ? progInfo(d, e) : null;
     if (!prog) return hints;
     let work = -1; // pořadí pracovní série (jako číslo série v kartě, od 0)
     return hints.map((x, j) => {
@@ -1560,9 +1560,12 @@
      měly všechny pracovní série (typ „n“, bez zahřívacích, drop setů a do selhání) aspoň horní hranici,
      navrhne rozdělaný trénink přidat váhu o krok krokovače cviku (kkStep, výchozí 2,5 kg) k nejtěžší sérii
      a opakování od dolní hranice. U cviku s dopomocí naopak ubrat dopomoc (od nejmenší dopomoci).
-     Návrh se projeví v šedém předvyplnění pracovních sérií (draftHints: ✓ i krokovač ho převezmou)
-     a řádkem pod „Minule“; klepnutí na řádek ho pro tento trénink skryje (e.progNo, jen v rozdělaném
-     tréninku, draftToWorkout ho neukládá). Sloupec Minule a kontrola velkého skoku zůstávají podle minula.
+     Návrh je zelený řádek pod „Minule“ (progLine), dokud jsou pracovní série nedotčené (progTouched).
+     Klepnutí na řádek návrh použije (e.progUse): šedé předvyplnění pracovních sérií = návrh (draftHints,
+     ✓ i krokovač ho převezmou) a řádek zmizí. Změna pracovních sérií (hodnota, ✓, + Série, smazání,
+     změna druhu série; progTouch → e.progNo) řádek schová bez použití, zahřívací série návrh nechají.
+     e.progUse a e.progNo jsou jen v rozdělaném tréninku (draftToWorkout je neukládá). Sloupec Minule
+     a kontrola velkého skoku zůstávají podle minula.
      Rozsah: u cviku pole prog ([min, max] = zapnuto, "off" = vypnuto, bez pole = podle nastavení), jinak
      S.cfg.progAll (výchozí vypnuto) s rozsahem S.cfg.progMin–progMax. Jen typy PROG_KINDS.
      F5-01 (kolik chybí na rekord) má nápovědu přidat do stejného řádku (progLine). */
@@ -1585,7 +1588,7 @@
   const progStr = (range) => range[0] + (range[1] > range[0] ? "–" + range[1] : "") + " opak.";
   // návrh pro cvik e rozdělaného tréninku d: {kg, reps, range, from, kind}, nebo null
   function progInfo(d, e) {
-    if (d.mode !== "active" || e.progNo) return null;
+    if (d.mode !== "active") return null;
     const range = progRange(e.exId);
     if (!range) return null;
     const last = draftLast(d, e.exId);
@@ -1614,8 +1617,21 @@
     const kg = assist ? Math.max(best, kgs[k] - step) : Math.min(best, kgs[k] + step);
     return { kg: round(kg), reps: range[0], range, kind, set: k };
   }
-  // řádek s návrhem pod „Minule“ v kartě cviku (klepnutí ho skryje)
+  // pracovní série cviku už upravené (hodnota, ✓, přidání, smazání, změna druhu): návrh se nenabízí
+  function progTouched(e) {
+    if (e.progNo) return true;
+    return e.sets.some((s) => s.t !== "w" && (s.done || s.kg !== "" || s.reps !== ""));
+  }
+  // změna pracovních sérií v rozdělaném tréninku: návrh zmizí (i po smazání hodnot)
+  function progTouch(d, e) {
+    if (d.mode === "active" && e) {
+      e.progNo = true;
+    }
+  }
+  // řádek s návrhem pod „Minule“ v kartě cviku: jen dokud není použitý a série jsou nedotčené,
+  // klepnutí ho použije (progUse)
   function progLine(d, e, i) {
+    if (e.progUse || progTouched(e)) return "";
     const prog = progInfo(d, e);
     if (!prog) return "";
     const kg = esc(numStr(prog.kg)) + " kg";
@@ -1626,8 +1642,8 @@
           ? `přidej zátěž <b>+${kg} × ${prog.reps}</b>`
           : `přidej váhu <b>${kg} × ${prog.reps}</b>`;
     const which = prog.set >= 0 ? ` (${prog.set + 1}. série)` : "";
-    return `<button class="exc-prog" data-act="progNo" data-i="${i}"
-        title="Klepnutím návrh skryješ">
+    return `<button class="exc-prog" data-act="progUse" data-i="${i}"
+        title="Klepnutím návrh použiješ">
       ${IC.prog}
       <span>Návrh: ${what}${which}</span>
     </button>`;
@@ -2135,9 +2151,11 @@
         <div class="xs muted">
           Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne
           trénink přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice.
-          U cviku s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule a v šedém
-          předvyplnění, ✓ ho převezme. Klepnutí na zelený řádek návrh v tomto tréninku skryje.
-          V Upravit cvik jde u cviku nastavit vlastní rozsah nebo návrh vypnout.
+          U cviku s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule, klepnutím
+          ho použiješ: navržené hodnoty se objeví v šedém předvyplnění sérií a ✓ je převezme. Když
+          místo toho začneš pracovní série upravovat (hodnoty, ✓, přidání, smazání, změna druhu
+          série), návrh zmizí. Zahřívací série na návrh nemají vliv. V Upravit cvik jde u cviku
+          nastavit vlastní rozsah nebo návrh vypnout.
         </div>
         <label class="switch">
           <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
@@ -10376,6 +10394,7 @@
       case "cycType": {
         const s = d.ex[i].sets[j];
         s.t = TYPES[(TYPES.indexOf(s.t) + 1) % TYPES.length];
+        progTouch(d, d.ex[i]); // změna druhu série mění pracovní série (F4-01)
         touchDraft();
         scheduleRender();
         break;
@@ -10429,23 +10448,20 @@
         break;
       case "delSet":
         swOpen = null;
+        if (d.ex[i].sets[j].t !== "w") {
+          progTouch(d, d.ex[i]); // smazaná pracovní série (F4-01), zahřívací návrh nechá
+        }
         d.ex[i].sets.splice(j, 1);
         touchDraft();
         scheduleRender();
         break;
-      case "progNo": {
-        // návrh progrese (F4-01) pro tento trénink skrýt, předvyplnění se vrátí na hodnoty z minula
+      case "progUse": {
+        // návrh progrese (F4-01) použít: šedé předvyplnění pracovních sérií = návrh, řádek zmizí
         const e = d && d.ex[i];
         if (!e) break;
-        e.progNo = true;
+        e.progUse = true;
         touchDraft();
         scheduleRender();
-        toast("Návrh progrese skrytý", "", () => {
-          if (curDraft() !== d || !d.ex.includes(e)) return;
-          delete e.progNo;
-          touchDraft();
-          scheduleRender();
-        });
         break;
       }
       case "undo": {
@@ -10466,6 +10482,7 @@
             ? newSetFrom({ t: l.t, kg: num(l.kg), reps: num(l.reps) })
             : newSetFrom(l ? { t: l.t } : null);
         ss.push(n);
+        progTouch(d, d.ex[i]); // přidaná pracovní série (F4-01)
         touchDraft();
         scheduleRender();
         break;

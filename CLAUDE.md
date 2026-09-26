@@ -324,8 +324,11 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   hranice; `set` = pořadí pracovní série, které návrh platí (−1 = všem). `S.cfg.progSets` (`all` výchozí / `first`):
   `first` = přidat jen 1. sérii, jinak dorovnat první lehčí sérii s horní hranicí o krok k nejtěžší. Předvyplnění
   v rozdělaném tréninku vždy přes `draftHints(d, e)` (✓, krokovač, karta), ne rovnou `exHints` (sloupec Minule
-  a `setJump` dál z `exHints(...).p`). Řádek `progLine` (ikona `IC.prog`, krátký text „Návrh: …“, akce `progNo`,
-  `e.progNo` se neukládá), štítek s rozsahem v kartě. Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
+  a `setJump` dál z `exHints(...).p`); návrh se do něj dostane až po klepnutí na řádek `progLine` (ikona `IC.prog`,
+  krátký text „Návrh: …“, akce `progUse` → `e.progUse`, řádek zmizí). Řádek se ukazuje, jen dokud jsou pracovní
+  série nedotčené (`progTouched`: hodnota nebo ✓ v nezahřívací sérii, nebo `e.progNo`); akce, které mění pracovní
+  série bez hodnot (+ Série, smazání nezahřívací série, změna druhu), volají `progTouch`. Zahřívací série návrh
+  nechají. `e.progUse` / `e.progNo` se neukládají. Štítek s rozsahem v kartě. Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
   F5-01 má nápovědu k rekordu přidat do stejného řádku.
 - Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
   Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
