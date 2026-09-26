@@ -952,8 +952,8 @@ select.inp {
 /* návrh progrese pod řádkem Minule (F4-01), klepnutím se skryje */
 .exc-prog {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
   margin: 0 14px 8px;
   width: calc(100% - 28px);
   padding: 6px 10px;
@@ -965,8 +965,15 @@ select.inp {
   font-size: var(--fs-sm);
   text-align: left;
 }
-.exc-prog .xs {
-  color: var(--ink-2);
+.exc-prog svg {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 /* rozsah opakování od – do (Nastavení → Trénink, Upravit cvik) */
 .prog-rng {

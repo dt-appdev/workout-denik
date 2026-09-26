@@ -116,6 +116,8 @@
       <path class="fill" d="M12 4a8 8 0 010 16z"/>
     </svg>`,
     backup: '<svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5M4 17v3h16v-3"/></svg>',
+    // návrh progrese (F4-01): šipka stoupající nahoru
+    prog: '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
     info: `<svg viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 11v6M12 7.5v.5"/>
@@ -1071,6 +1073,7 @@
         progAll: false,
         progMin: PROG_REPS.defMin,
         progMax: PROG_REPS.defMax,
+        progSets: "all",
       },
       c && typeof c === "object" ? c : {},
     );
@@ -1536,9 +1539,13 @@
     const hints = exHints(e, draftLast(d, e.exId));
     const prog = progInfo(d, e);
     if (!prog) return hints;
-    return hints.map((x, j) =>
-      e.sets[j].t === "n" ? { p: x.p, h: Object.assign({}, x.h, { kg: prog.kg, reps: prog.reps }) } : x,
-    );
+    let work = -1; // pořadí pracovní série (jako číslo série v kartě, od 0)
+    return hints.map((x, j) => {
+      if (e.sets[j].t !== "n") return x;
+      work++;
+      if (prog.set >= 0 && work !== prog.set) return x;
+      return { p: x.p, h: Object.assign({}, x.h, { kg: prog.kg, reps: prog.reps }) };
+    });
   }
 
   /* ---------- NÁVRH PROGRESE (F4-01) ----------
@@ -1577,23 +1584,28 @@
     const last = draftLast(d, e.exId);
     if (!last) return null;
     const work = last.e.sets.filter((s) => s.t === "n");
-    if (!work.length || work.some((s) => !(+s.reps >= range[1]))) return null;
+    if (!work.length) return null;
     const kind = kindOf(e.exId);
+    const assist = kind === "assist"; // s dopomocí: méně dopomoci = těžší
     const step = kkStep(d, e, "kg");
     const kgs = work.map((s) => +s.kg || 0);
-    let from;
-    let kg;
-    if (kind === "assist") {
-      // s dopomocí: méně dopomoci = těžší; bez dopomoci už není co ubrat
-      from = Math.min(...kgs);
-      if (!(from > 0)) return null;
-      kg = Math.max(0, from - step);
-    } else {
-      from = Math.max(...kgs);
-      if (kind === "wr" && !(from > 0)) return null;
-      kg = from + step;
+    const best = assist ? Math.min(...kgs) : Math.max(...kgs); // nejtěžší série z minula
+    const atTop = (s) => +s.reps >= range[1];
+    const round = (kg) => Math.round(kg * 100) / 100;
+    const first = S.cfg.progSets === "first";
+    if (work.every(atTop)) {
+      // všechny série na horní hranici: přidat (všem, nebo jen 1. sérii)
+      if (assist && !(best > 0)) return null; // bez dopomoci už není co ubrat
+      if (kind === "wr" && !(best > 0)) return null;
+      const kg = assist ? Math.max(0, best - step) : best + step;
+      return { kg: round(kg), reps: range[0], range, kind, set: first ? 0 : -1 };
     }
-    return { kg: Math.round(kg * 100) / 100, reps: range[0], range, from, kind };
+    if (!first) return null;
+    // postupně: první lehčí série s horní hranicí se přiblíží nejtěžší (o krok, nejvýš na její váhu)
+    const k = work.findIndex((s, n) => kgs[n] !== best && atTop(s));
+    if (k < 0) return null;
+    const kg = assist ? Math.max(best, kgs[k] - step) : Math.min(best, kgs[k] + step);
+    return { kg: round(kg), reps: range[0], range, kind, set: k };
   }
   // řádek s návrhem pod „Minule“ v kartě cviku (klepnutí ho skryje)
   function progLine(d, e, i) {
@@ -1602,17 +1614,15 @@
     const kg = esc(numStr(prog.kg)) + " kg";
     const what =
       prog.kind === "assist"
-        ? `Uber dopomoc: <b>−${kg}</b>`
+        ? `uber dopomoc <b>−${kg} × ${prog.reps}</b>`
         : prog.kind === "bwplus"
-          ? `Přidej zátěž: <b>+${kg}</b>`
-          : `Přidej váhu: <b>${kg}</b>`;
+          ? `přidej zátěž <b>+${kg} × ${prog.reps}</b>`
+          : `přidej váhu <b>${kg} × ${prog.reps}</b>`;
+    const which = prog.set >= 0 ? ` (${prog.set + 1}. série)` : "";
     return `<button class="exc-prog" data-act="progNo" data-i="${i}"
-        aria-label="Návrh progrese, klepnutím skryješ">
-      <span>📈 ${what} × ${prog.reps}</span>
-      <span class="xs">
-        Minule všechny pracovní série aspoň ${prog.range[1]} opak. (rozsah ${prog.range[0]}–${prog.range[1]}).
-        Klepnutím skryješ.
-      </span>
+        title="Klepnutím návrh skryješ">
+      ${IC.prog}
+      <span>Návrh: ${what}${which}</span>
     </button>`;
   }
   // rozsah u cviků ze zálohy: neplatný se zahodí (platí nastavení)
@@ -2118,19 +2128,45 @@
         <div class="xs muted">
           Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne
           trénink přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice.
-          Návrh se ukáže pod řádkem Minule a v šedém předvyplnění, ✓ ho převezme.
+          U cviku s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule a v šedém
+          předvyplnění, ✓ ho převezme. Klepnutí na zelený řádek návrh v tomto tréninku skryje.
+          V Upravit cvik jde u cviku nastavit vlastní rozsah nebo návrh vypnout.
         </div>
         <label class="switch">
           <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
           <span><b>U všech cviků</b><br><span class="xs muted">Zapnuto = u cviků s váhou (i vlastní
               váha se zátěží a s dopomocí) s rozsahem níže. Vypnuto = jen u cviků, kde návrh zapneš
-              v Upravit cvik (tam jde nastavit i vlastní rozsah nebo návrh u cviku vypnout).</span></span>
+              v Upravit cvik.</span></span>
         </label>
         <div class="row">
           <b class="grow">Výchozí rozsah opakování</b>
           ${progRangeInputs("progMin", "progMax", [S.cfg.progMin, S.cfg.progMax], "prog")}
         </div>
         <span class="fmsg" id="prog-msg"></span>
+        <div class="stack" style="gap:6px">
+          <b>Přidat váhu</b>
+          <div class="seg seg-wide">
+            ${[
+              ["all", "Všem sériím"],
+              ["first", "Postupně od 1. série"],
+            ]
+              .map(
+                ([k, l]) =>
+                  `<button data-act="progSets" data-v="${k}" aria-pressed="${S.cfg.progSets === k}">${l}` +
+                  `</button>`,
+              )
+              .join("")}
+          </div>
+          <div class="xs muted">
+            ${
+              S.cfg.progSets === "first"
+                ? "Váha se přidá jen v 1. sérii. V dalších trénincích se k ní postupně přidávají další " +
+                  "série, jakmile dají horní hranici (vždy jedna série o krok, nejvýš na váhu nejtěžší " +
+                  "série). Až mají všechny série horní hranici, přidá se znovu v 1. sérii."
+                : "Váha se přidá ve všech pracovních sériích najednou."
+            }
+          </div>
+        </div>
       </div>
     </section>`;
   }
@@ -8618,10 +8654,6 @@
             <span class="fmsg" id="x-prog-msg"></span>`
           : ""
       }
-      <span class="xs muted">
-        Když minule všechny pracovní série dosáhly horní hranice, trénink navrhne přidat váhu o krok
-        z tlačítek +/− a opakování od dolní hranice.
-      </span>
     </div>`
     );
   }
@@ -11613,6 +11645,9 @@
         break;
       case "progAll":
         put("config/main", Object.assign({}, S.cfg, { progAll: t.checked }));
+        break;
+      case "progSets":
+        put("config/main", Object.assign({}, S.cfg, { progSets: v === "first" ? "first" : "all" }));
         break;
       case "screenOn":
       case "screenDim":

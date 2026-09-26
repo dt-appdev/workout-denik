@@ -321,9 +321,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   = zapnuto, `"off"` = vypnuto, bez pole = `S.cfg.progAll` s `progMin`–`progMax`, výchozí vypnuto, 8–12), jen typy
   `PROG_KINDS` (wr, bwplus, assist). `progInfo(d, e)`: jen rozdělaný trénink, všechny pracovní série (`t === "n"`) z minula
   (`draftLast`) ≥ horní hranice → nejtěžší série + `kkStep` (u dopomoci nejmenší dopomoc − krok), opakování = dolní
-  hranice. Předvyplnění v rozdělaném tréninku vždy přes `draftHints(d, e)` (✓, krokovač, karta), ne rovnou `exHints`
-  (sloupec Minule a `setJump` dál z `exHints(...).p`). Řádek `progLine` (akce `progNo`, `e.progNo` se neukládá),
-  štítek s rozsahem v kartě. F5-01 má nápovědu k rekordu přidat do stejného řádku.
+  hranice; `set` = pořadí pracovní série, které návrh platí (−1 = všem). `S.cfg.progSets` (`all` výchozí / `first`):
+  `first` = přidat jen 1. sérii, jinak dorovnat první lehčí sérii s horní hranicí o krok k nejtěžší. Předvyplnění
+  v rozdělaném tréninku vždy přes `draftHints(d, e)` (✓, krokovač, karta), ne rovnou `exHints` (sloupec Minule
+  a `setJump` dál z `exHints(...).p`). Řádek `progLine` (ikona `IC.prog`, krátký text „Návrh: …“, akce `progNo`,
+  `e.progNo` se neukládá), štítek s rozsahem v kartě. Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
+  F5-01 má nápovědu k rekordu přidat do stejného řádku.
 - Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
   Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
   uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona
