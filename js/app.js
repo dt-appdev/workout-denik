@@ -56,25 +56,47 @@
     "prosinec",
   ];
   const DAY = 86400000;
+  /* ---------- ikony (F3-20) ----------
+     Jen vlastní SVG, nikdy emoji ani znaky písma jako ikona. Styl: viewBox 24 × 24, obrys bez výplně
+     v barvě textu, zaoblené konce. Kresby, které se používají na víc místech (i na obrázku ke sdílení),
+     jsou tu jen jednou. */
+  const DUMBBELL = "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"; // činka = logo appky
+  const BOOK =
+    "M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5zM12 6.5v13";
+  // stuha medaile do V, kotouč = kruh 12,15 r6
+  const MEDAL_RIB = "M8.8 10 5.5 3h4l2.5 5M15.2 10l3.3-7h-4l-1.4 3";
+  // ozubené kolo: 8 zubů spočítaných pravidelně
+  const GEAR = (() => {
+    const pt = (r, deg) => {
+      const a = ((deg - 90) * Math.PI) / 180;
+      return (12 + r * Math.cos(a)).toFixed(2) + " " + (12 + r * Math.sin(a)).toFixed(2);
+    };
+    let d = "";
+    for (let i = 0; i < 8; i++) {
+      const a = i * 45;
+      d +=
+        (i ? "L" : "M") + pt(7, a - 15) + "L" + pt(9.6, a - 9) + "L" + pt(9.6, a + 9) + "L" + pt(7, a + 15);
+    }
+    return d + "Z";
+  })();
   const IC = {
-    train: `<svg viewBox="0 0 24 24">
-      <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>
+    train: `<svg viewBox="0 0 24 24"><path d="${DUMBBELL}"/></svg>`,
+    // Historie: kalendář (Historie se otevírá kalendářem; tři čáry by vypadaly jako nabídka)
+    hist: `<svg viewBox="0 0 24 24">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/>
+      <path d="M3.5 10h17M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/>
     </svg>`,
-    hist: '<svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
-    ex: `<svg viewBox="0 0 24 24">
-      <path
-          d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5zM12 6.5v13"/>
-    </svg>`,
-    stats: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    ex: `<svg viewBox="0 0 24 24"><path d="${BOOK}"/></svg>`,
+    stats: '<svg viewBox="0 0 24 24"><path d="M6 20v-8M12 20V5M18 20v-5M3 20h18"/></svg>',
+    // Tělo: postava obrysem s rukama dolů (rozpažený panáček = symbol přístupnosti)
     body: `<svg viewBox="0 0 24 24">
-      <circle cx="12" cy="5" r="2.2"/>
-      <path d="M5 9h14M12 9v6M12 15l-3.5 6M12 15l3.5 6"/>
-    </svg>`,
-    set: `<svg viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="3"/>
+      <circle cx="12" cy="4.4" r="2.3"/>
       <path
-          d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>
+          d="M12 8H15c1 0 1.5.3 1.8 1l2.5 4.4a1.2 1.2 0 01-2.1 1.1l-1.6-2.9v8.6a1 1 0 01-1 1h-.7
+            a.8.8 0 01-.8-.8v-4a1.1 1.1 0 00-2.2 0v4a.8.8 0 01-.8.8h-.7a1 1 0 01-1-1v-8.6l-1.6 2.9
+            a1.2 1.2 0 01-2.1-1.1L7.2 9c.3-.7.8-1 1.8-1z"/>
     </svg>`,
+    set: `<svg viewBox="0 0 24 24"><path d="${GEAR}"/><circle cx="12" cy="12" r="3"/></svg>`,
     check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     more: `<svg viewBox="0 0 24 24">
       <circle cx="5" cy="12" r="1.2"/>
@@ -107,10 +129,8 @@
       <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/>
       <circle cx="12" cy="10" r="2.3"/>
     </svg>`,
-    medal: `<svg viewBox="0 0 24 24">
-      <circle cx="12" cy="15" r="5"/>
-      <path d="M8.5 3l2.2 7.3M15.5 3l-2.2 7.3"/>
-    </svg>`,
+    // obrys medaile (Nastavení); barevná medaile rekordu přes medal()
+    medal: `<svg viewBox="0 0 24 24"><path d="${MEDAL_RIB}"/><circle cx="12" cy="15" r="6"/></svg>`,
     theme: `<svg viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="8"/>
       <path class="fill" d="M12 4a8 8 0 010 16z"/>
@@ -129,7 +149,44 @@
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 11v6M12 7.5v.5"/>
     </svg>`,
+    // týdny v řadě (kalendář)
+    flame: `<svg viewBox="0 0 24 24">
+      <path
+          d="M12 21.2c-3.7 0-6.4-2.6-6.4-6.3 0-3.3 2.2-5.3 3.8-7.5.5 1.9 1.5 3 2.7 3.5.2-3.1 1.3-5.6 3.6-7.6
+            .4 3.1 3.1 5.6 3.1 10 0 4.9-2.8 7.9-6.8 7.9z"/>
+      <path
+          d="M12 21.2c-1.6 0-2.8-1.2-2.8-2.9 0-1.8 1.4-2.8 2.8-4.6 1.4 1.8 2.8 2.8 2.8 4.6
+            0 1.7-1.2 2.9-2.8 2.9z"
+          fill="currentColor" stroke="none" opacity=".35"/>
+    </svg>`,
+    // Napsat (krokovač)
+    kbd: `<svg viewBox="0 0 24 24">
+      <rect x="2.8" y="6.2" width="18.4" height="11.6" rx="2"/>
+      <path d="M6.8 10.2h.01M10.3 10.2h.01M13.7 10.2h.01M17.2 10.2h.01M8 14h8"/>
+    </svg>`,
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>',
+    // ručně upravená hodnota
+    edit: `<svg viewBox="0 0 24 24">
+      <path d="M4.5 19.5l1-4L15.8 5.2a2 2 0 012.9 0l.1.1a2 2 0 010 2.9L8.5 18.5zM13.8 7.2l3 3"/>
+    </svg>`,
+    // zpět na aktuální měsíc (kalendář)
+    today: '<svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9"/></svg>',
+    // fotka nastavená jako první
+    star: `<svg viewBox="0 0 24 24">
+      <path d="M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z" fill="currentColor"/>
+    </svg>`,
+    // rozbalit / posunout dolů (nahoru = třída .up)
+    down: '<svg viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></svg>',
+    // odkaz mimo appku
+    ext: `<svg viewBox="0 0 24 24">
+      <path
+          d="M13.5 4.5h6v6M19.5 4.5L11 13M17.5 14v4.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V8
+            A1.5 1.5 0 016 6.5h4.5"/>
+    </svg>`,
   };
+  // ikona s třídou .ic: v textu a tlačítkách, velikost podle písma (F3-20)
+  const icon = (name, cls) =>
+    IC[name].replace("<svg", `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"`);
 
   /* ---------- svalová mapa ----------
      Anatomické SVG: Ryan Graves, CC BY 4.0 (balíček flutter-body-atlas).
@@ -368,14 +425,14 @@
   const exLink = (e) =>
     urlSafe(e.url) ||
     "https://www.youtube.com/results?search_query=" + encodeURIComponent(e.name + " exercise form");
-  // popisek odkazu u cviku podle toho, kam vede
+  // popisek odkazu u cviku podle toho, kam vede (ikona odkazu ven se přidá u odkazu, IC.ext)
   function exLinkLabel(e) {
     const url = urlSafe(e.url);
-    if (!url) return "Hledat video ↗";
+    if (!url) return "Hledat video";
     const host = new URL(url).hostname.replace(/^www\./, "");
-    if (/(^|\.)hevyapp\.com$/.test(host)) return "Otevřít na Hevy ↗";
-    if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return "Video na YouTube ↗";
-    return "Otevřít odkaz ↗";
+    if (/(^|\.)hevyapp\.com$/.test(host)) return "Otevřít na Hevy";
+    if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return "Video na YouTube";
+    return "Otevřít odkaz";
   }
   // hledání bez ohledu na velikost písmen a diakritiku („tlak" najde „Tlak", „stehna" i „stehná")
   const fold = (s) =>
@@ -1809,7 +1866,7 @@
     if (S.cfg.recCelEx && d === S.active) {
       celExercise(e, lr); // oslava až po dokončení cviku (F3-02)
     } else if (types && types.length) {
-      toast("🏅 Nový rekord: " + types.map(recLow).join(", "));
+      toast("Nový rekord: " + types.map(recLow).join(", "), "", null, medal(types));
     }
     touchDraft();
     scheduleRender();
@@ -1944,11 +2001,11 @@
         <button class="btn kk-b" data-kk="1" data-kf="${rule}" aria-label="Přidat">+</button>
       </div>`;
     }
-    const foot = `<button class="btn grow" data-act="kkKbd">⌨ Napsat</button>
+    const foot = `<button class="btn grow" data-act="kkKbd">${icon("kbd")}Napsat</button>
       ${
         s.done
           ? '<button class="btn primary grow" data-act="closeSheet">Hotovo</button>'
-          : '<button class="btn primary grow" data-act="kkDone">✓ Série hotová</button>'
+          : `<button class="btn primary grow" data-act="kkDone">${icon("check")}Série hotová</button>`
       }`;
     openSheet(exName(e.exId), body, foot, false, {
       cls: "kk",
@@ -2152,10 +2209,10 @@
           Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne
           trénink přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice.
           U cviku s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule, klepnutím
-          ho použiješ: navržené hodnoty se objeví v šedém předvyplnění sérií a ✓ je převezme. Když
-          místo toho začneš pracovní série upravovat (hodnoty, ✓, přidání, smazání, změna druhu
-          série), návrh zmizí. Zahřívací série na návrh nemají vliv. V Upravit cvik jde u cviku
-          nastavit vlastní rozsah nebo návrh vypnout.
+          ho použiješ: navržené hodnoty se objeví v šedém předvyplnění sérií
+          a ${icon("check")} je převezme. Když místo toho začneš pracovní série upravovat (hodnoty,
+          ${icon("check")}, přidání, smazání, změna druhu série), návrh zmizí. Zahřívací série na návrh
+          nemají vliv. V Upravit cvik jde u cviku nastavit vlastní rozsah nebo návrh vypnout.
         </div>
         <label class="switch">
           <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
@@ -2453,7 +2510,9 @@
           .map(
             (id) =>
               `<div class="recex">
-                <div class="rn"><span class="md">🏅</span><b>${esc(exName(id))}</b></div>
+                <div class="rn">
+                  <span class="md">${medal(g[id].map((r) => r.type))}</span><b>${esc(exName(id))}</b>
+                </div>
                 ${g[id]
                   .map(
                     (r) =>
@@ -2474,7 +2533,7 @@
         .map(
           (r) =>
             `<div class="rec">
-              <span class="md">🏅</span>
+              <span class="md">${medal([r.type])}</span>
               <div class="grow">
                 ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b>` +
             `<span class="muted"> (dříve ` +
@@ -2601,6 +2660,15 @@
      Zavření jen na přání (aby šlo vše v klidu přečíst): tlačítko Pokračovat, klepnutí mimo kartu,
      Zpět (navBack). */
   const REC_BIG = { maxKg: 1, e1rm: 1, reps: 1, maxSec: 1, maxKm: 1, speed: 1 };
+  /* malá medaile rekordu (F3-20): zlatá za velký rekord (REC_BIG), stříbrná za malý. U víc rekordů
+     najednou (počet, nadpis) zlatá, když je mezi nimi aspoň jeden velký, stejně jako medaile v oslavě. */
+  const recGold = (types) => types.some((t) => REC_BIG[t]);
+  const medal = (types) =>
+    `<svg class="ic md-ic ${recGold(types) ? "gold" : "silver"}" viewBox="0 0 24 24" aria-hidden="true">` +
+    `<path class="rib" d="${MEDAL_RIB}"/><circle class="disc" cx="12" cy="15" r="6"/></svg>`;
+  // štítek s medailí a počtem rekordů (Historie, stránka tréninku); text = místo počtu (např. „×2“)
+  const recCount = (list, text) =>
+    `<span class="medals">${medal(list.map((r) => r.type))}${text === undefined ? list.length : text}</span>`;
   let celEl = null;
   const exDone = (e) => {
     const w = e.sets.filter((s) => isWork(s.t));
@@ -2627,7 +2695,7 @@
         ? { a: "#fff4b8", b: "#f5c542", c: "#d99a0b", d: "#9c6400", r: "#cf3a31", r2: "#9e2a23" }
         : { a: "#ffffff", b: "#dde2e8", c: "#aab2bc", d: "#66707b", r: "#2a78d6", r2: "#1d5aa3" };
     const id = "cel" + k,
-      bar = "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"; // činka z ikony appky
+      bar = DUMBBELL; // činka z ikony appky
     return `<svg viewBox="0 0 200 240" aria-hidden="true">
       <defs>
         <linearGradient id="${id}o" x1="0" y1="0" x2="1" y2="1">
@@ -2684,7 +2752,7 @@
             .map((r) => {
               const b = REC_BIG[r.type];
               return `<div class="cel-r${b ? "" : " small"}">
-                <span class="cel-dot ${b ? "g" : "s"}"></span>
+                ${medal([r.type])}
                 <span>${esc(REC[r.type])}</span>
                 <b>${esc(recFmt(r.type, r.v, r.set))}</b>
                 <span class="was">dříve ${esc(recFmt(r.type, r.prev, r.prevSet))}</span>
@@ -2712,7 +2780,7 @@
       <h2>Nový rekord!</h2>
       <div class="cel-ex">${esc(sub)}</div>
       <div class="cel-l">${list}</div>
-      <div class="cel-more" hidden>↓ Posuň pro další</div>
+      <div class="cel-more" hidden>${icon("down")}Posuň pro další</div>
       <button class="btn cel-ok">Pokračovat</button>
     </div>`;
     const t0 = Date.now();
@@ -2978,7 +3046,7 @@
                       ? ""
                       : `<button class="spr-p" data-act="recSndPlay" data-v="${id}"
                           aria-label="Přehrát zvuk ${l}">
-                        ▶
+                        ${icon("play")}
                       </button>`
                   }
                 </div>`,
@@ -3050,14 +3118,14 @@
     });
   }
   /* hláška nahoře; s funkcí undo má tlačítko „Vrátit“ (F2-03, akce undo), které platí,
-     jen dokud je hláška vidět (UNDO_MS) */
+     jen dokud je hláška vidět (UNDO_MS); ic = ikona před textem (SVG z appky, např. medal()) */
   const UNDO_MS = 5000;
-  function toast(msg, cls, undo) {
+  function toast(msg, cls, undo, ic) {
     const r = document.getElementById("toastRoot");
     toast.undo = undo || null;
     r.innerHTML =
       `<div class="toast${cls ? " " + cls : ""}${undo ? " has-undo" : ""}" role="status">` +
-      `<span>${esc(msg)}</span>` +
+      `${ic || ""}<span>${esc(msg)}</span>` +
       `${undo ? '<button class="toast-undo" data-act="undo">Vrátit</button>' : ""}` +
       `</div>`;
     clearTimeout(toast.t);
@@ -3253,14 +3321,9 @@
           .join("")}
       </div>
     </section>`;
-    h +=
-      `<section class="sec startbar">
+    h += `<section class="sec startbar">
       <button class="btn primary block" data-act="startEmpty">
-        ${IC.plus.replace(
-          "<svg",
-          '<svg width="18" height="18" style="stroke:currentColor;fill:none;stroke-width:2.4"',
-        )} ` +
-      `Začít prázdný trénink
+        ${icon("plus")}Začít prázdný trénink
       </button>
     </section>`;
     h += vHomeTpls(all);
@@ -3851,8 +3914,7 @@
     const dur = fmtDur((w.end || w.start) - w.start);
     return w.endOrig
       ? `<span title="Délka upravena ručně, původně ${fmtDur(w.endOrig - w.start)}">${dur} ` +
-          `<span class="edited">✎ ` +
-          `upraveno</span></span>`
+          `<span class="edited">${icon("edit")}upraveno</span></span>`
       : `<span>${dur}</span>`;
   }
   function curDraft() {
@@ -4111,7 +4173,7 @@
     );
     h += "</div>";
     h += `<div class="stack" style="margin-top:12px">
-        <button class="btn block" data-act="addEx">+ Přidat cvik</button>`;
+        <button class="btn block" data-act="addEx">${icon("plus")}Přidat cvik</button>`;
     if (mode === "active") {
       h += `<button class="btn primary block" data-act="finish">Dokončit trénink</button>
         <button class="btn ghost danger block" data-act="discard">Zahodit trénink</button>`;
@@ -4159,7 +4221,7 @@
       `${
         lr.ex.length
           ? `<span class="exmedal" title="${esc(lr.ex.map((t) => REC[t]).join(", "))}">
-            🏅 ${esc(lr.ex.map(recLow).join(", "))}
+            ${medal(lr.ex)}${esc(lr.ex.map(recLow).join(", "))}
           </span>`
           : ""
       }` +
@@ -4210,7 +4272,7 @@
           <th class="c-type">Série</th>
           ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
           ${flds.map((f) => `<th class="c-in">${FLD[f].lab}</th>`).join("")}
-          ${mode === "active" ? '<th class="c-ok"><span aria-label="Hotovo">✓</span></th>' : ""}
+          ${mode === "active" ? '<th class="c-ok" aria-label="Hotovo">' + icon("check") + "</th>" : ""}
         </tr>
       </thead>
       <tbody>`;
@@ -4243,7 +4305,8 @@
             ${lbl}` +
         `${
           lr.sets[j]
-            ? `<span class="medal" title="${esc(lr.sets[j].map((t) => REC[t]).join(", "))}">🏅</span>`
+            ? `<span class="medal" title="${esc(lr.sets[j].map((t) => REC[t]).join(", "))}">` +
+              `${medal(lr.sets[j])}</span>`
             : ""
         }
           </button>
@@ -4278,8 +4341,8 @@
     });
     h += `</tbody></table>
     <div class="exc-f">
-      <button class="btn sm" data-act="addSet" data-i="${i}">+ Série</button>
-      <button class="btn sm" data-act="addWarm" data-i="${i}">+ Zahřívací</button>
+      <button class="btn sm" data-act="addSet" data-i="${i}">${icon("plus")}Série</button>
+      <button class="btn sm" data-act="addWarm" data-i="${i}">${icon("plus")}Zahřívací</button>
     </div>
     </article>`;
     return h;
@@ -4441,7 +4504,7 @@
         <div class="row">
           <h3 class="grow">
             ${esc(w.title)}` +
-        `${wRecs(w).length ? ` <span class="medals">🏅 ${wRecs(w).length}</span>` : ""}
+        `${wRecs(w).length ? " " + recCount(wRecs(w)) : ""}
           </h3>
           <span class="pill">
             <span class="sw" style="background:${gymColor(w.gymId)}"></span>
@@ -4651,7 +4714,7 @@
       `${esc(gymName(p.gymId))}${p.gymId !== w.gymId ? " (jiné fitko)" : ""}
           ${extra.length ? `<div class="xs muted">Minule navíc: ${esc(extra.map(exName).join(", "))}</div>` : ""}
         </div>
-        <span class="chev">›</span>
+        ${icon("next", "chev")}
       </button>`
     );
   }
@@ -4791,7 +4854,9 @@
     if (justSaved || R.length) {
       b += R.length
         ? `<div class="recbox">
-          <h3>🏅 ${R.length} ${plural(R.length, "rekord", "rekordy", "rekordů")}</h3>
+          <h3>
+            ${medal(R.map((r) => r.type))}${R.length} ${plural(R.length, "rekord", "rekordy", "rekordů")}
+          </h3>
           ${recListHtml(R, true)}
         </div>`
         : '<div class="small muted">Tentokrát bez nového rekordu.</div>';
@@ -4810,7 +4875,7 @@
         ${ssLbl ? `<div class="row" style="margin-bottom:4px">${ssLbl}</div>` : ""}
         <div style="font-weight:700;color:var(--accent-2)">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
-          `</button>${er.length ? ` <span class="medals">🏅 ${er.length}</span>` : ""}` +
+          `</button>${er.length ? " " + recCount(er) : ""}` +
           `${typeof c === "string" ? c : ""}
         </div>
         ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}` +
@@ -4957,10 +5022,10 @@
   // ikony údajů (obrys, mřížka 24 × 24)
   const SHR_ICONS = {
     time: "M20 13.5a8 8 0 1 1-16 0 8 8 0 1 1 16 0M12 9.5v4l2.6 1.8M9.5 2.5h5M12 2.5v3",
-    vol: "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11",
+    vol: "M8.6 10.2a4 4 0 1 1 6.8 0M7.5 20.5h9a6 6 0 1 0-9 0z", // závaží (činka je dole logo, F3-20)
     sets: "M12 3 3 8l9 5 9-5-9-5M3 12.5l9 5 9-5M3 17l9 5 9-5",
-    ex: "M9 6h12M9 12h12M9 18h12M4 6h.5M4 12h.5M4 18h.5",
-    rec: "M18 15a6 6 0 1 1-12 0 6 6 0 1 1 12 0M8.8 10 5.5 3h4l2.5 5M15.2 10l3.3-7h-4l-1.4 3",
+    ex: BOOK, // kniha jako záložka Cviky
+    // rec = medaile, kreslí shrMedal
   };
   // otevřený panel: {w, nav, fmt, theme, lang, fig, img (ImageBitmap fotky), fx, fy (výřez 0–1), blob, cov}
   let shr = null;
@@ -5034,12 +5099,13 @@
           ? { ic: "sets", lab: X.setsReps, v: sets + " / " + reps, u: "" }
           : { ic: "sets", lab: X.sets, v: String(sets), u: "" },
         { ic: "ex", lab: X.ex, v: String(ids.length), u: "" },
-        { ic: "rec", lab: X.recs, v: String(R.length), u: R.length ? "🏅" : "" },
+        { ic: "rec", lab: X.recs, v: String(R.length), u: "", gold: recGold(R.map((r) => r.type)) },
       ],
       recs: R.map((r) => ({
         ex: shrExName(r.exId, en),
         t: X.rec[r.type] || r.type,
         v: shrRecFmt(r.type, r.v, r.set, en),
+        gold: !!REC_BIG[r.type],
       })),
       ex: ids.map((id) => {
         const kind = kindOf(id),
@@ -5112,7 +5178,26 @@
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 2.1;
     ctx.lineCap = "round";
-    ctx.stroke(new Path2D("M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"));
+    ctx.stroke(new Path2D(DUMBBELL));
+    ctx.restore();
+  }
+  // medaile zlatá / stříbrná (gold) jako medal() v appce, velikost s
+  function shrMedal(ctx, x, y, s, gold) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s / 24, s / 24);
+    ctx.lineWidth = 1.7;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = gold ? "#cf3a31" : "#2a78d6";
+    ctx.stroke(new Path2D(MEDAL_RIB));
+    ctx.beginPath();
+    ctx.arc(12, 15, 6, 0, 7);
+    ctx.fillStyle = gold ? "#f5c542" : "#d3d9e0";
+    ctx.fill();
+    ctx.strokeStyle = gold ? "#b87a06" : "#6f7882";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
     ctx.restore();
   }
   function shrIcon(ctx, name, x, y, s, color) {
@@ -5348,7 +5433,11 @@
     // údaje s ikonami: pod sebou (s fotkou nebo s postavou vpravo), jinak ve dvou sloupcích
     const step = story ? 104 : postFig ? Math.max(86, Math.min(106, Math.floor(room / 5))) : 106;
     const stat = (s, x, yy) => {
-      shrIcon(ctx, s.ic, x, yy - 4, 50, P.accent);
+      if (s.ic === "rec") {
+        shrMedal(ctx, x, yy - 4, 50, s.gold);
+      } else {
+        shrIcon(ctx, s.ic, x, yy - 4, 50, P.accent);
+      }
       shrText(ctx, s.lab, x + 76, yy + 6, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
       const fv = shrFont(700, 58, SHR_D);
       shrText(ctx, s.v, x + 74, yy + 64, fv, P.ink);
@@ -5424,7 +5513,7 @@
               fN = shrFont(600, 29, SHR_B),
               fT = shrFont(500, 25, SHR_B);
             const vw = shrWidth(ctx, r.v, fv);
-            shrText(ctx, "🏅", L + 18, ry + rowH * 0.66, shrFont(400, 32, SHR_B), "#000", "center");
+            shrMedal(ctx, L, ry + rowH * 0.66 - 31, 36, r.gold);
             const name = shrFit(ctx, r.ex, fN, w - vw - 260);
             const nw = shrWidth(ctx, name, fN);
             shrText(ctx, name, L + 52, by, fN, P.ink);
@@ -5907,7 +5996,8 @@
     let h =
       `<div class="kpis cal-k">
       <div class="kpi">
-        <b>🔥 ${streak}</b><span>${plural(streak, "týden", "týdny", "týdnů")} v řadě</span>
+        <b>${icon("flame", "flame")}${streak}</b>
+        <span>${plural(streak, "týden", "týdny", "týdnů")} v řadě</span>
       </div>
       <div class="kpi">
         <b>${rest == null ? "–" : rest}</b>` +
@@ -5919,14 +6009,16 @@
     h +=
       `<div class="card cal" data-cal="1">
       <div class="cal-nav">
-        <button class="iconbtn" data-act="calM" data-v="-1" aria-label="Předchozí měsíc">‹</button>
+        <button class="iconbtn" data-act="calM" data-v="-1" aria-label="Předchozí měsíc">
+          ${IC.back}
+        </button>
         ${
           isNow
             ? '<b class="cal-t">'
             : '<button class="cal-t" data-act="calM" data-v="0" title="Zpět na aktuální měsíc">'
         }` +
-      `${calMonthName(m0)} ${y}${isNow ? "</b>" : " <small>↺</small></button>"}
-        <button class="iconbtn" data-act="calM" data-v="1" aria-label="Další měsíc">›</button>
+      `${calMonthName(m0)} ${y}${isNow ? "</b>" : icon("today") + "</button>"}
+        <button class="iconbtn" data-act="calM" data-v="1" aria-label="Další měsíc">${IC.next}</button>
       </div>`;
     h += `<div class="cal-g">
       ${["po", "út", "st", "čt", "pá", "so", "ne"].map((d) => `<div class="cal-wd">${d}</div>`).join("")}`;
@@ -6752,7 +6844,7 @@
         }
         <div class="row wrap-r" style="justify-content:space-between">
           <a class="link" href="${esc(exLink(ex))}" target="_blank" rel="noopener">` +
-        `${esc(exLinkLabel(ex))}</a>
+        `${esc(exLinkLabel(ex))}${icon("ext")}</a>
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
         <div class="row wrap-r" style="margin-top:10px;gap:8px">
@@ -6784,7 +6876,7 @@
           list.length
             ? `Cvičeno ${list.length}× · naposledy ${fmtDate(list[0].w.start)} ` +
               `<button class="linkbtn" data-act="exPart" data-v="stats"
-                style="color:var(--accent-2);font-weight:600">Statistiky →</button>`
+                style="color:var(--accent-2);font-weight:600">Statistiky${icon("next")}</button>`
             : "S tímto cvikem zatím nemáš žádný záznam."
         }
       </p>`;
@@ -7010,7 +7102,7 @@
           .map(
             (r) =>
               `<div class="rec">
-                <span class="md">🏅</span>
+                <span class="md">${medal([r.type])}</span>
                 <div class="grow">
                   ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
               `<span class="muted">· ` +
@@ -7039,13 +7131,14 @@
       <div class="sec-h"><h2>Historie cviku</h2><span class="xs muted">${list.length}×</span></div>
       <div class="stack" style="gap:6px">`;
     for (const s of list.slice(0, S.exHistLimit || 25)) {
-      const nr = wRecs(s.w).filter((r) => r.exId === id).length;
+      const recs = wRecs(s.w).filter((r) => r.exId === id);
+      const nr = recs.length;
       h +=
         `<div class="card" style="padding:10px 12px">
         <div class="row small">
           <b class="grow">
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
-        `${nr ? ` <span class="medals">🏅${nr > 1 ? "×" + nr : ""}</span>` : ""}
+        `${nr ? " " + recCount(recs, nr > 1 ? "×" + nr : "") : ""}
           </b>
           <span class="pill">
             <span class="sw" style="background:${gymColor(s.w.gymId)}"></span>
@@ -7205,7 +7298,7 @@
               `<button type="button" class="gal-s" data-act="phView" data-v="${esc(p.id)}"
                   aria-label="Fotka ${i + 1} z ${list.length}">
                 <img src="${photoUrl(p.id)}" alt="">
-                ${photoTag(p)}${p.first ? '<span class="gal-pin">★ První</span>' : ""}
+                ${photoTag(p)}${p.first ? `<span class="gal-pin">${icon("star")}První</span>` : ""}
               </button>`,
           )
           .join("")}
@@ -7501,7 +7594,7 @@
       <div class="row" style="gap:8px">
         <button class="btn grow pv-gym" data-act="pvGym" aria-expanded="${pv.gymOpen}">
           ${gymSw}
-          <span class="grow">Fitko: ${esc(gymTxt)}</span>${pv.gymOpen ? "▴" : "▾"}
+          <span class="grow">Fitko: ${esc(gymTxt)}</span>${icon("down", pv.gymOpen ? "up" : "")}
         </button>
         <button class="btn danger" data-act="pvDel">Smazat</button>
       </div>
@@ -7702,7 +7795,7 @@
             return `<button type="button" class="th${on ? " sel" : ""}${saved ? " saved" : ""}"
                 data-act="fpSel" data-v="${k}" aria-pressed="${on}"${saved ? " disabled" : ""}>
               <img crossorigin="anonymous" src="${esc(fedbSrc(x, k))}" alt="">
-              <span class="ck">${on ? "✓" : ""}</span>
+              <span class="ck">${on ? IC.check : ""}</span>
               ${saved ? '<span class="gal-tag">Už uložená</span>' : ""}
             </button>`;
           })
@@ -7936,7 +8029,7 @@
       "Tělo",
       items.length ? "Poslední měření " + fmtDate(items[0].date) : "Hmotnost, složení, obvody",
     );
-    h += '<button class="btn primary block" data-act="addBody">+ Nové měření</button>';
+    h += `<button class="btn primary block" data-act="addBody">${icon("plus")}Nové měření</button>`;
     const m = S.bodyMetric;
     const f = BODY_F.find((x) => x[0] === m) || BODY_F[0];
     const since = rangeSince(S.bodyRange);
@@ -8284,7 +8377,7 @@
             return `<button type="button" role="radio" data-act="gymCol" data-v="${c}"
                 aria-checked="${c === cur}"
                 aria-label="Barva ${c}${o ? ", má ji " + esc(o) : ""}"><i style="background:var(--s${c})">
-                ${c === cur ? "✓" : ""}
+                ${c === cur ? IC.check : ""}
               </i><small>${o ? esc(o) : "&nbsp;"}</small></button>`;
           })
           .join("")}
@@ -8478,7 +8571,7 @@
       }
       <div class="row wrap-r" style="justify-content:space-between">
         <a class="link" href="${esc(exLink(e))}" target="_blank" rel="noopener">` +
-      `${esc(exLinkLabel(e))}</a>
+      `${esc(exLinkLabel(e))}${icon("ext")}</a>
       <span class="xs muted">${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" : ""}</span>
     </div>`;
     if (list.length) {
@@ -8508,7 +8601,7 @@
             .map(
               (r) =>
                 `<div class="rec">
-                  <span class="md">🏅</span>
+                  <span class="md">${medal([r.type])}</span>
                   <div class="grow">
                     ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
                 `<span class="muted">· ` +
@@ -8694,7 +8787,7 @@
             return `<button type="button" class="th${on ? " sel" : ""}" data-act="xPh" data-v="${k}"
                 aria-pressed="${on}">
               <img crossorigin="anonymous" src="${esc(fedbSrc(fx, k))}" alt="">
-              <span class="ck">${on ? "✓" : ""}</span>
+              <span class="ck">${on ? IC.check : ""}</span>
             </button>`;
           })
           .join("")}
@@ -11596,7 +11689,7 @@
         for (const x of document.querySelectorAll(".cpick button")) {
           const on = x === t;
           x.setAttribute("aria-checked", on);
-          x.querySelector("i").textContent = on ? "✓" : "";
+          x.querySelector("i").innerHTML = on ? IC.check : "";
         }
         break;
       case "saveGym": {
@@ -12415,7 +12508,8 @@
     </p>`;
     b += `<ol class="steps small">
       <li>
-        V Chromu klepni na <b>⋮ → Stažené soubory</b> (nebo otevři appku <b>Soubory</b> → Stažené).
+        V Chromu klepni vpravo nahoře na <b>tři tečky</b> → <b>Stažené soubory</b> (nebo otevři appku
+        <b>Soubory</b> → Stažené).
       </li>
       <li>Podrž soubor zálohy a zvol <b>Sdílet</b>.</li>
       <li>Vyber <b>Disk</b> → Uložit (nebo Gmail a pošli si ho).</li>
@@ -12765,7 +12859,7 @@
     if (!TEST_PR) return "";
     return `<div class="testbar"><b>TEST · PR #${esc(TEST_PR)}</b><span class="grow">
         ${esc(BUILD.nazev)}
-      </span><a href="${esc(MAIN_URL)}">Vydaná verze ›</a></div>`;
+      </span><a href="${esc(MAIN_URL)}">Vydaná verze${icon("next")}</a></div>`;
   }
   /* Nastavení → O aplikaci → Verze aplikace */
   function versionSettings() {
