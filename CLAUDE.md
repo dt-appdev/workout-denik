@@ -114,6 +114,17 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   cviků (trénink, šablona, Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“. Zobrazení
   jedné věci (cvik, uložený trénink F3-19) = stránka se šipkou ←. Stejné akce vypadají všude stejně (výběr cviků
   má + a zeměkouli jako záložka Cviky, F3-18).
+- Ikony (přání uživatele 26. 9. 2026, F3-20, sekce „ikony“ v `js/app.js`): v appce, na obrázku ke sdílení ani
+  v návrzích nikdy emoji ani znaky písma jako ikona (🏅, 🔥, ✓, ▶, ★, ↗, ‹ ›…). Vždy vlastní SVG ikona v sadě `IC`
+  (obrázek ke sdílení `SHR_ICONS`, `shrMedal`) ve stejném stylu: `viewBox="0 0 24 24"`, obrys bez výplně v barvě
+  textu (`currentColor`), zaoblené konce a spoje, čára na obrazovce asi 1,6 px. Ikona v textu nebo tlačítku přes
+  `icon(název, třída)` (třída `.ic`, velikost 1,2em podle písma), jinde (lišta, `.iconbtn`, `icoBtn`) `IC.název`.
+  Kresby na víc místech jen jednou (`DUMBBELL` = logo, `BOOK`, `MEDAL_RIB`). Medaile rekordu vždy přes
+  `medal(typy)`: zlatá, když je mezi typy velký rekord (`REC_BIG`, `recGold`), jinak stříbrná; barvy `--md-*`
+  v obou motivech. Stejný význam = stejná ikona všude, jedna kresba = jeden význam (Historie = kalendář, Tělo =
+  postava obrysem, Nastavení = ozubené kolo, zeměkoule = online databáze). Novou nebo překreslenou ikonu nejdřív
+  ukázat v náhledu (dnes / návrh, světlý i tmavý motiv) a nechat odsouhlasit. Šipka → ve větě („Nastavení →
+  Fitka“, „85 → 1:25“) a znaky × · – jsou typografie, ne ikona, ty zůstávají.
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu

@@ -26,6 +26,50 @@ img {
 }
 
 /* ---------- styl appky ---------- */
+/* ikona v textu a tlačítkách (F3-20, icon() v js/app.js): velikost podle písma, obrys v barvě textu */
+.ic {
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.22em;
+}
+.ic.up {
+  transform: rotate(180deg);
+}
+.btn > .ic {
+  stroke-width: 2.3;
+}
+/* medaile rekordu (medal()): zlatá / stříbrná, o kousek větší kvůli čitelnosti */
+.md-ic {
+  width: 1.35em;
+  height: 1.35em;
+  vertical-align: -0.3em;
+}
+.md-ic .disc {
+  stroke-width: 1.6;
+}
+.md-ic.gold .rib {
+  stroke: var(--md-g-rib);
+}
+.md-ic.gold .disc {
+  fill: var(--md-g);
+  stroke: var(--md-g-d);
+}
+.md-ic.silver .rib {
+  stroke: var(--md-s-rib);
+}
+.md-ic.silver .disc {
+  fill: var(--md-s);
+  stroke: var(--md-s-d);
+}
+.ic.flame {
+  color: var(--flame);
+}
 :root {
   color-scheme: light;
   --bg: #eceef2;
@@ -64,6 +108,14 @@ img {
   --s11: #8a3b2e;
   --s12: #424a9c;
   --chart: #5f6b7a;
+  /* medaile rekordu (F3-20): zlatá = velký rekord, stříbrná = malý; stuhy jako velká medaile v oslavě */
+  --md-g: #f2b52a;
+  --md-g-d: #9c6400;
+  --md-g-rib: #cf3a31;
+  --md-s: #d3d9e0;
+  --md-s-d: #6f7882;
+  --md-s-rib: #2a78d6;
+  --flame: #e2601a; /* týdny v řadě (kalendář) */
   --shadow: 0 1px 2px rgba(19, 22, 27, 0.06), 0 4px 16px rgba(19, 22, 27, 0.06);
   --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -128,6 +180,13 @@ img {
     --s11: #a3503f;
     --s12: #5a5fb0;
     --chart: #98a2b0;
+    --md-g: #f5c542;
+    --md-g-d: #b87a06;
+    --md-g-rib: #ee5b51;
+    --md-s: #c6ccd4;
+    --md-s-d: #8a939d;
+    --md-s-rib: #3987e5;
+    --flame: #ff8a3d;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
   }
 }
@@ -168,6 +227,13 @@ img {
   --s11: #a3503f;
   --s12: #5a5fb0;
   --chart: #98a2b0;
+  --md-g: #f5c542;
+  --md-g-d: #b87a06;
+  --md-g-rib: #ee5b51;
+  --md-s: #c6ccd4;
+  --md-s-d: #8a939d;
+  --md-s-rib: #3987e5;
+  --flame: #ff8a3d;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 * {
@@ -251,6 +317,8 @@ button {
   white-space: nowrap;
 }
 .testbar a {
+  display: inline-flex;
+  align-items: center;
   color: inherit;
   font-weight: 700;
   white-space: nowrap;
@@ -965,7 +1033,9 @@ select.inp {
   font-size: var(--fs-sm);
   text-align: left;
 }
-.exc-prog svg {
+/* ikona návrhu progrese i stagnace (F3-20: jedno pravidlo pro obě) */
+.exc-prog svg,
+.stag-ico svg {
   flex: none;
   width: 1.3em;
   height: 1.3em;
@@ -1001,15 +1071,6 @@ select.inp {
 .stag-ico {
   display: inline-flex;
   flex: none;
-}
-.stag-ico svg {
-  width: 1.3em;
-  height: 1.3em;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 .exc-note {
   margin: 0 14px 8px;
@@ -1513,6 +1574,9 @@ tr.done .okb {
   font-weight: 700;
 }
 .edited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
   font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--drop);
@@ -1909,6 +1973,10 @@ tr.done .okb {
     opacity: 0;
   }
 }
+/* ikona před textem hlášky (např. medaile u nového rekordu) */
+.toast > .ic {
+  margin-right: 0.35em;
+}
 /* hláška s tlačítkem Vrátit (F2-03) */
 .toast.has-undo {
   display: flex;
@@ -2138,6 +2206,9 @@ tr.done .okb {
   position: absolute;
   right: 8px;
   top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
   font-size: var(--fs-xs);
   font-weight: 700;
   padding: 4px 9px;
@@ -2213,6 +2284,22 @@ tr.done .okb {
   color: #fff;
   font-size: var(--fs-md);
   font-weight: 800;
+}
+.thumbs .ck svg,
+.cpick i svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cpick i svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.6;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
 }
 .thumbs .th.sel .ck {
   background: var(--accent);
@@ -2344,6 +2431,9 @@ tr.done .okb {
   white-space: pre-line;
 }
 .link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   font-size: var(--fs-md);
   font-weight: 700;
   color: var(--accent-2);
@@ -2492,6 +2582,12 @@ tr.done .okb {
 .kpi b {
   white-space: nowrap;
 }
+.kpi b .ic {
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.1em;
+  vertical-align: -0.08em;
+}
 .kpis.k4 .kpi {
   padding: 8px 10px;
 }
@@ -2511,12 +2607,16 @@ tr.done .okb {
   grid-column: 1;
 }
 .medals {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  vertical-align: 0.1em;
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--warm);
   background: var(--warm-bg);
   border-radius: 999px;
-  padding: 1px 7px;
+  padding: 1px 7px 1px 4px;
   white-space: nowrap;
 }
 .recbox {
@@ -2531,6 +2631,12 @@ tr.done .okb {
   font-weight: 700;
   color: var(--warm);
 }
+.recbox h3 .md-ic {
+  width: 1.15em;
+  height: 1.15em;
+  margin-right: 0.2em;
+  vertical-align: -0.2em;
+}
 .stype {
   position: relative;
 }
@@ -2539,9 +2645,12 @@ tr.done .okb {
   right: -8px;
   top: -8px;
   font-size: var(--fs-md);
-  line-height: 1;
+  line-height: 0;
 }
 .exmedal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--warm);
@@ -2682,8 +2791,8 @@ textarea.inp {
 }
 .cmp .chev {
   color: var(--ink-3);
-  font-size: var(--fs-2xl);
-  line-height: 1;
+  width: 1.4em;
+  height: 1.4em;
 }
 .sumh {
   margin: 0 0 6px;
@@ -2772,6 +2881,9 @@ textarea.inp {
   height: 44px;
 }
 .cal-t {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
   border: 0;
   background: none;
   padding: 6px 8px;
@@ -2781,8 +2893,9 @@ textarea.inp {
   letter-spacing: 0.03em;
   color: var(--ink);
 }
-.cal-t small {
-  font-size: var(--fs-md);
+.cal-t .ic {
+  width: 0.85em;
+  height: 0.85em;
   color: var(--ink-3);
 }
 .cal-g {
@@ -3063,7 +3176,7 @@ textarea.inp {
 }
 .cel-r {
   display: grid;
-  grid-template-columns: 14px 1fr auto;
+  grid-template-columns: 1.35em 1fr auto;
   gap: 0 8px;
   align-items: baseline;
   font-size: var(--fs-md);
@@ -3085,20 +3198,15 @@ textarea.inp {
   color: var(--ink-3);
   text-align: right;
 }
-.cel-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.cel-r .md-ic {
   align-self: center;
-}
-.cel-dot.g {
-  background: radial-gradient(circle at 35% 35%, #fff3b0, #e0a412 60%, #a86a00);
-}
-.cel-dot.s {
-  background: radial-gradient(circle at 35% 35%, #fff, #b9c0c8 60%, #6f7882);
 }
 .cel-more {
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25em;
   margin-top: 2px;
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -3266,6 +3374,10 @@ textarea.inp {
 }
 .spr-p {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
   border: 1px solid var(--line-2);
   background: var(--surface);
   border-radius: 8px;
