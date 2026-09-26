@@ -114,6 +114,12 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   cviků (trénink, šablona, Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“. Zobrazení
   jedné věci (cvik, uložený trénink F3-19) = stránka se šipkou ←. Stejné akce vypadají všude stejně (výběr cviků
   má + a zeměkouli jako záložka Cviky, F3-18).
+- Ikony (přání uživatele 26. 9. 2026, F3-20): v appce, na obrázku ke sdílení ani v návrzích nikdy emoji ani znaky
+  písma jako ikona (🏅, 🔥, ✓, ▶, ★, ↗, ‹ ›…). Vždy vlastní SVG ikona v sadě `IC` (obrázek ke sdílení `SHR_ICONS`) ve
+  stejném stylu: `viewBox="0 0 24 24"`, obrys bez výplně v barvě textu (`currentColor`), zaoblené konce a spoje, čára
+  na obrazovce asi 1,6 px, v textu velikost v `em`. Stejný význam = stejná ikona všude, jedna kresba = jeden význam.
+  Novou nebo překreslenou ikonu nejdřív ukázat v náhledu (dnes / návrh, světlý i tmavý motiv) a nechat odsouhlasit.
+  Šipka → ve větě („Nastavení → Fitka“) a znaky × · – jsou typografie, ne ikona, ty zůstávají.
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu
