@@ -949,6 +949,35 @@ select.inp {
   font-size: var(--fs-sm);
   color: var(--ink-3);
 }
+/* návrh progrese pod řádkem Minule (F4-01), klepnutím se skryje */
+.exc-prog {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 14px 8px;
+  width: calc(100% - 28px);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--good-bg);
+  color: var(--good);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+.exc-prog .xs {
+  color: var(--ink-2);
+}
+/* rozsah opakování od – do (Nastavení → Trénink, Upravit cvik) */
+.prog-rng {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.prog-rng .inp {
+  width: 3.6em;
+  text-align: center;
+}
 .exc-note {
   margin: 0 14px 8px;
   width: calc(100% - 28px);

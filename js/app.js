@@ -35,6 +35,8 @@
   const TYPE_NAME = { n: "Pracovní", w: "Zahřívací", d: "Drop set", f: "Do selhání" };
   // procenta u tlačítka zahřívací série v krokovači (F1-08): výchozí, rozsah a krok posuvníku v Nastavení
   const WARM_PCT = { def: 60, min: 10, max: 90, step: 10 };
+  // návrh progrese (F4-01): meze rozsahu opakování a výchozí rozsah
+  const PROG_REPS = { min: 1, max: 100, defMin: 8, defMax: 12 };
   const MONTHS = ["led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"];
   const MONTHS_FULL = [
     "leden",
@@ -1057,11 +1059,18 @@
         recSnd: "fanfara",
         stepper: true,
         warmPct: WARM_PCT.def,
+        progAll: false,
+        progMin: PROG_REPS.defMin,
+        progMax: PROG_REPS.defMax,
       },
       c && typeof c === "object" ? c : {},
     );
     const pct = Math.round(+c.warmPct / WARM_PCT.step) * WARM_PCT.step;
     c.warmPct = pct >= WARM_PCT.min && pct <= WARM_PCT.max ? pct : WARM_PCT.def;
+    if (!progValid([c.progMin, c.progMax])) {
+      c.progMin = PROG_REPS.defMin;
+      c.progMax = PROG_REPS.defMax;
+    }
     c.gyms = (Array.isArray(c.gyms) ? c.gyms : [])
       .filter((g) => g && g.id)
       .map((g, i) =>
@@ -1512,6 +1521,101 @@
       return { p, h: p || s.ph || null };
     });
   }
+  // exHints pro cvik e rozdělaného tréninku d, u pracovních sérií s návrhem progrese (F4-01)
+  function draftHints(d, e) {
+    const hints = exHints(e, draftLast(d, e.exId));
+    const prog = progInfo(d, e);
+    if (!prog) return hints;
+    return hints.map((x, j) =>
+      e.sets[j].t === "n" ? { p: x.p, h: Object.assign({}, x.h, { kg: prog.kg, reps: prog.reps }) } : x,
+    );
+  }
+
+  /* ---------- NÁVRH PROGRESE (F4-01) ----------
+     Double progression: cvik má rozsah opakování (např. 8–12). Když minule („minule“ jako F1-01, draftLast)
+     měly všechny pracovní série (typ „n“, bez zahřívacích, drop setů a do selhání) aspoň horní hranici,
+     navrhne rozdělaný trénink přidat váhu o krok krokovače cviku (kkStep, výchozí 2,5 kg) k nejtěžší sérii
+     a opakování od dolní hranice. U cviku s dopomocí naopak ubrat dopomoc (od nejmenší dopomoci).
+     Návrh se projeví v šedém předvyplnění pracovních sérií (draftHints: ✓ i krokovač ho převezmou)
+     a řádkem pod „Minule“; klepnutí na řádek ho pro tento trénink skryje (e.progNo, jen v rozdělaném
+     tréninku, draftToWorkout ho neukládá). Sloupec Minule a kontrola velkého skoku zůstávají podle minula.
+     Rozsah: u cviku pole prog ([min, max] = zapnuto, "off" = vypnuto, bez pole = podle nastavení), jinak
+     S.cfg.progAll (výchozí vypnuto) s rozsahem S.cfg.progMin–progMax. Jen typy PROG_KINDS.
+     F5-01 (kolik chybí na rekord) má nápovědu přidat do stejného řádku (progLine). */
+  const PROG_KINDS = { wr: true, bwplus: true, assist: true };
+  // platný rozsah opakování [min, max]
+  function progValid(range) {
+    if (!Array.isArray(range) || range.length !== 2) return false;
+    const [min, max] = range;
+    const ok = (n) => Number.isInteger(n) && n >= PROG_REPS.min && n <= PROG_REPS.max;
+    return ok(min) && ok(max) && min <= max;
+  }
+  // rozsah opakování cviku pro návrh progrese [min, max], nebo null (návrh u cviku není)
+  function progRange(exId) {
+    if (!PROG_KINDS[kindOf(exId)]) return null;
+    const prog = exOf(exId).prog;
+    if (prog === "off") return null;
+    if (progValid(prog)) return prog;
+    return S.cfg.progAll ? [S.cfg.progMin, S.cfg.progMax] : null;
+  }
+  const progStr = (range) => range[0] + (range[1] > range[0] ? "–" + range[1] : "") + " opak.";
+  // návrh pro cvik e rozdělaného tréninku d: {kg, reps, range, from, kind}, nebo null
+  function progInfo(d, e) {
+    if (d.mode !== "active" || e.progNo) return null;
+    const range = progRange(e.exId);
+    if (!range) return null;
+    const last = draftLast(d, e.exId);
+    if (!last) return null;
+    const work = last.e.sets.filter((s) => s.t === "n");
+    if (!work.length || work.some((s) => !(+s.reps >= range[1]))) return null;
+    const kind = kindOf(e.exId);
+    const step = kkStep(d, e, "kg");
+    const kgs = work.map((s) => +s.kg || 0);
+    let from;
+    let kg;
+    if (kind === "assist") {
+      // s dopomocí: méně dopomoci = těžší; bez dopomoci už není co ubrat
+      from = Math.min(...kgs);
+      if (!(from > 0)) return null;
+      kg = Math.max(0, from - step);
+    } else {
+      from = Math.max(...kgs);
+      if (kind === "wr" && !(from > 0)) return null;
+      kg = from + step;
+    }
+    return { kg: Math.round(kg * 100) / 100, reps: range[0], range, from, kind };
+  }
+  // řádek s návrhem pod „Minule“ v kartě cviku (klepnutí ho skryje)
+  function progLine(d, e, i) {
+    const prog = progInfo(d, e);
+    if (!prog) return "";
+    const kg = esc(numStr(prog.kg)) + " kg";
+    const what =
+      prog.kind === "assist"
+        ? `Uber dopomoc: <b>−${kg}</b>`
+        : prog.kind === "bwplus"
+          ? `Přidej zátěž: <b>+${kg}</b>`
+          : `Přidej váhu: <b>${kg}</b>`;
+    return `<button class="exc-prog" data-act="progNo" data-i="${i}"
+        aria-label="Návrh progrese, klepnutím skryješ">
+      <span>📈 ${what} × ${prog.reps}</span>
+      <span class="xs">
+        Minule všechny pracovní série aspoň ${prog.range[1]} opak. (rozsah ${prog.range[0]}–${prog.range[1]}).
+        Klepnutím skryješ.
+      </span>
+    </button>`;
+  }
+  // rozsah u cviků ze zálohy: neplatný se zahodí (platí nastavení)
+  function exProgClean(items) {
+    for (const id in items) {
+      const item = items[id];
+      if (!item || typeof item !== "object" || !("prog" in item)) continue;
+      if (item.prog !== "off" && !progValid(item.prog)) {
+        delete item.prog;
+      }
+    }
+    return items;
+  }
   // série jako text „80×8 · 80×7“ (onlyWork = jen pracovní, bez zahřívacích)
   function setsStr(sets, onlyWork, kind) {
     kind = kind || "wr";
@@ -1607,7 +1711,7 @@
       scheduleRender();
       return;
     }
-    const hint = exHints(e, draftLast(d, e.exId))[j].h;
+    const hint = draftHints(d, e)[j].h;
     if (hint) {
       if (s.kg === "" && hint.kg) {
         s.kg = numStr(hint.kg);
@@ -1721,7 +1825,7 @@
   // hodnota z minula (šedé předvyplnění) pro pole série, jinak NaN
   function kkHint(d, i, j, rule) {
     const e = d.ex[i];
-    const hint = exHints(e, draftLast(d, e.exId))[j].h;
+    const hint = draftHints(d, e)[j].h;
     return hint && +hint[rule] > 0 ? +hint[rule] : NaN;
   }
   // číslo, od kterého se krokuje: hodnota v políčku, jinak z minula, jinak 0
@@ -1993,6 +2097,54 @@
         </div>
       </div>
     </section>`;
+  }
+
+  /* Nastavení → Trénink → Návrh progrese (F4-01) */
+  function progSettings() {
+    const on = !!S.cfg.progAll;
+    return `<section class="sec">
+      <div class="sec-h"><h2>Návrh progrese</h2></div>
+      <div class="card stack">
+        <div class="xs muted">
+          Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne
+          trénink přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice.
+          Návrh se ukáže pod řádkem Minule a v šedém předvyplnění, ✓ ho převezme.
+        </div>
+        <label class="switch">
+          <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
+          <span><b>U všech cviků</b><br><span class="xs muted">Zapnuto = u cviků s váhou (i vlastní
+              váha se zátěží a s dopomocí) s rozsahem níže. Vypnuto = jen u cviků, kde návrh zapneš
+              v Upravit cvik (tam jde nastavit i vlastní rozsah nebo návrh u cviku vypnout).</span></span>
+        </label>
+        <div class="row">
+          <b class="grow">Výchozí rozsah opakování</b>
+          ${progRangeInputs("progMin", "progMax", [S.cfg.progMin, S.cfg.progMax], "prog")}
+        </div>
+        <span class="fmsg" id="prog-msg"></span>
+      </div>
+    </section>`;
+  }
+  // dvě políčka rozsahu opakování „od – do“ (Nastavení i Upravit cvik)
+  function progRangeInputs(idMin, idMax, range, dataF) {
+    const f = dataF ? ` data-f="${dataF}"` : "";
+    return `<span class="prog-rng">
+      <input class="inp${numCls("reps", range[0])}" id="${idMin}" data-num="reps"${f}
+          inputmode="numeric" value="${esc(range[0])}" aria-label="Opakování od">
+      <span>–</span>
+      <input class="inp${numCls("reps", range[1])}" id="${idMax}" data-num="reps"${f}
+          inputmode="numeric" value="${esc(range[1])}" aria-label="Opakování do">
+    </span>`;
+  }
+  // rozsah z dvojice políček: {range}, nebo {msg} s důvodem, proč neplatí
+  function progRangeRead(idMin, idMax) {
+    const text = (id) => document.getElementById(id).value.trim();
+    const range = [+text(idMin), +text(idMax)];
+    if (!text(idMin) || !text(idMax)) return { msg: "Vyplň rozsah opakování od – do." };
+    if (!progValid(range)) {
+      if (range[0] > range[1]) return { msg: "Dolní hranice opakování je vyšší než horní." };
+      return { msg: `Rozsah opakování jen ${PROG_REPS.min}–${PROG_REPS.max}.` };
+    }
+    return { range };
   }
 
   /* ---------- REKORDY ----------
@@ -3768,6 +3920,7 @@
       flds = kFields(kind);
     const lr = mode === "active" ? liveRecords(d, i) : { sets: {}, ex: [] };
     const ssLbl = ssPill(d.ex, i); // supersérie (F4-05): štítek a proužek vlevo
+    const range = progRange(e.exId); // rozsah opakování pro návrh progrese (F4-01)
     let h = `<article class="exc${ssLbl ? " ss-on" : ""}" data-i="${i}">
       <div class="exc-h">
         <div class="grow">
@@ -3786,6 +3939,7 @@
             : '<span class="pill">univerzální</span>'
         }` +
       `${kind !== "wr" ? `<span class="pill">${esc(KIND[kind].l.toLowerCase())}</span>` : ""}` +
+      `${range ? `<span class="pill" title="Rozsah opakování pro návrh progrese">${esc(progStr(range))}</span>` : ""}` +
       `${
         lr.ex.length
           ? `<span class="exmedal" title="${esc(lr.ex.map((t) => REC[t]).join(", "))}">
@@ -3820,6 +3974,7 @@
               : "Zatím bez záznamu"
         }
       </div>`;
+      h += progLine(d, e, i); // návrh progrese (F4-01)
     }
     if (e.note || e.showNote) {
       h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
@@ -3836,7 +3991,7 @@
       </thead>
       <tbody>`;
     let wn = 0;
-    const hints = exHints(e, last);
+    const hints = mode === "active" ? draftHints(d, e) : exHints(e, last);
     const useStepper = kkOn(d);
     const fval = (s, f) =>
       f === "sec" ? s.sec || "" : f === "km" ? s.km || "" : f === "reps" ? s.reps || "" : s.kg || "";
@@ -6633,7 +6788,7 @@
       id: "train",
       name: "Trénink",
       icon: "train",
-      body: () => stepperSettings() + restSettings() + bodyWeightSettings(),
+      body: () => stepperSettings() + progSettings() + restSettings() + bodyWeightSettings(),
     },
     { id: "rec", name: "Rekordy", icon: "medal", body: () => recSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
@@ -7109,6 +7264,47 @@
       </div>
     </div>`;
   }
+  // návrh progrese u cviku (F4-01): podle nastavení / vlastní rozsah / vypnuto
+  const progModeOf = (prog) => (prog === "off" ? "off" : progValid(prog) ? "on" : "def");
+  function exEdProg(e, v) {
+    const mode = v("x-prog") || progModeOf(e.prog);
+    const cfgRange = [S.cfg.progMin, S.cfg.progMax];
+    const saved = progValid(e.prog) ? e.prog : cfgRange;
+    const range = [
+      v("x-pmin") != null ? v("x-pmin") : saved[0],
+      v("x-pmax") != null ? v("x-pmax") : saved[1],
+    ];
+    const modes = {
+      def: "Podle nastavení (" + (S.cfg.progAll ? "zapnuto, " + progStr(cfgRange) : "vypnuto") + ")",
+      on: "Zapnuto, vlastní rozsah",
+      off: "Vypnuto",
+    };
+    return (
+      `<div class="stack" style="gap:6px">
+      <label class="f">
+        Návrh progrese
+        <select class="inp" id="x-prog">
+          ${Object.entries(modes)
+            .map(([k, l]) => `<option value="${k}"${mode === k ? " selected" : ""}>${esc(l)}</option>`)
+            .join("")}
+        </select>
+      </label>` +
+      `${
+        mode === "on"
+          ? `<div class="row">
+              <span class="grow small">Rozsah opakování</span>
+              ${progRangeInputs("x-pmin", "x-pmax", range, "")}
+            </div>
+            <span class="fmsg" id="x-prog-msg"></span>`
+          : ""
+      }
+      <span class="xs muted">
+        Když minule všechny pracovní série dosáhly horní hranice, trénink navrhne přidat váhu o krok
+        z tlačítek +/− a opakování od dolní hranice.
+      </span>
+    </div>`
+    );
+  }
   function renderExEdit(e) {
     const v = (k) => {
       const el = document.getElementById(k);
@@ -7177,6 +7373,7 @@
         <span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku
             mají jiný odpor.</span></span>
       </label>
+      ${PROG_KINDS[kind] ? exEdProg(e, v) : ""}
       <label class="f">
         Popis provedení
         <textarea class="inp" id="x-desc" rows="4">${esc(desc)}</textarea>
@@ -8815,6 +9012,21 @@
         touchDraft();
         scheduleRender();
         break;
+      case "progNo": {
+        // návrh progrese (F4-01) pro tento trénink skrýt, předvyplnění se vrátí na hodnoty z minula
+        const e = d && d.ex[i];
+        if (!e) break;
+        e.progNo = true;
+        touchDraft();
+        scheduleRender();
+        toast("Návrh progrese skrytý", "", () => {
+          if (curDraft() !== d || !d.ex.includes(e)) return;
+          delete e.progNo;
+          touchDraft();
+          scheduleRender();
+        });
+        break;
+      }
       case "undo": {
         const fn = toast.undo;
         toast.undo = null;
@@ -9081,6 +9293,18 @@
           urlInput.scrollIntoView({ block: "center", behavior: "smooth" });
           break;
         }
+        // F4-01: návrh progrese u cviku, vlastní rozsah jen platný
+        const progSel = document.getElementById("x-prog");
+        let prog = progSel ? progSel.value : null;
+        if (prog === "on") {
+          const res = progRangeRead("x-pmin", "x-pmax");
+          if (!res.range) {
+            document.getElementById("x-prog-msg").textContent = res.msg;
+            toast(res.msg);
+            break;
+          }
+          prog = res.range;
+        }
         const items = Object.assign({}, S.exLib);
         const o = Object.assign({}, items[id] || { custom: true }, {
           name,
@@ -9107,6 +9331,11 @@
         }
         if (!o.desc) {
           delete o.desc;
+        }
+        if (prog === "def") {
+          delete o.prog;
+        } else if (prog) {
+          o.prog = prog;
         }
         items[id] = o;
         putEx(items);
@@ -9936,6 +10165,9 @@
       case "stepper":
         put("config/main", Object.assign({}, S.cfg, { stepper: t.checked }));
         break;
+      case "progAll":
+        put("config/main", Object.assign({}, S.cfg, { progAll: t.checked }));
+        break;
       case "screenOn":
       case "screenDim":
         put("config/main", Object.assign({}, S.cfg, { [act]: t.checked }));
@@ -10167,6 +10399,15 @@
       readImport(t);
       return;
     }
+    if (f === "prog") {
+      // výchozí rozsah opakování pro návrh progrese (F4-01): uloží se jen platná dvojice
+      const res = progRangeRead("progMin", "progMax");
+      document.getElementById("prog-msg").textContent = res.msg || "";
+      if (res.range) {
+        put("config/main", Object.assign({}, S.cfg, { progMin: res.range[0], progMax: res.range[1] }));
+      }
+      return;
+    }
     if (t.id === "warmPct") {
       put("config/main", Object.assign({}, S.cfg, { warmPct: +t.value }));
       return;
@@ -10188,7 +10429,7 @@
       }
       return;
     }
-    if (t.id === "x-kind" && exEd) {
+    if ((t.id === "x-kind" || t.id === "x-prog") && exEd) {
       renderExEdit(S.exLib[exEd.id] || {});
       return;
     }
@@ -10651,7 +10892,7 @@
     return {
       exported: o.exported,
       cfg,
-      exercises: exLoad(exUrlsClean(obj(o.exercises)), o.exDb !== EX_V),
+      exercises: exLoad(exProgClean(exUrlsClean(obj(o.exercises))), o.exDb !== EX_V),
       templates: tplNorm(obj(o.templates)),
       months,
       body: obj(o.body),

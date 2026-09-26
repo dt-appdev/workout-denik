@@ -277,6 +277,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
   série z minula bez zahřívacích (`warmMax`, přes `draftLast`), zaokrouhleno na krok `kkStep` (`warmKg`). Zápis přes
   `kkSet` (stejně jako − / +), bez záznamu z minula se tlačítko neukáže.
+- Návrh progrese (F4-01, sekce „NÁVRH PROGRESE“): rozsah opakování `progRange(exId)` = pole cviku `prog` (`[min, max]`
+  = zapnuto, `"off"` = vypnuto, bez pole = `S.cfg.progAll` s `progMin`–`progMax`, výchozí vypnuto, 8–12), jen typy
+  `PROG_KINDS` (wr, bwplus, assist). `progInfo(d, e)`: jen rozdělaný trénink, všechny pracovní série (`t === "n"`) z minula
+  (`draftLast`) ≥ horní hranice → nejtěžší série + `kkStep` (u dopomoci nejmenší dopomoc − krok), opakování = dolní
+  hranice. Předvyplnění v rozdělaném tréninku vždy přes `draftHints(d, e)` (✓, krokovač, karta), ne rovnou `exHints`
+  (sloupec Minule a `setJump` dál z `exHints(...).p`). Řádek `progLine` (akce `progNo`, `e.progNo` se neukládá),
+  štítek s rozsahem v kartě. F5-01 má nápovědu k rekordu přidat do stejného řádku.
 - Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
   Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
   uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona

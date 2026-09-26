@@ -124,7 +124,7 @@ Předpoklad: F0-02 (svalové partie).
 
 ### Fáze 4 – Chytré funkce
 
-- [ ] **F4-01** Návrh progrese (double progression): po splnění horní hranice opakování navrhne +2,5 kg.
+- [x] **F4-01** Návrh progrese (double progression): po splnění horní hranice opakování navrhne +2,5 kg. Rozsah opakování u cviku (Upravit cvik: podle nastavení / vlastní rozsah / vypnuto), v Nastavení → Trénink vypínač „U všech cviků“ (výchozí vypnuto) a výchozí rozsah 8–12. Krok = krok tlačítek +/− cviku, opakování od dolní hranice, i u +kg a s dopomocí (ubrat dopomoc). V souhrnu po tréninku se nic neukazuje (rozhodnuto při úloze).
 - [ ] **F4-02** Generátor rozcvičkových sérií z pracovní váhy.
 - [ ] **F4-03** Kalkulačka kotoučů na osu.
 - [ ] **F4-04** RIR/RPE u série (volitelné).
@@ -172,6 +172,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 
 | Úloha | Otázka | Návrh |
 |---|---|---|
+| 26. 9. 2026 | F4-01 | Návrh progrese: když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, rozdělaný trénink ukáže pod řádkem Minule zelený návrh „📈 Přidej váhu: 65 kg × 8“ (u +kg „Přidej zátěž“, u cviku s dopomocí „Uber dopomoc“) a stejné hodnoty dá do šedého předvyplnění pracovních sérií, takže je ✓ i tlačítka +/− převezmou. Váha = nejtěžší série z minula + krok tlačítek +/− cviku, opakování = dolní hranice. Klepnutí na návrh ho pro tento trénink skryje (s Vrátit). Rozsah u cviku v Upravit cvik, výchozí v Nastavení → Trénink → Návrh progrese (U všech cviků vypnuto, 8–12). Nové pole cviku `prog` a nastavení `progAll`/`progMin`/`progMax` mají výchozí hodnoty, záloha zpětně kompatibilní. |
 | F0-02 | Obsahuje databáze cviků už svalové partie, nebo je doplníme? | Vyřešeno 23. 9.: partie všech 388 cviků zkontrolované a schválené, výchozí databáze je součástí appky. |
 | F0-03 | Zdroj, český název, popis, fotky? | Vyřešeno 23. 9.: jen free-exercise-db (kopie v repu, volné dílo), wger odloženo. Hotové české názvy všech 876 cviků, popis anglicky, hledání česky i anglicky, u stejného cviku upozornění „už máš“, fotky jen náhled (ukládání až F2-05). |
 | F0-04 | Jak dostat testovací verzi (před merge) do telefonu? GitHub Pages teď nasazuje jen `main`. | Vyřešeno 23. 9.: GitHub Actions nasadí každý otevřený PR do `…/workout-denik-test/pr-N/` (samostatné repo, aby šla testovací verze nainstalovat) s vlastními daty (kopie z vydané verze tlačítkem), oranžovým pruhem a ikonou TEST; verze a čas se doplní automaticky. |
