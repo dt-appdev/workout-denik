@@ -286,7 +286,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   s tréninky těsně před nimi, ne s rekordem z celé historie. Kontext `recCtx` (vázaný cvik zvlášť pro fitko). Výpočet
   `computeStag` jednou po změně dat (`stags()`: `ok[k]` = `stagHolds`), dotaz `stagInfo(exId, gymId)` / `stagOfCtx`
   (`n` = tréninků bez zlepšení, `ref` = trénink, od kterého nic lepšího), texty `stagCount`, `stagSince`. Ukazuje se jen
-  v rozdělaném tréninku (`.exc-stag` pod „Minule“, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce
+  v rozdělaném tréninku (`.exc-stag` pod „Minule“, ikona `IC.stag` = vodorovná čára s tečkami, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce
   Bez zlepšení) a ve Statistikách → Cviky (`statsStag`, jen cviky cvičené posledních 30 dní, `STAG_RECENT`). Vypínač
   `S.cfg.stagOn` a počet `stagN` v `config/main`, Nastavení → Rekordy a pokrok (`stagSettings`). Nic dalšího se neukládá.
 - Zkušební data (sekce „ZKUŠEBNÍ DATA“, jen `DEV` = testovací verze a lokálně): Nastavení → O aplikaci, karta
@@ -317,6 +317,19 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   `kk-warm` (akce `kkWarm`, `warmInfo`): `S.cfg.warmPct` % (`WARM_PCT`, posuvník `#warmPct` v `stepperSettings`) nejtěžší
   série z minula bez zahřívacích (`warmMax`, přes `draftLast`), zaokrouhleno na krok `kkStep` (`warmKg`). Zápis přes
   `kkSet` (stejně jako − / +), bez záznamu z minula se tlačítko neukáže.
+- Návrh progrese (F4-01, sekce „NÁVRH PROGRESE“): rozsah opakování `progRange(exId)` = pole cviku `prog` (`[min, max]`
+  = zapnuto, `"off"` = vypnuto, bez pole = `S.cfg.progAll` s `progMin`–`progMax`, výchozí vypnuto, 8–12), jen typy
+  `PROG_KINDS` (wr, bwplus, assist). `progInfo(d, e)`: jen rozdělaný trénink, všechny pracovní série (`t === "n"`) z minula
+  (`draftLast`) ≥ horní hranice → nejtěžší série + `kkStep` (u dopomoci nejmenší dopomoc − krok), opakování = dolní
+  hranice; `set` = pořadí pracovní série, které návrh platí (−1 = všem). `S.cfg.progSets` (`all` výchozí / `first`):
+  `first` = přidat jen 1. sérii, jinak dorovnat první lehčí sérii s horní hranicí o krok k nejtěžší. Předvyplnění
+  v rozdělaném tréninku vždy přes `draftHints(d, e)` (✓, krokovač, karta), ne rovnou `exHints` (sloupec Minule
+  a `setJump` dál z `exHints(...).p`); návrh se do něj dostane až po klepnutí na řádek `progLine` (ikona `IC.prog`,
+  krátký text „Návrh: …“, akce `progUse` → `e.progUse`, řádek zmizí). Řádek se ukazuje, jen dokud jsou pracovní
+  série nedotčené (`progTouched`: hodnota nebo ✓ v nezahřívací sérii, nebo `e.progNo`); akce, které mění pracovní
+  série bez hodnot (+ Série, smazání nezahřívací série, změna druhu), volají `progTouch`. Zahřívací série návrh
+  nechají. `e.progUse` / `e.progNo` se neukládají. Štítek s rozsahem v kartě. Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
+  F5-01 má nápovědu k rekordu přidat do stejného řádku.
 - Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
   Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
   uloží pořadí (`gyms`, `ex` = `curDraft().ex`, `tpl` = pole `order` u šablon, `tplSorted`, nová šablona

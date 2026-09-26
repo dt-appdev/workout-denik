@@ -949,15 +949,67 @@ select.inp {
   font-size: var(--fs-sm);
   color: var(--ink-3);
 }
+/* návrh progrese pod řádkem Minule (F4-01), klepnutím se skryje */
+.exc-prog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 14px 8px;
+  width: calc(100% - 28px);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--good-bg);
+  color: var(--good);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+.exc-prog svg {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* rozsah opakování od – do (Nastavení → Trénink, Upravit cvik) */
+.prog-rng {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.prog-rng .inp {
+  width: 3.6em;
+  text-align: center;
+}
 /* stagnace (F4-06): řádek pod „Minule“ */
 .exc-stag {
   all: unset;
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   margin: -4px 14px 8px;
+  padding: 0 10px; /* ikona pod ikonou návrhu progrese (F4-01) */
   font-size: var(--fs-sm);
   color: var(--ink-2);
   cursor: pointer;
+}
+/* ikona stagnace (F4-06): řádek v tréninku i sekce Bez zlepšení na stránce cviku */
+.stag-ico {
+  display: inline-flex;
+  flex: none;
+}
+.stag-ico svg {
+  width: 1.3em;
+  height: 1.3em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .exc-note {
   margin: 0 14px 8px;
