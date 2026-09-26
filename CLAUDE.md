@@ -125,6 +125,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   postava obrysem, Nastavení = ozubené kolo, zeměkoule = online databáze). Novou nebo překreslenou ikonu nejdřív
   ukázat v náhledu (dnes / návrh, světlý i tmavý motiv) a nechat odsouhlasit. Šipka → ve větě („Nastavení →
   Fitka“, „85 → 1:25“) a znaky × · – jsou typografie, ne ikona, ty zůstávají.
+- Nápovědy (F3-21, sekce „NÁPOVĚDY V NADPISU SEKCE“ v `js/app.js`): pod volbou žádný vysvětlující text, jen stav
+  nebo varování (co se děje teď, např. „Oznámení jsou zakázaná…“). Vysvětlení patří do panelu sekce: tlačítko
+  `helpBtn(klíč)` v nadpisu (`.sec-h`, víc tlačítek v `.sec-btns`, ikona `IC.help` = otazník; `IC.info` je O aplikaci),
+  akce `help` otevře `sheetHelp` (texty v `HELP`: `title` a `items()` = `[název, text v HTML]`, skládají se až při
+  otevření, takže můžou záviset na nastavení; parametr za dvojtečkou, např. `exRec:<id cviku>`). Nová volba = nová
+  položka v `HELP` své sekce, ne text pod přepínačem. V krátkých panelech (`openSheet`) tlačítko není, text nejvýš
+  jedna věta. Texty, které říkají, co se stane teď (Sloučit / Nahradit vše, přesun tažením), zůstávají u ovládání.
 - Vykreslení: `scheduleRender()`; změna dat vždy přes `put(path, data)`.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět" v `js/app.js`): každý stisk = jeden
   krok `navBack()`. Nový panel přes `openSheet(…, noanim, nav)`: panel v panelu

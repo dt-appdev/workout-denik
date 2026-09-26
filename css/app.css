@@ -1817,6 +1817,19 @@ tr.done .okb {
 .sheet-b > .pickrow {
   flex: none;
 }
+/* panel nápovědy sekce (F3-21): název volby a vysvětlení */
+.hlp {
+  flex: none;
+}
+.hlp b {
+  display: block;
+}
+.hlp p {
+  margin: 2px 0 0;
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+  line-height: 1.45;
+}
 .sheet-b .chips {
   min-height: 36px;
 }
