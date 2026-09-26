@@ -989,11 +989,27 @@ select.inp {
 .exc-stag {
   all: unset;
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   margin: -4px 14px 8px;
+  padding: 0 10px; /* ikona pod ikonou návrhu progrese (F4-01) */
   font-size: var(--fs-sm);
   color: var(--ink-2);
   cursor: pointer;
+}
+/* ikona stagnace (F4-06): řádek v tréninku i sekce Bez zlepšení na stránce cviku */
+.stag-ico {
+  display: inline-flex;
+  flex: none;
+}
+.stag-ico svg {
+  width: 1.3em;
+  height: 1.3em;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .exc-note {
   margin: 0 14px 8px;

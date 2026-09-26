@@ -118,6 +118,8 @@
     backup: '<svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5M4 17v3h16v-3"/></svg>',
     // návrh progrese (F4-01): šipka stoupající nahoru
     prog: '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+    // stagnace (F4-06): vodorovná šipka = bez posunu
+    stag: '<svg viewBox="0 0 24 24"><path d="M3 12h17M15 7l5 5-5 5"/></svg>',
     info: `<svg viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 11v6M12 7.5v.5"/>
@@ -4171,7 +4173,7 @@
     const stag = mode === "active" ? stagInfo(e.exId, d.gymId) : null;
     if (stag) {
       h += `<button class="exc-stag" data-act="openEx" data-v="${esc(e.exId)}" data-p="stats">
-        <span aria-hidden="true">📉</span>
+        <span class="stag-ico" aria-hidden="true">${IC.stag}</span>
         <span>${esc(stagCount(stag.n))} ${esc(stagSince(stag))}</span>
       </button>`;
     }
@@ -6914,7 +6916,7 @@
             .map(
               (x) =>
                 `<div class="row" style="gap:8px;align-items:flex-start">
-                  <span aria-hidden="true">📉</span>
+                  <span class="stag-ico" aria-hidden="true">${IC.stag}</span>
                   <div class="grow">
                     <b>${esc(stagCount(x.n))}</b>
                     ${
