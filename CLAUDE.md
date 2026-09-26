@@ -233,6 +233,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   změna fitka ho vynuluje), karta `tplCard`. Výběr fitek v editoru `tplGymPick` (akce `tplGym`, `d.gyms`).
   Zápis šablony vždy přes `Object.assign` s původní šablonou (zachová pole, která editor nezná). `delGym`
   odebere fitko i ze šablon.
+- Úvodní obrazovka během tréninku (F2-09, sekce „ÚVODNÍ OBRAZOVKA“ a „NOVÝ TRÉNINK BĚHEM TRÉNINKU“): route `train` =
+  rozdělaný trénink (když `S.active`), jinak úvodní obrazovka `vHome`; route `home` = úvodní obrazovka během tréninku
+  (šipka ← z tréninku přes `navBack`, bez tréninku se změní na `train`, do `Local` `route` se ukládá jako `train`).
+  Tlačítko „Probíhá trénink“ (akce `runOpen`) a záložka Trénink vedou do tréninku. `curGym()` je během tréninku fitko
+  tréninku (`selGym` ho mění, výběr Fitko v tréninku mění `S.selGym`). Začít u šablony / Cvičit znovu během tréninku
+  = `sheetRun(next)` (`runNext`: `{tpl}` / `{again}`; `runFinish` = `finishAsk` a po `finishOk` `runStart` bez souhrnu,
+  `runDiscard`). Konec tréninku vždy přes `activeEnd()`. Uložení / smazání šablony se vrací přes `tplLeave()`.
 - Jedinečné názvy šablon (F2-08, sekce „JEDINEČNÉ NÁZVY ŠABLON“): stejný název (`tplKey`: bez velkých písmen, diakritiky
   a mezer) nesmí mít šablony, které se ukazují ve stejném fitku (`tplMeet`, `[]` = všechna fitka); shody `tplClash`,
   volný název `tplFreeName` („Nohy 2“), uložený název přes `tplClean`. Editor: `tplNameProblem` / `tplNameMark` (červený
