@@ -1836,10 +1836,10 @@
     }
     return out;
   }
-  // velký skok v sérii j cviku i: {f, v, ref, refTxt}, jinak null
-  function setJump(d, i, j) {
+  // velký skok v sérii j cviku i: {f, v, ref, refTxt}, jinak null; s = hodnoty série (výchozí ta v tréninku,
+  // F1-14 kontroluje kopii s doplněným předvyplněním)
+  function setJump(d, i, j, s = d.ex[i].sets[j]) {
     const e = d.ex[i];
-    const s = e.sets[j];
     const prev = exHints(e, draftLast(d, e.exId))[j].p;
     let maxes = null;
     for (const f of kFields(kindOf(e.exId))) {
@@ -1866,7 +1866,8 @@
     const sign = f === "plus" ? "+" : f === "minus" ? "−" : "";
     return sign + fmtKg(v) + " kg";
   }
-  function sheetJump(i, j, jump) {
+  // okAct = akce tlačítka „Ano, je to správně“ (Označit v okně Dokončit trénink má vlastní, F1-14)
+  function sheetJump(i, j, jump, okAct = "jumpOk") {
     const body = `
     <p style="margin:0">${esc(jump.refTxt)}: <b>${esc(jumpFmt(jump.f, jump.ref))}</b></p>
     <p style="margin:0">Není to překlep?</p>`;
@@ -1874,27 +1875,14 @@
         data-v="${esc(jump.f)}">
       Opravit
     </button>
-    <button class="btn primary grow" data-act="jumpOk" data-i="${i}" data-j="${j}">
+    <button class="btn primary grow" data-act="${okAct}" data-i="${i}" data-j="${j}">
       Ano, je to správně
     </button>`;
     openSheet("Opravdu " + jumpFmt(jump.f, jump.v) + "?", body, foot);
   }
 
-  // jsou v tréninku odškrtnuté všechny série? (po poslední se pauza nespouští)
-  const allSetsDone = (d) => d.ex.every((e) => e.sets.every((s) => s.done));
-  /* ✓ u série: odškrtnutí (převezme šedé předvyplnění, zkontroluje hodnoty a velký skok),
-     nebo jeho zrušení */
-  function toggleSetDone(d, i, j) {
-    const e = d.ex[i];
-    const s = e.sets[j];
-    const kind = kindOf(e.exId);
-    if (s.done) {
-      s.done = false;
-      delete s.at;
-      touchDraft();
-      scheduleRender();
-      return;
-    }
+  // doplní do série s (j-tá série cviku e) chybějící hodnoty ze šedého předvyplnění a upraví zápis čísel
+  function setFill(d, e, j, s) {
     const hint = draftHints(d, e)[j].h;
     if (hint) {
       if (s.kg === "" && hint.kg) {
@@ -1910,10 +1898,28 @@
         s.km = numStr(hint.km);
       }
     }
-    for (const f of kFields(kind)) {
+    for (const f of kFields(kindOf(e.exId))) {
       const rule = setRule(f);
       s[rule] = numNormalize(rule, s[rule]); // „85“ → „1:25“, „5,“ → „5“
     }
+  }
+  // jsou v tréninku odškrtnuté všechny série? (po poslední se pauza nespouští)
+  const allSetsDone = (d) => d.ex.every((e) => e.sets.every((s) => s.done));
+  /* ✓ u série: odškrtnutí (převezme šedé předvyplnění, zkontroluje hodnoty a velký skok),
+     nebo jeho zrušení */
+  function toggleSetDone(d, i, j) {
+    const e = d.ex[i];
+    const s = e.sets[j];
+    const kind = kindOf(e.exId);
+    if (s.done) {
+      s.done = false;
+      delete s.at;
+      delete s.atEnd; // označená v okně Dokončit trénink (F1-14)
+      touchDraft();
+      scheduleRender();
+      return;
+    }
+    setFill(d, e, j, s);
     const problem = setProblem(kind, s, true);
     if (problem) {
       touchDraft();
@@ -1932,6 +1938,7 @@
     }
     s.done = true;
     s.at = Date.now();
+    delete s.atEnd;
     // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05),
     // s vypnutým časovačem pauzy (S.cfg.restOn) žádná, po poslední sérii tréninku taky žádná
     if (d === S.active) {
@@ -4013,13 +4020,19 @@
     const d = S.active;
     runNext = next;
     const done = d.ex.reduce((a, e) => a + e.sets.filter((s) => s.done).length, 0);
-    const doneTxt = done + " " + plural(done, "hotová série", "hotové série", "hotových sérií");
+    const doneTxt = done
+      ? done + " " + plural(done, "hotová série", "hotové série", "hotových sérií")
+      : "zatím žádná hotová série";
+    // Dokončit jde i bez hotové série, když série mají zapsané hodnoty (označí se v okně, F1-14)
+    const canFinish = done || finUndone(d).val;
     openSheet(
       "Probíhá trénink",
       `<p style="margin:0">
         Trénink „${esc(d.title)}“ ještě běží (${doneTxt}). Chceš ho ukončit a začít ${esc(runNextName(next))}?
       </p>`,
-      (done ? '<button class="btn primary full" data-act="runFinish">Dokončit a začít nový</button>' : "") +
+      (canFinish
+        ? '<button class="btn primary full" data-act="runFinish">Dokončit a začít nový</button>'
+        : "") +
         `<button class="btn danger full" data-act="runDiscard">Zahodit a začít nový</button>
         <button class="btn full" data-act="closeSheet">Zrušit</button>`,
     );
@@ -4065,8 +4078,12 @@
   }
   function finEndValue(d) {
     const el = document.getElementById("fin-end");
-    if (!el || !el.value) return null;
-    const [h, m] = el.value.split(":").map(Number);
+    return el ? finEndFrom(d, el.value) : null;
+  }
+  // čas „HH:MM“ z políčka Konec jako okamžik (po půlnoci další den)
+  function finEndFrom(d, value) {
+    if (!value) return null;
+    const [h, m] = value.split(":").map(Number);
     const x = new Date(d.start);
     x.setHours(h, m, 0, 0);
     let t = x.getTime();
@@ -4082,25 +4099,40 @@
         : " · bez časů sérií, navržen aktuální čas"
     }`;
   }
-  // okno Dokončit trénink (tlačítko v tréninku i Dokončit a začít nový, F2-09)
-  function finishAsk(d) {
+  /* okno Dokončit trénink (tlačítko v tréninku i Dokončit a začít nový, F2-09); neoznačené série a keep
+     (Konec a Aktualizovat šablonu po znovuotevření) viz sekce NEOZNAČENÉ SÉRIE PŘI DOKONČENÍ (F1-14) */
+  function finishAsk(d, keep, noanim) {
     const problem = draftProblem(d, true);
     if (problem) {
       showProblem(problem.e, problem.j, problem);
       return;
     }
     const ex = draftToWorkout(d, true);
-    const undone = d.ex.reduce((a, e) => a + e.sets.filter((s) => !s.done).length, 0);
-    if (!ex.length) {
+    const undone = finUndone(d);
+    if (!ex.length && !undone.val) {
       toast("Žádná série není označená jako hotová.");
       return;
     }
     const lastAt = lastSetAt(d);
     const sug = suggestEnd(d);
-    let b = `<p style="margin:0">
-      ${ex.length} cviků, ${ex.reduce((a, e) => a + e.sets.length, 0)} sérií.
-    </p>
-    ${undone ? `<p class="small muted" style="margin:0">${undone} neoznačených sérií se neuloží.</p>` : ""}`;
+    const end = (keep && finEndFrom(d, keep.end)) || sug;
+    const nSets = ex.reduce((a, e) => a + e.sets.length, 0);
+    const cnt = ex.length
+      ? `${ex.length} ${plural(ex.length, "cvik", "cviky", "cviků")}, ` +
+        `${nSets} ${plural(nSets, "série", "série", "sérií")}.`
+      : "Zatím žádná hotová série.";
+    let b = `<p style="margin:0">${cnt}</p>`;
+    if (undone.val) {
+      b += `<div class="banner act" style="margin-top:0">
+        <span class="grow">${finValTxt(undone.val)}</span>
+        <button class="btn" data-act="finMark">${icon("check")}Označit</button>
+      </div>`;
+    }
+    if (undone.empty) {
+      b += `<div class="banner" style="margin-top:0">
+        ${undone.empty} ${plural(undone.empty, "série", "série", "sérií")} bez zapsaných hodnot se neuloží.
+      </div>`;
+    }
     b += `<div class="card stack" style="gap:8px">
       <div class="row">
         <label class="f grow">
@@ -4109,10 +4141,10 @@
         </label>
         <label class="f grow">
           Konec
-          <input class="inp" type="time" id="fin-end" data-f="finEnd" value="${toTimeInput(sug)}">
+          <input class="inp" type="time" id="fin-end" data-f="finEnd" value="${toTimeInput(end)}">
         </label>
       </div>
-      <div class="small muted" id="fin-info">${finInfo(d, sug, lastAt)}</div>
+      <div class="small muted" id="fin-info">${finInfo(d, end, lastAt)}</div>
     </div>`;
     // Dokončit a začít nový (F2-09): co začne po uložení
     if (runNext) {
@@ -4121,16 +4153,105 @@
     if (d.tplId && S.templates[d.tplId]) {
       b +=
         `<label class="switch">
-        <input type="checkbox" id="updTpl"> Aktualizovat šablonu „` +
+        <input type="checkbox" id="updTpl"${keep && keep.upd ? " checked" : ""}> Aktualizovat šablonu „` +
         `${esc(S.templates[d.tplId].name)}“ (cviky a váhy)
       </label>`;
     }
+    // bez hotové série se Uložit ukáže až po Označit (F1-14)
     openSheet(
       "Dokončit trénink?",
       b,
-      `<button class="btn grow" data-act="closeSheet">Zpět</button>
-      <button class="btn primary grow" data-act="finishOk">Uložit trénink</button>`,
+      '<button class="btn grow" data-act="closeSheet">Zpět</button>' +
+        (ex.length ? '<button class="btn primary grow" data-act="finishOk">Uložit trénink</button>' : ""),
+      noanim,
     );
+  }
+
+  /* ---------- NEOZNAČENÉ SÉRIE PŘI DOKONČENÍ (F1-14) ----------
+     Okno Dokončit trénink (finishAsk) rozlišuje neodškrtnuté série (finUndone): se zapsanými hodnotami
+     (setHasVal: aspoň jedno políčko druhu zápisu vyplněné psaním, krokovačem nebo tlačítkem 60 %; šedé
+     předvyplnění se nepočítá) a bez hodnot. První ukáže oranžový pruh s tlačítkem Označit (.banner.act jako
+     připomínka zálohy), druhé pruh bez tlačítka (.banner) „… bez zapsaných hodnot se neuloží“. Okno se otevře
+     i bez hotové série, když nějaká série má hodnoty; místo počtů „Zatím žádná hotová série.“ a Uložit trénink
+     se ukáže až po označení. Panel Probíhá trénink (sheetRun, F2-09) pak nabízí i Dokončit a začít nový.
+     Označit (finMark) dělá totéž co ✓ u každé takové série, ale nad kopiemi: doplní chybějící hodnoty
+     z předvyplnění (setFill), zkontroluje hodnoty (setProblem) a velký skok (setJump, F1-10). Při problému
+     se neoznačí nic: okno se zavře a appka skočí do políčka (showProblem, s krokovačem jeho panel); u skoku
+     panel „Opravdu …?“, kde Ano (finJumpOk) dá sérii jumpOk a označování pokračuje, Opravit (jumpFix) skočí do
+     políčka. Pauza se nespustí, hláška rekordu u série se neukáže (oslava po uložení tréninku ano).
+     Označená série má done a místo času odškrtnutí s.atEnd; čas s.at dostane při Uložit trénink (finishOk)
+     = Konec z okna, navržený Konec (suggestEnd) podle ní neposouvá. ✓ v tréninku atEnd maže (toggleSetDone).
+     Upravený Konec a Aktualizovat šablonu zůstanou i po znovuotevření okna (finState → finishAsk keep,
+     přes panel Opravdu …? v finKeep). */
+  let finKeep = null;
+  // má série zapsanou aspoň jednu hodnotu druhu zápisu cviku? (šedé předvyplnění se nepočítá)
+  function setHasVal(kind, s) {
+    return kFields(kind).some((f) => String(s[setRule(f)] ?? "").trim() !== "");
+  }
+  // neodškrtnuté série tréninku: val = se zapsanými hodnotami, empty = bez hodnot
+  function finUndone(d) {
+    const res = { val: 0, empty: 0 };
+    for (const e of d.ex) {
+      const kind = kindOf(e.exId);
+      for (const s of e.sets) {
+        if (s.done) continue;
+        if (setHasVal(kind, s)) {
+          res.val++;
+        } else {
+          res.empty++;
+        }
+      }
+    }
+    return res;
+  }
+  // text pruhu se sériemi, které mají hodnoty, ale nejsou označené
+  function finValTxt(n) {
+    if (n === 1) return "1 série má hodnoty, ale není označená.";
+    return n + " " + plural(n, "série má", "série mají", "sérií má") + " hodnoty, ale nejsou označené.";
+  }
+  // Konec a Aktualizovat šablonu z otevřeného okna Dokončit trénink
+  function finState() {
+    const end = document.getElementById("fin-end");
+    const upd = document.getElementById("updTpl");
+    return { end: end ? end.value : "", upd: !!(upd && upd.checked) };
+  }
+  // Označit: odškrtne všechny série s hodnotami, nebo ukáže první problém a neoznačí nic
+  function finMark(d, keep) {
+    finKeep = keep;
+    const todo = [];
+    for (let i = 0; i < d.ex.length; i++) {
+      const e = d.ex[i];
+      const kind = kindOf(e.exId);
+      for (let j = 0; j < e.sets.length; j++) {
+        const s = e.sets[j];
+        if (s.done || !setHasVal(kind, s)) continue;
+        const copy = Object.assign({}, s);
+        setFill(d, e, j, copy);
+        const problem = setProblem(kind, copy, true);
+        if (problem) {
+          closeSheet();
+          showProblem(e, j, problem);
+          return;
+        }
+        todo.push({ i, j, copy });
+      }
+    }
+    for (const x of todo) {
+      const jump = x.copy.jumpOk ? null : setJump(d, x.i, x.j, x.copy);
+      if (jump) {
+        sheetJump(x.i, x.j, jump, "finJumpOk");
+        return;
+      }
+    }
+    for (const x of todo) {
+      const s = d.ex[x.i].sets[x.j];
+      Object.assign(s, x.copy, { done: true, atEnd: true });
+      delete s.at;
+      edMark(d, d.ex[x.i]);
+    }
+    touchDraft();
+    scheduleRender();
+    finishAsk(d, keep, true);
   }
   function durLabel(w) {
     const dur = fmtDur((w.end || w.start) - w.start);
@@ -11685,11 +11806,29 @@
         runNext = null;
         finishAsk(d);
         break;
+      case "finMark":
+        // Označit v okně Dokončit trénink (F1-14)
+        finMark(S.active, finState());
+        break;
+      case "finJumpOk":
+        // Ano, je to správně u velkého skoku při Označit (F1-14): označování pokračuje
+        closeSheet();
+        S.active.ex[i].sets[j].jumpOk = true;
+        finMark(S.active, finKeep);
+        break;
       case "finishOk": {
-        const ex = draftToWorkout(d, true);
         const upd = document.getElementById("updTpl");
         const sug = suggestEnd(d);
         const end = finEndValue(d) || sug;
+        // série označené v okně (F1-14) dostanou jako čas odškrtnutí konec tréninku
+        for (const e of d.ex) {
+          for (const s of e.sets) {
+            if (s.done && s.atEnd) {
+              s.at = end;
+            }
+          }
+        }
+        const ex = draftToWorkout(d, true);
         const w = { title: d.title.trim() || defaultTitle(), start: d.start, end, gymId: d.gymId, ex };
         if (d.tplId) {
           w.tplId = d.tplId;
