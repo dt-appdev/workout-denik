@@ -129,6 +129,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-20** Vlastní ikony místo emoji
 - [x] **F3-21** Kratší nápovědy (otazník v nadpisu sekce)
 - [x] **F3-22** Karta cviku bez štítků
+- [ ] **F3-23** Redesign appky (přání 27. 9. 2026, nic nerozhodnuto): jednotný vzhled celé appky, tedy systém (barvy, rozestupy, písmo, karty), tlačítka a ikony. Rozsah a podobu probrat, až bude úloha na řadě.
 
 
 ### Fáze 4 – Chytré funkce
