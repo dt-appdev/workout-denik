@@ -37,21 +37,79 @@ Původní zadání:
 
 ## Priority a pořadí
 
-Pořadí: nejdřív ochrana dat, pak pohodlí při samotném tréninku, pak šablony, statistiky, chytré funkce a nakonec motivace. Úlohy uvnitř fáze jsou seřazené podle priority, dělají se shora dolů.
+Pořadí: nejdřív ochrana dat, pak pohodlí při samotném tréninku, pak šablony, statistiky, chytré funkce a nakonec motivace. Fáze třídí úlohy podle témat; kdy se která úloha dělá, určují etapy níže.
 
-Aktuální pořadí dalších úloh (zhodnoceno 24. 9. 2026, má přednost před pořadím ve fázích):
+### Etapy podle naléhavosti
 
-- Dál podle fází: zbytek fáze 1 (F1-06, F1-07), pak fáze 2, 3, 4 a 5.
+Aktuální pořadí dalších úloh (zhodnoceno 27. 9. 2026 podle nezávislého UX auditu, má přednost před pořadím ve fázích). Úlohy jsou rozdělené do etap podle naléhavosti. V etapě se dělají shora dolů; úlohy, které na sobě nezávisí, jdou dělat souběžně (každá ve své větvi). Fáze níže zůstávají tématické (kam úloha patří), etapy říkají, kdy se dělá.
+
+Značky u úloh z auditu (celý audit a přiřazení všech nálezů k úlohám v `docs/navrhy/ux-audit-2026-09-27.md`):
+
+- **P1–P3** naléhavost: P1 výrazně zhoršuje zápis tréninku nebo tiše ztrácí data, P2 zhoršuje používání, P3 drobnost. (P0 = nejde používat nebo se ztrácí data; audit žádné nenašel.)
+- **A–D** druh nálezu: A objektivní problém, B silné doporučení, C vkus, D rozhodnutí vlastníka (u takových úloh je otázka v části Otevřené otázky).
+- Náročnost: velmi nízká / nízká (hodiny) / střední.
 
 ```mermaid
 flowchart LR
-  P[PWA<br/>Převod] --> F0[Fáze 0<br/>Data a základ]
-  F0 --> F1[Fáze 1<br/>Ovládání při tréninku]
-  F1 --> F2[Fáze 2<br/>Šablony a historie]
-  F2 --> F3[Fáze 3<br/>Statistiky a vzhled]
-  F3 --> F4[Fáze 4<br/>Chytré funkce]
-  F4 --> F5[Fáze 5<br/>Motivace]
+  E1[Etapa 1<br/>Nic se neztratí] --> E2[Etapa 2<br/>Bezpečný zápis]
+  E2 --> E3[Etapa 3<br/>Co dnes,<br/>zlepšuji se?]
+  E3 --> E4[Etapa 4<br/>Drobnosti]
+  E4 --> E5[Etapa 5<br/>Jednotný vzhled]
+  E5 --> E6[Etapa 6<br/>Zbytek plánu]
 ```
+
+#### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
+
+1. **F1-14** Neoznačené série s hodnotami při dokončení · *Dokončení tréninku · P1 · A · nízká* – jediná tichá ztráta dat, kterou audit našel.
+2. **F1-13** Předvyplnění ze série nad · *Zápis série · P1 · A · nízká* – u nového cviku a stroje poprvé v jiném fitku stojí každá další série cca 7 klepnutí místo 1. Mění rozhodnutí z F1-01.
+3. **F0-13** Záloha častěji a ze souhrnu · *Ochrana dat · B · D · nízká* – při smazání dat Chromu nebo ztrátě telefonu dnes hrozí ztráta až 14 dní tréninků.
+
+#### Etapa 2 – Bezpečnější ovládání při tréninku (P2, rychlé)
+
+4. **F1-15** Druh série výběrem místo cyklu · *Zápis série · P2 · A · nízká* – omylné klepnutí tiše změní objem, rekordy i párování s minule.
+5. **F1-18** Větší ✓ a dotykové plochy v tréninku · *Zápis série · P2 · B · nízká* – ✓ je nejpoužívanější prvek appky a má jen 44 × 34 px.
+6. **F1-16** Přečas pauzy jen na záložce Trénink · *Pauza · P2 · B · nízká* – pruh přečasu zakrývá obsah ostatních záložek.
+7. **F1-06** Přidávání cviku a hledání po slovech · *Výběr cviku · P2 · A · střední* – abecední výsledky, víceslovné hledání jen přesnou frází.
+
+#### Etapa 3 – „Co dnes?“ a „Zlepšuji se?“ (P2, větší úpravy)
+
+8. **F2-04** Šablona na řadě jako hlavní akce úvodu · *Úvod · P2 · B · střední* – nejčastější akce nemá největší váhu.
+9. **F3-26** Progres po cvicích ve Statistikách · *Statistiky · P2 · B · střední* – na „zlepšuji se?“ dnes odpovídá jen stránka každého cviku zvlášť.
+10. **F3-25** Rekord jako skutečná událost · *Rekordy · P2 · B/D · střední* – 89 rekordů za 30 dní, rekord přestal být signálem. Předpoklad pro F5-01 a F5-03. Začít hlubší diskusí o definici rekordu.
+11. **F3-27** Porovnání s předchozím obdobím · *Statistiky · B · nízká–střední* – čísla Přehledu bez srovnání nic neříkají.
+
+#### Etapa 4 – Drobnosti a doladění (P3, rychlé)
+
+12. **F3-24** Texty a drobnosti z auditu · *Texty, úvod, souhrn, Historie · P3 · A/B · velmi nízká* – skloňování, počty, popisky, prázdný stav fitek.
+13. **F1-17** Kratší pauza po zahřívací sérii · *Pauza · P3 · B · nízká*.
+14. **F3-28** Stránka cviku: historie výš · *Stránka cviku · P3 · B · nízká–střední*.
+15. **F3-29** Formulář měření jen s používanými údaji · *Tělo · P3 · B · nízká*.
+
+#### Etapa 5 – Jednotný vzhled
+
+16. **F3-23** Redesign v úzkém rozsahu (barvy podle významu, jedna hlavní akce na obrazovce, dotyková plocha) · *Vzhled · B, zbytek C · střední* – až po etapách 1–3, které mění úvod a trénink.
+
+#### Etapa 6 – Zbytek plánu
+
+17. **F1-07** Poznámky ke stroji podle fitka.
+18. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
+19. **F3-16** Rozepsaný formulář přežije zavření appky.
+20. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-04, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+
+Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25). Odložené: F0-11, F3-07.
+
+#### Ověřit při používání (souběžně s etapou 1)
+
+Audit testoval v prohlížeči v režimu telefonu, ne v telefonu. Tohle rozhodne jen skutečné používání, nejlépe týden tréninků s poznámkami. Výsledek může změnit pořadí nebo zadání uvedených úloh.
+
+- Jak často cvičíš cvik, který v daném fitku nemá historii (přínos F1-13).
+- Jestli se ti už stalo, že se druh série změnil omylem, např. osamělá zahřívací série mezi pracovními ve starších trénincích (F1-15).
+- Chodí oznámení a vibrace konce pauzy se zhasnutým displejem a appkou na pozadí? (F1-04; Android uspává časovače.)
+- Gboard po Napsat: přejde klávesa Další z kg na Opak.? Nezakryje klávesnice řádek? (`enterkeyhint` v F3-24.)
+- Prediktivní gesto Zpět (Android 14+) v nainstalované appce (F0-06).
+- Čitelnost šedého předvyplnění na slunci a v ostře osvětlené posilovně ve světlém motivu (F3-01, F3-23).
+- Vadí 6 záložek ve spodní liště? (Odloženo, viz Co neděláme.)
+- Velikost dat v `localStorage`: `zd1:cache` drží celou knihovnu cviků i všechny tréninky a limit cca 5 MB sdílí vydaná appka i testovací verze. Časem zkontrolovat; když poroste k limitu, cache zmenšit (např. bez výchozích cviků z `EX_DB`). Databáze pro online hledání (`js/fedb.js`) se už teď načítá až při hledání.
 
 ### Převod na PWA
 
@@ -73,6 +131,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-10** Čitelný kód (přeformátování)
 - [ ] **F0-11** Rozdělit `js/app.js` do víc souborů podle částí (např. datová vrstva a záloha, rozdělaný trénink a pauza, historie s kalendářem a souhrnem, statistiky, záložka Cviky, nastavení; v `app.js` zůstane start, vykreslení a akce). Bez build kroku: víc `<script>` v `index.html` ve správném pořadí a všechny soubory do `FILES` v `sw.js`. **Odloženo 27. 9. 2026 (u F0-12):** přínos pro spotřebu tokenů je po F0-12 střední (sekce mají popis a ID v nadpisu, čte se jen potřebná část), riziko je jisté (dnes je vše v jedné funkci, po rozdělení by jména sdílely všechny soubory a mohla by se srazit s vestavěnými jmény prohlížeče; přerušená historie řádků; obrovské konflikty s otevřenými PR). Vrátit se, až `app.js` naroste nad cca 18 000 řádků nebo se v něm začnou často přetahovat souběžné větve. Dělat jen bez otevřených PR.
 - [x] **F0-12** Úklid repa pro menší spotřebu tokenů (kratší `CLAUDE.md`, rozdělený plán, `.ignore`, smazaná `puvodni/`)
+- [ ] **F0-13** Záloha častěji a ze souhrnu (UX audit 27. 9. 2026, §9; B · D · nízká): data jsou jen v jednom telefonu a připomínka zálohy na úvodní obrazovce přijde až po 14 dnech (`BK_REMIND_DAYS`), takže při smazání dat Chromu nebo ztrátě telefonu hrozí ztráta až 14 dní tréninků. Návrh: v souhrnu po tréninku tlačítko Zálohovat (sdílení souboru zálohy, např. na Disk, stejně jako v Nastavení → Data a záloha), když je poslední záloha do souboru starší než 7 dní nebo od ní přibylo 5 tréninků; připomínku na úvodní obrazovce zkrátit na 7 dní. Automatické nahrávání do cloudu dál ne (Co neděláme). Počty odsouhlasené 27. 9. (Otevřené otázky).
 
 ### Fáze 1 – Ovládání při tréninku
 
@@ -83,20 +142,26 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-03** Krokovač +/− pro váhu a opakování
 - [x] **F1-04** Časovač pauzy z času konce, vibrace, oznámení
 - [x] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče
-- [ ] **F1-06** Přidávání cviku: naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku", hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05).
+- [ ] **F1-06** Přidávání cviku a hledání po slovech (doplněno podle UX auditu 27. 9. 2026, §2 B; P2 · A · střední): naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku“, hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05). Z auditu: výsledky hledání řadit podle používání, ne abecedně (cvičené v tomto fitku nahoru, pak ostatní cvičené, pak zbytek; dnes „squat“ vrátí jako první Assisted Pistol Squats); hledat po slovech v libovolném pořadí (dnes `exMatch` hledá celý dotaz jako jeden text, „tah kladky“ ani „tlak na lavici“ nenajde nic); zvážit synonyma („tlak na lavici“ → bench press). Platí ve výběru cviků i v záložce Cviky (F3-18).
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
 - [x] **F1-08** Zahřívací série „60 %“ z minula
-- [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04). Po kole pracovních sérií supersérie má přednost Časovač po pracovní supersérii (rozhodnuto u F4-05), délka pauzy se vybírá v `toggleSetDone` přes `ssRest`.
+- [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04). Po kole pracovních sérií supersérie má přednost Časovač po pracovní supersérii (rozhodnuto u F4-05), délka pauzy se vybírá v `toggleSetDone` přes `ssRest`. Kratší pauza po zahřívací sérii je samostatně v F1-17 (jednodušší, dá se udělat dřív).
 - [x] **F1-10** Kontrola čísel, upozornění na velký skok
 - [ ] **F1-12** Ruční spuštění pauzy (nápad, rozhodnout později; vzniklo u F4-05): s vypnutým časovačem pauzy (hlavní vypínač v Nastavení → Odpočinek) jít pauzu spustit ručně, např. klepnutím na čas tréninku nahoře.
 - [x] **F1-11** Opravy z používání při tréninku (návrat na naposledy změněný cvik…)
+- [ ] **F1-13** Předvyplnění ze série nad (UX audit 27. 9. 2026, §5 nález 1; P1 · A · nízká): když série nemá odpovídající sérii z minula ani hodnotu ze šablony (nový cvik, cvik vázaný na fitko poprvé v tomto fitku, série navíc proti minule), je dnes prázdná a zápis stojí cca 7 klepnutí (kg → Napsat → číslo → Opak. → číslo → ✓) místo 1. Nově bude šedé předvyplnění = nejbližší série nad ní stejného druhu (zahřívací ze zahřívací, ostatní z pracovních) a ✓ ho převezme. Sloupec Minule zůstane „–“, aby bylo jasné, že nejde o historii. Krokovač bez hodnoty nezačne od 0, ale od série nad, jinak od poslední hodnoty cviku z jiného fitka (jen start krokovače, ne předvyplnění). Mění rozhodnutí F1-01 z 23. 9. („hodnoty ze série nad ní se nepřebírají“); změnu i podrobnosti uživatel odsouhlasil 27. 9. (Otevřené otázky). Kde: `exHints` / `draftHints` (sekce MINULE A PŘEDVYPLNĚNÍ), start krokovače (sekce KROKOVAČ). Pozor na návrh progrese (F4-01), zahřívací 60 % (F1-08), kontrolu velkého skoku (F1-10) a supersérie.
+- [ ] **F1-14** Neoznačené série s hodnotami při dokončení (UX audit 27. 9. 2026, §2 E a §5 nález 3; P1 · A · nízká): okno Dokončit trénink dnes píše jen „8 neoznačených sérií se neuloží“ a nerozlišuje prázdné série ze šablony od sérií s ručně zapsanými hodnotami bez ✓. Ty druhé jsou nejspíš odcvičené a jen neodškrtnuté, a tiše se ztratí. Nově zvlášť řádek „2 série mají hodnoty, ale nejsou označené“ s tlačítkem Označit jako hotové; prázdné série dál „se neuloží“. Počítají se jen zapsané hodnoty, ne šedé předvyplnění. Při té příležitosti skloňování v okně („1 cviků, 1 sérií“). Kde: `finishAsk`. Takto označené série dostanou jako čas odškrtnutí (`s.at`) čas ukončení tréninku (rozhodnuto 27. 9., Otevřené otázky).
+- [ ] **F1-15** Druh série výběrem místo cyklu (UX audit 27. 9. 2026, §5 nález 2; P2 · A · nízká): klepnutí na číslo série dnes bez potvrzení přepne druh (pracovní → zahřívací → drop set → do selhání, `case "cycType"`). Přepnutá série ztratí předvyplnění, další série se přečíslují a spárují s jinou sérií z minula (v auditu pak série 3 ukazovala hodnotu ze série 2); omyl mění objem, rekordy i předvyplnění, drop set a do selhání jsou 2–3 klepnutí naslepo. Odznak má 34 × 32 px a je na kraji, kde se drží telefon. Návrh: klepnutí otevře malý panel (`openSheet`) se 4 druhy, aktuální zvýrazněný (vždy 2 klepnutí, bez omylu). Varianta: cyklus zůstane, jen s hláškou „Série 2 → Zahřívací · Vrátit“. Platí v tréninku, v úpravě uloženého tréninku i v šabloně; dál volá `progTouch`.
+- [ ] **F1-16** Přečas pauzy jen na záložce Trénink (UX audit 27. 9. 2026, §3 a §8; P2 · B · nízká): pruh pauzy je nad spodní lištou na všech záložkách a korálový přečas (volba Počítat přečas) zmizí až po 15 min (`REST_OVER_MAX`), takže po tréninku zakrývá obsah Statistik a Těla. Návrh: na ostatních záložkách místo pruhu přečasu jen malý ukazatel na záložce Trénink, přečas ukončit po 5 min, barva přečasu ne korálová (sladit s F3-23). Odpočet pauzy (±15 s, Přeskočit) zůstane na všech záložkách (Otevřené otázky).
+- [ ] **F1-17** Kratší pauza po zahřívací sérii (UX audit 27. 9. 2026, §5 nález 4; P3 · B · nízká): po zahřívací sérii dnes běží stejná pauza jako po pracovní (výchozí 2:00), takže se často přeskakuje. Návrh: vlastní délka pauzy po zahřívací sérii v Nastavení → Trénink → Odpočinek mezi sériemi (např. výchozí 1:00, volba i Bez pauzy). Jednodušší než celé F1-09. Kde: výběr délky pauzy v `toggleSetDone` (jako `ssRest` u supersérie, F4-05), nová položka v `HELP`.
+- [ ] **F1-18** Větší ✓ a dotykové plochy v tréninku (UX audit 27. 9. 2026, §8; P2 · B · nízká): ✓ série (nejpoužívanější prvek appky) má 44 × 34 px, odznak druhu série 34 × 32 px, ±15 s v pauze cca 38 × 34 px; doporučeno aspoň 44–48 px, se zpocenou rukou a při chůzi se to pozná. Návrh: ✓ přes celou výšku řádku a šířku cca 52 px, u ostatních zvětšit dotykovou plochu (vzhled může zůstat menší). Rozměry v `em` podle F3-11, ověřit s písmem Největší na šířce 360 px. Stejné pravidlo pro zbytek appky (čipy, segmenty, ikonová tlačítka) patří do F3-23.
 
 ### Fáze 2 – Šablony a historie
 
 - [x] **F2-01** Cvičit znovu z historie
 - [x] **F2-02** Šablony podle fitka
 - [x] **F2-03** Smazání série tahem, Vrátit cvik
-- [ ] **F2-04** Rotace programu: appka ukáže, která šablona je na řadě.
+- [ ] **F2-04** Šablona na řadě jako hlavní akce úvodu (rotace programu; doplněno podle UX auditu 27. 9. 2026, §2 B, §4 Úvod a §11; P2 · B · střední): appka ukáže, která šablona je na řadě. Dnes je na úvodní obrazovce nejvýraznější „Začít prázdný trénink“ a všechna „Začít“ u šablon jsou stejně korálová, i když běžný den začíná šablonou. Návrh: nahoře karta „Dnes na řadě: Pull“ s jediným hlavním tlačítkem Začít, pod ní ostatní šablony s vedlejším Začít, prázdný trénink jako vedlejší tlačítko. Nejjednodušší pravidlo bez nových dat: na řadě je nejdéle necvičená šablona ve vybraném fitku (Otevřené otázky). Dlaždici Objem 30 dní nahradit údajem „Poslední trénink: před 2 dny (Legs)“. Během tréninku zůstává „Probíhá trénink“ (F2-09).
 - [x] **F2-05** Vlastní fotky u cviku
 - [x] **F2-08** Jedinečné názvy šablon
 - [ ] **F2-06** Archivace starých fitek a tréninků (vzniklo u F3-01, rozhodnout později): fitko, kam už se nechodí, zmizí z výběru a filtrů, tréninky a statistiky zůstanou.
@@ -110,8 +175,8 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-01** Barvy fitek a partií, tmavý režim
 - [x] **F3-02** Osobní rekordy s oslavou
 - [x] **F3-03** Souhrn po tréninku
-- [ ] **F3-04** Radar svalových partií ve statistikách: aktuální vs předchozí období, filtr fitka, karty s rozdíly (tréninky, čas, objem, série), klepnutí na osu ukáže cviky.
-- [ ] **F3-05** Radar v souhrnu po tréninku: volitelné, přepínatelné doplnění ke schématu postavy (F3-03), ne jeho náhrada.
+- [ ] **F3-04** Radar svalových partií ve statistikách: aktuální vs předchozí období, filtr fitka, klepnutí na osu ukáže cviky. Karty s rozdíly (tréninky, čas, objem, série) přesunuté do F3-27. **UX audit 27. 9. 2026 doporučuje radar nedělat** (§6, §11): partie už ukazuje postava a pruhy, radar se 6 osami přináší stejnou informaci hůř čitelně. Rozhodnout (Otevřené otázky).
+- [ ] **F3-05** Radar v souhrnu po tréninku: volitelné, přepínatelné doplnění ke schématu postavy (F3-03), ne jeho náhrada. Audit 27. 9. 2026 doporučuje nedělat, stejně jako F3-04.
 - [x] **F3-06** Kalendář
 - [ ] **F3-07** Roční heatmapa tréninků (barva podle počtu sérií). **Odloženo 24. 9. 2026:** po náhledech samoúčelná, co a kdy se cvičilo ukazuje kalendář (F3-06) a graf Průběh. Celá diskuse, rozhodnutí, náhledy a odkaz na hotový kód v `docs/navrhy/F3-07-heatmapa.md`.
 - [x] **F3-08** Jednotky v grafech
@@ -129,7 +194,20 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-20** Vlastní ikony místo emoji
 - [x] **F3-21** Kratší nápovědy (otazník v nadpisu sekce)
 - [x] **F3-22** Karta cviku bez štítků
-- [ ] **F3-23** Redesign appky (přání 27. 9. 2026, nic nerozhodnuto): jednotný vzhled celé appky, tedy systém (barvy, rozestupy, písmo, karty), tlačítka a ikony. Rozsah a podobu probrat, až bude úloha na řadě.
+- [ ] **F3-23** Redesign appky (přání 27. 9. 2026, nic nerozhodnuto): jednotný vzhled celé appky, tedy systém (barvy, rozestupy, písmo, karty), tlačítka a ikony. Rozsah a podobu probrat, až bude úloha na řadě. **UX audit 27. 9. 2026 (§7) doporučuje místo vizuální přestavby úzké zadání**, protože systém už existuje (barvy v `:root`, stupnice `--fs-*`, ikony `IC`, panely `openSheet`): (1) barvy podle významu – korálová dnes znamená hlavní akci, odkaz (název cviku), aktivní záložku, zničující akci (Zahodit trénink) i přečas pauzy; návrh: názvy cviků v barvě textu (klikatelnost nese ikona grafu), zničující akce červeně nebo neutrálním textem, přečas neutrálně; (2) jedna hlavní akce na obrazovce – úvod řeší F2-04, v tréninku bez hotové série má být hlavní Přidat cvik, ne Dokončit trénink; (3) jedna minimální dotyková plocha 44–48 px pro čipy, segmenty a ikonová tlačítka (dnes 34 px; trénink řeší F1-18). Ostatní je vkus (C). **Rozhodnuto 27. 9.: zatím jen v tomto úzkém rozsahu**, vizuální přestavbu zvážit až potom.
+- [ ] **F3-24** Texty a drobnosti z auditu (UX audit 27. 9. 2026, §3, §4, §8 a §10; P3 · A/B · velmi nízká). Samé malé úpravy bez změny dat:
+  - skloňování všude přes `plural` („4 cviků“ u šablony na úvodní obrazovce; „1 cviků, 1 sérií“ v okně Dokončit trénink, pokud ho už neopraví F1-14),
+  - počet cviků ve výběru cviků a v záložce Cviky podle filtru (dnes pořád „388 cviků“),
+  - úvodní obrazovka bez fitka: místo prázdného „Kde dnes cvičíš“ tlačítko „+ Přidat fitko“ (dnes jen přes Nastavení → Fitka),
+  - souhrn po tréninku: hláška „Trénink uložen“ zakrývá nadpis (přesunout dolů nad lištu, nebo vynechat, souhrn sám je potvrzení), dlaždice Rekordy se při 0 neukáže,
+  - Historie: „0 dní volna“ bez kontextu → popisek „dní od tréninku“,
+  - nadpis „Probíhá trénink“ se při písmu Největší zalomí na 2 řádky → kratší („Trénink“ a čas),
+  - `enterkeyhint="next"` / `"done"` v políčkách série, jen pokud ověření v telefonu ukáže, že Gboard nepřechází z kg na Opak.
+- [ ] **F3-25** Rekord jako skutečná událost (UX audit 27. 9. 2026, §3, §6 a §11; P2 · B/D · střední): rekord se počítá za každou metriku zvlášť (max. zátěž, odh. 1RM, nejlepší série, objem cviku…) a u cviků vázaných na fitko zvlášť po fitkách, takže jedna dobrá série udělá 2–3 rekordy (v auditu 28 rekordů na 20 tréninků bench pressu, 89 za 30 dní) a dlaždice Rekordy nic neříká. Návrh: v počtech (Statistiky, Historie, souhrn, obrázek ke sdílení) a v oslavě jen 1 rekord na cvik a trénink (nejvyšší metrika); objem cviku (roste už přidáním série) nepočítat jako rekord, nebo ho ukazovat jen na stránce cviku. Navazuje na dělení zlatá / stříbrná medaile (F3-20, `REC_BIG`). Rekordy se počítají z historie, změna definice nic neztratí. Předpoklad pro F5-01 a F5-03. Kde: sekce REKORDY (F3-02) a OSLAVA REKORDU. **Definice rekordu se rozhodne až po hlubší diskusi na začátku úlohy** (27. 9.; výchozí návrh v Otevřených otázkách).
+- [ ] **F3-26** Progres po cvicích ve Statistikách (UX audit 27. 9. 2026, §2 H, §6 a §11; P2 · B · střední): Přehled dnes ukazuje hlavně kolik se cvičilo (tréninky, čas, objem, série, rekordy), na „zlepšuji se?“ odpovídá jen stránka každého cviku zvlášť. Návrh: ve Statistikách → Cviky u každého cviku změna za zvolené období („108 kg · +4,5 kg za 3M“; odh. 1RM, u cviků s víc než 10 opakováními max. zátěž) a řazení podle změny; místo „Nejčastější cviky“ (v PPL mají všechny cviky stejný počet) blok „Největší zlepšení“ vedle Bez zlepšení (F4-06). Cvik vázaný na fitko po fitkách, platí filtr fitka a období. Částečně pokrývá F5-04. Má přednost před radarem F3-04 i před F3-15.
+- [ ] **F3-27** Porovnání s předchozím obdobím (UX audit 27. 9. 2026, §6; B · nízká–střední): dlaždice Přehledu (tréninky, čas, objem, série) s rozdílem proti stejně dlouhému předchozímu období („14 tréninků · +1“), stejně Souhrn minulý měsíc / pololetí / rok. Přesunuto z F3-04 (karty s rozdíly), bez radaru. Platí filtr fitka. Souhrn tréninku už porovnává s minulým tréninkem (`dHtml`), stejný vzhled rozdílů.
+- [ ] **F3-28** Stránka cviku: historie výš (UX audit 27. 9. 2026, §2 G, §4 a §6; P3 · B · nízká–střední): na stránce cviku je pořadí graf → osobní rekordy → poslední rekordy → historie a historie (nejčastější důvod návštěvy) začíná cca 1 300 px pod horním okrajem. Návrh: graf → historie → osobní rekordy, blok „Poslední rekordy“ vypustit nebo sbalit (opakuje Osobní rekordy a medaile v historii). Ze záložky Cviky otevírat cvik s historií rovnou na Statistikách (dnes Popis; z tréninku už Statistiky). Výchozí metrika grafu u cviků s víc než 10 opakováními Max. zátěž nebo Nejlepší série (odhad 1RM je tam nepřesný).
+- [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
 
 
 ### Fáze 4 – Chytré funkce
@@ -151,15 +229,17 @@ Předpoklad: F0-02 (svalové partie).
 
 Předpoklad: F3-02 (oslava rekordu). Vše se počítá z uložených tréninků, nic nového se neukládá (kromě nastavení). Každá funkce jde vypnout, volby patří do skupiny Nastavení → Rekordy a pokrok (přejmenovaná z „Rekordy“ v F4-06). Žádná oznámení na pozadí a žádné výčitky („ztratíš streak“).
 
-- [ ] **F5-01** Kolik chybí na rekord: u série v rozdělaném tréninku drobná nápověda, co je potřeba na nový rekord (např. „[medaile] 8 opak. = nový 1RM“, „85 kg = max. zátěž“). Navazuje na F4-01.
+UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravidelnost) a F5-01 (motivace v okamžiku série), obě v etapě 6. F5-03, F5-06 a F5-07 odložit, dokud nejsou rekordy čitelné (F3-25): odznaky a obrazná srovnání jsou spíš vizuální prvky než motivační mechanismus. Rozhodnutí „žádné XP a levely“ audit považuje za správné.
+
+- [ ] **F5-01** Kolik chybí na rekord: u série v rozdělaném tréninku drobná nápověda, co je potřeba na nový rekord (např. „[medaile] 8 opak. = nový 1RM“, „85 kg = max. zátěž“). Navazuje na F4-01. Až po F3-25 (jeden rekord na cvik a trénink), jinak by nápověda ukazovala víc druhů rekordů najednou.
 - [ ] **F5-02** Týdenní cíl: v Nastavení počet tréninků za týden (např. 3), na obrazovce Trénink kolečko „2 / 3 tento týden“, streak počítá týdny se splněným cílem (dnes `calStreak` = týdny aspoň s 1 tréninkem).
 - [ ] **F5-03** Milníky (odznaky): 10./50./100. trénink, N týdnů v řadě, celkem zvednuto 10/100 t, první trénink v novém fitku… Při dosažení oslava jako u rekordu (odznak místo medaile), ve Statistikách nástěnka se získanými i zamčenými odznaky.
-- [ ] **F5-04** Pokrok v čase: karta „Před rokem jsi na bench dal 60 kg, dnes 85 kg (+42 %)“ u nejčastějších cviků (Statistiky, případně stránka cviku).
-- [ ] **F5-05** Měsíční shrnutí: na začátku měsíce karta za minulý měsíc (tréninky, rekordy, nejlepší cvik, porovnání s předchozím měsícem), na konci roku „Rok v posilovně“.
+- [ ] **F5-04** Pokrok v čase: karta „Před rokem jsi na bench dal 60 kg, dnes 85 kg (+42 %)“ u nejčastějších cviků (Statistiky, případně stránka cviku). Částečně pokryje F3-26 (změna za období u každého cviku); zbude jen karta s delším srovnáním.
+- [ ] **F5-05** Měsíční shrnutí: na začátku měsíce karta za minulý měsíc (tréninky, rekordy, nejlepší cvik, porovnání s předchozím měsícem), na konci roku „Rok v posilovně“. Porovnání s předchozím obdobím navazuje na F3-27.
 - [ ] **F5-06** Kluby síly: odznaky „Klub 100 kg bench“, „bench = tělesná hmotnost“ apod. (tělesnou hmotnost appka zná).
 - [ ] **F5-07** Objem obrazně: „Tento měsíc jsi zvedl 42 t, to jsou 3 autobusy.“
 - [ ] **F5-08** Osobní výzvy: appka navrhne výzvu podle průměru (např. „12 tréninků v říjnu“, „+10 % objemu nohou“), průběh na obrazovce Trénink.
-- [ ] **F5-09** Zanedbaná partie: nenápadná informace na obrazovce Trénink („Nohy naposledy před 10 dny“), jen v appce, bez oznámení. Navazuje na skupiny partií (F3-01) a radar (F3-04).
+- [ ] **F5-09** Zanedbaná partie: nenápadná informace na obrazovce Trénink („Nohy naposledy před 10 dny“), jen v appce, bez oznámení. Navazuje na skupiny partií (F3-01) a pruhy partií ve Statistikách (radar F3-04 je podle auditu nejistý).
 
 
 ## Co neděláme
@@ -171,12 +251,17 @@ Předpoklad: F3-02 (oslava rekordu). Vše se počítá z uložených tréninků,
 | Napojení na hodinky / Health Connect | Z webové appky nedostupné, jen z nativní aplikace. |
 | Cloud, server, synchronizace dat | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01. (GitHub slouží jen pro kód a hosting.) |
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
+| Průvodce prvním spuštěním (onboarding) | Appku používá jeden uživatel, který ji zná (UX audit 27. 9. 2026). Prázdný stav bez fitka řeší F3-24. |
+| Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Řešit až při skutečném přechodu. |
 
-Odloženo (vrátit se, až bude fáze 3 hotová):
+Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle poznámky u nich):
 
 - Automatická volba fitka podle GPS: ruční volba stačí, GPS vyžaduje oprávnění a baterii.
 - Silueta postavy obarvená podle zatížení ve Statistikách: radar (F3-04) pokryje totéž jednodušeji. (V souhrnu po tréninku je postava od F3-03.)
 - Jemnější dělení partií (biceps/triceps, kvadricepsy/hamstringy/hýždě): podle odpovědi na otevřenou otázku.
+- Méně záložek ve spodní liště (dnes 6, Material Design doporučuje 3–5; UX audit 27. 9. 2026, D): audit doporučuje neměnit, přínos je malý a změna zvyku velká. Vrátit se, jen když přibude záložka nebo to začne vadit (Ověřit při používání).
+- Filtry v záložce Cviky schované pod jedno tlačítko „Filtr“ (audit, C): není nutné.
+- Hledání ve výběru cviků dole u palce (audit, C/B): nezvyklé; nejdřív F1-06, které potřebu hledat sníží.
 
 ## Otevřené otázky
 
@@ -186,6 +271,17 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 |---|---|---|
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
+| F1-13 | Ze které série nad brát předvyplnění (jen odškrtnuté, nebo i zapsané bez ✓)? Jen v rozdělaném tréninku, nebo i v šabloně a úpravě uloženého tréninku? Odkud začne krokovač? (Mění rozhodnutí F1-01 z 23. 9.) | **Rozhodnuto 27. 9. 2026 (podle návrhu):** nejbližší série nad stejného druhu se zapsanými hodnotami (odškrtnutá i neodškrtnutá), jen v rozdělaném tréninku; krokovač bez hodnoty od série nad, jinak od posledního záznamu cviku v jiném fitku (jen start, ne předvyplnění). |
+| F1-14 | Jaký čas odškrtnutí dostanou série označené až v okně Dokončit trénink? | **Rozhodnuto 27. 9. 2026:** čas ukončení tréninku (Konec v okně Dokončit trénink). Navržený konec se počítá jen z odškrtnutých sérií jako dnes, takto označené série ho neposunou. |
+| F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Panel (vždy 2 klepnutí, žádný omyl). |
+| F1-16 | Skrýt na ostatních záložkách jen přečas, nebo i odpočet pauzy? Po kolika minutách přečas ukončit? | Jen přečas (odpočet s ±15 s a Přeskočit zůstane všude), konec přečasu po 5 min. |
+| F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
+| F0-13 | Kdy nabízet zálohu v souhrnu po tréninku a na kolik dní zkrátit připomínku? | **Rozhodnuto 27. 9. 2026 (podle návrhu):** tlačítko Zálohovat v souhrnu, když je poslední záloha do souboru starší než 7 dní nebo od ní přibylo 5 tréninků; připomínka na úvodní obrazovce po 7 dnech. |
+| F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
+| F3-25 | Co počítat jako rekord? Zůstanou malé (stříbrné) rekordy vidět? | **Nerozhodnuto (27. 9. 2026):** rozhodne se až po hlubší diskusi na začátku úlohy. Výchozí návrh k diskusi: v počtech a oslavě 1 rekord na cvik a trénink (první podle pořadí `REC_ORDER`: max. zátěž, odh. 1RM…); objem cviku a nejlepší série jen na stránce cviku, bez oslavy a mimo počty. |
+| F3-26 | Jak měřit změnu síly za období? | Odh. 1RM (u cviků s víc než 10 opakováními max. zátěž): nejlepší hodnota z posledních 2 tréninků v období proti prvním 2; cvik vázaný na fitko po fitkách. |
+| F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
+| F3-23 | Redesign jako vizuální přestavba, nebo úzké zadání podle auditu? | **Rozhodnuto 27. 9. 2026:** zatím jen úzké zadání (barvy podle významu, jedna hlavní akce na obrazovce, dotyková plocha 44–48 px); vizuální přestavbu zvážit až potom. |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
 | F3-04 | 6 hlavních partií, nebo jemnější dělení? | 6 partií |
 | F5-02 | Počítat do týdenního cíle všechna fitka? Co když cíl změním v průběhu? | Všechna fitka; změna cíle platí od aktuálního týdne, starší týdny se hodnotí podle cíle, který tehdy platil (nebo zjednodušeně podle aktuálního). |

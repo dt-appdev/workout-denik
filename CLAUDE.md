@@ -79,7 +79,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `docs/plan-vyvoje.md` | Plán vývoje: otevřené úlohy a otázky, hotové úlohy jen jedním řádkem. |
 | `docs/hotovo.md` | Archiv: celé popisy hotových úloh a vyřešené otázky. |
 | `docs/log.md` | Log hotových úloh (nejnovější nahoře). |
-| `docs/navrhy/` | Odložené návrhy: diskuse, rozhodnutí a náhledy úloh, ke kterým se možná vrátíme (např. `F3-07-heatmapa.md`). Při znovuotevření úlohy nejdřív přečíst. |
+| `docs/navrhy/` | Odložené návrhy: diskuse, rozhodnutí a náhledy úloh, ke kterým se možná vrátíme (např. `F3-07-heatmapa.md`), a UX audit `ux-audit-2026-09-27.md` (u úloh z auditu číst jen sekci uvedenou v úloze). Při znovuotevření úlohy nejdřív přečíst. |
 | `.ignore` | Soubory, které nástroje pro hledání přeskakují (F0-12). |
 | `.nojekyll` | GitHub Pages servíruje soubory tak, jak jsou (bez Jekyllu). |
 | `.git-blame-ignore-revs` | Commity, které jen přeformátovaly kód (F0-10); GitHub je v historii řádků přeskočí. |
