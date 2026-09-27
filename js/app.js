@@ -3149,7 +3149,16 @@
     // formulář cviku (F3-14) pod záložku, odkud se na něj přišlo
     const top = S.nav[S.nav.length - 1];
     const r = S.route === "exed" ? (top ? top.route : "ex") : S.route;
-    const cur = r === "exd" ? (S.prevRoute === "stats" ? "stats" : "ex") : r === "wd" ? "hist" : r;
+    const cur =
+      r === "exd"
+        ? S.prevRoute === "stats"
+          ? "stats"
+          : "ex"
+        : r === "wd"
+          ? "hist"
+          : r === "home"
+            ? "train"
+            : r;
     document.getElementById("tabs").innerHTML = t
       .map(
         ([k, l]) =>
@@ -3182,8 +3191,12 @@
     try {
       if (S.route === "edit" && S.editDraft) {
         h = vEditor(S.editDraft);
-      } else if (S.route === "train") {
-        h = S.active ? vEditor(S.active) : vHome();
+      } else if (S.route === "train" || S.route === "home") {
+        // úvodní obrazovka během tréninku (F2-09); trénink mezitím skončil = obyčejná záložka Trénink
+        if (S.route === "home" && !S.active) {
+          S.route = "train";
+        }
+        h = S.active && S.route === "train" ? vEditor(S.active) : vHome();
       } else if (S.route === "hist") {
         h = vHist();
       } else if (S.route === "ex") {
@@ -3262,7 +3275,7 @@
     } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
     const base = (r) =>
-      r === "edit" || r === "exd" ? "train" : r === "exed" ? "ex" : r === "wd" ? "hist" : r;
+      r === "edit" || r === "exd" || r === "home" ? "train" : r === "exed" ? "ex" : r === "wd" ? "hist" : r;
     // formulář cviku (F3-14) se po restartu neobnoví, zůstane uložené místo, odkud se na něj přišlo
     if (route !== "exed") {
       lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
@@ -3272,8 +3285,13 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- ÚVODNÍ OBRAZOVKA (záložka Trénink bez rozdělaného tréninku) ---------- */
+  /* ---------- ÚVODNÍ OBRAZOVKA ----------
+     Bez rozdělaného tréninku záložka Trénink (route train). Během tréninku (F2-09) route home: šipka ←
+     z tréninku, velké tlačítko „Probíhá trénink“ vrátí do tréninku, Kde dnes cvičíš mění fitko tréninku
+     a Začít u šablony se zeptá, co s rozdělaným tréninkem (sheetRun). */
+  // fitko, kde dnes cvičíš; během tréninku fitko tréninku
   function curGym() {
+    if (S.active && S.cfg.gyms.some((g) => g.id === S.active.gymId)) return S.active.gymId;
     return S.selGym || S.cfg.defaultGymId || (S.cfg.gyms[0] && S.cfg.gyms[0].id) || null;
   }
   function vHome() {
@@ -3319,11 +3337,16 @@
           .join("")}
       </div>
     </section>`;
-    h += `<section class="sec startbar">
-      <button class="btn primary block" data-act="startEmpty">
-        ${icon("plus")}Začít prázdný trénink
-      </button>
-    </section>`;
+    // během tréninku místo nového tréninku návrat do rozdělaného (F2-09)
+    h += S.active
+      ? `<section class="sec startbar">
+        <button class="btn primary block" data-act="runOpen">Probíhá trénink</button>
+      </section>`
+      : `<section class="sec startbar">
+        <button class="btn primary block" data-act="startEmpty">
+          ${icon("plus")}Začít prázdný trénink
+        </button>
+      </section>`;
     h += vHomeTpls(all);
     return h;
   }
@@ -3868,6 +3891,52 @@
     closeSheet();
     go("train");
   }
+  /* ---------- NOVÝ TRÉNINK BĚHEM TRÉNINKU (F2-09) ----------
+     Začít u šablony nebo Cvičit znovu během rozdělaného tréninku se zeptá (sheetRun): Dokončit a začít
+     nový (okno Dokončit trénink, pak rovnou nový trénink bez souhrnu), Zahodit a začít nový, Zrušit.
+     Co začne potom, drží runNext: {tpl: id šablony} nebo {again: stav okna Cvičit znovu}. */
+  let runNext = null;
+  // název toho, co začne („trénink podle šablony „Push““)
+  function runNextName(next) {
+    if (next.tpl) {
+      const t = S.templates[next.tpl];
+      return t ? "trénink podle šablony „" + t.name + "“" : "nový trénink";
+    }
+    return "znovu trénink „" + next.again.w.title + "“";
+  }
+  function sheetRun(next) {
+    const d = S.active;
+    runNext = next;
+    const done = d.ex.reduce((a, e) => a + e.sets.filter((s) => s.done).length, 0);
+    const doneTxt = done + " " + plural(done, "hotová série", "hotové série", "hotových sérií");
+    openSheet(
+      "Probíhá trénink",
+      `<p style="margin:0">
+        Trénink „${esc(d.title)}“ ještě běží (${doneTxt}). Chceš ho ukončit a začít ${esc(runNextName(next))}?
+      </p>`,
+      (done ? '<button class="btn primary full" data-act="runFinish">Dokončit a začít nový</button>' : "") +
+        `<button class="btn danger full" data-act="runDiscard">Zahodit a začít nový</button>
+        <button class="btn full" data-act="closeSheet">Zrušit</button>`,
+    );
+  }
+  // začne trénink po ukončení rozdělaného (šablona mohla mezitím zmizet)
+  function runStart(next) {
+    if (next && next.tpl && S.templates[next.tpl]) {
+      startWorkout(next.tpl);
+    } else if (next && next.again) {
+      again = next.again;
+      startAgain();
+    } else {
+      go("train");
+    }
+  }
+  // konec rozdělaného tréninku (uložení i zahození); jeho fitko zůstane vybrané na úvodní obrazovce
+  function activeEnd() {
+    S.selGym = curGym();
+    S.active = null;
+    saveActive();
+    restStop();
+  }
   function defaultTitle() {
     const h = new Date().getHours();
     return h < 11 ? "Ranní trénink" : h < 17 ? "Odpolední trénink" : "Večerní trénink";
@@ -3907,6 +3976,56 @@
         ? " · poslední série v " + fmtTime(lastAt) + ", navrženo +3 min"
         : " · bez časů sérií, navržen aktuální čas"
     }`;
+  }
+  // okno Dokončit trénink (tlačítko v tréninku i Dokončit a začít nový, F2-09)
+  function finishAsk(d) {
+    const problem = draftProblem(d, true);
+    if (problem) {
+      showProblem(problem.e, problem.j, problem);
+      return;
+    }
+    const ex = draftToWorkout(d, true);
+    const undone = d.ex.reduce((a, e) => a + e.sets.filter((s) => !s.done).length, 0);
+    if (!ex.length) {
+      toast("Žádná série není označená jako hotová.");
+      return;
+    }
+    const lastAt = lastSetAt(d);
+    const sug = suggestEnd(d);
+    let b = `<p style="margin:0">
+      ${ex.length} cviků, ${ex.reduce((a, e) => a + e.sets.length, 0)} sérií.
+    </p>
+    ${undone ? `<p class="small muted" style="margin:0">${undone} neoznačených sérií se neuloží.</p>` : ""}`;
+    b += `<div class="card stack" style="gap:8px">
+      <div class="row">
+        <label class="f grow">
+          Začátek
+          <input class="inp" type="time" value="${toTimeInput(d.start)}" disabled>
+        </label>
+        <label class="f grow">
+          Konec
+          <input class="inp" type="time" id="fin-end" data-f="finEnd" value="${toTimeInput(sug)}">
+        </label>
+      </div>
+      <div class="small muted" id="fin-info">${finInfo(d, sug, lastAt)}</div>
+    </div>`;
+    // Dokončit a začít nový (F2-09): co začne po uložení
+    if (runNext) {
+      b += `<p class="small muted" style="margin:0">Po uložení začne ${esc(runNextName(runNext))}.</p>`;
+    }
+    if (d.tplId && S.templates[d.tplId]) {
+      b +=
+        `<label class="switch">
+        <input type="checkbox" id="updTpl"> Aktualizovat šablonu „` +
+        `${esc(S.templates[d.tplId].name)}“ (cviky a váhy)
+      </label>`;
+    }
+    openSheet(
+      "Dokončit trénink?",
+      b,
+      `<button class="btn grow" data-act="closeSheet">Zpět</button>
+      <button class="btn primary grow" data-act="finishOk">Uložit trénink</button>`,
+    );
   }
   function durLabel(w) {
     const dur = fmtDur((w.end || w.start) - w.start);
@@ -4084,10 +4203,8 @@
   function vEditor(d) {
     const mode = d.mode;
     let h = "";
-    const left =
-      mode === "active"
-        ? ""
-        : `<button class="iconbtn" data-act="edCancel" aria-label="Zpět">${IC.back}</button>`;
+    // šipka ←: z rozdělaného tréninku na úvodní obrazovku (F2-09), jinak tam, odkud se přišlo
+    const left = `<button class="iconbtn" data-act="edCancel" aria-label="Zpět">${IC.back}</button>`;
     const heading =
       mode === "template"
         ? d.id
@@ -10628,8 +10745,30 @@
       case "selGym":
         S.selGym = v;
         tplOther = false;
+        // během tréninku mění i fitko tréninku (F2-09)
+        if (S.active && S.active.gymId !== v) {
+          S.active.gymId = v;
+          saveActive();
+          toast("Fitko tréninku: " + gymName(v));
+        }
         scheduleRender();
         break;
+      case "runOpen":
+        go("train");
+        break;
+      case "runFinish":
+        closeSheet();
+        go("train");
+        finishAsk(S.active);
+        break;
+      case "runDiscard": {
+        const next = runNext;
+        runNext = null;
+        activeEnd();
+        closeSheet();
+        runStart(next);
+        break;
+      }
       case "startEmpty":
         if (S.active) {
           go("train");
@@ -10639,8 +10778,7 @@
         break;
       case "startTpl":
         if (S.active) {
-          toast("Nejdřív dokonči rozdělaný trénink.");
-          go("train");
+          sheetRun({ tpl: v });
           break;
         }
         startWorkout(v);
@@ -11339,54 +11477,10 @@
       case "restSkip":
         restStop();
         break;
-      case "finish": {
-        const problem = draftProblem(d, true);
-        if (problem) {
-          showProblem(problem.e, problem.j, problem);
-          break;
-        }
-        const ex = draftToWorkout(d, true);
-        const undone = d.ex.reduce((a, e) => a + e.sets.filter((s) => !s.done).length, 0);
-        if (!ex.length) {
-          toast("Žádná série není označená jako hotová.");
-          break;
-        }
-        const lastAt = lastSetAt(d);
-        const sug = suggestEnd(d);
-        let b = `<p style="margin:0">
-          ${ex.length} cviků, ${ex.reduce((a, e) => a + e.sets.length, 0)} sérií.
-        </p>
-        ${
-          undone ? `<p class="small muted" style="margin:0">${undone} neoznačených sérií se neuloží.</p>` : ""
-        }`;
-        b += `<div class="card stack" style="gap:8px">
-          <div class="row">
-            <label class="f grow">
-              Začátek
-              <input class="inp" type="time" value="${toTimeInput(d.start)}" disabled>
-            </label>
-            <label class="f grow">
-              Konec
-              <input class="inp" type="time" id="fin-end" data-f="finEnd" value="${toTimeInput(sug)}">
-            </label>
-          </div>
-          <div class="small muted" id="fin-info">${finInfo(d, sug, lastAt)}</div>
-        </div>`;
-        if (d.tplId && S.templates[d.tplId]) {
-          b +=
-            `<label class="switch">
-            <input type="checkbox" id="updTpl"> Aktualizovat šablonu „` +
-            `${esc(S.templates[d.tplId].name)}“ (cviky a váhy)
-          </label>`;
-        }
-        openSheet(
-          "Dokončit trénink?",
-          b,
-          `<button class="btn grow" data-act="closeSheet">Zpět</button>
-          <button class="btn primary grow" data-act="finishOk">Uložit trénink</button>`,
-        );
+      case "finish":
+        runNext = null;
+        finishAsk(d);
         break;
-      }
       case "finishOk": {
         const ex = draftToWorkout(d, true);
         const upd = document.getElementById("updTpl");
@@ -11409,11 +11503,16 @@
           items[d.tplId] = Object.assign({}, items[d.tplId], { items: tplItemsOf({ ex }) });
           put("config/templates", { items });
         }
-        S.active = null;
-        saveActive();
-        restStop();
+        activeEnd();
         closeSheet();
         toast("Trénink uložen");
+        // Dokončit a začít nový (F2-09): rovnou nový trénink, souhrn a oslava se přeskočí (trénink je v Historii)
+        if (runNext) {
+          const next = runNext;
+          runNext = null;
+          runStart(next);
+          break;
+        }
         go("hist"); // Dokončit i Zpět ze stránky „Hotovo“ vedou do Historie
         openWorkout({ id, mk: monthKey(w.start) }, true);
         if (S.cfg.recCelW) {
@@ -11428,9 +11527,7 @@
         confirmSheet("Zahodit trénink?", "Rozdělaný trénink se smaže a neuloží.", "Zahodit", "discardOk");
         break;
       case "discardOk":
-        S.active = null;
-        saveActive();
-        restStop();
+        activeEnd();
         closeSheet();
         go("train");
         break;
@@ -11541,9 +11638,8 @@
           ),
         });
         put("config/templates", { items });
-        S.editDraft = null;
         toast("Šablona uložena");
-        go("train");
+        tplLeave();
         break;
       }
       case "tplGym": {
@@ -11571,9 +11667,8 @@
         const items = Object.assign({}, S.templates);
         delete items[S.editDraft.id];
         put("config/templates", { items });
-        S.editDraft = null;
         closeSheet();
-        go("train");
+        tplLeave();
         break;
       }
       case "histGym":
@@ -11606,16 +11701,9 @@
         S.histLimit = (S.histLimit || 40) + 40;
         scheduleRender();
         break;
-      case "wAgain": {
-        if (S.active) {
-          closeSheet();
-          toast("Nejdřív dokonči rozdělaný trénink.");
-          go("train");
-          break;
-        }
+      case "wAgain":
         sheetAgain(Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]));
         break;
-      }
       case "againGym": {
         if (!again) break;
         again.gym = v;
@@ -11632,7 +11720,9 @@
         navBack();
         break;
       case "againOk":
-        if (again && !S.active) {
+        if (again && S.active) {
+          sheetRun({ again }); // během tréninku se nejdřív zeptá, co s ním (F2-09)
+        } else if (again) {
           startAgain();
         }
         break;
@@ -12261,6 +12351,10 @@
     if (!f || !d) return;
     if (f === "gymId") {
       d.gymId = t.value;
+      // fitko rozdělaného tréninku = Kde dnes cvičíš na úvodní obrazovce (F2-09)
+      if (d.mode === "active") {
+        S.selGym = t.value;
+      }
       touchDraft();
       scheduleRender();
     }
@@ -12309,8 +12403,8 @@
   /* ---------- tlačítko Zpět (F0-06) ----------
      Každý stisk systémového Zpět (i gesto) = jeden krok navBack() podle toho, co je na obrazovce:
      panel → o úroveň / zavřít, stránka cviku, úprava a formulář cviku → tam, odkud se přišlo,
-     jiná záložka → Trénink.
-     Na hlavní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
+     jiná záložka → Trénink, rozdělaný trénink → úvodní obrazovka (F2-09).
+     Na úvodní obrazovce Tréninku první Zpět jen ukáže hlášku, další appku zavře.
      Historie prohlížeče jen „počítá kroky“: drží se v ní aspoň tolik záznamů, kolik kroků zbývá
      na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
      přidané bez klepnutí může při Zpět přeskočit. Po hlášce na hlavní obrazovce zůstanou kroky
@@ -12329,13 +12423,17 @@
   function navDepth() {
     const r = S.route,
       top = S.nav[S.nav.length - 1];
-    let page = 1; // jiná záložka: jeden krok na Trénink
+    // Trénink: úvodní obrazovka, s rozdělaným tréninkem o krok víc (← z tréninku na úvodní obrazovku, F2-09)
+    const train = S.active ? 1 : 0;
+    let page = 1 + train; // jiná záložka: jeden krok na Trénink
     if (r === "exd" || r === "edit" || r === "exed" || r === "wd") {
       page = 1 + (top ? top.d : 1);
     } else if (r === "train") {
+      page = train;
+    } else if (r === "home") {
       page = 0;
     } else if (r === "set" && S.setPage) {
-      page = 2; // podstránka Nastavení → rozcestník → Trénink
+      page = 2 + train; // podstránka Nastavení → rozcestník → Trénink
     }
     return (celEl ? 1 : 0) + (sheetNav ? sheetNav.lv : 0) + page;
   }
@@ -12369,6 +12467,15 @@
       return;
     }
     go(v);
+  }
+  // po uložení nebo smazání šablony zpět na úvodní obrazovku (i během tréninku, F2-09), na stejné místo
+  function tplLeave() {
+    S.editDraft = null;
+    const f = S.nav.pop();
+    go(f ? f.route : "train");
+    if (f) {
+      render.restoreY = f.y;
+    }
   }
   // otevře úpravu tréninku nebo šablony (S.editDraft) a zapamatuje si, kam se pak vrátit
   function goEdit() {
@@ -12413,7 +12520,9 @@
         go(
           r === "edit"
             ? d && d.mode === "template"
-              ? "train"
+              ? S.active
+                ? "home"
+                : "train"
               : "hist"
             : r === "wd"
               ? "hist"
@@ -12437,7 +12546,12 @@
       setPageOpen("");
       return true;
     }
-    if (r !== "train") {
+    // rozdělaný trénink → úvodní obrazovka, trénink běží dál (F2-09)
+    if (r === "train" && S.active) {
+      go("home");
+      return true;
+    }
+    if (r !== "train" && r !== "home") {
       go("train");
       return true;
     }
