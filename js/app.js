@@ -1612,8 +1612,9 @@
     return hints.map((x, j) => {
       if (e.sets[j].t !== "n") return x;
       work++;
-      if (prog.set >= 0 && work !== prog.set) return x;
-      return { p: x.p, h: Object.assign({}, x.h, { kg: prog.kg, reps: prog.reps }) };
+      const hit = prog.sets.find((p) => p.set === work);
+      if (!hit) return x;
+      return { p: x.p, h: Object.assign({}, x.h, { kg: hit.kg, reps: prog.reps }) };
     });
   }
 
@@ -1622,6 +1623,10 @@
      měly všechny pracovní série (typ „n“, bez zahřívacích, drop setů a do selhání) aspoň horní hranici,
      navrhne rozdělaný trénink přidat váhu o krok krokovače cviku (kkStep, výchozí 2,5 kg) k nejtěžší sérii
      a opakování od dolní hranice. U cviku s dopomocí naopak ubrat dopomoc (od nejmenší dopomoci).
+     Série s menší váhou než nejtěžší se nejdřív dorovnávají (oprava F4-01): lehčí série, která dala horní
+     hranici, dostane o krok víc (nejvýš váhu nejtěžší), i když nejtěžší série horní hranici nedala. Nad
+     nejtěžší váhu se přidává, až mají všechny pracovní série stejnou váhu a horní hranici. S.cfg.progSets
+     „all“ = všechny takové série najednou, „first“ = jen první z nich (přidání nad nejtěžší jen 1. série).
      Návrh je zelený řádek pod „Minule“ (progLine), dokud jsou pracovní série nedotčené (progTouched).
      Klepnutí na řádek návrh použije (e.progUse): šedé předvyplnění pracovních sérií = návrh (draftHints,
      ✓ i krokovač ho převezmou) a řádek zmizí. Změna pracovních sérií (hodnota, ✓, + Série, smazání,
@@ -1647,8 +1652,14 @@
     if (progValid(prog)) return prog;
     return S.cfg.progAll ? [S.cfg.progMin, S.cfg.progMax] : null;
   }
+  // výčet „1.“, „1. a 2.“, „1., 2. a 3.“
+  function listAnd(items) {
+    if (items.length < 2) return items.join("");
+    return items.slice(0, -1).join(", ") + " a " + items[items.length - 1];
+  }
   const progStr = (range) => range[0] + (range[1] > range[0] ? "–" + range[1] : "") + " opak.";
-  // návrh pro cvik e rozdělaného tréninku d: {kg, reps, range, from, kind}, nebo null
+  /* návrh pro cvik e rozdělaného tréninku d: {sets, reps, range, kind, up}, nebo null;
+     sets = [{set, kg}] (set = pořadí pracovní série od 0), up = přidání nad nejtěžší váhu (jinak dorovnání) */
   function progInfo(d, e) {
     if (d.mode !== "active") return null;
     const range = progRange(e.exId);
@@ -1665,19 +1676,22 @@
     const atTop = (s) => +s.reps >= range[1];
     const round = (kg) => Math.round(kg * 100) / 100;
     const first = S.cfg.progSets === "first";
-    if (work.every(atTop)) {
-      // všechny série na horní hranici: přidat (všem, nebo jen 1. sérii)
-      if (assist && !(best > 0)) return null; // bez dopomoci už není co ubrat
-      if (kind === "wr" && !(best > 0)) return null;
-      const kg = assist ? Math.max(0, best - step) : best + step;
-      return { kg: round(kg), reps: range[0], range, kind, set: first ? 0 : -1 };
-    }
-    if (!first) return null;
-    // postupně: první lehčí série s horní hranicí se přiblíží nejtěžší (o krok, nejvýš na její váhu)
-    const k = work.findIndex((s, n) => kgs[n] !== best && atTop(s));
-    if (k < 0) return null;
-    const kg = assist ? Math.max(best, kgs[k] - step) : Math.min(best, kgs[k] + step);
-    return { kg: round(kg), reps: range[0], range, kind, set: k };
+    const info = (sets, up) => ({ sets, reps: range[0], range, kind, up });
+    // nejdřív dorovnat: lehčí série s horní hranicí se přiblíží nejtěžší (o krok, nejvýš na její váhu)
+    const even = [];
+    work.forEach((s, n) => {
+      if (kgs[n] === best || !atTop(s)) return;
+      const kg = assist ? Math.max(best, kgs[n] - step) : Math.min(best, kgs[n] + step);
+      even.push({ set: n, kg: round(kg) });
+    });
+    if (even.length) return info(first ? even.slice(0, 1) : even, false);
+    // všechny série se stejnou váhou na horní hranici: přidat (všem, nebo jen 1. sérii)
+    if (!work.every(atTop)) return null;
+    if (assist && !(best > 0)) return null; // bez dopomoci už není co ubrat
+    if (kind === "wr" && !(best > 0)) return null;
+    const kg = round(assist ? Math.max(0, best - step) : best + step);
+    const sets = work.map((s, n) => ({ set: n, kg }));
+    return info(first ? sets.slice(0, 1) : sets, true);
   }
   // pracovní série cviku už upravené (hodnota, ✓, přidání, smazání, změna druhu): návrh se nenabízí
   function progTouched(e) {
@@ -1696,14 +1710,16 @@
     if (e.progUse || progTouched(e)) return "";
     const prog = progInfo(d, e);
     if (!prog) return "";
-    const kg = esc(numStr(prog.kg)) + " kg";
-    const what =
-      prog.kind === "assist"
-        ? `uber dopomoc <b>−${kg} × ${prog.reps}</b>`
-        : prog.kind === "bwplus"
-          ? `přidej zátěž <b>+${kg} × ${prog.reps}</b>`
-          : `přidej váhu <b>${kg} × ${prog.reps}</b>`;
-    const which = prog.set >= 0 ? ` (${prog.set + 1}. série)` : "";
+    const sign = prog.kind === "assist" ? "−" : prog.kind === "bwplus" ? "+" : "";
+    const verb =
+      prog.kind === "assist" ? "uber dopomoc" : prog.kind === "bwplus" ? "přidej zátěž" : "přidej váhu";
+    // různé váhy vedle sebe („42,5 kg × 7 · 45 kg × 7“), stejné jen jednou
+    const kgs = [...new Set(prog.sets.map((p) => p.kg))];
+    const vals = kgs.map((kg) => `<b>${sign}${esc(numStr(kg))} kg × ${prog.reps}</b>`).join(" · ");
+    // které série: nic = všechny najednou (přidání ve volbě Všem sériím)
+    const all = prog.up && S.cfg.progSets !== "first";
+    const which = all ? "" : ` (${listAnd(prog.sets.map((p) => p.set + 1 + "."))} série)`;
+    const what = verb + " " + vals;
     return `<button class="exc-prog" data-act="progUse" data-i="${i}"
         title="Klepnutím návrh použiješ">
       ${IC.prog}
@@ -8302,7 +8318,10 @@
           "Jak to funguje",
           "Když minule všechny pracovní série cviku dosáhly horní hranice rozsahu opakování, navrhne trénink " +
             "přidat váhu o krok z tlačítek +/− (výchozí 2,5 kg) a opakování od dolní hranice. U cviku " +
-            "s dopomocí navrhne dopomoc ubrat. Návrh je v zeleném řádku pod Minule, klepnutím ho použiješ: " +
+            "s dopomocí navrhne dopomoc ubrat. Když série neměly stejnou váhu (např. 40 a 45 kg), nejdřív " +
+            "dorovná lehčí série: každá, která dala horní hranici, dostane o krok víc, nejvýš váhu nejtěžší " +
+            "série. Nad nejtěžší váhu přidá, až mají všechny série stejnou váhu. " +
+            "Návrh je v zeleném řádku pod Minule, klepnutím ho použiješ: " +
             `navržené hodnoty se objeví v šedém předvyplnění sérií a ${icon("check")} je převezme. Když místo ` +
             `toho začneš pracovní série upravovat (hodnoty, ${icon("check")}, přidání, smazání, změna druhu ` +
             "série), návrh zmizí. Zahřívací série na návrh nemají vliv.",
@@ -8319,10 +8338,11 @@
         ],
         [
           "Přidat váhu",
-          "Všem sériím: váha se přidá ve všech pracovních sériích najednou. Postupně od 1. série: váha se " +
+          "Všem sériím: váha se přidá ve všech pracovních sériích najednou a lehčí série se dorovnávají " +
+            "všechny najednou. Postupně od 1. série: váha se " +
             "přidá jen v 1. sérii, v dalších trénincích se k ní postupně přidávají další série, jakmile dají " +
             "horní hranici (vždy jedna série o krok, nejvýš na váhu nejtěžší série). Až mají všechny série " +
-            "horní hranici, přidá se znovu v 1. sérii.",
+            "stejnou váhu a horní hranici, přidá se znovu v 1. sérii.",
         ],
       ],
     },
@@ -13217,6 +13237,29 @@
   /* série cviku v každém zkušebním tréninku (pořadí jako FAKE_DAYS), null = cvik v tréninku není;
      note = co má appka ukázat (jen pro přehled v kódu) */
   const FAKE_PLAN = [
+    {
+      exId: "leg-extension-machine",
+      note:
+        "návrh progrese (F4-01) s různými vahami: se zapnutým návrhem 8–12 Všem sériím „42,5 kg × 8 · " +
+        "45 kg × 8 (1. a 2. série)“, Postupně „42,5 kg × 8 (1. série)“",
+      sets: [
+        null,
+        null,
+        null,
+        null,
+        [
+          { t: "n", kg: 40, reps: 10 },
+          { t: "n", kg: 40, reps: 10 },
+          { t: "n", kg: 45, reps: 10 },
+        ],
+        [
+          { t: "w", kg: 20, reps: 12 },
+          { t: "n", kg: 40, reps: 12 },
+          { t: "n", kg: 42.5, reps: 12 },
+          { t: "n", kg: 45, reps: 12 },
+        ],
+      ],
+    },
     {
       exId: "bench-press-barbell",
       note: "vázaný na fitko, 4 tréninky bez zlepšení",

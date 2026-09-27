@@ -346,8 +346,10 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   = zapnuto, `"off"` = vypnuto, bez pole = `S.cfg.progAll` s `progMin`–`progMax`, výchozí vypnuto, 8–12), jen typy
   `PROG_KINDS` (wr, bwplus, assist). `progInfo(d, e)`: jen rozdělaný trénink, všechny pracovní série (`t === "n"`) z minula
   (`draftLast`) ≥ horní hranice → nejtěžší série + `kkStep` (u dopomoci nejmenší dopomoc − krok), opakování = dolní
-  hranice; `set` = pořadí pracovní série, které návrh platí (−1 = všem). `S.cfg.progSets` (`all` výchozí / `first`):
-  `first` = přidat jen 1. sérii, jinak dorovnat první lehčí sérii s horní hranicí o krok k nejtěžší. Předvyplnění
+  hranice. Přednost má dorovnání: lehčí pracovní série s horní hranicí dostane o krok víc, nejvýš váhu nejtěžší (`up`
+  = false); nad nejtěžší (`up` = true) až při stejné váze všech sérií. Výsledek `{sets: [{set, kg}], reps, up}`, `set` =
+  pořadí pracovní série. `S.cfg.progSets` (`all` výchozí / `first`): `all` = všechny takové série najednou, `first` = jen
+  první z nich (přidání jen 1. sérii). Předvyplnění
   v rozdělaném tréninku vždy přes `draftHints(d, e)` (✓, krokovač, karta), ne rovnou `exHints` (sloupec Minule
   a `setJump` dál z `exHints(...).p`); návrh se do něj dostane až po klepnutí na řádek `progLine` (ikona `IC.prog`,
   krátký text „Návrh: …“, akce `progUse` → `e.progUse`, řádek zmizí). Řádek se ukazuje, jen dokud jsou pracovní
