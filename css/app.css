@@ -1010,12 +1010,7 @@ select.inp {
   all: unset;
   cursor: pointer;
 }
-.exc-prev {
-  padding: 0 14px 8px;
-  font-size: var(--fs-sm);
-  color: var(--ink-3);
-}
-/* návrh progrese pod řádkem Minule (F4-01), klepnutím se skryje */
+/* návrh progrese pod názvem cviku (F4-01), klepnutím se skryje */
 .exc-prog {
   display: flex;
   align-items: center;

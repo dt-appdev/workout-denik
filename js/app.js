@@ -493,13 +493,17 @@
     </div>`;
   }
   // postava zepředu a zezadu obarvená podle hodnot partií (m: {partie: počet}), sytější = víc;
-  // grp = barva podle skupiny partie (F3-01), jinak červená
-  function musFigs(m, small, grp) {
+  // grp = barva podle skupiny partie (F3-01), jinak červená; weak = {partie: true} jen vedlejší partie
+  // (MUS_WEAK, slabá barva bez ohledu na počet)
+  function musFigs(m, small, grp, weak) {
     const mx = Math.max(0, ...Object.values(m)) || 1;
     const heat = (k) => {
       const v = m[k] || 0;
       if (!v) return "var(--m-idle)";
-      const a = grp ? 0.4 + (0.6 * v) / mx : 0.25 + (0.75 * v) / mx;
+      let a = grp ? 0.4 + (0.6 * v) / mx : 0.25 + (0.75 * v) / mx;
+      if (weak && weak[k]) {
+        a = MUS_WEAK;
+      }
       return (
         "color-mix(in srgb, " +
         (grp ? mgCol(k) : "var(--m-pri)") +
@@ -513,6 +517,13 @@
       <figure>${MUSCLE_MAP.svg("back", heat, "Zezadu")}<figcaption>Zezadu</figcaption></figure>
     </div>`;
   }
+  // sytost barvy partie, která byla v tréninku jen vedlejší (souhrn a obrázek ke sdílení)
+  const MUS_WEAK = 0.25;
+  // barva pruhu partie v seznamu pod postavou (jen vedlejší = slabší)
+  const mgColWeak = (k, weak) =>
+    weak && weak[k]
+      ? "color-mix(in srgb, " + mgCol(k) + " " + MUS_WEAK * 100 + "%, var(--m-idle))"
+      : mgCol(k);
   // pruh s poměrem skupin partií a legenda v procentech (F3-01)
   function mgStack(m) {
     const g = {};
@@ -1671,7 +1682,7 @@
      hranici, dostane o krok víc (nejvýš váhu nejtěžší), i když nejtěžší série horní hranici nedala. Nad
      nejtěžší váhu se přidává, až mají všechny pracovní série stejnou váhu a horní hranici. S.cfg.progSets
      „all“ = všechny takové série najednou, „first“ = jen první z nich (přidání nad nejtěžší jen 1. série).
-     Návrh je zelený řádek pod „Minule“ (progLine), dokud jsou pracovní série nedotčené (progTouched).
+     Návrh je zelený řádek pod názvem cviku (progLine), dokud jsou pracovní série nedotčené (progTouched).
      Klepnutí na řádek návrh použije (e.progUse): šedé předvyplnění pracovních sérií = návrh (draftHints,
      ✓ i krokovač ho převezmou) a řádek zmizí. Změna pracovních sérií (hodnota, ✓, + Série, smazání,
      změna druhu série; progTouch → e.progNo) řádek schová bez použití, zahřívací série návrh nechají.
@@ -1753,7 +1764,7 @@
       e.progNo = true;
     }
   }
-  // řádek s návrhem pod „Minule“ v kartě cviku: jen dokud není použitý a série jsou nedotčené,
+  // řádek s návrhem pod názvem cviku v kartě: jen dokud není použitý a série jsou nedotčené,
   // klepnutí ho použije (progUse)
   function progLine(d, e, i) {
     if (e.progUse || progTouched(e)) return "";
@@ -1869,6 +1880,8 @@
     openSheet("Opravdu " + jumpFmt(jump.f, jump.v) + "?", body, foot);
   }
 
+  // jsou v tréninku odškrtnuté všechny série? (po poslední se pauza nespouští)
+  const allSetsDone = (d) => d.ex.every((e) => e.sets.every((s) => s.done));
   /* ✓ u série: odškrtnutí (převezme šedé předvyplnění, zkontroluje hodnoty a velký skok),
      nebo jeho zrušení */
   function toggleSetDone(d, i, j) {
@@ -1920,10 +1933,12 @@
     s.done = true;
     s.at = Date.now();
     // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05),
-    // s vypnutým časovačem pauzy (S.cfg.restOn) žádná
+    // s vypnutým časovačem pauzy (S.cfg.restOn) žádná, po poslední sérii tréninku taky žádná
     if (d === S.active) {
       const rest = ssRest(d, i, j);
-      if (rest === "none") {
+      if (allSetsDone(d)) {
+        restStop();
+      } else if (rest === "none") {
         restStop();
         toast(restNext());
       } else if (S.cfg.restOn === false) {
@@ -1950,7 +1965,9 @@
      Počáteční hodnota = hodnota v políčku, u prázdného políčka šedé předvyplnění z minula (F1-01).
      Krok u kg (i +kg a −kg), času a km se mění jedním tlačítkem dokola (STEPS) a pamatuje se
      v Local "kkStep" pro každý cvik (cvik vázaný na fitko zvlášť pro každé fitko). Opakování po 1.
-     „Napsat“ zavře panel a otevře klávesnici v políčku (kkKbd = id políčka, dokud ho uživatel neopustí).
+     „Napsat“ zavře panel a otevře klávesnici v políčku. Klávesnicí se pak píše do všech políček té série
+     (kg i opakování, bez krokovače), dokud uživatel sérii neopustí (klepne jinam, na tlačítko nebo na ✓).
+     kkKbd = začátek id políček série (kkSetId), focusout uvnitř série režim neukončí.
      „Série hotová“ zavře panel a odškrtne sérii přes toggleSetDone (kontrola čísel, velký skok, rekord,
      pauza). Nic nového se neukládá do dat tréninku.
      Políčka jsou readonly s data-act="kk", panel sheetStepper(i, j, f) (třída kk přes openSheet(…, nav.cls),
@@ -1958,7 +1975,7 @@
      NUM_RULES. „Napsat“ = kkKeyboard. focusInput u políčka s krokovačem otevře panel místo klávesnice.
      Výchozí S.cfg.stepper = zapnuto. */
   const STEPS = {
-    kg: [0.5, 1, 1.25, 2.5, 5, 10],
+    kg: [0.5, 1, 1.25, 2, 2.5, 5, 10],
     sec: [1, 5, 30],
     km: [0.1, 0.5, 1],
   };
@@ -1967,12 +1984,16 @@
   const KK_REPEAT_DELAY = 450; // ms: podržení tlačítka − / +, než se hodnota začne měnit sama
   const KK_REPEAT_EVERY = 90; // ms: další krok při podržení
   let kk = null; // otevřený krokovač: {i, j, f} (cvik, série, pole, na které se klepnulo)
-  let kkKbd = null; // id políčka, do kterého se právě píše klávesnicí (přes „Napsat“)
+  let kkKbd = null; // začátek id políček série, do které se právě píše klávesnicí (přes „Napsat“)
   let kkHold = null; // časovač podrženého tlačítka
 
   // krokovač místo klávesnice? jen v rozdělaném tréninku a se zapnutým nastavením
   const kkOn = (d) => d.mode === "active" && S.cfg.stepper !== false;
   const kkInputId = (e, j, f) => "in-" + e.k + "-" + j + "-" + f;
+  // začátek id všech políček série j cviku e („in-<k>-<j>-“)
+  const kkSetId = (e, j) => kkInputId(e, j, "");
+  // píše se do políčka (id) klávesnicí přes „Napsat“?
+  const kkTyping = (id) => !!kkKbd && typeof id === "string" && id.startsWith(kkKbd);
 
   // klíč uloženého kroku: cvik, u cviku vázaného na fitko i fitko, a pravidlo (kg, sec, km)
   function kkStepKey(d, e, rule) {
@@ -1986,7 +2007,7 @@
     const saved = Local.get("kkStep", {})[kkStepKey(d, e, rule)];
     return STEPS[rule].includes(saved) ? saved : STEP_DEF[rule];
   }
-  // další krok dokola (0,5 → 1 → 1,25 → 2,5 → 5 → 10 → 0,5 …) a uložení
+  // další krok dokola (0,5 → 1 → 1,25 → 2 → 2,5 → 5 → 10 → 0,5 …) a uložení
   function kkStepNext(d, e, rule) {
     const list = STEPS[rule];
     const next = list[(list.indexOf(kkStep(d, e, rule)) + 1) % list.length];
@@ -2183,26 +2204,33 @@
     }
   });
   // „Napsat“: zavře panel a otevře klávesnici v políčku (musí být ve stejném klepnutí, jinak Chrome
-  // klávesnici neukáže)
+  // klávesnici neukáže); ostatní políčka série jdou taky psát klávesnicí
   function kkKeyboard() {
     const d = S.active;
     if (!kk || !d || !d.ex[kk.i]) return;
-    const id = kkInputId(d.ex[kk.i], kk.j, kk.f);
+    const e = d.ex[kk.i];
+    const j = kk.j; // closeSheet krokovač zavře (kk = null)
+    const id = kkInputId(e, j, kk.f);
     closeSheet();
     const input = document.getElementById(id);
     if (!input) return;
-    kkKbd = id;
-    input.readOnly = false;
-    input.removeAttribute("data-act");
+    kkKbd = kkSetId(e, j);
+    for (const fld of kFields(kindOf(e.exId))) {
+      const other = document.getElementById(kkInputId(e, j, fld));
+      if (other) {
+        other.readOnly = false;
+        other.removeAttribute("data-act");
+      }
+    }
     input.focus();
     input.select();
   }
-  // po opuštění políčka zase krokovač
+  // po opuštění série (ne přechodu na její další políčko) zase krokovač
   document.addEventListener("focusout", (ev) => {
-    if (kkKbd && ev.target.id === kkKbd) {
-      kkKbd = null;
-      scheduleRender();
-    }
+    if (!kkTyping(ev.target.id)) return;
+    if (ev.relatedTarget && kkTyping(ev.relatedTarget.id)) return;
+    kkKbd = null;
+    scheduleRender();
   });
 
   /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
@@ -2613,8 +2641,8 @@
      počítá se jednou po změně dat (stags). Vypínač S.cfg.stagOn (Nastavení → Rekordy a pokrok).
      Výpočet computeStag (stags(): ok[k] = stagHolds), dotaz stagInfo(exId, gymId) / stagOfCtx (n = tréninků
      bez zlepšení, ref = trénink, od kterého nic lepšího nebylo), texty stagCount, stagSince. N = STAG_N (3 /
-     4 / 5, výchozí 4), nastavení stagSettings. Ukazuje se jen v rozdělaném tréninku (.exc-stag pod „Minule“,
-     ikona IC.stag, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce Bez zlepšení) a ve
+     4 / 5, výchozí 4), nastavení stagSettings. Ukazuje se jen v rozdělaném tréninku (.exc-stag pod názvem
+     cviku, ikona IC.stag, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce Bez zlepšení) a ve
      Statistikách → Cviky (statsStag, jen cviky cvičené posledních STAG_RECENT dní). */
   const STAG_MAX = 30; // nejdelší řada tréninků bez zlepšení, kterou appka počítá
   const STAG_RECENT = 30 * 86400000; // Statistiky → Cviky: jen cviky cvičené posledních 30 dní
@@ -4432,24 +4460,8 @@
         ${IC.more}
       </button>
       </div>`;
+    // minulé hodnoty jsou ve sloupci Minule (samostatný řádek „Minule (datum): …“ nad tabulkou už není)
     if (mode !== "template") {
-      const other = !last && ex.gymDep ? lastSession(e.exId, d.gymId, d.id, draftBefore(d), true) : null;
-      h += `<div class="exc-prev">
-        ${
-          last
-            ? `Minule${ex.gymDep ? " v " + esc(gymName(last.w.gymId)) : ""} (${fmtDateS(last.w.start)}): ` +
-              `<span class="num">${esc(setsStr(last.e.sets, true, kind))}` +
-              `</span>`
-            : ex.gymDep
-              ? "V tomto fitku zatím bez záznamu" +
-                (other
-                  ? `. V jiném fitku (${esc(gymName(other.w.gymId))}, ${fmtDateS(other.w.start)}): ` +
-                    `<span class="num">${esc(setsStr(other.e.sets, true, kind))}` +
-                    `</span>`
-                  : "")
-              : "Zatím bez záznamu"
-        }
-      </div>`;
       h += progLine(d, e, i); // návrh progrese (F4-01)
     }
     // stagnace (F4-06): jen v probíhajícím tréninku, klepnutí otevře Statistiky cviku
@@ -4521,7 +4533,7 @@
         const fld = f === "plus" || f === "minus" ? "kg" : f;
         const id = kkInputId(e, j, f);
         // krokovač (F1-03): políčko jen ke čtení, klepnutí otevře panel s +/−
-        const stepper = useStepper && kkKbd !== id ? ` readonly data-act="kk" data-v="${f}"` : "";
+        const stepper = useStepper && !kkTyping(id) ? ` readonly data-act="kk" data-v="${f}"` : "";
         const last = mode !== "active" && n === flds.length - 1;
         h += `<td class="c-in${last ? " sw-cell" : ""}">
           <input class="cell${numCls(fld, fval(s, fld))}" id="${id}"
@@ -4737,7 +4749,9 @@
      (prevEx: i z jiné šablony, cvik vázaný na fitko jen ze stejného fitka). Vše se počítá z uložených dat.
      Dole po uložení červené Dokončit (do Historie, F3-12), z Historie Cvičit znovu.
      Obsah wSummary. Minulý běh prevRun podle sameRun: šablona, jinak název bez automatických DEF_TITLES, nebo
-     againOf. Procvičené partie wMuscles, postava přes musFigs (sdílí ji i Statistiky). Nic se neukládá. */
+     againOf. Procvičené partie wMuscles, postava přes musFigs (sdílí ji i Statistiky). Nic se neukládá.
+     Partie, které byly jen vedlejší (wSecOnly), mají na postavě, v pruzích i na obrázku ke sdílení slabou
+     barvu MUS_WEAK. */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
@@ -4838,6 +4852,23 @@
     }
     return m;
   }
+  // partie, které byly v tréninku jen vedlejší (u žádného cviku s pracovní sérií hlavní): {partie: true}
+  function wSecOnly(w) {
+    const pri = {},
+      weak = {};
+    for (const e of w.ex || []) {
+      if (!e.sets.some((s) => isWork(s.t))) continue;
+      for (const k of exPri(exOf(e.exId))) {
+        pri[k] = true;
+      }
+    }
+    for (const k in wMuscles(w)) {
+      if (!pri[k]) {
+        weak[k] = true;
+      }
+    }
+    return weak;
+  }
   // rozdíl proti minule: ▲ víc (zeleně), ▼ míň (červeně), ◄► beze změny; neutral = jen šedě (čas)
   // trojúhelníčky jako SVG, aby vypadaly stejně v každém písmu
   const TRI = (() => {
@@ -4928,16 +4959,19 @@
       rows = Object.entries(m).sort((a, b) => b[1] - a[1]);
     if (!rows.length) return "";
     const mx = rows[0][1];
+    const weak = wSecOnly(w); // jen vedlejší partie slabší barvou
     return `<div class="card">
       <h3 class="sumh">Procvičené partie</h3>
-      ${musFigs(m, false, true)}${mgStack(m)}
+      ${musFigs(m, false, true, weak)}${mgStack(m)}
       <div class="mbars">
         ${rows
           .map(
             ([k, v]) =>
               `<div class="mbar">
                 <span>${esc(MUSCLE_MAP.NAMES[k])}</span>
-                <div><i style="width:${Math.max(4, (v / mx) * 100)}%;background:${mgCol(k)}"></i></div>
+                <div>
+                  <i style="width:${Math.max(4, (v / mx) * 100)}%;background:${mgColWeak(k, weak)}"></i>
+                </div>
               </div>`,
           )
           .join("")}
@@ -5336,6 +5370,7 @@
         };
       }),
       mus: wMuscles(w),
+      musWeak: wSecOnly(w),
     };
   }
 
@@ -5451,7 +5486,7 @@
     return shrAtlas[view];
   }
   // postava (view = front / back) výšky h, partie v barvě skupiny, sytější = víc sérií; vrací šířku
-  function shrFigure(ctx, P, view, x, y, h, m) {
+  function shrFigure(ctx, P, view, x, y, h, m, weak) {
     const A = shrAtlasOf(view);
     const k = h / A.h;
     const mx = Math.max(0, ...Object.values(m)) || 1;
@@ -5464,13 +5499,15 @@
       if (it.fill.startsWith("var(--sil")) {
         col = P.sil;
       } else if (g) {
-        col = shrMix(g, P.idle, 0.45 + (0.55 * m[it.key]) / mx);
+        // jen vedlejší partie slabě (jako v souhrnu)
+        const a = weak && weak[it.key] ? MUS_WEAK : 0.45 + (0.55 * m[it.key]) / mx;
+        col = shrMix(g, P.idle, a);
       } else if (it.fill !== "none") {
         col = P.idle;
       }
       if (col) {
         ctx.fillStyle = col;
-        if (g && P.glow) {
+        if (g && P.glow && !(weak && weak[it.key])) {
           ctx.shadowColor = g;
           ctx.shadowBlur = 28 / k;
         }
@@ -5487,9 +5524,9 @@
     return A.w * k;
   }
   // postava zepředu a zezadu vedle sebe
-  function shrFigures(ctx, P, x, y, h, m) {
-    const fw = shrFigure(ctx, P, "front", x, y, h, m);
-    shrFigure(ctx, P, "back", x + fw - h * 0.03, y, h, m);
+  function shrFigures(ctx, P, x, y, h, m, weak) {
+    const fw = shrFigure(ctx, P, "front", x, y, h, m, weak);
+    shrFigure(ctx, P, "back", x + fw - h * 0.03, y, h, m, weak);
   }
   // skupiny partií seřazené podle podílu: [{k, v, pc}]
   function shrGroups(m) {
@@ -5670,7 +5707,7 @@
       }
       if (!img) {
         const fh = Math.min(step * 5 - 20, 550);
-        shrFigures(ctx, P, W - L - (1.042 * fh - 40), top - 30, fh, D.mus);
+        shrFigures(ctx, P, W - L - (1.042 * fh - 40), top - 30, fh, D.mus, D.musWeak);
       }
     } else {
       D.stats.forEach((s, i) => {
@@ -5686,7 +5723,7 @@
       const postFh = footY - 60 - y - 30;
       if (postFig && postFh >= 120) {
         // příspěvek s fotkou: postava místo řádku s názvy partií, pruh pod ní
-        shrFigures(ctx, P, L - 6, y - 16, postFh, D.mus);
+        shrFigures(ctx, P, L - 6, y - 16, postFh, D.mus, D.musWeak);
         shrStack(ctx, P, L, y - 16 + postFh + 14, colW, 8, G);
       } else if (img) {
         shrText(ctx, X.mus, L, y, shrFont(600, 22, SHR_B), P.ink2, "left", 4);
@@ -5701,7 +5738,7 @@
           // příběh s fotkou: postava vlevo pod partiemi
           const fh = Math.min(footY - 56 - y, 360);
           if (fh >= 140) {
-            shrFigures(ctx, P, L - 6, y, fh, D.mus);
+            shrFigures(ctx, P, L - 6, y, fh, D.mus, D.musWeak);
           }
         }
       } else {
@@ -8444,7 +8481,7 @@
             "s dopomocí navrhne dopomoc ubrat. Když série neměly stejnou váhu (např. 40 a 45 kg), nejdřív " +
             "dorovná lehčí série: každá, která dala horní hranici, dostane o krok víc, nejvýš váhu nejtěžší " +
             "série. Nad nejtěžší váhu přidá, až mají všechny série stejnou váhu. " +
-            "Návrh je v zeleném řádku pod Minule, klepnutím ho použiješ: " +
+            "Návrh je v zeleném řádku pod názvem cviku, klepnutím ho použiješ: " +
             `navržené hodnoty se objeví v šedém předvyplnění sérií a ${icon("check")} je převezme. Když místo ` +
             `toho začneš pracovní série upravovat (hodnoty, ${icon("check")}, přidání, smazání, změna druhu ` +
             "série), návrh zmizí. Zahřívací série na návrh nemají vliv.",
@@ -10047,6 +10084,7 @@
      - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
        (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
      S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série.
+     Po ✓ poslední neodškrtnuté série tréninku se pauza nespustí a běžící se zastaví (allSetsDone).
      Start jen přes restStart(). Nastavení v config/main: restOn (hlavní vypínač, vypnuto = po ✓ žádná pauza,
      F4-05), restSec, restSs (po pracovní supersérii, F4-05), restAlert (both / sound / vib), restOver,
      restNotify. Zpráva {type:"rest"} posílá restPost(), oznámení jen když appka není na očích.
