@@ -57,9 +57,13 @@
   ];
   const DAY = 86400000;
   /* ---------- ikony (F3-20) ----------
-     Jen vlastní SVG, nikdy emoji ani znaky písma jako ikona. Styl: viewBox 24 × 24, obrys bez výplně
-     v barvě textu, zaoblené konce. Kresby, které se používají na víc místech (i na obrázku ke sdílení),
-     jsou tu jen jednou. */
+     Jen vlastní SVG, nikdy emoji ani znaky písma jako ikona. Styl: viewBox 24 × 24, obrys bez výplně v barvě
+     textu, zaoblené konce. Kresby, které se používají na víc místech (i na obrázku ke sdílení), jsou tu jen
+     jednou (DUMBBELL = logo, BOOK, MEDAL_RIB). Čára na obrazovce asi 1,6 px. Významy: Historie = kalendář,
+     Tělo = postava obrysem, Nastavení = ozubené kolo, zeměkoule = online databáze. Ikona v textu nebo
+     tlačítku přes icon(název, třída) (třída .ic, 1,2em podle písma), jinde (lišta, .iconbtn, icoBtn)
+     IC.název. Na obrázku ke sdílení SHR_ICONS a shrMedal. Medaile rekordu vždy přes medal(typy): zlatá, když
+     je mezi typy velký rekord (REC_BIG, recGold), jinak stříbrná; barvy --md-* v obou motivech. */
   const DUMBBELL = "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"; // činka = logo appky
   const BOOK =
     "M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5zM12 6.5v13";
@@ -313,7 +317,9 @@
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   /* ---------- odkaz u cviku (F0-09) ----------
      Jen adresa http(s) s doménou, nejvýš URL_MAX znaků. Adrese bez schématu („youtube.com/…“) se doplní
-     https://. Jiný odkaz (skript, intent://, adresa uvnitř appky…) se neuloží ani neotevře. */
+     https://. Jiný odkaz (skript, intent://, adresa uvnitř appky…) se neuloží ani neotevře.
+     Funkce: urlNormalize (doplní https://), urlProblem (text hlášky, "" = v pořádku), urlSafe (otevírat jen
+     tohle), exLink / exLinkLabel (odkaz a popisek), exUrlsClean při obnově zálohy (normBackup). */
   const URL_MAX = 500;
   // jednotná podoba odkazu: bez mezer okolo, adresa bez schématu dostane https://
   function urlNormalize(value) {
@@ -368,6 +374,10 @@
     return items;
   }
 
+  /* ---------- databáze cviků (F0-02) ----------
+     S.exLib = EX_DB + odchylky (exLoad). config/exercises = {v: 2, items} s jen
+     odchylkami od EX_DB a vlastními cviky, zápis vždy přes putEx(items), který uloží jen rozdíly (exPack).
+     Partie jsou klíče MUSCLE_MAP.NAMES, ramena jedna partie delts (staré delt_f/s/r se převádějí). */
   function exPack(items, legacy, partial) {
     const out = {};
     for (const id in items || {}) {
@@ -555,7 +565,8 @@
        get(path)                   -> Promise<data|null>
      Dnes: IndexedDbBackend (IndexedDB v prohlížeči, data jen v telefonu).
      Do verze 9 to byl ClaudeDbBackend (databáze Claude artefaktu),
-     viz puvodni/workout-denik.html. Cesty dokumentů zůstávají stejné:
+     viz puvodni/workout-denik.html v tagu artefakt-v9 (z repa smazáno v F0-12).
+     Cesty dokumentů zůstávají stejné:
        config/main, config/exercises, config/templates, config/backup,
        workouts/RRRR-MM, body/all, state/active
      Fotky u cviků (F2-05) jdou mimo Store rovnou do IndexedDB (úložiště photos).
@@ -1132,7 +1143,10 @@
     const i = S.cfg.gyms.findIndex((g) => g.id === id);
     return i < 0 ? 0 : i;
   };
-  /* barva fitka (F0-07): uložená v g.col (číslo 1–GYM_COLORS = proměnná --sN), nezávislá na pořadí */
+  /* ---------- barva fitka (F0-07) ----------
+     Uložená v g.col (číslo 1–GYM_COLORS = proměnná --sN), nezávislá na pořadí.
+     Nikdy ji nepočítat z pořadí fitek (pořadí = S.cfg.gyms, mění se přetažením). Chybějící barvu doplní
+     cfgNorm, nové fitko dostane freeGymCol, výběr v sheetGym (akce gymCol, F3-01). */
   const gymColor = (id) => {
     const g = S.cfg.gyms.find((g) => g.id === id);
     return "var(--s" + (g && g.col ? g.col : (gymIdx(id) % GYM_COLORS) + 1) + ")";
@@ -1296,7 +1310,13 @@
      povinné hodnoty (opakování, čas, km u odškrtnuté série) hlídá setProblem.
      Pravidla:  dec = počet desetinných míst (0 = jen celé číslo), min/max = rozsah,
                 unit = jednotka do nápovědy,
-                time = čas (45, 1:30, 1:02:30; čárka a tečka se při psaní mění na dvojtečku). */
+                time = čas (45, 1:30, 1:02:30; čárka a tečka se při psaní mění na dvojtečku).
+     Pravidla NUM_RULES: kg, reps, sec, km, min, body, pct, kcal, bw. Při vykreslení dostane políčko třídu
+     numCls(pravidlo, hodnota). Znaky filtruje numInput (globální posluchač input; číslici navíc podle numFits
+     nepřijme, „,5“ → „0,5“), jednotnou podobu po opuštění políčka a při ✓ dá numNormalize (čas „85“ → „1:25“,
+     „1:5“ → „1:05“, „82.5“ → „82,5“). Před uložením setProblem / draftProblem (série) a inputProblem(id)
+     (políčka ve formulářích). Uložené číslo do políčka vždy přes numStr (nejvýš 2 desetinná místa). ✓ série =
+     toggleSetDone. Nové číselné pole (F1-03, F1-08, F4-04…) vždy přes stejná pravidla. */
   const NUM_RULES = {
     kg: { lab: "Váha", dec: 2, max: 999, unit: "kg" },
     reps: { lab: "Opakování", dec: 0, max: 999 },
@@ -1604,7 +1624,12 @@
      Série se párují podle druhu: zahřívací zvlášť, ostatní (pracovní, drop set, do selhání) spolu, v pořadí.
      Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Zdroj: odpovídající série z minula,
      jinak s.ph (hodnoty ze šablony u nikdy necvičeného cviku). Když ani jedno není, ukáže se „–“
-     ve sloupci Minule i v políčkách (hodnoty ze série nad ní se nepřebírají). */
+     ve sloupci Minule i v políčkách (hodnoty ze série nad ní se nepřebírají).
+     „Minule“ = lastSession: cvik vázaný na fitko jen v tomtéž fitku, při úpravě uloženého tréninku jen
+     tréninky před ním (draftLast). exHints vrátí pro každou sérii minulou sérii (sloupec Minule) a
+     předvyplnění. Nový cvik v tréninku má prázdné hodnoty; s.ph = hodnoty ze šablony jen u nikdy necvičeného
+     cviku a jen v rozdělaném tréninku. V rozdělaném tréninku se předvyplnění bere vždy přes draftHints (návrh
+     progrese, F4-01). */
   const setGrp = (t) => (t === "w" ? "w" : "n");
   const HINT_F = ["kg", "reps", "sec", "km"];
   // ke každé sérii cviku e: p = odpovídající série z minula (sloupec Minule), h = šedé předvyplnění
@@ -1654,7 +1679,11 @@
      a kontrola velkého skoku zůstávají podle minula.
      Rozsah: u cviku pole prog ([min, max] = zapnuto, "off" = vypnuto, bez pole = podle nastavení), jinak
      S.cfg.progAll (výchozí vypnuto) s rozsahem S.cfg.progMin–progMax. Jen typy PROG_KINDS.
-     F5-01 (kolik chybí na rekord) má nápovědu přidat do stejného řádku (progLine). */
+     F5-01 (kolik chybí na rekord) má nápovědu přidat do stejného řádku (progLine).
+     progInfo(d, e) vrací {sets: [{set, kg}], reps, up}: set = pořadí pracovní série, up = přidání nad
+     nejtěžší váhu. Předvyplnění v rozdělaném tréninku vždy přes draftHints(d, e) (✓, krokovač, karta), ne
+     rovnou exHints (sloupec Minule a setJump dál z exHints(...).p). Rozsah opakování je i v nadpisu sloupce
+     Opak. (repsRange, F3-22). Vysvětlení jen v progSettings, ve formuláři cviku jen volba. */
   const PROG_KINDS = { wr: true, bwplus: true, assist: true };
   // platný rozsah opakování [min, max]
   function progValid(range) {
@@ -1772,7 +1801,8 @@
      U úplně nového cviku se neporovnává nic. Ptá se jen při nárůstu (pokles bývá záměrný):
      kg víc než 1,5× a aspoň o 20 kg, opakování víc než 2× a aspoň o 10, čas a km víc než 2×.
      Potvrzení platí pro sérii, dokud se v ní nezmění hodnota (s.jumpOk, do uloženého tréninku
-     se nedostane). */
+     se nedostane).
+     Hranice v JUMP, výpočet setJump, dotaz sheetJump. */
   const JUMP = {
     kg: { x: 1.5, add: 20 },
     reps: { x: 2, add: 10 },
@@ -1922,7 +1952,11 @@
      v Local "kkStep" pro každý cvik (cvik vázaný na fitko zvlášť pro každé fitko). Opakování po 1.
      „Napsat“ zavře panel a otevře klávesnici v políčku (kkKbd = id políčka, dokud ho uživatel neopustí).
      „Série hotová“ zavře panel a odškrtne sérii přes toggleSetDone (kontrola čísel, velký skok, rekord,
-     pauza). Nic nového se neukládá do dat tréninku. */
+     pauza). Nic nového se neukládá do dat tréninku.
+     Políčka jsou readonly s data-act="kk", panel sheetStepper(i, j, f) (třída kk přes openSheet(…, nav.cls),
+     stav kk, řádek tr.kk-on). − / + mají data-kk (kkPress, podržení opakuje), základ kkBase, meze z
+     NUM_RULES. „Napsat“ = kkKeyboard. focusInput u políčka s krokovačem otevře panel místo klávesnice.
+     Výchozí S.cfg.stepper = zapnuto. */
   const STEPS = {
     kg: [0.5, 1, 1.25, 2.5, 5, 10],
     sec: [1, 5, 30],
@@ -2177,7 +2211,9 @@
      („minule“ jako F1-01: draftLast, cvik vázaný na fitko jen z tohoto fitka), zaokrouhleno na krok
      krokovače cviku. Hodnota se zapíše stejně jako napsaná, další úpravy zůstanou a tlačítko jde použít
      znovu. Bez záznamu z minula se tlačítko neukáže. Nic nového se neukládá do dat tréninku.
-     Výpočet (warmKg) může převzít generátor rozcvičkových sérií (F4-02). */
+     Výpočet (warmKg) může převzít generátor rozcvičkových sérií (F4-02).
+     Tlačítko kk-warm (akce kkWarm, warmInfo), procento WARM_PCT / posuvník #warmPct ve stepperSettings,
+     nejtěžší série warmMax, výsledek warmKg, zápis přes kkSet (stejně jako − / +). Jen typ wr. */
 
   // nejtěžší série cviku e z minula bez zahřívacích (0 = bez záznamu)
   function warmMax(d, e) {
@@ -2296,7 +2332,7 @@
     return { range };
   }
 
-  /* ---------- REKORDY ----------
+  /* ---------- REKORDY (F3-02) ----------
      Počítají se chronologicky z celé historie (zpětně i pro importovaná data).
      Kontext: cvik vázaný na fitko -> zvlášť pro každé fitko, jinak globálně.
      První trénink s cvikem v kontextu (a první výskyt daného typu) rekord nezakládá.
@@ -2574,7 +2610,12 @@
      Nový ukazatel (např. první série se zátěží) se bere jako zlepšení. Porovnává se jen s tréninky těsně
      před posledními N, ne s rekordem z celé historie (po pauze nebo zranění by hlásil stagnaci pořád).
      Kontext jako u rekordů (recCtx): cvik vázaný na fitko zvlášť pro každé fitko. Nic se neukládá,
-     počítá se jednou po změně dat (stags). Vypínač S.cfg.stagOn (Nastavení → Rekordy a pokrok). */
+     počítá se jednou po změně dat (stags). Vypínač S.cfg.stagOn (Nastavení → Rekordy a pokrok).
+     Výpočet computeStag (stags(): ok[k] = stagHolds), dotaz stagInfo(exId, gymId) / stagOfCtx (n = tréninků
+     bez zlepšení, ref = trénink, od kterého nic lepšího nebylo), texty stagCount, stagSince. N = STAG_N (3 /
+     4 / 5, výchozí 4), nastavení stagSettings. Ukazuje se jen v rozdělaném tréninku (.exc-stag pod „Minule“,
+     ikona IC.stag, klepnutí = Statistiky cviku), na stránce cviku → Statistiky (sekce Bez zlepšení) a ve
+     Statistikách → Cviky (statsStag, jen cviky cvičené posledních STAG_RECENT dní). */
   const STAG_MAX = 30; // nejdelší řada tréninků bez zlepšení, kterou appka počítá
   const STAG_RECENT = 30 * 86400000; // Statistiky → Cviky: jen cviky cvičené posledních 30 dní
   // ukazatele jednoho tréninku pro porovnání (exMetrics, u vlastní váhy jen opakování)
@@ -2678,7 +2719,10 @@
      nebo nový typ. Nastavení v config/main: recCelEx (po cviku; vypnuto = jen hláška po sérii jako dřív),
      recCelW (po tréninku), recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio.
      Zavření jen na přání (aby šlo vše v klidu přečíst): tlačítko Pokračovat, klepnutí mimo kartu,
-     Zpět (navBack). */
+     Zpět (navBack).
+     celebrate(R, podtitul, auto): element .cel v body, stav celEl (navBack a navDepth s ní počítají). V
+     tréninku ji spouští celExercise po odškrtnutí (exDone, liveRecords), po uložení wRecs. Zvuky celTone,
+     žádné soubory. Medaile sama nezmizí. */
   const REC_BIG = { maxKg: 1, e1rm: 1, reps: 1, maxSec: 1, maxKm: 1, speed: 1 };
   /* malá medaile rekordu (F3-20): zlatá za velký rekord (REC_BIG), stříbrná za malý. U víc rekordů
      najednou (počet, nadpis) zlatá, když je mezi nimi aspoň jeden velký, stejně jako medaile v oslavě. */
@@ -3305,10 +3349,15 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- ÚVODNÍ OBRAZOVKA ----------
+  /* ---------- ÚVODNÍ OBRAZOVKA (F2-02, F2-09) ----------
      Bez rozdělaného tréninku záložka Trénink (route train). Během tréninku (F2-09) route home: šipka ←
      z tréninku, velké tlačítko „Probíhá trénink“ vrátí do tréninku, Kde dnes cvičíš mění fitko tréninku
-     a Začít u šablony se zeptá, co s rozdělaným tréninkem (sheetRun). */
+     a Začít u šablony se zeptá, co s rozdělaným tréninkem (sheetRun).
+     Route train = rozdělaný trénink (když S.active), jinak vHome; route home = úvodní obrazovka během
+     tréninku (bez tréninku se změní na train, do Local route se ukládá jako train). Tlačítko „Probíhá
+     trénink“ = akce runOpen. curGym() je během tréninku fitko tréninku (selGym ho mění, výběr Fitko v
+     tréninku mění S.selGym). Šablony vHomeTpls, karta tplCard. Uložení a smazání šablony se vrací přes
+     tplLeave(). */
   // fitko, kde dnes cvičíš; během tréninku fitko tréninku
   function curGym() {
     if (S.active && S.cfg.gyms.some((g) => g.id === S.active.gymId)) return S.active.gymId;
@@ -3375,7 +3424,10 @@
      obrazovce nahoře šablony vybraného fitka (curGym) a šablony bez fitka, ostatní až po tlačítku
      „Ostatní šablony“ (jako „Zobrazit další“ v Historii; tplOther, po otevření appky a změně fitka
      znovu skryté). Smazané fitko se ze šablon odebere (delGym), fitka, která už neexistují, se navíc
-     nikdy nepočítají (tplGyms). */
+     nikdy nepočítají (tplGyms).
+     Šablona = {name, order, gyms, items}; gyms doplní tplNorm (při načtení i v normBackup), dotaz tplHere(t,
+     gymId). Výběr fitek v editoru tplGymPick (akce tplGym, d.gyms). Zápis šablony vždy přes Object.assign s
+     původní šablonou (zachová pole, která editor nezná). */
   let tplOther = false; // ukázané ostatní šablony (klepnutí na tlačítko „Ostatní šablony“)
   // doplní šablonám seznam fitek (starší šablony ho nemají); items = {id: šablona}
   function tplNorm(items) {
@@ -3411,7 +3463,12 @@
      s jedním fitkem tedy všechny). Názvy se porovnávají bez velkých písmen, diakritiky a mezer (tplKey).
      Úprava šablony: upozornění pod názvem hned při psaní (tplNameMark), Uložit šablonu při shodě nepustí.
      Uložit jako šablonu v souhrnu se při shodě zeptá (sheetTplClash): přepsat / uložit jako „Nohy 2“.
-     Stávající duplikáty zůstanou (obnova zálohy, smazané fitko, šablony z dřívějška). */
+     Stávající duplikáty zůstanou (obnova zálohy, smazané fitko, šablony z dřívějška).
+     Funkce: tplClash (shody), tplFreeName (volný název „Nohy 2“), tplClean (uložený název). Editor:
+     tplNameProblem / tplNameMark (červený název a text #ed-title-msg hned při psaní), saveTpl nepustí,
+     tlačítko #tpl-save je šedé přes tplSaveOff (.btn.off, klepnout jde, ukáže hlášku). Stará šablona s
+     duplikátem projde, dokud se nezmění název a fitka. sheetTplClash: stav tplAsk, akce tplAskNew /
+     tplAskOver / tplAskBack. Každé nové místo, které vytváří šablonu, má volný název hlídat stejně. */
   let tplAsk = null; // dotaz Uložit jako šablonu při shodě: {w, gyms, id, name}
   // název pro porovnání: „Nohy A“ = „nohya“ = „Nohy  á“
   const tplKey = (name) => fold(name).replace(/\s+/g, "");
@@ -3715,7 +3772,12 @@
      a podle pořadí. Po ✓ série rozhodne ssRest o pauze:
      - dvojice v jiném cviku supersérie ještě není hotová → bez pauzy, jen hláška „Další: …“,
      - kolo je hotové → pracovní kolo S.cfg.restSs (Časovač po pracovní supersérii), zahřívací výchozí,
-     - série nemá v jiném cviku dvojici (série navíc) → výchozí časovač. */
+     - série nemá v jiném cviku dvojici (série navíc) → výchozí časovač.
+     ssNorm se volá po odebrání cviku, po přetažení (ssMoved), v draftToWorkout a při uložení šablony. Menu
+     cviku ssOn (ssLink) / ssOff (ssUnlink). Karty jedné supersérie obaluje ssWrap (.ssg = menší mezera),
+     karta má třídu ss-on (proužek vlevo přes ::before, rozměry karty beze změny; i na stránce tréninku a v
+     panelu Pořadí cviků, bez štítku, F3-22). Každé nové místo, které kopíruje cviky (šablona ↔ trénink),
+     přenáší značku přes ssOf(e). restNext v supersérii vybírá další kolo. */
   // značka supersérie cviku pro Object.assign (prázdný objekt = cvik není v supersérii)
   const ssOf = (e) => (e && e.ss ? { ss: e.ss } : {});
   // rozsah [od, do] supersérie, do které patří cvik na místě i (null = není v supersérii)
@@ -3833,7 +3895,10 @@
      hodnoty jen šedě z minula v zvoleném fitku (jako u šablony, F1-01). Poznámky ke cvikům jen
      ve stejném fitku. Vazba na šablonu zůstane (když šablona ještě existuje), „Aktualizovat šablonu“
      je nezaškrtnuté (od F4-05 vždy, u každého tréninku ze šablony).
-     d.again = id původního tréninku, uloží se jako w.againOf (souhrn F3-03 s ním pak porovnává). */
+     d.again = id původního tréninku, uloží se jako w.againOf (souhrn F3-03 s ním pak porovnává).
+     Tlačítko wAgain na stránce tréninku (vWorkout) otevře sheetAgain (volba fitka, stav again), startAgain
+     založí trénink přes exEntryFor. Starší rozdělaný trénink může mít again:true. Série do šablony z tréninku
+     vždy přes tplSet (i sec, km). */
   let again = null; // {w, gym}: otevřené okno Cvičit znovu
   const againEx = (w) => (w.ex || []).filter((e) => S.exLib[e.exId]);
   function againInfo() {
@@ -3904,7 +3969,9 @@
   /* ---------- NOVÝ TRÉNINK BĚHEM TRÉNINKU (F2-09) ----------
      Začít u šablony nebo Cvičit znovu během rozdělaného tréninku se zeptá (sheetRun): Dokončit a začít
      nový (okno Dokončit trénink, pak rovnou nový trénink bez souhrnu), Zahodit a začít nový, Zrušit.
-     Co začne potom, drží runNext: {tpl: id šablony} nebo {again: stav okna Cvičit znovu}. */
+     Co začne potom, drží runNext: {tpl: id šablony} nebo {again: stav okna Cvičit znovu}.
+     runFinish = finishAsk a po finishOk runStart bez souhrnu, runDiscard. Konec tréninku vždy přes
+     activeEnd(). */
   let runNext = null;
   // název toho, co začne („trénink podle šablony „Push““)
   function runNextName(next) {
@@ -4059,7 +4126,11 @@
 
   /* ---------- NÁVRAT DO TRÉNINKU (F1-11) ----------
      Poslední změněný cvik rozdělaného tréninku (klíč e.k v Local "edLast"). Po návratu z jiné záložky
-     (i po znovuotevření appky) se stránka posune tak, aby karta cviku začínala hned pod horní lištou. */
+     (i po znovuotevření appky) se stránka posune tak, aby karta cviku začínala hned pod horní lištou.
+     edMark(d, e) volají posluchače click / input pro prvky s data-i, přidání cviku, Smazat v řádku série a
+     Vrátit; nový způsob změny cviku mimo data-i má edMark volat taky. go("train") z jiné záložky a start
+     appky nastaví render.toEx, render pak posune na kartu přes edScroll (render.restoreY má přednost). Enter
+     v jednořádkovém textovém poli (ne data-num) schová klávesnici (globální keydown). */
   function edMark(d, e) {
     if (d && d.mode === "active" && e && e.k) {
       lsSet("edLast", e.k);
@@ -4079,7 +4150,9 @@
      Po odebrání nebo nahrazení cviku (šablona, rozdělaný i ukončený trénink) nabídne hláška „Vrátit“.
      Vrátí původní cvik se sériemi a poznámkou na stejné místo (u nahrazení místo nového cviku newK).
      Platí jen pro stejnou úpravu, která je pořád otevřená. Smazání série „Vrátit“ nemá.
-     ssBefore = [[cvik, značka supersérie]] před odebráním: Vrátit obnoví i supersérii (F4-05). */
+     ssBefore = [[cvik, značka supersérie]] před odebráním: Vrátit obnoví i supersérii (F4-05).
+     toast(msg, cls, undo) s funkcí undo ukáže tlačítko „Vrátit“ (akce undo, UNDO_MS). exUndoOffer po exRemove
+     a po nahrazení cviku (pickDone), jen když je otevřená stejná úprava (curDraft()). */
   function exUndoOffer(d, idx, entry, newK, msg, ssBefore) {
     toast(msg, "", () => {
       if (curDraft() !== d) {
@@ -4111,7 +4184,9 @@
      delSet, leží za posledním sloupcem a karta cviku ho jinak ořízne). Série se smaže až klepnutím na
      něj. Tah doprava, klepnutí jinam nebo posunutí stránky řádek vrátí. Odsunutý je nejvýš jeden řádek
      (swOpen). Svislý pohyb posouvá stránku (touch-action: pan-y u buněk). Po tahu se klepnutí zahodí,
-     aby se neotevřel krokovač ani neodškrtla série. */
+     aby se neotevřel krokovač ani neodškrtla série.
+     Stav sw, odsunutý řádek swOpen, zahození klepnutí swEatUntil, tlačítko v buňce .sw-cell. Tlačítko × ani
+     swipe na ✓ nejsou (tah od levého okraje je v Chromu Zpět). */
   const SW_SLOP = 10; // px: pohyb, po kterém se rozhodne, jestli jde o tah do strany, nebo o posun stránky
   const SW_OPEN = 0.4; // část šířky tlačítka Smazat, po které řádek po puštění zůstane odsunutý
   const SW_EAT_MS = 350; // ms: jak dlouho po tahu zahodit klepnutí
@@ -4315,6 +4390,11 @@
     h += "</div>";
     return h;
   }
+  /* ---------- karta cviku (F3-22) ----------
+     V hlavičce žádné textové štítky. Stav cviku = ikona za názvem v barvě názvu
+     (nameWithIcons): vázáno na fitko gdIcon(tip) (klepnutí gdTip = hláška GD_TIP), nový rekord medaile
+     (recTip). Supersérie jen proužek (ss-on), druh zápisu jen sloupce tabulky, rozsah opakování v nadpisu
+     Opak. (repsRange, progSpan). Nový údaj o cviku do karty jako ikonu nebo do tabulky, ne jako štítek. */
   function vExCard(d, e, i) {
     const ex = S.exLib[e.exId] || { name: e.exId };
     const last = draftLast(d, e.exId);
@@ -4573,7 +4653,7 @@
     };
   }
 
-  /* ---------- HISTORIE ---------- */
+  /* ---------- HISTORIE (F3-06) ---------- */
   function gymChips(act, cur, withAll) {
     return (
       `<div class="chips" data-ck="${act}">
@@ -4655,7 +4735,9 @@
      proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
      (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
      (prevEx: i z jiné šablony, cvik vázaný na fitko jen ze stejného fitka). Vše se počítá z uložených dat.
-     Dole po uložení červené Dokončit (do Historie, F3-12), z Historie Cvičit znovu. */
+     Dole po uložení červené Dokončit (do Historie, F3-12), z Historie Cvičit znovu.
+     Obsah wSummary. Minulý běh prevRun podle sameRun: šablona, jinak název bez automatických DEF_TITLES, nebo
+     againOf. Procvičené partie wMuscles, postava přes musFigs (sdílí ji i Statistiky). Nic se neukládá. */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
@@ -4906,7 +4988,9 @@
      Uložený trénink se otevírá jako stránka (route "wd", jako stránka cviku), ne panel: z Historie (seznam
      i kalendář), z porovnání „Porovnáno s…“ a po uložení tréninku. S.wDetail = {id, mk, saved}, saved =
      právě uložený („Hotovo · …“ a Dokončit). Zpět vede tam, odkud se přišlo (navFrame si pamatuje
-     i předchozí trénink a otevřený výběr dne v kalendáři). Otevírat jen přes openWorkout. */
+     i předchozí trénink a otevřený výběr dne v kalendáři). Otevírat jen přes openWorkout.
+     vWorkout, openWorkout(w, justSaved). navFrame si pamatuje S.wDetail (f.wd). Po uložení úpravy (saveEdit)
+     zpět na stránku s novým mk. */
   function openWorkout(w, justSaved) {
     const f = navFrame();
     closeSheet();
@@ -5037,7 +5121,19 @@
      tmavý nebo světlý, česky nebo anglicky, volitelně s fotkou (jen do obrázku, nikam se neukládá) a s postavou.
      Písmo v pevných px, na volbě Velikost písma (F3-11) nezávisí. Postava se kreslí přímo z obrysů atlasu
      (Path2D), ne přes obrázek, takže pravidla zabezpečení (CSP) se nemění. Volby panelu se pamatují v Local "shr".
-     Sdílení přes systémovou nabídku Androidu (navigator.share se souborem), jinak jen Uložit obrázek. */
+     Sdílení přes systémovou nabídku Androidu (navigator.share se souborem), jinak jen Uložit obrázek.
+     Panel: stav shr, shareOpen, Zpět = closeSheet; třída shr na .scrim = pevná výška, náhled .shr-prev vyplní
+     zbytek, ovládání v řádcích .shr-row je vždy vidět, Postava = tlačítko .shr-tog s aria-pressed. Kreslí
+     shrDraw(ctx, shrData(w, en), volby) na <canvas id="shrCv"> (náhled = canvas zmenšený přes CSS), výška
+     SHR_H (story 1920 / post 1350; story nechává nahoře a dole SHR_SAFE 250 px bez textu, Instagram je
+     překrývá; řádek s logem footY). Barvy SHR_PAL (skupiny partií stejné jako --g-*), texty SHR_TXT (cs / en;
+     anglicky name cviku, česky cz). Postava shrFigures z obrysů ATLAS.
+     Volby v Local shr (fmt, theme, lang, fig). Fotka jen v paměti (shr.img, ImageBitmap, políčko #shrPhotoIn
+     mimo panel, plné rozlišení do SHR_PH_MAX; closeSheet ji uvolní přes shrClose), výřez fx / fy a přiblížení
+     zoom (do shrZoomMax: nejvýš 3× a jen dokud je fotka ostrá) gesty v náhledu (shrPt, shrGest), klepnutí =
+     obrázek přes celou obrazovku shrFull (sheetNav o úroveň hlouběji), dvojí klepnutí = výchozí výřez. Bez
+     navigator.share LocalDownloads.save (umí i Blob s type).
+     Nový údaj na obrázku přidat do shrData a oba jazyky do SHR_TXT. */
   const SHR_W = 1080;
   const SHR_H = { story: 1920, post: 1350 };
   const SHR_SAFE = 250; // příběh: okraj nahoře a dole, který překrývá Instagram (viz shrDraw)
@@ -6051,7 +6147,12 @@
      rozdělené na barvy a „2×“), tečka = měření v Tělo, čárkované kolečko = rozdělaný trénink.
      Filtr fitek skryje tréninky z jiných fitek, streak a volné dny se počítají vždy ze všech fitek.
      Otevře se vždy aktuální měsíc (S.calM = 0), přepíná se šipkami nebo swipem.
-     Budoucí dny jsou zatím neaktivní (místo pro plánované tréninky, F4-07). */
+     Budoucí dny jsou zatím neaktivní (místo pro plánované tréninky, F4-07).
+     Historie má přepínač S.histView (cal výchozí / list, Local histView). vCal vykreslí měsíc S.calM (0 =
+     aktuální, goTab("hist") ho vynuluje; calShift, swipe na [data-cal]). Tréninky podle dne wByDay (klíč
+     dayKey, použít i pro heatmapu F3-07), měření bodyByDay, streak calStreak, volné dny calRest. Klepnutí
+     sheetCalDay: jedna věc rovnou, víc = výběr, z něj stránka tréninku openWorkout (Zpět výběr znovu otevře
+     přes navFrame) nebo sheetBody s nav zpět do výběru. */
   const dayKey = (t) => {
     const d = new Date(t);
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
@@ -6313,7 +6414,11 @@
     );
   }
 
-  /* ---------- STATISTIKY ---------- */
+  /* ---------- STATISTIKY (F3-13) ----------
+     Statistiky (F3-13): route stats, vStats vykreslí přepínač částí STATS_PARTS nad filtrem fitek a jednu
+     část: statsOver (Přehled), statsMus (Partie, sem radar F3-04), statsEx (Cviky). Otevřená část S.statsPart
+     (Local statsPart, výchozí over, akce statsPart posune nahoru). Fitko S.statsGym a období S.statsRange
+     jsou společné pro všechny části. Nová sekce Statistik patří do jedné z částí, ne pod ně. */
   const RANGES = [
     ["7d", "7 dní", 7],
     ["30d", "30 dní", 30],
@@ -6798,7 +6903,9 @@
     return h;
   }
 
-  /* ---------- ZÁLOŽKA CVIKY (F0-05) ---------- */
+  /* ---------- ZÁLOŽKA CVIKY (F0-05) ----------
+     Route ex (vExList), filtry S.exlM / S.exlEq / S.exlSort v localStorage. Hledání přes exMatch ignoruje
+     diakritiku. */
   function vExList() {
     const { byEx } = derive();
     const all = Object.entries(S.exLib);
@@ -6930,7 +7037,9 @@
     return h;
   }
 
-  /* ---------- STRÁNKA CVIKU ---------- */
+  /* ---------- STRÁNKA CVIKU (F0-05) ----------
+     Route exd (vExDetail), části Popis a Statistiky (S.exPart); openEx volí část podle toho, odkud se přišlo
+     (data-p ji vynutí). */
   function vExDetail() {
     const id = S.exDetail;
     const ex = exOf(id);
@@ -7286,7 +7395,14 @@
      ve všech fitkách), fotky aktuálního fitka (photoGym), bez fitka, jiných fitek; ve skupině od nejstarší.
      Před uložením se fotka zmenší (PH_MAX px, JPEG), tím zmizí i údaje z fotoaparátu (poloha GPS).
      Záloha: fotky jen v souboru s přepínačem „Zálohovat i fotky“, body obnovy je nemají; obnova fotky
-     jen přidává (Nahradit vše přepíše jen fotky se stejným id), maže se jen ručně. */
+     jen přidává (Nahradit vše přepíše jen fotky se stejným id), maže se jen ručně.
+     Zápis jen photoSave / photoDel / photoUpdate (ne přes put), zobrazení photoUrl, zmenšení photoShrink
+     (PH_MAX). Galerie photoGallery, pořadí photosOf, pozice galPos (galRestore po vykreslení, galReset při
+     otevření stránky cviku). Celá obrazovka openViewer / pv (panel v sheetRoot, Zpět přes sheetNav) má stejné
+     snímky jako galerie (pvIds: PV_FIG = postava, pak fotky), tah dolů zavře (pvDrag, PV_CLOSE_DY). Z online
+     databáze fedbPhotos / fp (shoda fedbMatch, jinak hledání), ve formuláři Nový cvik exEd.fxPh; stahuje se
+     přes <img crossorigin> a canvas (fedbImg), ne fetch. Záloha photosExport (přepínač Local bkPhotos),
+     obnova photosImport. copyFromMain kopíruje i photos. */
   const PH_MAX = 1280,
     PH_Q = 0.82;
   const phBlob = new Map(), // id fotky → Blob
@@ -8524,7 +8640,11 @@
      Rozcestník se skupinami, každá skupina na vlastní podstránce (S.setPage, "" = rozcestník).
      Otevřená podstránka se pamatuje v Local "setPage" (vrátí se po aktualizaci nebo zavření appky),
      klepnutí na záložku Nastavení vrátí rozcestník (goTab). Zpět z podstránky = rozcestník
-     (navBack, navDepth). Nová volba patří do některé skupiny, ne na rozcestník. */
+     (navBack, navDepth). Nová volba patří do některé skupiny, ne na rozcestník.
+     Rozcestník vSettingsHub, skupiny SET_PAGES (Fitka, Trénink, Rekordy a pokrok, Vzhled, Data a záloha, O
+     aplikaci), otevření podstránky jen přes setPageOpen. Na rozcestníku jen názvy skupin, výjimka: oranžový
+     řádek Data a záloha s textem, když backupDue() (stejné pravidlo jako připomínka na úvodní obrazovce).
+     Nová volba = funkce …Settings() v body existující skupiny, novou skupinu jen výjimečně. */
   const SET_PAGES = [
     { id: "gyms", name: "Fitka", icon: "gym", body: () => gymSettings() },
     {
@@ -8956,7 +9076,11 @@
      Formulář je samostatná stránka (route "exed") se šipkou ←, ne panel. Otevírá se jen přes exEdOpen,
      který si uloží místo návratu (navFrame, i s otevřeným panelem: výběr cviků, info o cviku, výsledky
      online hledání). Zpět i Uložit vrací přes exEdLeave. Hodnoty políček se průběžně ukládají do exEd.f
-     (posluchač input/change), takže formulář přežije překreslení; neuložené změny = exEdChanged. */
+     (posluchač input/change), takže formulář přežije překreslení; neuložené změny = exEdChanged.
+     exEdOpen(id, from, fx): from = list / detail / info / picker, fx = záznam z online hledání (předvyplnění
+     se počítá jako změna). S neuloženými změnami se Zpět i záložka zeptají (akce exDiscard). exEdLeave(re):
+     re = jiný panel než uložený (např. výběr cviků po uložení z výsledků hledání). Route exed se neukládá do
+     Local route (po restartu se neobnoví, F3-16). */
   // exEd = {id, from, fx, fxPh, f: hodnoty formuláře, orig: f a fxPh při otevření}
   let exEd = null;
   // from: odkud se přišlo – list (záložka Cviky), detail (stránka cviku), info (info o cviku ve výběru),
@@ -9124,7 +9248,11 @@
   /* ---------- JEDINEČNÉ NÁZVY CVIKŮ (F3-17) ----------
      Anglický (hlavní) název nesmí mít dva cviky, český název jen upozorní (výchozí databáze má dva různé cviky
      se stejným českým názvem). Porovnává se bez velkých písmen, diakritiky a mezer (exKey), i se skrytými cviky.
-     Cvik, který už duplikát má (starší data), projde, dokud se jeho anglický název nezmění. */
+     Cvik, který už duplikát má (starší data), projde, dokud se jeho anglický název nezmění.
+     Shoda exClash(pole, hodnota, vlastníId), zákaz uložení exNameBlock. Hlášky exNameMsgs / exNameMark hned
+     při psaní (#x-name-msg, #x-cz-msg; #ex-save dostane .btn.off), český název jen .fmsg.warn. Odkaz
+     exClashOpen otevře stránku cviku a Zpět vrátí formulář (navFrame formuláře je v f.exEd, vrací ho
+     exEdLeave). Každé nové místo, které vytváří nebo přejmenovává cvik, má názvy hlídat stejně. */
   const exKey = (s) => fold(s).replace(/\s+/g, "");
   // jiný cvik se stejným názvem v poli field ("name" / "cz"), jinak null
   function exClash(field, value, selfId) {
@@ -9301,7 +9429,10 @@
      hledání: poprvé je potřeba internet, pak soubor drží service worker v cache.
      Vybraný cvik předvyplní formulář Nový cvik a uloží se jako vlastní cvik se značkou
      src:"fedb:<id>". Fotky se ve výsledcích jen ukazují (online); uložit k cviku jdou jen ty, které
-     uživatel vybere (formulář Nový cvik, stránka cviku → Z online databáze, sekce „FOTKY U CVIKU“). */
+     uživatel vybere (formulář Nový cvik, stránka cviku → Z online databáze, sekce „FOTKY U CVIKU“).
+     Načtení fedbLoad (js/fedb.js není ve FILES v sw.js), stav hledání fs, vykreslení renderFs / refreshFs.
+     Předvyplnění přes exEdOpen(null, from, fx). Náhledy fotek z FEDB_IMG, nic se neukládá. Změna českých
+     názvů nebo shod: upravit TSV v tools/fedb/ a spustit python3 tools/fedb/build.py. */
   let fs = null,
     fedbP = null;
   function fedbLoad() {
@@ -9508,7 +9639,10 @@
      a úchyt dnd-h (dndGrip). Zvednutá položka jede s prstem, ostatní jí uhýbají, u okraje panelu
      (stránky) se seznam sám posouvá. Po puštění se položka přesune i v HTML (bez probliknutí)
      a dndDrop(druh, odkud, kam) uloží nové pořadí. Tahá se jen za úchyt, posouvání stránky
-     a klepání fungují dál. */
+     a klepání fungují dál.
+     Žádné šipky. dndDrop ukládá: gyms, ex = curDraft().ex, tpl = pole order u šablon (tplSorted, nová šablona
+     tplNextOrder). Vysoké položky (karty cviků) se netahají na stránce, ale v panelu s krátkým seznamem
+     (sheetExOrder, sheetTplOrder). V panelu se posouvá .sheet-b, jinak stránka (dndView bez lišt). */
   const DND_EDGE = 56; // px od okraje rámečku, kde se seznam začne sám posouvat
   const DND_SPEED = 14; // nejvyšší posun za snímek (px)
   let dnd = null; // probíhající tah
@@ -9912,7 +10046,14 @@
      - appka je na očích celou dobu → pípnutí / vibrace podle S.cfg.restAlert,
      - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
        (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
-     S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série. */
+     S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série.
+     Start jen přes restStart(). Nastavení v config/main: restOn (hlavní vypínač, vypnuto = po ✓ žádná pauza,
+     F4-05), restSec, restSs (po pracovní supersérii, F4-05), restAlert (both / sound / vib), restOver,
+     restNotify. Zpráva {type:"rest"} posílá restPost(), oznámení jen když appka není na očích.
+     Záznam událostí oznámení (cache wdlog-prN, píše sw.js i appka) je vývojový nástroj: jen v testovací verzi
+     a lokálně (DEV), tlačítko v Nastavení → O aplikaci (sheetRestLog). Ve vydané verzi nic takového být nemá
+     (přání uživatele). Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
+     vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat. */
   const REST_SECS = [60, 90, 120, 150, 180]; // volby délky pauzy v Nastavení (výchozí i po supersérii)
   const REST_VIB = [700, 300, 700],
     REST_OVER_MAX = 15 * 60; // 2 dlouhé vibrace; přečas zmizí po 15 min
@@ -10234,7 +10375,10 @@
      po návratu ho appka vezme znovu). Pojistka: po WAKE_IDLE bez dotyku se zámek pustí.
      Baterie pod WAKE_BATT bez nabíječky: funkce dočasně neplatí, Nastavení to ukáže.
      S.cfg.screenDim: po WAKE_DIM bez dotyku černá obrazovka jen s odpočtem (jas webová appka
-     měnit neumí; na OLED displeji černá šetří baterii). Klepnutí ji schová a nic pod ní nezmáčkne. */
+     měnit neumí; na OLED displeji černá šetří baterii). Klepnutí ji schová a nic pod ní nezmáčkne.
+     Vše řídí wakeSync() (volá ho restSave, visibilitychange, baterie a interval s restTick). Dotyk wakeTouch,
+     baterie batteryLow (navigator.getBattery), upozornění ve wakeSettings, vrstva .dim (dimEl). screenOn
+     výchozí vypnuto. */
   const WAKE_IDLE = 10 * 60 * 1000,
     WAKE_DIM = 30 * 1000,
     WAKE_BATT = 0.15,
@@ -10414,10 +10558,16 @@
     return h;
   }
 
-  /* ---------- grafy (SVG) ----------
+  /* ---------- grafy (SVG, F3-08) ----------
      spec grafu: type ("bar" / "line"), label, unit (přípona hodnoty v bublině), yUnit (jednotka u čísel
      na ose Y, F3-08), fmt (druh hodnot podle CH_FMT, jinak obyčejná čísla), whole (jen celá čísla na ose)
-     a data (bars / series). */
+     a data (bars / series).
+     Vložení chartPh(spec, výška), kreslí drawCharts. Jednotka yUnit je u každého čísla na ose (opakování
+     „10×“ bez mezery přes withUnit). CH_FMT: min = minuty jako „2:00 h“, sec = sekundy jako „1:30 min“, vol =
+     kg, od 10 000 tuny jako fmtVol. whole u počtů (opakování, tréninky, série). Graf je přes celou šířku
+     karty: levý okraj = změřená šířka nejdelšího popisku (chartTextWidth), vpravo bez okraje. Popisky pod
+     sloupci se při nedostatku místa pravidelně vynechají (poslední zůstane). Nový graf s jednotkou jen přes
+     tato pole. Grafy, které nepatří fitku, mají var(--chart), ne --s1. */
   const CH = {};
   let chN = 0;
   function chartPh(spec, h) {
@@ -12425,7 +12575,11 @@
      na hlavní obrazovku, + 1 pojistka. Záznamy se přidávají jen po klepnutí – Chrome záznamy
      přidané bez klepnutí může při Zpět přeskočit. Po hlášce na hlavní obrazovce zůstanou kroky
      „dopředu“ v historii; dotyk (klepnutí i swipe) pojistku obnoví krokem vpřed (history.forward),
-     ten klepnutí nepotřebuje. Rozdělaný trénink Zpět nikdy neukončí. */
+     ten klepnutí nepotřebuje. Rozdělaný trénink Zpět nikdy neukončí.
+     Nový panel přes openSheet(…, noanim, nav): panel v panelu dostane nav.lv (hloubka) a nav.back (krok o
+     úroveň), dynamický panel nav.re (znovu otevření). Nová podstránka (jako exd, edit, exed, wd) uloží místo
+     návratu S.nav.push(navFrame()) a musí se doplnit do navBack, navDepth a go (stránky, které nemažou
+     S.nav). Šipky ← v appce volají navBack(). Záznamy historie se přidávají jen po klepnutí (navEnsure). */
   // pos = kde v historii appky jsme, top = nejvyšší existující záznam, wait = čeká se na krok vpřed
   const Nav = { pos: 0, top: 0, ignore: false, exit: false, wait: false };
   (function () {
@@ -12643,7 +12797,9 @@
         vždy před obnovou ze zálohy a ručně. Drží se posledních BK_MAX_POINTS.
      Formát souboru: version 2 = version 1 + pole "photos" (fotky u cviků F2-05, jen v souboru
      s přepínačem „Zálohovat i fotky“; body obnovy mají photos prázdné, includes.photos = false).
-     Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše" (fotky jen přidá). */
+     Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše" (fotky jen přidá).
+     Verze formátu BK_VERSION, načtení a doplnění starých záloh normBackup (měnit jen zpětně kompatibilně).
+     Stažení souboru přes LocalDownloads (odkaz s download). */
   const BK_VERSION = 2,
     BK_REMIND_DAYS = 14,
     BK_AUTO_DAYS = 7,
@@ -13173,7 +13329,10 @@
   /* ---------- verze appky (F0-04) ----------
      Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
      (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
-     Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA). */
+     Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA).
+     BUILD (z js/verze.js), TEST_PR (číslo PR z adresy, jinak ""). Nastavení → O aplikaci → Verze aplikace:
+     versionSettings, kontrola aktualizace window.PWA.check(), v testu copyFromMain, ve vydané verzi
+     scanTestData / deleteTestData. Pruh testBar() je součástí topbar(). */
   const MAIN_URL = BUILD.vydana || "../"; // adresa vydané verze (z testovací verze)
   const fmtSize = (b) =>
     b < 1048576
@@ -13238,7 +13397,9 @@
      „Zkušební fitko“ (FAKE_GYM) a FAKE_DAYS.length tréninků s id začínajícím FAKE_ID, data počítaná od dneška,
      takže jsou pořád čerstvá. Cviky a série podle FAKE_PLAN (scénáře pro stagnaci F4-06, další úlohy můžou
      přidat své). „Smazat“ odebere jen fitko FAKE_GYM a tréninky s FAKE_ID, nic jiného. Cviky, které nejsou
-     vázané na fitko (plank, shyby, bicepsový zdvih), se sčítají se skutečnými tréninky v testovací verzi. */
+     vázané na fitko (plank, shyby, bicepsový zdvih), se sčítají se skutečnými tréninky v testovací verzi.
+     Karta fakeSettings (Nastavení → O aplikaci), fakeAdd (znovu klepnutím se data obnoví) a fakeRemove. Nová
+     úloha může do FAKE_PLAN přidat své scénáře (a doplnit popis v PR). */
   const FAKE_GYM = "fake-gym";
   const FAKE_ID = "fake-";
   const FAKE_DAYS = [36, 30, 24, 18, 12, 6]; // před kolika dny byl každý zkušební trénink (od nejstaršího)

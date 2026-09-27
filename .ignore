@@ -1,0 +1,9 @@
+# Soubory, které nástroje pro hledání (ripgrep, Claude Code) přeskakují (F0-12).
+# Jsou velké nebo generované a výsledky hledání by jen zahltily. Appka je normálně používá,
+# na web se kopírují. Hledat v nich jde, když se cesta k souboru zadá přímo.
+js/atlas.js
+js/fedb.js
+tools/fedb/*.tsv
+fonts/
+icons/
+docs/navrhy/**/*.png
