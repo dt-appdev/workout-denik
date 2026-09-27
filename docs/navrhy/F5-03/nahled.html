@@ -1,0 +1,1511 @@
+<title>Odznaky deníku</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="../../../fonts/fonts.css">
+<style>
+  /* Náhled F5-03 (odznaky). Barvy a písmo převzaté z css/app.css, aby náhled vypadal jako appka. */
+  :root {
+    color-scheme: light;
+    --bg: #eceef2;
+    --surface: #ffffff;
+    --surface-2: #f5f6f8;
+    --line: #dce0e6;
+    --line-2: #c9ced6;
+    --ink: #13161b;
+    --ink-2: #3a404b;
+    --ink-3: #545b66;
+    --accent: #cf3a31;
+    --accent-ink: #ffffff;
+    --accent-soft: #fbe7e5;
+    --good: #1b7a48;
+    --tile: #e3e6ec;
+    --lock: #9aa1ab;
+    --shadow: 0 1px 2px rgba(19, 22, 27, 0.06), 0 4px 16px rgba(19, 22, 27, 0.06);
+    --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+    --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e1013;
+      --surface: #171a1f;
+      --surface-2: #1f232a;
+      --line: #2a2f37;
+      --line-2: #3a404a;
+      --ink: #eceef1;
+      --ink-2: #ccd1d8;
+      --ink-3: #b0b6bf;
+      --accent: #ee5b51;
+      --accent-ink: #1a0806;
+      --accent-soft: #3a1715;
+      --good: #52c48d;
+      --tile: #1f232a;
+      --lock: #5d646e;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e1013;
+    --surface: #171a1f;
+    --surface-2: #1f232a;
+    --line: #2a2f37;
+    --line-2: #3a404a;
+    --ink: #eceef1;
+    --ink-2: #ccd1d8;
+    --ink-3: #b0b6bf;
+    --accent: #ee5b51;
+    --accent-ink: #1a0806;
+    --accent-soft: #3a1715;
+    --good: #52c48d;
+    --tile: #1f232a;
+    --lock: #5d646e;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 16px 64px;
+    display: grid;
+    gap: 44px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 {
+    font-size: 40px;
+    line-height: 1.05;
+  }
+  h2 {
+    font-size: 28px;
+  }
+  h3 {
+    font-size: 20px;
+  }
+  p {
+    margin: 0;
+    max-width: 68ch;
+    color: var(--ink-2);
+  }
+  .eyebrow {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .head {
+    display: grid;
+    gap: 12px;
+  }
+  .head-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .sec {
+    display: grid;
+    gap: 16px;
+  }
+  .sec > p {
+    margin-top: -6px;
+  }
+  .rules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+  }
+  .rule {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+    align-content: start;
+  }
+  .rule b {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .rule span {
+    color: var(--ink-2);
+    font-size: 14px;
+  }
+  .tbtn {
+    font: 600 14px var(--body);
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .tbtn:focus-visible,
+  .chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  /* úrovně */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    font: 600 14px var(--body);
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 12px 6px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .chip[aria-pressed="true"] {
+    color: var(--ink);
+    border-color: var(--ink-3);
+    background: var(--surface-2);
+  }
+  .chip i {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    transform: rotate(45deg);
+    display: block;
+  }
+  .ladder-box {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .ladder {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(84px, 1fr));
+    gap: 10px 8px;
+    min-width: 900px;
+  }
+  .lgrp {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+  .lgrp.m {
+    grid-column: 1 / span 5;
+  }
+  .lgrp.r {
+    grid-column: 6 / span 5;
+  }
+  .lcell {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  .lcell .t {
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 18px;
+    background: var(--tile);
+  }
+  .lcell b {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .lcell small {
+    color: var(--ink-3);
+    font-size: 12px;
+    line-height: 1.25;
+  }
+  /* matice všech kategorií */
+  .mx-box {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px 16px;
+  }
+  .mx {
+    display: grid;
+    grid-template-columns: 150px repeat(5, 56px) 16px repeat(5, 56px);
+    align-items: center;
+    gap: 6px 6px;
+    min-width: 780px;
+  }
+  .mx .nm {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-weight: 600;
+  }
+  .mx .nm svg {
+    width: 22px;
+    height: 22px;
+    flex: none;
+  }
+  .mx .hd {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .mx .opt {
+    font-weight: 500;
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+  /* čárové ikony */
+  .ico-svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .icons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+  }
+  .icopanel {
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: grid;
+    gap: 10px;
+    border: 1px solid var(--line);
+  }
+  .icopanel.lt {
+    background: #ffffff;
+    color: #13161b;
+    --sub: #545b66;
+    --ln: #dce0e6;
+  }
+  .icopanel.dk {
+    background: #171a1f;
+    color: #eceef1;
+    --sub: #b0b6bf;
+    --ln: #2a2f37;
+  }
+  .icopanel h3 {
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .icorow {
+    display: grid;
+    grid-template-columns: 30px 22px 1fr;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid var(--ln);
+    padding-top: 8px;
+  }
+  .icorow .big {
+    width: 30px;
+    height: 30px;
+  }
+  .icorow .sm {
+    width: 20px;
+    height: 20px;
+  }
+  .icorow span {
+    font-size: 14px;
+  }
+  .icorow em {
+    display: block;
+    font-style: normal;
+    font-size: 12px;
+    color: var(--sub);
+  }
+  .new {
+    font: 700 11px var(--body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #cf3a31;
+  }
+  /* telefony */
+  .phones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .phone-col {
+    display: grid;
+    gap: 8px;
+    width: 360px;
+    max-width: 100%;
+  }
+  .phone-col > small {
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  .phone {
+    width: 360px;
+    max-width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line-2);
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .ph-in {
+    padding: 14px 14px 18px;
+    display: grid;
+    gap: 12px;
+  }
+  .ph-top {
+    display: grid;
+    gap: 0;
+  }
+  .ph-top b {
+    font-family: var(--display);
+    font-size: 30px;
+    line-height: 1.1;
+  }
+  .ph-top span {
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  .seg {
+    display: flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .seg span {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 6px 0;
+    border-radius: 7px;
+    color: var(--ink-2);
+  }
+  .seg span.on {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+  }
+  .card-h {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+  }
+  .card-h svg {
+    width: 20px;
+    height: 20px;
+  }
+  .card-h small {
+    margin-left: auto;
+    font-family: var(--body);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .row5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+  .bt {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+  }
+  .bt svg.g {
+    width: 54px;
+    height: 54px;
+  }
+  .bt .cnt {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .bt .pg {
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .bt .pg i {
+    display: block;
+    height: 100%;
+    background: var(--ink-3);
+  }
+  .bt .pt {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .sumline {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .sumline b {
+    font-family: var(--display);
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .fade {
+    height: 40px;
+    margin-top: -52px;
+    background: linear-gradient(transparent, var(--bg));
+    position: relative;
+  }
+  /* panel detailu */
+  .dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 10, 12, 0.45);
+  }
+  .sheet {
+    position: relative;
+    margin-top: 150px;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 10px 18px 20px;
+    display: grid;
+    gap: 12px;
+  }
+  .sheet .grab {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-2);
+    justify-self: center;
+  }
+  .sheet-h {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .sheet-h b {
+    font-family: var(--display);
+    font-size: 26px;
+    line-height: 1.05;
+  }
+  .sheet-h span {
+    display: block;
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  .kv {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  .kv div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .kv div span:first-child {
+    color: var(--ink-3);
+  }
+  .kv div span:last-child {
+    text-align: right;
+    font-weight: 600;
+  }
+  .bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+  }
+  /* oslava */
+  .cel {
+    background: rgba(8, 10, 12, 0.72);
+    min-height: 640px;
+    display: grid;
+    place-items: center;
+    padding: 20px 18px;
+  }
+  .cel-card {
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 18px 18px 16px;
+    width: 100%;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+  .cel-card .k {
+    font-family: var(--display);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .cel-card b.nm {
+    font-family: var(--display);
+    font-size: 32px;
+    line-height: 1;
+  }
+  .cel-card .sub {
+    color: var(--ink-2);
+    font-size: 14px;
+  }
+  .cel-list {
+    width: 100%;
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+    padding-top: 8px;
+    display: grid;
+    gap: 6px;
+    text-align: left;
+  }
+  .cel-list div {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+  }
+  .cel-list small {
+    display: block;
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+  .btn {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font: 700 16px var(--body);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+  /* nastavení */
+  .setrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  .setrow:last-child {
+    border-bottom: 0;
+  }
+  .sw {
+    width: 40px;
+    height: 24px;
+    border-radius: 12px;
+    background: var(--accent);
+    position: relative;
+    flex: none;
+  }
+  .sw::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+  }
+  /* katalog */
+  .cat {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .catc {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px 10px;
+    display: grid;
+    gap: 6px;
+    align-content: start;
+  }
+  .catc-h {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .catc-h svg {
+    width: 26px;
+    height: 26px;
+  }
+  .catc-h small {
+    display: block;
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  .catc .per {
+    font-family: var(--display);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 6px;
+  }
+  .crow {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 3px 0;
+    border-top: 1px solid var(--line);
+  }
+  .crow svg {
+    width: 44px;
+    height: 44px;
+  }
+  .crow b {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .crow span {
+    display: block;
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .note {
+    font-size: 13px;
+    color: var(--ink-3);
+    max-width: 68ch;
+  }
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 32px;
+    }
+    .cat {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="head-row">
+      <div class="eyebrow">Návrh F5-03 · Motivace</div>
+      <button class="tbtn" id="themeBtn" type="button">Přepnout světlý / tmavý</button>
+    </div>
+    <h1>Odznaky: drahokamy za měsíc a za rok</h1>
+    <p>
+      Každá kategorie má 10 odznaků. Pět měsíčních se nuluje prvního dne v měsíci, pět ročních 1. ledna.
+      Čím těžší odznak, tím propracovanější drahokam. Roční drahokamy mají kovový rámeček a nejtěžší i křídla.
+      Symbol uvnitř určuje kategorii, barva kamene taky.
+    </p>
+    <div class="rules">
+      <div class="rule">
+        <b>Opakovatelné</b>
+        <span>Každý měsíc nebo rok jde odznak získat znovu. U odznaku je počítadlo, např. ×3.</span>
+      </div>
+      <div class="rule">
+        <b>Náročnost podle období</b>
+        <span>Úroveň 1–5 platí za kalendářní měsíc, 6–10 za kalendářní rok.</span>
+      </div>
+      <div class="rule">
+        <b>Z historie potichu</b>
+        <span>Po spuštění se odznaky z uložených tréninků přidělí bez oslavy.</span>
+      </div>
+      <div class="rule">
+        <b>Získaný zůstane</b>
+        <span>Když trénink později smažeš, odznak nezmizí.</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="sec">
+    <h2>Úrovně drahokamu</h2>
+    <p>Stejná řada tvarů pro všechny kategorie. Vyber kategorii a uvidíš její barvu, symbol a odznaky.</p>
+    <div class="chips" id="chips"></div>
+    <div class="ladder-box">
+      <div class="ladder" id="ladder"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Všech 90 odznaků</h2>
+    <p>9 kategorií × 10 úrovní. Tělo jde v Nastavení vypnout.</p>
+    <div class="mx-box">
+      <div class="mx" id="matrix"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Symboly kategorií</h2>
+    <p>
+      Čárové ikony ve stylu sady IC (24 × 24, obrys, zaoblené konce). Kde má appka ikonu se stejným významem,
+      použije se ta. Nové kresby ke schválení jsou označené.
+    </p>
+    <div class="icons" id="icons"></div>
+  </section>
+
+  <section class="sec">
+    <h2>Obrazovky v appce</h2>
+    <p>Příklad: 27. září 2026, 13 tréninků v září. Čísla jsou vymyšlená, jen pro ukázku.</p>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section class="sec">
+    <h2>Katalog</h2>
+    <p class="note">
+      Pracovní série = bez zahřívacích. Týden = pondělí až neděle; týden přes přelom měsíce patří měsíci,
+      do kterého padne jeho čtvrtek (každý týden patří právě jednomu měsíci). Objem a série počítá appka
+      stejně jako Statistiky, ze všech fitek.
+    </p>
+    <div class="cat" id="catalog"></div>
+  </section>
+</div>
+
+<script>
+  (() => {
+    /* ---------- tlačítko motivu ---------- */
+    const root = document.documentElement;
+    document.getElementById("themeBtn").addEventListener("click", () => {
+      const dark =
+        root.dataset.theme === "dark" ||
+        (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+      root.dataset.theme = dark ? "light" : "dark";
+    });
+
+    /* ---------- symboly kategorií (24 × 24) ----------
+       Tahy mají stroke="currentColor", plochy fill="currentColor" (i v rytině v kameni). */
+    const DUMBBELL = "M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11";
+    const MEDAL_RIB = "M8.8 10 5.5 3h4l2.5 5M15.2 10l3.3-7h-4l-1.4 3";
+    const F = 'fill="currentColor" stroke="none"';
+    const SYM = {
+      train: `<path d="${DUMBBELL}"/>`,
+      flame:
+        '<path d="M12 21.2c-3.7 0-6.4-2.6-6.4-6.3 0-3.3 2.2-5.3 3.8-7.5.5 1.9 1.5 3 2.7 3.5.2-3.1 1.3-5.6 ' +
+        '3.6-7.6.4 3.1 3.1 5.6 3.1 10 0 4.9-2.8 7.9-6.8 7.9z"/>',
+      kettle:
+        '<path d="M8 11 7.4 7.8A2.8 2.8 0 0 1 10.2 4.5h3.6a2.8 2.8 0 0 1 2.8 3.3L16 11"/>' +
+        '<path d="M5.5 15.2a6.5 6.5 0 1 1 13 0c0 1.9-.6 3.5-1.7 4.8H7.2c-1.1-1.3-1.7-2.9-1.7-4.8z"/>',
+      tally: '<path d="M6 5.5v13M10 5.5v13M14 5.5v13M18 5.5v13M3.5 15.5l17-7"/>',
+      hourglass:
+        '<path d="M6.5 3.5h11M6.5 20.5h11M8 3.5v1.8c0 2.7 4 4.2 4 6.7s-4 4-4 6.7v1.8' +
+        'M16 3.5v1.8c0 2.7-4 4.2-4 6.7s4 4 4 6.7v1.8"/>' +
+        `<path d="M9.4 19.6h5.2L12 16.4z" ${F}/>`,
+      medal: `<path d="${MEDAL_RIB}"/><circle cx="12" cy="15" r="6"/>`,
+      compass:
+        '<circle cx="12" cy="12" r="8.5"/><path d="M15.6 8.4l-2.3 4.9-4.9 2.3 2.3-4.9z"/>' +
+        `<path d="M15.6 8.4l-2.3 4.9-2.6-2.6z" ${F}/>`,
+      dice:
+        '<rect x="4" y="4" width="16" height="16" rx="3.5"/>' +
+        `<circle cx="8.6" cy="8.6" r="1.35" ${F}/><circle cx="15.4" cy="8.6" r="1.35" ${F}/>` +
+        `<circle cx="12" cy="12" r="1.35" ${F}/><circle cx="8.6" cy="15.4" r="1.35" ${F}/>` +
+        `<circle cx="15.4" cy="15.4" r="1.35" ${F}/>`,
+      body:
+        '<circle cx="12" cy="4.4" r="2.3"/><path d="M12 8H15c1 0 1.5.3 1.8 1l2.5 4.4a1.2 1.2 0 01-2.1 1.1' +
+        "l-1.6-2.9v8.6a1 1 0 01-1 1h-.7a.8.8 0 01-.8-.8v-4a1.1 1.1 0 00-2.2 0v4a.8.8 0 01-.8.8h-.7" +
+        'a1 1 0 01-1-1v-8.6l-1.6 2.9a1.2 1.2 0 01-2.1-1.1L7.2 9c.3-.7.8-1 1.8-1z"/>',
+    };
+    const lineIcon = (k, cls) =>
+      `<svg class="ico-svg ${cls || ""}" viewBox="0 0 24 24" aria-hidden="true">${SYM[k]}</svg>`;
+
+    /* ---------- kategorie a odznaky ----------
+       m = měsíční (úroveň 1–5), r = roční (úroveň 6–10): [název, podmínka] */
+    const CATS = [
+      {
+        id: "tr",
+        name: "Tréninky",
+        gem: "rubín",
+        col: "#d8343c",
+        sym: "train",
+        icon: "z appky: Trénink (činka)",
+        m: [
+          ["Rozjezd", "4 tréninky za měsíc"],
+          ["Pravidelně", "8 tréninků za měsíc"],
+          ["Nadšenec", "12 tréninků za měsíc"],
+          ["Dříč", "16 tréninků za měsíc"],
+          ["Železný měsíc", "20 tréninků za měsíc"],
+        ],
+        r: [
+          ["Padesátka", "50 tréninků za rok"],
+          ["Stovka", "100 tréninků za rok"],
+          ["Sto padesát", "150 tréninků za rok"],
+          ["Dvoustovka", "200 tréninků za rok"],
+          ["Železný rok", "250 tréninků za rok"],
+        ],
+      },
+      {
+        id: "pr",
+        name: "Pravidelnost",
+        gem: "jantar",
+        col: "#ec8412",
+        sym: "flame",
+        icon: "z appky: týdny v řadě (plamen)",
+        m: [
+          ["Každý týden", "V každém týdnu měsíce aspoň 1 trénink"],
+          ["Dvakrát týdně", "V každém týdnu měsíce aspoň 2 tréninky"],
+          ["Bez výpadku", "Celý měsíc žádná pauza delší než 4 dny"],
+          ["Třikrát týdně", "V každém týdnu měsíce aspoň 3 tréninky"],
+          ["Čtyřikrát týdně", "V každém týdnu měsíce aspoň 4 tréninky"],
+        ],
+        r: [
+          ["10 týdnů v řadě", "10 týdnů po sobě s tréninkem, počítá se od 1. ledna"],
+          ["20 týdnů v řadě", "20 týdnů po sobě s tréninkem"],
+          ["30 týdnů v řadě", "30 týdnů po sobě s tréninkem"],
+          ["40 týdnů v řadě", "40 týdnů po sobě s tréninkem"],
+          ["Celý rok", "Trénink v každém týdnu roku"],
+        ],
+      },
+      {
+        id: "ob",
+        name: "Objem",
+        gem: "safír",
+        col: "#2f6fdc",
+        sym: "kettle",
+        icon: "nová: kettlebell = zvednutá váha",
+        isNew: true,
+        m: [
+          ["10 tun", "Za měsíc zvednout celkem 10 t"],
+          ["25 tun", "Za měsíc zvednout celkem 25 t"],
+          ["50 tun", "Za měsíc zvednout celkem 50 t"],
+          ["75 tun", "Za měsíc zvednout celkem 75 t"],
+          ["100 tun", "Za měsíc zvednout celkem 100 t"],
+        ],
+        r: [
+          ["250 tun", "Za rok zvednout celkem 250 t"],
+          ["500 tun", "Za rok zvednout celkem 500 t"],
+          ["750 tun", "Za rok zvednout celkem 750 t"],
+          ["1 000 tun", "Za rok zvednout celkem 1 000 t"],
+          ["1 500 tun", "Za rok zvednout celkem 1 500 t"],
+        ],
+      },
+      {
+        id: "se",
+        name: "Série",
+        gem: "smaragd",
+        col: "#1c9a5c",
+        sym: "tally",
+        icon: "nová: čárky = počítání sérií",
+        isNew: true,
+        m: [
+          ["60 sérií", "60 pracovních sérií za měsíc"],
+          ["120 sérií", "120 pracovních sérií za měsíc"],
+          ["180 sérií", "180 pracovních sérií za měsíc"],
+          ["240 sérií", "240 pracovních sérií za měsíc"],
+          ["300 sérií", "300 pracovních sérií za měsíc"],
+        ],
+        r: [
+          ["750 sérií", "750 pracovních sérií za rok"],
+          ["1 500 sérií", "1 500 pracovních sérií za rok"],
+          ["2 000 sérií", "2 000 pracovních sérií za rok"],
+          ["2 500 sérií", "2 500 pracovních sérií za rok"],
+          ["3 000 sérií", "3 000 pracovních sérií za rok"],
+        ],
+      },
+      {
+        id: "ca",
+        name: "Čas",
+        gem: "ametyst",
+        col: "#8650d4",
+        sym: "hourglass",
+        icon: "nová: přesýpací hodiny = čas v posilovně",
+        isNew: true,
+        m: [
+          ["5 hodin", "Za měsíc 5 h v posilovně"],
+          ["10 hodin", "Za měsíc 10 h v posilovně"],
+          ["15 hodin", "Za měsíc 15 h v posilovně"],
+          ["20 hodin", "Za měsíc 20 h v posilovně"],
+          ["25 hodin", "Za měsíc 25 h v posilovně"],
+        ],
+        r: [
+          ["50 hodin", "Za rok 50 h v posilovně"],
+          ["100 hodin", "Za rok 100 h v posilovně"],
+          ["150 hodin", "Za rok 150 h v posilovně"],
+          ["200 hodin", "Za rok 200 h v posilovně"],
+          ["250 hodin", "Za rok 250 h v posilovně"],
+        ],
+      },
+      {
+        id: "re",
+        name: "Rekordy",
+        gem: "citrín",
+        col: "#e2a813",
+        sym: "medal",
+        icon: "z appky: rekord (medaile)",
+        m: [
+          ["První rekord", "1 nový rekord za měsíc"],
+          ["Tři rekordy", "3 nové rekordy za měsíc"],
+          ["Pět rekordů", "5 nových rekordů za měsíc"],
+          ["Osm rekordů", "8 nových rekordů za měsíc"],
+          ["Dvanáct rekordů", "12 nových rekordů za měsíc"],
+        ],
+        r: [
+          ["15 rekordů", "15 nových rekordů za rok"],
+          ["30 rekordů", "30 nových rekordů za rok"],
+          ["45 rekordů", "45 nových rekordů za rok"],
+          ["60 rekordů", "60 nových rekordů za rok"],
+          ["80 rekordů", "80 nových rekordů za rok"],
+        ],
+      },
+      {
+        id: "ov",
+        name: "Objevování",
+        gem: "akvamarín",
+        col: "#14a3b8",
+        sym: "compass",
+        icon: "nová: kompas = nové cviky, fitka, partie",
+        isNew: true,
+        m: [
+          ["Všestranný", "Všech 6 skupin partií aspoň 1 pracovní sérií"],
+          ["Pestrý", "15 různých cviků za měsíc"],
+          ["Novinka", "Cvik, který jsi ještě nikdy necvičil"],
+          ["Na cestách", "Tréninky ve 2 různých fitkách"],
+          ["Vyvážený", "Každá ze 6 skupin partií aspoň 15 pracovních sérií"],
+        ],
+        r: [
+          ["Nové fitko", "První trénink ve fitku, kde jsi ještě necvičil"],
+          ["Třicet cviků", "30 různých cviků za rok"],
+          ["Pět novinek", "5 cviků poprvé v životě za rok"],
+          ["Všestranný rok", "V každém měsíci roku všech 6 skupin partií"],
+          ["Sběratel", "50 různých cviků za rok"],
+        ],
+      },
+      {
+        id: "za",
+        name: "Zábavné",
+        gem: "růženín",
+        col: "#dc4a8a",
+        sym: "dice",
+        icon: "nová: hrací kostka = zábavné",
+        isNew: true,
+        secret: true,
+        m: [
+          ["Ranní ptáče", "Trénink začatý před 7:00"],
+          ["Noční sova", "Trénink začatý po 21:00"],
+          ["Víkendový bojovník", "Trénink v sobotu i v neděli téhož víkendu"],
+          ["Dvojitá směna", "Dva tréninky v jednom dni"],
+          ["Celý týden", "Za měsíc trénink v každý den týdne (po, út … ne)"],
+        ],
+        r: [
+          ["Pátek třináctého", "Trénink v pátek 13."],
+          ["Svátek", "Trénink ve státní svátek"],
+          ["Vánoce", "Trénink mezi 24. a 26. prosincem"],
+          ["Silvestr a Nový rok", "Trénink 31. prosince i hned 1. ledna (patří novému roku)"],
+          ["Sedm v řadě", "7 dní po sobě s tréninkem"],
+        ],
+      },
+      {
+        id: "te",
+        name: "Tělo",
+        gem: "peridot",
+        col: "#86a81a",
+        sym: "body",
+        icon: "z appky: Tělo (postava)",
+        optional: true,
+        m: [
+          ["Na váze", "Aspoň 1 měření za měsíc"],
+          ["Každý týden", "Měření v každém týdnu měsíce"],
+          ["Obvody", "Změřený pas, hrudník, paže i stehno"],
+          ["Složení těla", "Měření s tělesným tukem i svalem"],
+          ["Pečlivý", "12 měření za měsíc"],
+        ],
+        r: [
+          ["12 z 12", "Měření v každém měsíci roku"],
+          ["Obvody každé čtvrtletí", "Všechny 4 obvody v každém čtvrtletí"],
+          ["52 měření", "52 měření za rok"],
+          ["Svalový přírůstek", "Kosterní sval o 1 kg víc než při prvním měření roku"],
+          ["Rekompozice", "Sval (kg) nahoru a tuk (%) dolů proti prvnímu měření roku"],
+        ],
+      },
+    ];
+
+    /* ---------- kreslení drahokamu ----------
+       gem(cat, lvl, opt): SVG 120 × 120. Úroveň 1–5 = holý kámen (trojúhelník, smaragdový brus,
+       šestiúhelník, štít, osmiúhelníkový briliant), 6–10 = menší kámen v kovovém rámečku
+       (stříbro, stříbro s hroty, zlato s hroty, zlato s křídly, zlato s velkými křídly a korunkou).
+       opt.lock = zamčený (šedý), opt.secret = zamčený bez symbolu. */
+    let uid = 0;
+    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const toHex = (a) => "#" + a.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+    const mix = (a, b, t) => {
+      const x = hex(a),
+        y = hex(b);
+      return toHex(x.map((v, i) => v + (y[i] - v) * t));
+    };
+    const P = (p) => p.map((v) => v[0].toFixed(1) + "," + v[1].toFixed(1)).join(" ");
+    const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    const regular = (n, r, cx, cy, rot) => {
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const a = ((rot + (360 / n) * i - 90) * Math.PI) / 180;
+        out.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+      }
+      return out;
+    };
+    const scalePoly = (poly, c, k) => poly.map((p) => [c[0] + (p[0] - c[0]) * k, c[1] + (p[1] - c[1]) * k]);
+    // tvary holých kamenů: obrys, střed, velikost stolu (vnitřní plošky) a symbolu, dělení plošek
+    function shapeFor(lvl) {
+      if (lvl === 1) {
+        const t = [
+            [60, 12],
+            [108, 96],
+            [12, 96],
+          ],
+          o = [];
+        for (let i = 0; i < 3; i++) {
+          o.push(lerp(t[i], t[(i + 2) % 3], 0.14), lerp(t[i], t[(i + 1) % 3], 0.14));
+        }
+        return { o, c: [60, 70], k: 0.58, sym: 34, cut: 1 };
+      }
+      if (lvl === 2) {
+        const o = [
+          [38, 14],
+          [82, 14],
+          [98, 30],
+          [98, 92],
+          [82, 108],
+          [38, 108],
+          [22, 92],
+          [22, 30],
+        ];
+        return { o, c: [60, 61], k: 0.6, sym: 38, cut: 1 };
+      }
+      if (lvl === 3) return { o: regular(6, 52, 60, 60, 0), c: [60, 60], k: 0.56, sym: 38, cut: 2 };
+      if (lvl === 4) {
+        const o = [
+          [60, 8],
+          [106, 36],
+          [98, 98],
+          [60, 112],
+          [22, 98],
+          [14, 36],
+        ];
+        return { o, c: [60, 62], k: 0.55, sym: 38, cut: 2 };
+      }
+      return { o: regular(8, 54, 60, 60, 22.5), c: [60, 60], k: 0.52, sym: 38, cut: 4 };
+    }
+    const LIGHT = [-0.55, -0.83];
+    // plošky kamene: cut 1 = lichoběžníky, 2 = dva trojúhelníky, 4 = briliant (4 plošky na hranu)
+    function facets(o, c, k, cut, col, edge) {
+      const ins = scalePoly(o, c, k),
+        n = o.length,
+        dark = mix(col, "#000000", 0.55),
+        light = mix(col, "#ffffff", 0.62);
+      const shade = (t) => (t < 0.5 ? mix(dark, col, t * 2) : mix(col, light, (t - 0.5) * 2));
+      const tone = (pts, f, j) => {
+        const m = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]);
+        const d = [m[0] - c[0], m[1] - c[1]],
+          len = Math.hypot(d[0], d[1]) || 1;
+        const dot = (d[0] * LIGHT[0] + d[1] * LIGHT[1]) / len;
+        return shade(Math.min(1, Math.max(0, 0.5 + 0.5 * dot * f + (j % 2 ? 0.07 : -0.05))));
+      };
+      let s = "";
+      const face = (pts, f, j) =>
+        (s += `<polygon points="${P(pts)}" fill="${tone(pts, f, j)}" stroke="${edge}" stroke-width=".7"
+          stroke-linejoin="round"/>`);
+      for (let i = 0; i < n; i++) {
+        const a = o[i],
+          b = o[(i + 1) % n],
+          ia = ins[i],
+          ib = ins[(i + 1) % n];
+        if (cut === 1) {
+          face([a, b, ib, ia], 1, i);
+        } else if (cut === 2) {
+          face([a, b, ib], 1, i * 2);
+          face([a, ib, ia], 0.7, i * 2 + 1);
+        } else {
+          const m = lerp(lerp(a, b, 0.5), lerp(ia, ib, 0.5), 0.38);
+          face([a, b, m], 1, i * 4);
+          face([b, ib, m], 0.75, i * 4 + 1);
+          face([ib, ia, m], 0.5, i * 4 + 2);
+          face([ia, a, m], 0.75, i * 4 + 3);
+        }
+      }
+      return { s, ins };
+    }
+    // kámen se stolem (vnitřní ploška) a rytým symbolem
+    function stone(shape, col, symKey, secret) {
+      const id = "g" + ++uid,
+        dark = mix(col, "#000000", 0.5),
+        { o, c, k, cut } = shape;
+      const f = facets(o, c, k, cut, col, "rgba(255,255,255,.22)");
+      let s = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${mix(col, "#ffffff", 0.55)}"/>
+          <stop offset=".55" stop-color="${mix(col, "#ffffff", 0.12)}"/>
+          <stop offset="1" stop-color="${mix(col, "#000000", 0.15)}"/>
+        </linearGradient></defs>`;
+      s += f.s;
+      s += `<polygon points="${P(f.ins)}" fill="url(#${id})" stroke="rgba(255,255,255,.35)" stroke-width=".8"/>`;
+      s += `<polygon points="${P(o)}" fill="none" stroke="${dark}" stroke-width="2.2" stroke-linejoin="round"/>`;
+      if (!secret) {
+        const sz = shape.sym,
+          sc = sz / 24,
+          tx = c[0] - 12 * sc,
+          ty = c[1] - 12 * sc;
+        const g = (color, dx, dy, op) =>
+          `<g transform="translate(${(tx + dx).toFixed(2)} ${(ty + dy).toFixed(2)}) scale(${sc.toFixed(3)})"
+            fill="none" stroke="currentColor" color="${color}" stroke-width="2.3" stroke-linecap="round"
+            stroke-linejoin="round" opacity="${op}">${SYM[symKey]}</g>`;
+        s += g(mix(col, "#ffffff", 0.75), 0.7, 0.8, 0.8) + g(mix(col, "#000000", 0.52), 0, 0, 1);
+      }
+      // odlesk
+      const hx = c[0] - (c[0] - f.ins[0][0]) * 0.1 - 14,
+        hy = c[1] - 16;
+      s += `<path d="M${hx} ${hy - 5}l1.3 3.7 3.7 1.3-3.7 1.3-1.3 3.7-1.3-3.7-3.7-1.3 3.7-1.3z"
+        fill="#fff" opacity=".85"/>`;
+      return s;
+    }
+    const METAL = {
+      silver: ["#ffffff", "#dfe3e9", "#a3acb7", "#5f6873"],
+      gold: ["#fff4bf", "#f6c94c", "#c98c12", "#7d5306"],
+      grey: ["#d5d9de", "#b5bac1", "#8d939b", "#646a72"],
+    };
+    function metalGrad(kind) {
+      const id = "m" + ++uid,
+        m = METAL[kind];
+      return {
+        id,
+        def: `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${m[0]}"/><stop offset=".35" stop-color="${m[1]}"/>
+          <stop offset=".7" stop-color="${m[2]}"/><stop offset="1" stop-color="${m[3]}"/>
+        </linearGradient>`,
+        dark: m[3],
+        light: m[0],
+      };
+    }
+    // křídla vpravo (vlevo zrcadlově): n per, délka len
+    function wings(mg, n, len, anchor) {
+      let one = "";
+      for (let k = n - 1; k >= 0; k--) {
+        const bx = anchor[0],
+          by = anchor[1] + k * 7.5,
+          tx = bx + len - k * 5,
+          ty = anchor[1] - 24 + k * 13;
+        one += `<path d="M${bx} ${by} Q${bx + len * 0.35} ${ty - 3} ${tx} ${ty}
+          Q${bx + len * 0.6} ${by + 3} ${bx} ${by + 10}Z" fill="url(#${mg.id})" stroke="${mg.dark}"
+          stroke-width="1.2" stroke-linejoin="round"/>`;
+      }
+      return `<g>${one}</g><g transform="translate(120 0) scale(-1 1)">${one}</g>`;
+    }
+    function gem(cat, lvl, opt) {
+      opt = opt || {};
+      const col = opt.lock ? "#8b929c" : cat.col;
+      let body = "";
+      if (lvl <= 5) {
+        body = stone(shapeFor(lvl), col, cat.sym, opt.secret);
+      } else {
+        const c = [60, 62],
+          hexa = lvl <= 7,
+          gemR = hexa ? 32 : 33,
+          o = hexa ? regular(6, gemR, c[0], c[1], 0) : regular(8, gemR, c[0], c[1], 22.5);
+        const bez = scalePoly(o, c, 1.25);
+        const mg = metalGrad(opt.lock ? "grey" : lvl <= 7 ? "silver" : "gold");
+        let back = "",
+          front = "";
+        if (lvl >= 9) back += wings(mg, lvl === 10 ? 4 : 3, lvl === 10 ? 30 : 24, [c[0] + 30, c[1] - 6]);
+        if (lvl >= 7) {
+          const R = gemR * 1.25;
+          const spike = (pts) =>
+            (back += `<polygon points="${P(pts)}" fill="url(#${mg.id})" stroke="${mg.dark}" stroke-width="1.2"
+              stroke-linejoin="round"/>`);
+          spike([
+            [c[0] + R - 6, c[1] - 11],
+            [c[0] + R + 11, c[1]],
+            [c[0] + R - 6, c[1] + 11],
+          ]);
+          spike([
+            [c[0] - R + 6, c[1] - 11],
+            [c[0] - R - 11, c[1]],
+            [c[0] - R + 6, c[1] + 11],
+          ]);
+          if (lvl >= 8) {
+            spike([
+              [c[0] - 10, c[1] + R - 6],
+              [c[0], c[1] + R + 12],
+              [c[0] + 10, c[1] + R - 6],
+            ]);
+          }
+        }
+        const ring = `M${P(bez).replace(/ /g, " L")}Z M${P(o).replace(/ /g, " L")}Z`;
+        front += `<path d="${ring}" fill="url(#${mg.id})" fill-rule="evenodd" stroke="${mg.dark}"
+          stroke-width="1.4" stroke-linejoin="round"/>`;
+        front += `<polygon points="${P(scalePoly(o, c, 1.12))}" fill="none" stroke="${mg.light}"
+          stroke-opacity=".6" stroke-width=".9"/>`;
+        if (lvl >= 8) {
+          // korunka nahoře: kovová patka a malý kámen (u 10 větší)
+          const R = gemR * 1.25,
+            top = c[1] - R,
+            big = lvl === 10 ? 1.35 : 1;
+          back += `<polygon points="${P([
+            [c[0] - 12 * big, top + 6],
+            [c[0], top - 14 * big],
+            [c[0] + 12 * big, top + 6],
+          ])}" fill="url(#${mg.id})" stroke="${mg.dark}" stroke-width="1.2" stroke-linejoin="round"/>`;
+          if (lvl === 10) {
+            const gy = top - 6;
+            front += `<polygon points="${P([
+              [c[0], gy - 8],
+              [c[0] + 6, gy],
+              [c[0], gy + 8],
+              [c[0] - 6, gy],
+            ])}" fill="${mix(col, "#ffffff", 0.2)}" stroke="${mix(col, "#000000", 0.5)}" stroke-width="1.2"/>
+              <path d="M${c[0]} ${gy - 8}L${c[0] + 6} ${gy}H${c[0] - 6}Z" fill="#fff" opacity=".35"/>`;
+          }
+        }
+        const shape = { o, c, k: hexa ? 0.56 : 0.54, sym: 31, cut: hexa ? 2 : 4 };
+        body = `<defs>${mg.def}</defs>${back}${stone(shape, col, cat.sym, opt.secret)}${front}`;
+      }
+      const cls = opt.cls ? ` class="${opt.cls}"` : "";
+      const op = opt.lock ? ' opacity=".5"' : "";
+      return `<svg${cls} viewBox="0 0 120 120" role="img" aria-label="${opt.label || ""}"><g${op}>${body}</g></svg>`;
+    }
+    const badgeOf = (cat, lvl) => (lvl <= 5 ? cat.m[lvl - 1] : cat.r[lvl - 6]);
+
+    /* ---------- úrovně ---------- */
+    let pick = 0;
+    function renderLadder() {
+      const cat = CATS[pick];
+      let h = '<div class="lgrp m">Měsíc · nuluje se 1. v měsíci</div><div class="lgrp r">Rok · nuluje se 1. ledna</div>';
+      for (let l = 1; l <= 10; l++) {
+        const b = badgeOf(cat, l);
+        h += `<div class="lcell"><div class="t">${gem(cat, l, { label: b[0] })}</div>
+          <b>${l}. ${b[0]}</b><small>${b[1]}</small></div>`;
+      }
+      document.getElementById("ladder").innerHTML = h;
+      document.querySelectorAll(".chip").forEach((c, i) => c.setAttribute("aria-pressed", String(i === pick)));
+    }
+    document.getElementById("chips").innerHTML = CATS.map(
+      (c, i) =>
+        `<button class="chip" type="button" data-i="${i}" aria-pressed="false"><i style="background:${c.col}"></i>` +
+        `${c.name}</button>`,
+    ).join("");
+    document.getElementById("chips").addEventListener("click", (ev) => {
+      const b = ev.target.closest(".chip");
+      if (!b) return;
+      pick = +b.dataset.i;
+      renderLadder();
+    });
+    renderLadder();
+
+    /* ---------- matice ---------- */
+    {
+      let h = '<div></div><div class="hd" style="grid-column:span 5">Měsíc</div><div></div>';
+      h += '<div class="hd" style="grid-column:span 5">Rok</div>';
+      for (const cat of CATS) {
+        h += `<div class="nm" style="color:${cat.col}">${lineIcon(cat.sym)}<span style="color:var(--ink)">${cat.name}` +
+          `${cat.optional ? ' <span class="opt">(volitelné)</span>' : ""}</span></div>`;
+        for (let l = 1; l <= 10; l++) {
+          if (l === 6) h += "<div></div>";
+          h += gem(cat, l, { label: badgeOf(cat, l)[0] });
+        }
+      }
+      document.getElementById("matrix").innerHTML = h;
+    }
+
+    /* ---------- ikony ---------- */
+    {
+      const rows = CATS.map(
+        (c) => `<div class="icorow">${lineIcon(c.sym, "big")}${lineIcon(c.sym, "sm")}
+          <span>${c.name}${c.isNew ? ' <span class="new">nová</span>' : ""}<em>${c.icon}</em></span></div>`,
+      ).join("");
+      document.getElementById("icons").innerHTML =
+        `<div class="icopanel lt"><h3>Světlý motiv</h3>${rows}</div>` +
+        `<div class="icopanel dk"><h3>Tmavý motiv</h3>${rows}</div>`;
+    }
+
+    /* ---------- obrazovky ----------
+       stav odznaku v ukázce: [získáno letos/tento měsíc?, celkem ×N | průběh 0–1, text průběhu] */
+    const MONTH = {
+      tr: [["g", 14], ["g", 9], ["g", 3], ["p", 13 / 16, "13/16"], ["p", 13 / 20, "13/20"]],
+      pr: [["g", 11], ["p", 0.75, "3/4 týd."], ["g", 5], ["p", 0.5, "2/4 týd."], ["p", 0, "0/4 týd."]],
+      ob: [["g", 16], ["g", 12], ["p", 38 / 50, "38/50 t"], ["p", 38 / 75, "38/75 t"], ["p", 0.38, "38/100 t"]],
+      se: [["g", 15], ["g", 7], ["p", 142 / 180, "142/180"], ["p", 142 / 240, "142/240"], ["p", 142 / 300, "142/300"]],
+      ca: [["g", 16], ["g", 10], ["p", 11.5 / 15, "11,5/15 h"], ["p", 11.5 / 20, "11,5/20 h"], ["p", 0.46, "11,5/25 h"]],
+      re: [["g", 13], ["g", 6], ["p", 0.8, "4/5"], ["p", 0.5, "4/8"], ["p", 0.33, "4/12"]],
+      ov: [["g", 12], ["g", 4], ["p", 0, "0/1"], ["g", 2], ["p", 4 / 6, "4/6 sk."]],
+      za: [["g", 3], ["s"], ["s"], ["s"], ["s"]],
+      te: [["g", 8], ["p", 0.5, "2/4 týd."], ["g", 3], ["p", 0, "0/1"], ["p", 5 / 12, "5/12"]],
+    };
+    const YEAR = {
+      tr: [["g", 2], ["g", 1], ["p", 118 / 150, "118/150"], ["p", 118 / 200, "118/200"], ["p", 118 / 250, "118/250"]],
+      pr: [["g", 2], ["g", 1], ["p", 23 / 30, "23/30"], ["p", 23 / 40, "23/40"], ["p", 0, "přerušeno"]],
+      ob: [["g", 2], ["p", 402 / 500, "402/500 t"], ["p", 402 / 750, "402/750"], ["p", 0.4, "402/1000"], ["p", 0.27, "402/1500"]],
+      se: [["g", 2], ["p", 1320 / 1500, "1320/1500"], ["p", 0.66, "1320/2000"], ["p", 0.53, "1320/2500"], ["p", 0.44, "1320/3000"]],
+      ca: [["g", 2], ["p", 0.96, "96/100 h"], ["p", 0.64, "96/150 h"], ["p", 0.48, "96/200 h"], ["p", 0.38, "96/250 h"]],
+      re: [["g", 2], ["g", 1], ["p", 38 / 45, "38/45"], ["p", 38 / 60, "38/60"], ["p", 38 / 80, "38/80"]],
+      ov: [["g", 2], ["g", 1], ["p", 0.6, "3/5"], ["p", 1, "9/9 měs."], ["p", 34 / 50, "34/50"]],
+      za: [["g", 1], ["g", 2], ["s"], ["s"], ["s"]],
+      te: [["p", 1, "9/9 měs."], ["p", 0.66, "2/3 čtvrt."], ["p", 31 / 52, "31/52"], ["p", 0.4, "+0,4/1 kg"], ["p", 0, "0/2"]],
+    };
+    function tiles(cat, data, base) {
+      return data
+        .map((d, i) => {
+          const lvl = base + i,
+            b = badgeOf(cat, lvl);
+          if (d[0] === "g") {
+            return `<div class="bt">${gem(cat, lvl, { cls: "g", label: b[0] })}
+              <span class="cnt">×${d[1]}</span></div>`;
+          }
+          if (d[0] === "s") {
+            return `<div class="bt">${gem(cat, lvl, { cls: "g", lock: 1, secret: 1, label: "Tajný odznak" })}
+              <span class="pt">tajný</span></div>`;
+          }
+          return `<div class="bt">${gem(cat, lvl, { cls: "g", lock: 1, label: b[0] })}
+            <span class="pg"><i style="width:${Math.round(d[1] * 100)}%"></i></span>
+            <span class="pt">${d[2]}</span></div>`;
+        })
+        .join("");
+    }
+    function board(data, base, segOn, head) {
+      let got = 0;
+      for (const k in data) got += data[k].filter((d) => d[0] === "g").length;
+      let h = `<div class="ph-in">
+        <div class="ph-top"><b>Statistiky</b><span>Všechna fitka</span></div>
+        <div class="seg"><span>Přehled</span><span>Partie</span><span>Cviky</span><span class="on">Odznaky</span></div>
+        <div class="seg"><span${segOn === "m" ? ' class="on"' : ""}>Září</span>
+          <span${segOn === "r" ? ' class="on"' : ""}>2026</span></div>
+        <div class="sumline"><span>${head}</span><span><b>${got}</b> / 45</span></div>`;
+      for (const cat of CATS) {
+        h += `<div class="card"><div class="card-h"><span style="color:${cat.col};display:flex">${lineIcon(cat.sym)}</span>
+          ${cat.name}</div><div class="row5">${tiles(cat, data[cat.id], base)}</div></div>`;
+      }
+      return h + "</div>";
+    }
+    function cut(html, px) {
+      return `<div class="phone" style="max-height:${px}px">${html}</div>`;
+    }
+    const tr = CATS[0],
+      ob = CATS[2];
+    const detail = `<div class="phone" style="height:640px">
+        <div style="filter:blur(1px);opacity:.6">${board(MONTH, 1, "m", "Září 2026 · zbývají 3 dny")}</div>
+        <div class="dim"></div>
+        <div class="sheet" style="position:absolute;left:0;right:0;bottom:0;margin:0">
+          <div class="grab"></div>
+          <div class="sheet-h">${gem(tr, 4, { lock: 1, label: "Dříč" })}
+            <div><b>Dříč</b><span>Tréninky · měsíční · úroveň 4</span><span>16 tréninků za kalendářní měsíc</span></div>
+          </div>
+          <div style="display:grid;gap:6px">
+            <div class="sumline"><span>Září 2026</span><span><b>13</b> / 16 · zbývají 3 dny</span></div>
+            <div class="bar"><i style="width:81%;background:${tr.col}"></i></div>
+          </div>
+          <div class="kv">
+            <div><span>Získáno</span><span>2× (březen 2026, leden 2025)</span></div>
+            <div><span>Nejlepší měsíc</span><span>březen 2026 · 18 tréninků</span></div>
+            <div><span>Další úroveň</span><span>Železný měsíc · 20 tréninků</span></div>
+          </div>
+        </div>
+      </div>`;
+    const celebration = `<div class="phone"><div class="cel"><div class="cel-card">
+        <span class="k">Nový odznak</span>
+        ${gem(tr, 3, { label: "Nadšenec" }).replace("<svg", '<svg style="width:170px;height:170px"')}
+        <b class="nm">Nadšenec</b>
+        <span class="sub">12 tréninků za září 2026 · potřetí</span>
+        <div class="cel-list">
+          <div>${gem(ob, 2, { label: "25 tun" })}<span>25 tun<small>Objem · září 2026 · podvanácté</small></span></div>
+          <div>${gem(CATS[5], 7, { label: "30 rekordů" })}<span>30 rekordů<small>Rekordy · rok 2026 · poprvé</small></span></div>
+        </div>
+        <div class="btn">Pokračovat</div>
+      </div></div></div>`;
+    const settings = `<div class="phone"><div class="ph-in">
+        <div class="ph-top"><b>Rekordy a pokrok</b><span>Nastavení</span></div>
+        <div class="card" style="gap:0">
+          <div class="setrow"><span>Odznaky</span><span class="sw"></span></div>
+          <div class="setrow"><span>Oslava nového odznaku</span><span class="sw"></span></div>
+          <div class="setrow"><span>Odznaky za měření těla</span><span class="sw"></span></div>
+        </div>
+      </div></div>`;
+    document.getElementById("phones").innerHTML = [
+      [cut(board(MONTH, 1, "m", "Září 2026 · zbývají 3 dny"), 900), "Nástěnka: měsíc. Získané barevně s počtem, ostatní šedě s průběhem."],
+      [cut(board(YEAR, 6, "r", "Rok 2026 · zbývá 95 dní"), 900), "Nástěnka: rok. Rámečky a křídla, stejné kategorie."],
+      [detail, "Klepnutí na odznak: podmínka, průběh, kdy už jsi ho získal."],
+      [celebration, "Oslava po uložení tréninku, nahoře nejtěžší nový odznak."],
+      [settings, "Nastavení → Rekordy a pokrok."],
+    ]
+      .map(([h, t]) => `<div class="phone-col">${h}<small>${t}</small></div>`)
+      .join("");
+
+    /* ---------- katalog ---------- */
+    document.getElementById("catalog").innerHTML = CATS.map((cat) => {
+      const rows = (list, base) =>
+        list
+          .map(
+            (b, i) => `<div class="crow">${gem(cat, base + i, { label: b[0] })}
+              <div><b>${base + i}. ${b[0]}</b><span>${b[1]}</span></div></div>`,
+          )
+          .join("");
+      return `<div class="catc">
+        <div class="catc-h"><span style="color:${cat.col};display:flex">${lineIcon(cat.sym)}</span>
+          <div><h3>${cat.name}</h3><small>Kámen: ${cat.gem}${cat.optional ? " · jde vypnout" : ""}${
+            cat.secret ? " · tajné, dokud je nezískáš" : ""
+          }</small></div></div>
+        <div class="per">Měsíc</div>${rows(cat.m, 1)}
+        <div class="per">Rok</div>${rows(cat.r, 6)}
+      </div>`;
+    }).join("");
+  })();
+</script>
