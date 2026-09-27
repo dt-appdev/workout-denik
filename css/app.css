@@ -67,6 +67,15 @@ img {
   fill: var(--md-s);
   stroke: var(--md-s-d);
 }
+/* ikona „vázáno na fitko“ a medaile za názvem cviku (F3-22): barva textu vedle, poslední slovo názvu
+   drží ikony na stejném řádku (nameWithIcons) */
+.nowrap {
+  white-space: nowrap;
+}
+.gd-ic,
+.exc-med {
+  margin-left: 0.25em;
+}
 .ic.flame {
   color: var(--flame);
 }
@@ -88,8 +97,7 @@ img {
   --warm-bg: #fcefd4;
   --drop: #5646bd;
   --drop-bg: #ebe8fb;
-  --ss: #0b7a86; /* proužek a štítek supersérie (F4-05) */
-  --ss-bg: #dcf1f3;
+  --ss: #0b7a86; /* proužek supersérie (F4-05) */
   --fail: #c0322b;
   --fail-bg: #fbe4e2;
   --good: #1b7a48;
@@ -162,7 +170,6 @@ img {
     --drop: #a197f2;
     --drop-bg: #26223f;
     --ss: #4cc2cf;
-    --ss-bg: #173b3f;
     --fail: #f0736a;
     --fail-bg: #3a1a18;
     --good: #52c48d;
@@ -209,7 +216,6 @@ img {
   --drop: #a197f2;
   --drop-bg: #26223f;
   --ss: #4cc2cf;
-  --ss-bg: #173b3f;
   --fail: #f0736a;
   --fail-bg: #3a1a18;
   --good: #52c48d;
@@ -751,10 +757,6 @@ a.btn {
   height: 8px;
   border-radius: 50%;
 }
-.pill.gd {
-  background: var(--accent-soft);
-  color: var(--accent-2);
-}
 .pill.test {
   background: #f59f00;
   color: #1a1a1a;
@@ -980,10 +982,6 @@ select.inp {
   z-index: 1;
   pointer-events: none;
 }
-.pill.ssp {
-  background: var(--ss-bg);
-  color: var(--ss);
-}
 .exc {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1095,6 +1093,12 @@ select.inp {
   font-weight: 600;
   text-align: center;
   padding: 4px 2px;
+}
+/* rozsah opakování pro návrh progrese pod nadpisem Opak. (F3-22) */
+.sets th .rng {
+  display: block;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .sets td {
   padding: 4px 2px;
@@ -2623,7 +2627,7 @@ tr.done .okb {
   display: inline-flex;
   align-items: center;
   gap: 0.15em;
-  vertical-align: 0.1em;
+  vertical-align: -0.2em;
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--warm);
@@ -2659,14 +2663,6 @@ tr.done .okb {
   top: -8px;
   font-size: var(--fs-md);
   line-height: 0;
-}
-.exmedal {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2em;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--warm);
 }
 /* formulář Nový / Upravit cvik na stránce (F3-14): stejné mezery jako dřív v panelu */
 .ex-form {

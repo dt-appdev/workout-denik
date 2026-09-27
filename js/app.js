@@ -136,6 +136,13 @@
       <path class="fill" d="M12 4a8 8 0 010 16z"/>
     </svg>`,
     backup: '<svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5M4 17v3h16v-3"/></svg>',
+    // cvik vázaný na fitko (F3-22): velký zámek a malý špendlík (špendlík = fitko, jako ikona fitka)
+    gymDep: `<svg viewBox="0 0 24 24">
+      <path d="M6 14.5s-3.5-3-3.5-6.7a3.5 3.5 0 017 0c0 .6-.1 1.2-.3 1.8"/>
+      <circle cx="6" cy="7.8" r="1.1"/>
+      <rect x="9.5" y="12.5" width="12" height="9" rx="2"/>
+      <path d="M12.3 12.5V10a3.2 3.2 0 016.4 0v2.5"/>
+    </svg>`,
     // návrh progrese (F4-01): šipka stoupající nahoru
     prog: '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
     // stagnace (F4-06): vodorovná čára s tečkami = plochý průběh, bez posunu
@@ -192,6 +199,18 @@
   // ikona s třídou .ic: v textu a tlačítkách, velikost podle písma (F3-20)
   const icon = (name, cls) =>
     IC[name].replace("<svg", `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"`);
+  /* ikona „vázáno na fitko“ (F3-22) za názvem cviku nebo za textem „Vázáno na fitko“, v barvě textu
+     vedle ní. tip = klepnutí ukáže vysvětlení (akce gdTip, karta cviku); jinde klepnutí patří řádku kolem. */
+  const GD_TIP = "Vázáno na fitko: progres se počítá zvlášť pro každé fitko.";
+  const gdIcon = (tip) =>
+    `<span class="gd-ic"${tip ? ' data-act="gdTip"' : ""} role="img" aria-label="Vázáno na fitko">` +
+    `${icon("gymDep")}</span>`;
+  // název cviku s ikonami za ním: poslední slovo drží s ikonami na řádku, aby ikona nezůstala sama
+  function nameWithIcons(name, after) {
+    if (!after) return esc(name);
+    const k = name.lastIndexOf(" ") + 1;
+    return `${esc(name.slice(0, k))}<span class="nowrap">${esc(name.slice(k))}${after}</span>`;
+  }
 
   /* ---------- svalová mapa ----------
      Anatomické SVG: Ryan Graves, CC BY 4.0 (balíček flutter-body-atlas).
@@ -1657,7 +1676,8 @@
     if (items.length < 2) return items.join("");
     return items.slice(0, -1).join(", ") + " a " + items[items.length - 1];
   }
-  const progStr = (range) => range[0] + (range[1] > range[0] ? "–" + range[1] : "") + " opak.";
+  const progSpan = (range) => range[0] + (range[1] > range[0] ? "–" + range[1] : "");
+  const progStr = (range) => progSpan(range) + " opak.";
   /* návrh pro cvik e rozdělaného tréninku d: {sets, reps, range, kind, up}, nebo null;
      sets = [{set, kg}] (set = pořadí pracovní série od 0), up = přidání nad nejtěžší váhu (jinak dorovnání) */
   function progInfo(d, e) {
@@ -3750,16 +3770,6 @@
     }
     ssNorm(list);
   }
-  // štítek cviku v supersérii „supersérie 1/2“ ("" = cvik není v supersérii)
-  function ssLabel(list, i) {
-    const run = ssRun(list, i);
-    return run ? `supersérie ${i - run[0] + 1}/${run[1] - run[0] + 1}` : "";
-  }
-  // štítek jako pill do hlavičky karty cviku
-  function ssPill(list, i) {
-    const label = ssLabel(list, i);
-    return label ? `<span class="pill ssp">${esc(label)}</span>` : "";
-  }
   // karty cviků (cards[i] patří list[i]); karty jedné supersérie obalí kvůli menší mezeře mezi nimi.
   // Proužek vlevo má každá karta sama (třída ss-on), rozměry karty se nemění.
   function ssWrap(list, cards) {
@@ -4195,35 +4205,28 @@
     const kind = kindOf(e.exId),
       flds = kFields(kind);
     const lr = mode === "active" ? liveRecords(d, i) : { sets: {}, ex: [] };
-    const ssLbl = ssPill(d.ex, i); // supersérie (F4-05): štítek a proužek vlevo
-    const range = progRange(e.exId); // rozsah opakování pro návrh progrese (F4-01)
-    let h = `<article class="exc${ssLbl ? " ss-on" : ""}" data-i="${i}">
+    const inSs = ssRun(d.ex, i); // supersérie (F4-05): proužek vlevo
+    const range = progRange(e.exId); // rozsah opakování pro návrh progrese (F4-01), pod nadpisem Opak.
+    /* F3-22: v hlavičce karty žádné štítky. Za názvem ikona „vázáno na fitko“ a medaile nového
+       rekordu, klepnutí na ně ukáže vysvětlení (gdTip, recTip), klepnutí na název otevře Popis.
+       Druh zápisu poznáš podle sloupců tabulky, supersérii podle proužku vlevo. */
+    const recNames = lr.ex.map(recLow).join(", ");
+    const after =
+      (ex.gymDep ? gdIcon(true) : "") +
+      (lr.ex.length
+        ? `<span class="exc-med" data-act="recTip" data-v="${esc(recNames)}" role="img"
+            aria-label="Nový rekord: ${esc(recNames)}">${medal(lr.ex)}</span>`
+        : "");
+    let h =
+      `<article class="exc${inSs ? " ss-on" : ""}" data-i="${i}">
       <div class="exc-h">
         <div class="grow">
           <h3>
-            <button data-act="openEx" data-v="${esc(e.exId)}" data-p="info">${esc(ex.name)}</button>
+            <button data-act="openEx" data-v="${esc(e.exId)}" data-p="info">` +
+      `${nameWithIcons(ex.name, after)}</button>
           </h3>
-          ${ex.cz ? `<div class="cz">${esc(ex.cz)}</div>` : ""}`;
-    h +=
-      `<div class="row wrap-r" style="margin-top:4px;gap:6px">
-        ${ssLbl}
-        ${
-          ex.gymDep
-            ? `<span class="pill gd" title="Progres se počítá zvlášť pro každé fitko">
-              vázáno na fitko
-            </span>`
-            : '<span class="pill">univerzální</span>'
-        }` +
-      `${kind !== "wr" ? `<span class="pill">${esc(KIND[kind].l.toLowerCase())}</span>` : ""}` +
-      `${range ? `<span class="pill" title="Rozsah opakování pro návrh progrese">${esc(progStr(range))}</span>` : ""}` +
-      `${
-        lr.ex.length
-          ? `<span class="exmedal" title="${esc(lr.ex.map((t) => REC[t]).join(", "))}">
-            ${medal(lr.ex)}${esc(lr.ex.map(recLow).join(", "))}
-          </span>`
-          : ""
-      }` +
-      `</div></div>
+          ${ex.cz ? `<div class="cz">${esc(ex.cz)}</div>` : ""}
+        </div>
       <button class="iconbtn" data-act="openEx" data-v="${esc(e.exId)}" data-p="stats"
           aria-label="Statistiky cviku">
         ${IC.stats}
@@ -4264,12 +4267,16 @@
       h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
           placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
     }
+    // rozsah opakování (F4-01) pod nadpisem sloupce Opak. (F3-22)
+    const repsRange = range
+      ? `<span class="rng" title="Rozsah opakování pro návrh progrese">${progSpan(range)}</span>`
+      : "";
     h += `<table class="sets">
       <thead>
         <tr>
           <th class="c-type">Série</th>
           ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
-          ${flds.map((f) => `<th class="c-in">${FLD[f].lab}</th>`).join("")}
+          ${flds.map((f) => `<th class="c-in">${FLD[f].lab}${f === "reps" ? repsRange : ""}</th>`).join("")}
           ${mode === "active" ? '<th class="c-ok" aria-label="Hotovo">' + icon("check") + "</th>" : ""}
         </tr>
       </thead>
@@ -4867,10 +4874,8 @@
       const er = R.filter((r) => r.exId === e.exId);
       const c = seen[e.exId] ? null : sumEx(w, e.exId);
       seen[e.exId] = true;
-      const ssLbl = ssPill(w.ex, i);
       cards.push(
-        `<div class="card${ssLbl ? " ss-on" : ""}">
-        ${ssLbl ? `<div class="row" style="margin-bottom:4px">${ssLbl}</div>` : ""}
+        `<div class="card${ssRun(w.ex, i) ? " ss-on" : ""}">
         <div style="font-weight:700;color:var(--accent-2)">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
           `</button>${er.length ? " " + recCount(er) : ""}` +
@@ -6782,7 +6787,8 @@
         `<button class="exrow" data-act="openEx" data-v="${esc(r.id)}">
         <div class="grow">
           <div class="n">
-            ${esc(e.name)}${e.custom ? ' <span class="xs muted">(vlastní)</span>' : ""}
+            ${nameWithIcons(e.name, e.gymDep ? gdIcon() : "")}` +
+        `${e.custom ? ' <span class="xs muted">(vlastní)</span>' : ""}
           </div>
           ${e.cz ? `<div class="cz">${esc(e.cz)}</div>` : ""}
           <div class="m">
@@ -6852,7 +6858,7 @@
         <label class="switch">
           <input type="checkbox" id="gymDepToggle" data-act="toggleGymDep"
               ${ex.gymDep ? "checked" : ""}>
-          <span><b>Vázáno na fitko</b><br>` +
+          <span><b>Vázáno na fitko${gdIcon()}</b><br>` +
         `<span class="xs muted">${
           ex.gymDep
             ? "Každé fitko má vlastní progres, grafy i rekordy."
@@ -6885,7 +6891,7 @@
     }
     h += `<p class="xs muted" style="margin:0 0 8px">${
       ex.gymDep
-        ? "Vázáno na fitko: počítá se zvlášť pro každé fitko."
+        ? `Vázáno na fitko${gdIcon()}: počítá se zvlášť pro každé fitko.`
         : "Nevázáno na fitko: data ze všech fitek se sčítají."
     } Změníš v Popisu.</p>`;
     const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
@@ -8656,7 +8662,7 @@
         <button class="pick" data-act="pickToggle" data-v="${esc(id)}" aria-pressed="${on}">
           <span class="chk">${on ? IC.check : ""}</span>
           <div class="grow">
-            <div style="font-weight:600">${esc(e.name)}</div>
+            <div style="font-weight:600">${nameWithIcons(e.name, e.gymDep ? gdIcon() : "")}</div>
             ${e.cz ? `<div class="cz">${esc(e.cz)}</div>` : ""}
             <div class="xs muted">
               ${esc(
@@ -8667,7 +8673,7 @@
                   "",
               )} ` +
         `· ${esc(EQUIP[e.equip] || "")}${n ? " · " + n + "× v historii" : ""}` +
-        `${e.gymDep ? " · vázáno na fitko" : ""}
+        `
             </div>
           </div>
         </button>
@@ -8771,7 +8777,8 @@
       <div class="row wrap-r" style="justify-content:space-between">
         <a class="link" href="${esc(exLink(e))}" target="_blank" rel="noopener">` +
       `${esc(exLinkLabel(e))}${icon("ext")}</a>
-      <span class="xs muted">${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" : ""}</span>
+      <span class="xs muted">` +
+      `${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" + gdIcon() : ""}</span>
     </div>`;
     if (list.length) {
       let best = 0,
@@ -9140,7 +9147,8 @@
       </label>
       <label class="switch">
         <input type="checkbox" id="x-gd" ${f.gd ? "checked" : ""}>
-        <span><b>Vázáno na fitko</b><br><span class="xs muted">Zapni u strojů a kladek — v každém fitku
+        <span><b>Vázáno na fitko${gdIcon()}</b><br>
+          <span class="xs muted">Zapni u strojů a kladek — v každém fitku
             mají jiný odpor.</span></span>
       </label>
       ${PROG_KINDS[f.kind] ? exEdProg(f) : ""}
@@ -9597,12 +9605,12 @@
       .map((e, i) => {
         const n = e.sets.length;
         const name = exName(e.exId);
-        const ss = ssLabel(d.ex, i); // cvik v supersérii (F4-05): proužek vlevo a „supersérie 1/2“
+        const ss = ssRun(d.ex, i); // cvik v supersérii (F4-05): proužek vlevo
         return `<div class="card dnd-it dnd-row${ss ? " ss-on" : ""}">
             <div class="grow">
               <b>${esc(name)}</b>
               <div class="xs muted">
-                ${n} ${plural(n, "série", "série", "sérií")}${ss ? " · " + esc(ss) : ""}
+                ${n} ${plural(n, "série", "série", "sérií")}
               </div>
             </div>
             ${dndGrip(name)}
@@ -10785,6 +10793,13 @@
         scheduleRender();
         break;
       }
+      // F3-22: vysvětlení ikon za názvem cviku v kartě
+      case "gdTip":
+        toast(GD_TIP);
+        break;
+      case "recTip":
+        toast("Nový rekord: " + v);
+        break;
       case "exMenu": {
         const e = d.ex[i];
         const run = ssRun(d.ex, i);
