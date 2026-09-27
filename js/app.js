@@ -4267,16 +4267,17 @@
       h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
           placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
     }
-    // rozsah opakování (F4-01) pod nadpisem sloupce Opak. (F3-22)
+    // rozsah opakování (F4-01) za nadpisem sloupce Opak. (F3-22), bez místa se zalomí pod něj
     const repsRange = range
       ? `<span class="rng" title="Rozsah opakování pro návrh progrese">${progSpan(range)}</span>`
       : "";
+    const thLabel = (f) => FLD[f].lab + (f === "reps" && repsRange ? " " + repsRange : "");
     h += `<table class="sets">
       <thead>
         <tr>
           <th class="c-type">Série</th>
           ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
-          ${flds.map((f) => `<th class="c-in">${FLD[f].lab}${f === "reps" ? repsRange : ""}</th>`).join("")}
+          ${flds.map((f) => `<th class="c-in">${thLabel(f)}</th>`).join("")}
           ${mode === "active" ? '<th class="c-ok" aria-label="Hotovo">' + icon("check") + "</th>" : ""}
         </tr>
       </thead>

@@ -128,8 +128,8 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
 - Karta cviku bez štítků (F3-22, `vExCard`): v hlavičce karty (trénink, šablona, úprava tréninku) žádné textové štítky.
   Stav cviku ukazuje ikona za názvem v barvě názvu (`nameWithIcons(název, ikony)` drží poslední slovo s ikonami na řádku):
   vázáno na fitko `gdIcon(tip)` (`IC.gymDep` = velký zámek a malý špendlík, klepnutí `gdTip` = hláška `GD_TIP`), nový
-  rekord medaile (`recTip`); supersérie jen proužek (`ss-on`), druh zápisu jen sloupce tabulky, rozsah opakování pod
-  nadpisem Opak. (`repsRange`, `progSpan`). Stejná ikona `gdIcon()` za názvem cviku ve výběru cviků a záložce Cviky
+  rekord medaile (`recTip`); supersérie jen proužek (`ss-on`), druh zápisu jen sloupce tabulky, rozsah
+  opakování v nadpisu Opak. (`repsRange`, `progSpan`). Stejná ikona `gdIcon()` za názvem cviku ve výběru cviků a záložce Cviky
   a za textem „Vázáno na fitko“ (stránka cviku, info, Nový / Upravit cvik). Nový údaj o cviku do karty jako ikonu nebo
   do tabulky, ne jako štítek.
 - Nápovědy (F3-21, sekce „NÁPOVĚDY V NADPISU SEKCE“ v `js/app.js`): pod volbou žádný vysvětlující text, jen stav
@@ -355,7 +355,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   krátký text „Návrh: …“, akce `progUse` → `e.progUse`, řádek zmizí). Řádek se ukazuje, jen dokud jsou pracovní
   série nedotčené (`progTouched`: hodnota nebo ✓ v nezahřívací sérii, nebo `e.progNo`); akce, které mění pracovní
   série bez hodnot (+ Série, smazání nezahřívací série, změna druhu), volají `progTouch`. Zahřívací série návrh
-  nechají. `e.progUse` / `e.progNo` se neukládají. Rozsah pod nadpisem sloupce Opak. (`repsRange`, F3-22). Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
+  nechají. `e.progUse` / `e.progNo` se neukládají. Rozsah v nadpisu sloupce Opak. (`repsRange`, F3-22). Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
   F5-01 má nápovědu k rekordu přidat do stejného řádku.
 - Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
   Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`

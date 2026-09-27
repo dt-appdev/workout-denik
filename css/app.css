@@ -1094,11 +1094,10 @@ select.inp {
   text-align: center;
   padding: 4px 2px;
 }
-/* rozsah opakování pro návrh progrese pod nadpisem Opak. (F3-22) */
+/* rozsah opakování pro návrh progrese za nadpisem Opak. (F3-22); bez místa se celý zalomí pod něj */
 .sets th .rng {
-  display: block;
   letter-spacing: 0;
-  text-transform: none;
+  white-space: nowrap;
 }
 .sets td {
   padding: 4px 2px;
