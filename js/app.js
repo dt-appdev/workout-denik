@@ -1631,11 +1631,19 @@
   function draftLast(d, exId) {
     return lastSession(exId, d.gymId, d.id, draftBefore(d));
   }
-  /* ---------- MINULE A PŘEDVYPLNĚNÍ (F1-01) ----------
+  /* ---------- MINULE A PŘEDVYPLNĚNÍ (F1-01, F1-13) ----------
      Série se párují podle druhu: zahřívací zvlášť, ostatní (pracovní, drop set, do selhání) spolu, v pořadí.
      Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Zdroj: odpovídající série z minula,
      jinak s.ph (hodnoty ze šablony u nikdy necvičeného cviku). Když ani jedno není, ukáže se „–“
-     ve sloupci Minule i v políčkách (hodnoty ze série nad ní se nepřebírají).
+     ve sloupci Minule i v políčkách.
+     Předvyplnění ze série nad (F1-13, jen v rozdělaném tréninku, v draftHints): série bez minula, šablony
+     i návrhu progrese dostane hodnoty nejbližší série nad ní ve stejném cviku, která má zapsané hodnoty
+     (odškrtnutá i neodškrtnutá; aboveHint, setVals). Zahřívací bere jen ze zahřívací, ostatní (pracovní,
+     drop set, do selhání) jen z pracovní. Převezmou se jen vyplněná políčka. Sloupec Minule zůstane „–“
+     (nejde o historii), kontrola velkého skoku (F1-10) a zahřívací 60 % (F1-08) dál jen podle minula.
+     Změna hodnoty psaním nebo krokovačem hned obnoví šedé hodnoty sérií pod ní (hintsRefresh), aby ✓
+     nepřevzal něco jiného, než je vidět. Supersérie nic nemění (jen v rámci jednoho cviku).
+     Úprava uloženého tréninku a šablona předvyplnění ze série nad nemají.
      „Minule“ = lastSession: cvik vázaný na fitko jen v tomtéž fitku, při úpravě uloženého tréninku jen
      tréninky před ním (draftLast). exHints vrátí pro každou sérii minulou sérii (sloupec Minule) a
      předvyplnění. Nový cvik v tréninku má prázdné hodnoty; s.ph = hodnoty ze šablony jen u nikdy necvičeného
@@ -1658,18 +1666,70 @@
       return { p, h: p || s.ph || null };
     });
   }
-  // exHints pro cvik e rozdělaného tréninku d, u pracovních sérií s použitým návrhem progrese (F4-01)
+  // exHints pro cvik e rozdělaného tréninku d, u pracovních sérií s použitým návrhem progrese (F4-01),
+  // série bez předvyplnění ze série nad (F1-13)
   function draftHints(d, e) {
-    const hints = exHints(e, draftLast(d, e.exId));
+    let hints = exHints(e, draftLast(d, e.exId));
     const prog = e.progUse ? progInfo(d, e) : null;
-    if (!prog) return hints;
-    let work = -1; // pořadí pracovní série (jako číslo série v kartě, od 0)
-    return hints.map((x, j) => {
-      if (e.sets[j].t !== "n") return x;
-      work++;
-      const hit = prog.sets.find((p) => p.set === work);
-      if (!hit) return x;
-      return { p: x.p, h: Object.assign({}, x.h, { kg: hit.kg, reps: prog.reps }) };
+    if (prog) {
+      let work = -1; // pořadí pracovní série (jako číslo série v kartě, od 0)
+      hints = hints.map((x, j) => {
+        if (e.sets[j].t !== "n") return x;
+        work++;
+        const hit = prog.sets.find((p) => p.set === work);
+        if (!hit) return x;
+        return { p: x.p, h: Object.assign({}, x.h, { kg: hit.kg, reps: prog.reps }) };
+      });
+    }
+    if (d.mode !== "active") return hints;
+    return hints.map((x, j) => (x.h ? x : { p: x.p, h: aboveHint(e, j) }));
+  }
+  // zapsané hodnoty série s jako předvyplnění ({kg, reps, sec, km}, jen platná čísla > 0), jinak null
+  function setVals(kind, s) {
+    const out = {};
+    for (const f of kFields(kind)) {
+      const rule = setRule(f);
+      const res = numCheck(rule, s[rule]);
+      if (res.ok && res.v > 0) {
+        out[rule] = res.v;
+      }
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  // předvyplnění série j ze série nad (F1-13): nejbližší zahřívací nad zahřívací, jinak nejbližší pracovní
+  // se zapsanými hodnotami; null = žádná taková není
+  function aboveHint(e, j) {
+    const kind = kindOf(e.exId);
+    const from = e.sets[j].t === "w" ? "w" : "n";
+    for (let k = j - 1; k >= 0; k--) {
+      if (e.sets[k].t !== from) continue;
+      const vals = setVals(kind, e.sets[k]);
+      if (vals) return vals;
+    }
+    return null;
+  }
+  // šedé předvyplnění do políčka: bez předvyplnění „–“, chybějící hodnota prázdně
+  function hintStr(h, f) {
+    if (!h) return "–";
+    if (f === "sec") return h.sec ? fmtSec(h.sec) : "";
+    if (f === "km") return String(h.km || "");
+    if (f === "reps") return String(h.reps || "");
+    return h.kg ? fmtKg(h.kg).replace(/\s/g, "") : "";
+  }
+  // po změně hodnoty v cviku i rozdělaného tréninku d obnoví šedé předvyplnění v jeho políčkách
+  // (bez překreslení, série pod ní ho můžou brát ze série nad, F1-13)
+  function hintsRefresh(d, i) {
+    const e = d && d.mode === "active" ? d.ex[i] : null;
+    if (!e) return;
+    const hints = draftHints(d, e);
+    const flds = kFields(kindOf(e.exId));
+    e.sets.forEach((s, j) => {
+      for (const f of flds) {
+        const input = document.getElementById(kkInputId(e, j, f));
+        if (input) {
+          input.placeholder = hintStr(hints[j].h, setRule(f));
+        }
+      }
     });
   }
 
@@ -1969,7 +2029,10 @@
      Velká tlačítka +/− pro ovládání jednou rukou. V rozdělaném tréninku (se zapnutým S.cfg.stepper)
      jsou políčka série jen ke čtení, takže se neotevře klávesnice, a klepnutí na ně otevře spodní panel
      s hodnotami série pod sebou. Tlačítko − / + mění hodnotu o krok, podržení ji mění dál.
-     Počáteční hodnota = hodnota v políčku, u prázdného políčka šedé předvyplnění z minula (F1-01).
+     Počáteční hodnota = hodnota v políčku, u prázdného políčka šedé předvyplnění (z minula, F1-01, nebo ze
+     série nad, F1-13), jinak u cviku vázaného na fitko hodnota z posledního tréninku v jiném fitku (kkOther,
+     jen start pro každé políčko zvlášť, ✓ ji nepřevezme; panel ji ukáže místo „bez záznamu z minula“),
+     jinak 0.
      Krok u kg (i +kg a −kg), času a km se mění jedním tlačítkem dokola (STEPS) a pamatuje se
      v Local "kkStep" pro každý cvik (cvik vázaný na fitko zvlášť pro každé fitko). Opakování po 1.
      „Napsat“ zavře panel a otevře klávesnici v políčku. Klávesnicí se pak píše do všech políček té série
@@ -2031,13 +2094,32 @@
     const hint = draftHints(d, e)[j].h;
     return hint && +hint[rule] > 0 ? +hint[rule] : NaN;
   }
-  // číslo, od kterého se krokuje: hodnota v políčku, jinak z minula, jinak 0
+  /* série z posledního tréninku cviku vázaného na fitko v jiném fitku pro start krokovače u políčka série j
+     bez předvyplnění (F1-13): odpovídající série jako ve sloupci Minule, když tam bylo sérií méně, poslední
+     zahřívací (u zahřívací), jinak poslední pracovní; null = cvik není vázaný na fitko nebo záznam není */
+  function kkOther(d, e, j) {
+    const ex = S.exLib[e.exId];
+    if (!ex || !ex.gymDep) return null;
+    const before = draftBefore(d) || Infinity;
+    const other = (derive().byEx[e.exId] || []).find(
+      (x) => x.w.id !== d.id && x.w.gymId !== d.gymId && x.w.start < before,
+    );
+    if (!other) return null;
+    const pair = exHints(e, other)[j].p;
+    if (pair) return pair;
+    const from = e.sets[j].t === "w" ? "w" : "n";
+    const same = other.e.sets.filter((q) => q.t === from);
+    return same.length ? same[same.length - 1] : null;
+  }
+  // číslo, od kterého se krokuje: hodnota v políčku, jinak předvyplnění, jinak z jiného fitka, jinak 0
   function kkBase(d, i, j, rule) {
     const text = d.ex[i].sets[j][rule];
     const res = numCheck(rule, text);
     if (res.ok && isFinite(res.v)) return res.v;
     const hint = kkHint(d, i, j, rule);
-    return isFinite(hint) ? hint : 0;
+    if (isFinite(hint)) return hint;
+    const other = kkOther(d, d.ex[i], j);
+    return other && +other[rule] > 0 ? +other[rule] : 0;
   }
   // číslo jako text do políčka: čas „1:05“, opakování celé číslo, kg a km s čárkou
   function kkText(rule, value) {
@@ -2081,7 +2163,16 @@
           </button>`,
       )
       .join("");
-    const prevText = prev ? `minule <b class="num">${esc(setStr(kind, prev))}</b>` : "bez záznamu z minula";
+    // bez minula a s políčkem bez předvyplnění: hodnota z jiného fitka, od které začne krokovač (F1-13)
+    const hint = draftHints(d, e)[j].h;
+    const bare = flds.some((fld) => !(hint && +hint[setRule(fld)] > 0));
+    const other = !prev && bare ? kkOther(d, e, j) : null;
+    let prevText = "bez záznamu z minula";
+    if (prev) {
+      prevText = `minule <b class="num">${esc(setStr(kind, prev))}</b>`;
+    } else if (other) {
+      prevText = `v jiném fitku <b class="num">${esc(setStr(kind, other))}</b>`;
+    }
     const warm = warmInfo(d, i, j);
     let body = `<div class="kk-sub">
       <span class="grow">${esc(label)} · ${prevText}</span>
@@ -2184,6 +2275,7 @@
         input.className = "cell" + numCls(rule, s[rule]);
       }
     }
+    hintsRefresh(d, kk.i); // F1-13: série pod ní můžou brát předvyplnění z této
   }
   function kkHoldStop() {
     clearTimeout(kkHold);
@@ -4617,13 +4709,6 @@
     const useStepper = kkOn(d);
     const fval = (s, f) =>
       f === "sec" ? s.sec || "" : f === "km" ? s.km || "" : f === "reps" ? s.reps || "" : s.kg || "";
-    const phOf = (p, f) => {
-      if (!p) return "–";
-      if (f === "sec") return p.sec ? fmtSec(p.sec) : "";
-      if (f === "km") return String(p.km || "");
-      if (f === "reps") return String(p.reps || "");
-      return p.kg ? fmtKg(p.kg).replace(/\s/g, "") : "";
-    };
     e.sets.forEach((s, j) => {
       const lbl = s.t === "w" ? "W" : s.t === "d" ? "D" : s.t === "f" ? "F" : String(++wn);
       const p = hints[j].p,
@@ -4659,7 +4744,7 @@
         h += `<td class="c-in${last ? " sw-cell" : ""}">
           <input class="cell${numCls(fld, fval(s, fld))}" id="${id}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
-              value="${esc(fval(s, fld))}" placeholder="${esc(phOf(hn, fld))}"
+              value="${esc(fval(s, fld))}" placeholder="${esc(hintStr(hn, fld))}"
               aria-label="${FLD[f].lab}"${stepper}>
           ${last ? delBtn : ""}
         </td>`;
@@ -11229,7 +11314,7 @@
         touchDraft();
         scheduleRender();
         break;
-      } // mimo šablonu prázdná, šedé předvyplnění z minula (jinak „–“)
+      } // mimo šablonu prázdná, šedé předvyplnění z minula, jinak ze série nad (F1-13), jinak „–“
       case "addWarm": {
         const ss = d.ex[i].sets;
         let k = 0;
@@ -12556,6 +12641,7 @@
       set[f] = t.value;
       delete set.jumpOk; // změněná hodnota = znovu zkontrolovat velký skok
       touchDraft();
+      hintsRefresh(d, i); // F1-13: série pod ní můžou brát předvyplnění z této
       return;
     }
     if (f === "note") {

@@ -162,7 +162,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Kopírování cviků (šablona ↔ trénink) přenáší supersérii přes `ssOf(e)`, série do šablony vždy přes `tplSet`.
 - Zápis šablony vždy přes `Object.assign` s původní šablonou. Každé místo, které vytváří šablonu, hlídá volný
   název (`tplClash`, `tplFreeName`); každé místo, které vytváří nebo přejmenovává cvik, hlídá název (`exClash`).
-- Předvyplnění sérií v rozdělaném tréninku vždy přes `draftHints(d, e)`, ne rovnou `exHints`.
+- Předvyplnění sérií v rozdělaném tréninku vždy přes `draftHints(d, e)`, ne rovnou `exHints`. Změna hodnoty série
+  bez překreslení volá `hintsRefresh(d, i)` (série pod ní berou předvyplnění ze série nad, F1-13).
 - Změna cviku mimo prvky s `data-i` volá `edMark` (návrat do tréninku). Konec tréninku vždy přes `activeEnd()`.
 - Hotová série rozdělaného tréninku má čas odškrtnutí `s.at`; série označená v okně Dokončit trénink má místo něj
   `s.atEnd` a čas dostane až při uložení (F1-14). Každé odškrtnutí nebo zrušení ✓ `atEnd` maže.
