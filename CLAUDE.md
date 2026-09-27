@@ -2,7 +2,7 @@
 
 Osobní appka na zapisování tréninků ve fitku (inspirovaná Hevy). Běží jako PWA
 na GitHub Pages, používá se na Androidu v Chromu, nainstalovaná na plochu.
-Do září 2026 běžela jako Claude artefakt (jeden HTML soubor, tag `artefakt-v9`).
+Do září 2026 běžela jako Claude artefakt (jeden HTML soubor, v gitu `d491407:puvodni/workout-denik.html`).
 
 Plán vývoje a priority: `docs/plan-vyvoje.md` (jen otevřené úlohy). Je to jediný zdroj pravdy o tom,
 co je hotové a co je na řadě. Úlohy mají ID (např. F0-02). Popisy hotových úloh a vyřešené otázky jsou
@@ -84,7 +84,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `.nojekyll` | GitHub Pages servíruje soubory tak, jak jsou (bez Jekyllu). |
 | `.git-blame-ignore-revs` | Commity, které jen přeformátovaly kód (F0-10); GitHub je v historii řádků přeskočí. |
 
-Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii gitu: `git show artefakt-v9:puvodni/workout-denik.html`.
+Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii gitu: `git show d491407:puvodni/workout-denik.html`.
 
 ## Konvence
 

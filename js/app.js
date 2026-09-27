@@ -565,7 +565,7 @@
        get(path)                   -> Promise<data|null>
      Dnes: IndexedDbBackend (IndexedDB v prohlížeči, data jen v telefonu).
      Do verze 9 to byl ClaudeDbBackend (databáze Claude artefaktu),
-     viz puvodni/workout-denik.html v tagu artefakt-v9 (z repa smazáno v F0-12).
+     viz puvodni/workout-denik.html (z repa smazáno v F0-12, v gitu commit d491407).
      Cesty dokumentů zůstávají stejné:
        config/main, config/exercises, config/templates, config/backup,
        workouts/RRRR-MM, body/all, state/active
