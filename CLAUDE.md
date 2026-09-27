@@ -125,6 +125,13 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   postava obrysem, Nastavení = ozubené kolo, zeměkoule = online databáze). Novou nebo překreslenou ikonu nejdřív
   ukázat v náhledu (dnes / návrh, světlý i tmavý motiv) a nechat odsouhlasit. Šipka → ve větě („Nastavení →
   Fitka“, „85 → 1:25“) a znaky × · – jsou typografie, ne ikona, ty zůstávají.
+- Karta cviku bez štítků (F3-22, `vExCard`): v hlavičce karty (trénink, šablona, úprava tréninku) žádné textové štítky.
+  Stav cviku ukazuje ikona za názvem v barvě názvu (`nameWithIcons(název, ikony)` drží poslední slovo s ikonami na řádku):
+  vázáno na fitko `gdIcon(tip)` (`IC.gymDep` = velký zámek a malý špendlík, klepnutí `gdTip` = hláška `GD_TIP`), nový
+  rekord medaile (`recTip`); supersérie jen proužek (`ss-on`), druh zápisu jen sloupce tabulky, rozsah
+  opakování v nadpisu Opak. (`repsRange`, `progSpan`). Stejná ikona `gdIcon()` za názvem cviku ve výběru cviků a záložce Cviky
+  a za textem „Vázáno na fitko“ (stránka cviku, info, Nový / Upravit cvik). Nový údaj o cviku do karty jako ikonu nebo
+  do tabulky, ne jako štítek.
 - Nápovědy (F3-21, sekce „NÁPOVĚDY V NADPISU SEKCE“ v `js/app.js`): pod volbou žádný vysvětlující text, jen stav
   nebo varování (co se děje teď, např. „Oznámení jsou zakázaná…“). Vysvětlení patří do panelu sekce: tlačítko
   `helpBtn(klíč)` v nadpisu (`.sec-h`, víc tlačítek v `.sec-btns`, ikona `IC.help` = otazník; `IC.info` je O aplikaci),
@@ -289,7 +296,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   šablona; `ssRun` = rozsah, aspoň 2 cviky), osamělou nebo rozdělenou značku uklidí `ssNorm` (po odebrání, přetažení
   `ssMoved`, v `draftToWorkout`, při uložení šablony). Menu cviku `ssOn` (`ssLink`) / `ssOff` (`ssUnlink`), karty jedné supersérie
   obaluje `ssWrap` (`.ssg` = menší mezera), karta má třídu `ss-on` (proužek vlevo přes `::before`, rozměry karty
-  beze změny) a štítek `ssPill` / `ssLabel` („supersérie 1/2“; editor, souhrn, panel Pořadí cviků). Každé nové místo, které kopíruje cviky (šablona ↔ trénink), přenáší
+  beze změny; i na stránce tréninku a v panelu Pořadí cviků, bez štítku „supersérie 1/2“, F3-22). Každé nové místo, které kopíruje cviky (šablona ↔ trénink), přenáší
   značku přes `ssOf(e)`. Pauza po ✓ (`toggleSetDone`) podle `ssRest`: série se párují podle `setGrp` a pořadí,
   nehotová dvojice = bez pauzy a hláška `restNext()`, hotové pracovní kolo = `restStart(S.cfg.restSs)`, jinak výchozí
   `S.cfg.restSec`. `restNext` v supersérii vybírá další kolo.
@@ -355,7 +362,7 @@ co je hotové a co je na řadě. Úlohy mají ID (např. F0-02).
   krátký text „Návrh: …“, akce `progUse` → `e.progUse`, řádek zmizí). Řádek se ukazuje, jen dokud jsou pracovní
   série nedotčené (`progTouched`: hodnota nebo ✓ v nezahřívací sérii, nebo `e.progNo`); akce, které mění pracovní
   série bez hodnot (+ Série, smazání nezahřívací série, změna druhu), volají `progTouch`. Zahřívací série návrh
-  nechají. `e.progUse` / `e.progNo` se neukládají. Štítek s rozsahem v kartě. Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
+  nechají. `e.progUse` / `e.progNo` se neukládají. Rozsah v nadpisu sloupce Opak. (`repsRange`, F3-22). Vysvětlení jen v `progSettings`, ve formuláři cviku jen volba.
   F5-01 má nápovědu k rekordu přidat do stejného řádku.
 - Přetažení (F2-07, sekce „PŘETAŽENÍ“): pořadí se mění jen tažením za úchyt `dndGrip(popisek)`, žádné šipky.
   Seznam má `data-dnd="<druh>"`, položky třídu `dnd-it` (přímé děti seznamu). Po puštění `dndDrop(druh, odkud, kam)`
