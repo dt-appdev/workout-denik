@@ -60,4 +60,4 @@ Když token vyprší nebo chybí, vydaná verze se nasazuje dál, jen testovací
 ne (workflow v záložce Actions to ohlásí). Pak stačí vytvořit nový token
 a v kroku 4 ho uložit znovu (Update secret).
 
-Plán vývoje: [docs/plan-vyvoje.md](docs/plan-vyvoje.md). Kontext pro Claude Code: [CLAUDE.md](CLAUDE.md).
+Plán vývoje: [docs/plan-vyvoje.md](docs/plan-vyvoje.md) (hotové úlohy v [docs/hotovo.md](docs/hotovo.md), log v [docs/log.md](docs/log.md)). Kontext pro Claude Code: [CLAUDE.md](CLAUDE.md).
