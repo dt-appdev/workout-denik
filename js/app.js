@@ -8802,14 +8802,23 @@
         const list = [
           [
             "Co je záloha",
-            "Jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo telefon, " +
-              "třeba na Google Disk. Jak na to, ukáže tlačítko Jak na Disk?",
+            "Jeden soubor se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo telefon, aby " +
+              "přežil i smazání dat Chromu nebo ztrátu telefonu.",
           ],
           [
-            "Sdílet zálohu a Stáhnout",
-            "Sdílet zálohu otevře nabídku sdílení: vyber Disk (nebo OneDrive, Gmail) a Uložit. Stáhnout uloží " +
-              "soubor do složky Stažené a mimo telefon ho pošleš sám. Sdílený soubor má příponu .json.txt " +
-              "(soubor .json Chrome sdílet nedovolí), obsah je stejný a obnova ze souboru přijme oba.",
+            "Sdílet",
+            "Nahraje zálohu do cloudu (Google Disk, OneDrive…) nebo ji pošle e-mailem: v nabídce vyber " +
+              "aplikaci, třeba Disk, a dej Uložit.",
+          ],
+          [
+            "Stáhnout",
+            "Stáhne zálohu do telefonu do složky Stažené. Mimo telefon ji pak pošleš sám: Chrome → tři " +
+              "tečky → Stažené soubory, podrž soubor a zvol Sdílet.",
+          ],
+          [
+            "Obnovit ze souboru",
+            "Vyber soubor zálohy, z Disku jde vybrat přímo. Záloha má příponu .json.txt (soubor .json Chrome " +
+              "sdílet nedovolí), obnova přijme i starší zálohy .json.",
           ],
           [
             "Kdy appka připomene zálohu",
@@ -12579,9 +12588,6 @@
         lsSet("bkHelpOff", true);
         closeSheet();
         break;
-      case "bkHelp":
-        showBackupHelp(true);
-        break;
       case "help":
         sheetHelp(v);
         break;
@@ -13077,8 +13083,10 @@
      s přepínačem „Zálohovat i fotky“; body obnovy mají photos prázdné, includes.photos = false).
      Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše" (fotky jen přidá).
      Verze formátu BK_VERSION, načtení a doplnění starých záloh normBackup (měnit jen zpětně kompatibilně).
-     Stažení souboru přes LocalDownloads (odkaz s download). */
+     Stažení souboru přes LocalDownloads (odkaz s download). Soubory zálohy i bodů obnovy mají příponu BK_EXT
+     (.json.txt, obsah JSON), obnova ze souboru bere i starší .json. */
   const BK_VERSION = 2,
+    BK_EXT = ".json.txt", // přípona všech souborů zálohy (F0-13: .json Chrome na Androidu sdílet nedovolí)
     BK_REMIND_DAYS = 7,
     BK_AUTO_DAYS = 7,
     BK_MAX_POINTS = 8;
@@ -13166,23 +13174,20 @@
             ${fmtSize((ps.size * 4) / 3)} větší.</span></span>
       </label>`;
     }
-    // F0-13: kde jde sdílet soubor, je hlavní Sdílet zálohu a stažení vedlejší
+    // F0-13: kde jde sdílet soubor, je hlavní Sdílet (cloud, e-mail) a Stáhnout vedlejší
     h += navigator.canShare
       ? `<div class="row wrap-r">
-        <button class="btn primary grow" data-act="bkShare">Sdílet zálohu</button>
+        <button class="btn primary grow" data-act="bkShare">Sdílet</button>
         <button class="btn grow" data-act="export">Stáhnout</button>
       </div>
       <label class="btn" for="impFile">Obnovit ze souboru</label>`
       : `<div class="row wrap-r">
-        <button class="btn primary grow" data-act="export">Stáhnout zálohu</button>
+        <button class="btn primary grow" data-act="export">Stáhnout</button>
         <label class="btn grow" for="impFile">Obnovit ze souboru</label>
       </div>`;
     h += `<input type="file" id="impFile" accept=".json,.txt,application/json,text/plain" hidden>`;
-    h += `<div class="row">
-      <span class="xs muted grow">
-        Poslední záloha: ${last ? fmtDate(last) + " (" + agoLabel(last) + ")" : "zatím nikdy"}
-      </span>
-      <button class="btn sm ghost" data-act="bkHelp">Jak na Disk?</button>
+    h += `<div class="xs muted">
+      Poslední záloha: ${last ? fmtDate(last) + " (" + agoLabel(last) + ")" : "zatím nikdy"}
     </div>`;
     h += "</div></section>";
 
@@ -13249,13 +13254,13 @@
     }
     b = b || (await bkBuild());
     if (!b) return;
-    const name = b.name + ".json";
+    const name = b.name + BK_EXT;
     try {
-      await downloads.save({ filename: name, data: b.data });
+      await downloads.save({ filename: name, data: b.data, type: "text/plain" });
       markBackup(Date.now());
       scheduleRender();
       if (!lsGet("bkHelpOff", false)) {
-        showBackupHelp(false, name);
+        showBackupHelp(name);
       } else {
         toast("Záloha stažena");
       }
@@ -13265,27 +13270,14 @@
       }
     }
   }
-  // okno s návodem, jak dostat zálohu na Disk (force = otevřené tlačítkem Jak na Disk?)
-  function showBackupHelp(force, name) {
-    let b = "";
-    if (!force) {
-      b +=
-        `<p style="margin:0">
-        Soubor <b>${esc(name || "workout-denik-….json")}</b> je v telefonu ve složce <b>Stažené</b> ` +
-        `(Download).
-      </p>`;
-    }
-    if (force && navigator.canShare) {
-      // F0-13: sdílení je nejkratší cesta, stažený soubor až jako druhá možnost
-      b += `<p class="small" style="margin:0">
-        Nejrychleji: <b>Sdílet zálohu</b> → vyber <b>Disk</b> → Uložit (nebo OneDrive, Gmail…).
-      </p>`;
-      b += `<p class="small muted" style="margin:0">Stažený soubor pošleš mimo telefon takhle:</p>`;
-    } else {
-      b += `<p class="small muted" style="margin:0">
-        Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj:
-      </p>`;
-    }
+  // okno po stažení zálohy s návodem, jak ji dostat mimo telefon (F0-13: dřív i tlačítko Jak na Disk?)
+  function showBackupHelp(name) {
+    let b = `<p style="margin:0">
+      Soubor <b>${esc(name)}</b> je v telefonu ve složce <b>Stažené</b> (Download).
+    </p>`;
+    b += `<p class="small muted" style="margin:0">
+      Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj (rychleji to jde tlačítkem Sdílet):
+    </p>`;
     b += `<ol class="steps small">
       <li>
         V Chromu klepni vpravo nahoře na <b>tři tečky</b> → <b>Stažené soubory</b> (nebo otevři appku
@@ -13297,20 +13289,19 @@
     b += `<p class="xs muted" style="margin:0">
       Obnova: Nastavení → Data a záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).
     </p>`;
-    const foot = force
-      ? '<button class="btn primary grow" data-act="closeSheet">Rozumím</button>'
-      : `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
+    const foot = `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
       <button class="btn primary grow" data-act="closeSheet">Hotovo</button>`;
-    openSheet(force ? "Záloha na Disk" : "Záloha stažena", b, foot);
+    openSheet("Záloha stažena", b, foot);
   }
 
   /* ---------- ZÁLOHA SDÍLENÍM A ZE SOUHRNU (F0-13) ----------
-     Tlačítko Zálohovat (připomínka na úvodní obrazovce, souhrn po tréninku) a Sdílet zálohu v Nastavení → Data
-     a záloha otevře systémovou nabídku sdílení se souborem zálohy: vybere se Disk, OneDrive, Gmail… a Uložit.
-     Oproti stažení (doExport) odpadá cesta přes složku Stažené.
+     Tlačítko Zálohovat (připomínka na úvodní obrazovce, souhrn po tréninku) a Sdílet v Nastavení → Data a záloha
+     otevře systémovou nabídku sdílení se souborem zálohy: vybere se Disk, OneDrive, Gmail… a Uložit. Oproti
+     Stáhnout (doExport, složka Stažené) odpadá posílání souboru dál. V pruzích zůstává název Zálohovat, protože
+     souhrn má i Sdílet obrázku tréninku (F4-08).
      - Chrome sdílí jen některé typy souborů (seznam přípon a typů v Chromu, .json v něm není) a navigator.canShare
-       to nekontroluje: .json projde, ale navigator.share ho pak odmítne (NotAllowedError). Záloha se proto sdílí
-       vždy jako .json.txt (text/plain), obsah je stejný. Obnova ze souboru bere .json i .txt (readImport čte
+       to nekontroluje: .json projde, ale navigator.share ho pak odmítne (NotAllowedError). Záloha proto má všude
+       příponu BK_EXT (.json.txt, text/plain), obsah je stejný. Obnova ze souboru bere .json i .txt (readImport čte
        obsah, přípona je jedno). Kde sdílení souborů nejde vůbec, záloha se stáhne.
      - Za zálohu (markBackup) se počítá, až se sdílení splní (vybraný cíl). Zavření nabídky (AbortError) ne.
        Android splní sdílení už výběrem cíle, i když se pak uložení v Disku zruší.
@@ -13326,10 +13317,10 @@
     BK_READY_MS = 120000;
   let bkReady = null; // připravená záloha {b, file, at} pro druhé klepnutí po NotAllowedError
 
-  // soubor zálohy ke sdílení (.json.txt, .json Chrome sdílet nedovolí), nebo null, když sdílení nejde
+  // soubor zálohy ke sdílení (BK_EXT), nebo null, když sdílení nejde
   function bkShareFile(b) {
     if (!navigator.canShare) return null;
-    const f = new File([b.data], b.name + ".json.txt", { type: "text/plain" });
+    const f = new File([b.data], b.name + BK_EXT, { type: "text/plain" });
     return navigator.canShare({ files: [f] }) ? f : null;
   }
   // Zálohovat: sdílení souboru zálohy, kde nejde, stažení
@@ -13696,8 +13687,9 @@
     try {
       const data = await fetchPoint(id);
       await downloads.save({
-        filename: FILE_P + "-bod-obnovy-" + toDateInput(p ? p.at : Date.now()) + ".json",
+        filename: FILE_P + "-bod-obnovy-" + toDateInput(p ? p.at : Date.now()) + BK_EXT,
         data,
+        type: "text/plain",
       });
       toast("Bod obnovy stažen");
     } catch (e) {
