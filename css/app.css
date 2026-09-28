@@ -127,6 +127,8 @@ img {
   --shadow: 0 1px 2px rgba(19, 22, 27, 0.06), 0 4px 16px rgba(19, 22, 27, 0.06);
   --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* nejmenší dotyková plocha (F1-18): výška buněk ✓ a druhu série; zbytek appky převezme F3-23 */
+  --tap: 44px;
   /* Stupnice písma (F3-11): jiné velikosti písma než tyto nepoužívat.
      --fs-k = zvětšení písma z Nastavení → Vzhled (data-fs na <html>, fontScale v js/app.js). */
   --fs-k: 1;
@@ -1120,6 +1122,18 @@ select.inp {
 .sets .c-ok {
   width: 54px;
 }
+/* F1-18: neviditelný okraj ✓ a odznaku druhu série vyplní celou buňku, klepnout jde i vedle rámečku */
+.sets td.c-ok,
+.sets td.c-type {
+  height: var(--tap);
+  position: relative;
+}
+.okb::after,
+.stype::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
 /* poslední sloupec (✓, v šabloně a úpravě tréninku poslední políčko) s okrajem karty */
 .sets th:last-child,
 .sets td:last-child {
@@ -1152,11 +1166,20 @@ select.inp {
   height: 32px;
   border-radius: 8px;
   border: 0;
+  padding: 0;
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--fs-lg);
   background: var(--surface-2);
   color: var(--ink);
+}
+.stype-in {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 .stype.w {
   background: var(--warm-bg);
@@ -1448,6 +1471,17 @@ tr.done .okb {
   min-height: 38px;
   padding: 0 9px;
   font-weight: 700;
+  position: relative;
+}
+/* F1-18: neviditelný okraj tlačítka zvětší klepací plochu k okraji pruhu (padding .rest-in)
+   a do poloviny mezery (gap) k sousednímu tlačítku */
+.rest-in button::after {
+  content: "";
+  position: absolute;
+  inset: -8px -3px;
+}
+.rest-in button:last-child::after {
+  right: -8px;
 }
 .rest-in.over {
   background: var(--accent);
@@ -2648,9 +2682,7 @@ tr.done .okb {
   margin-right: 0.2em;
   vertical-align: -0.2em;
 }
-.stype {
-  position: relative;
-}
+/* medaile u odznaku série: vůči vnitřku odznaku (.stype-in), okraj tlačítka vyplní buňku (F1-18) */
 .stype .medal {
   position: absolute;
   right: -8px;
