@@ -66,7 +66,7 @@ flowchart LR
 
 #### Etapa 2 – Bezpečnější ovládání při tréninku (P2, rychlé)
 
-4. **F1-15** Druh série výběrem místo cyklu · *Zápis série · P2 · A · nízká* – omylné klepnutí tiše změní objem, rekordy i párování s minule.
+4. ~~**F1-15** Druh série výběrem místo cyklu~~ – odloženo 28. 9. 2026 (uživatel se nikdy neuklikl), viz `docs/navrhy/F1-15-druh-serie.md`.
 5. **F1-18** Větší ✓ a dotykové plochy v tréninku · *Zápis série · P2 · B · nízká* – ✓ je nejpoužívanější prvek appky a má jen 44 × 34 px.
 6. **F1-16** Přečas pauzy jen na záložce Trénink · *Pauza · P2 · B · nízká* – pruh přečasu zakrývá obsah ostatních záložek.
 7. **F1-06** Přidávání cviku a hledání po slovech · *Výběr cviku · P2 · A · střední* – abecední výsledky, víceslovné hledání jen přesnou frází.
@@ -96,14 +96,13 @@ flowchart LR
 19. **F3-16** Rozepsaný formulář přežije zavření appky.
 20. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-04, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
-Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F3-07.
+Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F1-15, F3-07.
 
 #### Ověřit při používání (souběžně s etapou 1)
 
 Audit testoval v prohlížeči v režimu telefonu, ne v telefonu. Tohle rozhodne jen skutečné používání, nejlépe týden tréninků s poznámkami. Výsledek může změnit pořadí nebo zadání uvedených úloh.
 
 - Jak často cvičíš cvik, který v daném fitku nemá historii (přínos F1-13).
-- Jestli se ti už stalo, že se druh série změnil omylem, např. osamělá zahřívací série mezi pracovními ve starších trénincích (F1-15).
 - Chodí oznámení a vibrace konce pauzy se zhasnutým displejem a appkou na pozadí? (F1-04; Android uspává časovače.)
 - Gboard po Napsat: přejde klávesa Další z kg na Opak.? Nezakryje klávesnice řádek? (`enterkeyhint` v F3-24.)
 - Prediktivní gesto Zpět (Android 14+) v nainstalované appce (F0-06).
@@ -152,7 +151,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-11** Opravy z používání při tréninku (návrat na naposledy změněný cvik…)
 - [x] **F1-13** Předvyplnění ze série nad
 - [x] **F1-14** Neoznačené série s hodnotami při dokončení
-- [ ] **F1-15** Druh série výběrem místo cyklu (UX audit 27. 9. 2026, §5 nález 2; P2 · A · nízká): klepnutí na číslo série dnes bez potvrzení přepne druh (pracovní → zahřívací → drop set → do selhání, `case "cycType"`). Přepnutá série ztratí předvyplnění, další série se přečíslují a spárují s jinou sérií z minula (v auditu pak série 3 ukazovala hodnotu ze série 2); omyl mění objem, rekordy i předvyplnění, drop set a do selhání jsou 2–3 klepnutí naslepo. Odznak má 34 × 32 px a je na kraji, kde se drží telefon. Návrh: klepnutí otevře malý panel (`openSheet`) se 4 druhy, aktuální zvýrazněný (vždy 2 klepnutí, bez omylu). Varianta: cyklus zůstane, jen s hláškou „Série 2 → Zahřívací · Vrátit“. Platí v tréninku, v úpravě uloženého tréninku i v šabloně; dál volá `progTouch`.
+- [ ] **F1-15** Druh série výběrem místo cyklu (UX audit 27. 9. 2026, §5 nález 2): klepnutí na číslo série by místo přepnutí dokola otevřelo panel se 4 druhy (jako v Hevy). **Odloženo 28. 9. 2026:** uživatel se nikdy neuklikl a zapsané hodnoty ani předvyplnění se přepnutím neztratí. Ověřené chování, podoba v Hevy a návrh v `docs/navrhy/F1-15-druh-serie.md`.
 - [ ] **F1-16** Přečas pauzy jen na záložce Trénink (UX audit 27. 9. 2026, §3 a §8; P2 · B · nízká): pruh pauzy je nad spodní lištou na všech záložkách a korálový přečas (volba Počítat přečas) zmizí až po 15 min (`REST_OVER_MAX`), takže po tréninku zakrývá obsah Statistik a Těla. Návrh: na ostatních záložkách místo pruhu přečasu jen malý ukazatel na záložce Trénink, přečas ukončit po 5 min, barva přečasu ne korálová (sladit s F3-23). Odpočet pauzy (±15 s, Přeskočit) zůstane na všech záložkách (Otevřené otázky).
 - [ ] **F1-17** Kratší pauza po zahřívací sérii (UX audit 27. 9. 2026, §5 nález 4; P3 · B · nízká): po zahřívací sérii dnes běží stejná pauza jako po pracovní (výchozí 2:00), takže se často přeskakuje. Návrh: vlastní délka pauzy po zahřívací sérii v Nastavení → Trénink → Odpočinek mezi sériemi (např. výchozí 1:00, volba i Bez pauzy). Jednodušší než celé F1-09. Kde: výběr délky pauzy v `toggleSetDone` (jako `ssRest` u supersérie, F4-05), nová položka v `HELP`.
 - [ ] **F1-18** Větší ✓ a dotykové plochy v tréninku (UX audit 27. 9. 2026, §8; P2 · B · nízká): ✓ série (nejpoužívanější prvek appky) má 44 × 34 px, odznak druhu série 34 × 32 px, ±15 s v pauze cca 38 × 34 px; doporučeno aspoň 44–48 px, se zpocenou rukou a při chůzi se to pozná. Návrh: ✓ přes celou výšku řádku a šířku cca 52 px, u ostatních zvětšit dotykovou plochu (vzhled může zůstat menší). Rozměry v `em` podle F3-11, ověřit s písmem Největší na šířce 360 px. Stejné pravidlo pro zbytek appky (čipy, segmenty, ikonová tlačítka) patří do F3-23.
@@ -273,7 +272,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 |---|---|---|
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
-| F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Panel (vždy 2 klepnutí, žádný omyl). |
+| F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
 | F1-16 | Skrýt na ostatních záložkách jen přečas, nebo i odpočet pauzy? Po kolika minutách přečas ukončit? | Jen přečas (odpočet s ±15 s a Přeskočit zůstane všude), konec přečasu po 5 min. |
 | F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
 | F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
