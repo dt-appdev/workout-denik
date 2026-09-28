@@ -4526,6 +4526,18 @@
     { passive: true },
   );
 
+  /* ---------- VĚTŠÍ DOTYKOVÉ PLOCHY (F1-18) ----------
+     Nejpoužívanější prvky tréninku reagují na klepnutí i vedle svého rámečku, vzhled zůstává stejný.
+     Jen v css/app.css: tlačítko má neviditelný okraj (::after), který patří k tlačítku, takže ho prst
+     trefí přímo (Chrome na dotyk jinak „přitáhne“ klepnutí vedle tlačítka k nejbližšímu políčku).
+     - ✓ série (.okb) a odznak druhu série (.stype, vykresluje vExCard): okraj vyplní celou buňku tabulky
+       sérií (td.c-ok, td.c-type s position: relative, tlačítko samo bez position; medaile rekordu se proto
+       drží vnitřního .stype-in). Buňka má aspoň výšku --tap z :root (44 px).
+     - −15 / +15 / Přeskočit v pruhu pauzy: okraj sahá až k hornímu a dolnímu okraji pruhu a do poloviny
+       mezery k sousednímu tlačítku (.rest-in button::after).
+     Tlačítko Smazat (.sw-del, F2-03) leží mimo buňku ✓, tah doleva funguje i z okraje ✓.
+     Stejné pravidlo pro zbytek appky (čipy, segmenty, ikonová tlačítka) převezme F3-23 (--tap). */
+
   function vEditor(d) {
     const mode = d.mode;
     let h = "";
@@ -4723,13 +4735,13 @@
         <td class="c-type">
           <button class="stype ${s.t}" data-act="cycType" data-i="${i}" data-j="${j}"
               title="${TYPE_NAME[s.t]} — klepnutím změníš">
-            ${lbl}` +
+            <span class="stype-in">${lbl}` +
         `${
           lr.sets[j]
             ? `<span class="medal" title="${esc(lr.sets[j].map((t) => REC[t]).join(", "))}">` +
               `${medal(lr.sets[j])}</span>`
             : ""
-        }
+        }</span>
           </button>
         </td>`;
       if (mode !== "template") {
