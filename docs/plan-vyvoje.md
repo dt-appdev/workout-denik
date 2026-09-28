@@ -62,7 +62,7 @@ flowchart LR
 
 1. ~~**F1-14** Neoznačené série s hodnotami při dokončení~~ – hotovo 27. 9. 2026.
 2. ~~**F1-13** Předvyplnění ze série nad~~ – hotovo 27. 9. 2026.
-3. **F0-13** Záloha častěji a ze souhrnu · *Ochrana dat · B · D · nízká* – při smazání dat Chromu nebo ztrátě telefonu dnes hrozí ztráta až 14 dní tréninků.
+3. ~~**F0-13** Záloha častěji a ze souhrnu~~ – hotovo 27. 9. 2026.
 
 #### Etapa 2 – Bezpečnější ovládání při tréninku (P2, rychlé)
 
@@ -96,7 +96,7 @@ flowchart LR
 19. **F3-16** Rozepsaný formulář přežije zavření appky.
 20. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-04, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
-Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25). Odložené: F0-11, F3-07.
+Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F3-07.
 
 #### Ověřit při používání (souběžně s etapou 1)
 
@@ -131,7 +131,8 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-10** Čitelný kód (přeformátování)
 - [ ] **F0-11** Rozdělit `js/app.js` do víc souborů podle částí (např. datová vrstva a záloha, rozdělaný trénink a pauza, historie s kalendářem a souhrnem, statistiky, záložka Cviky, nastavení; v `app.js` zůstane start, vykreslení a akce). Bez build kroku: víc `<script>` v `index.html` ve správném pořadí a všechny soubory do `FILES` v `sw.js`. **Odloženo 27. 9. 2026 (u F0-12):** přínos pro spotřebu tokenů je po F0-12 střední (sekce mají popis a ID v nadpisu, čte se jen potřebná část), riziko je jisté (dnes je vše v jedné funkci, po rozdělení by jména sdílely všechny soubory a mohla by se srazit s vestavěnými jmény prohlížeče; přerušená historie řádků; obrovské konflikty s otevřenými PR). Vrátit se, až `app.js` naroste nad cca 18 000 řádků nebo se v něm začnou často přetahovat souběžné větve. Dělat jen bez otevřených PR.
 - [x] **F0-12** Úklid repa pro menší spotřebu tokenů (kratší `CLAUDE.md`, rozdělený plán, `.ignore`, smazaná `puvodni/`)
-- [ ] **F0-13** Záloha častěji a ze souhrnu (UX audit 27. 9. 2026, §9; B · D · nízká): data jsou jen v jednom telefonu a připomínka zálohy na úvodní obrazovce přijde až po 14 dnech (`BK_REMIND_DAYS`), takže při smazání dat Chromu nebo ztrátě telefonu hrozí ztráta až 14 dní tréninků. Návrh: v souhrnu po tréninku tlačítko Zálohovat (sdílení souboru zálohy, např. na Disk, stejně jako v Nastavení → Data a záloha), když je poslední záloha do souboru starší než 7 dní nebo od ní přibylo 5 tréninků; připomínku na úvodní obrazovce zkrátit na 7 dní. Automatické nahrávání do cloudu dál ne (Co neděláme). Počty odsouhlasené 27. 9. (Otevřené otázky).
+- [x] **F0-13** Záloha častěji a ze souhrnu
+- [ ] **F0-14** Automatická záloha na Google Disk (nápad 27. 9. 2026 u F0-13; D · střední; **nejdřív zkouška**): appka po uložení tréninku sama nahraje zálohu do skryté složky „data aplikace“ na Disku uživatele (Drive API, `appDataFolder`, oprávnění `drive.appdata`, vidí ji jen tahle appka), drží posledních pár záloh a na novém telefonu po přihlášení nabídne obnovu. Zdarma, ale uživatel jednou založí projekt v Google Cloud (OAuth klient, stav Testing, Google ukáže varování „Aplikace není ověřená“). Přihlášení bez cizích skriptů: okno `accounts.google.com` (token na 1 hodinu) a malá stránka pro návrat ve stejné doméně. Na pozadí to nejde: přístup vyprší po hodině a obnoví se jen po klepnutí (nejlépe navázat na Dokončit v souhrnu, okno Googlu jen problikne). Mění pravidla: řádek o cloudu v Co neděláme, CSP (`connect-src https://www.googleapis.com`), testovací verze musí zálohovat odděleně od vydané. Zkouška: funguje okno přihlášení a návrat do nainstalované appky na Androidu? Alternativa bez programování: aplikace typu Autosync nebo FolderSync, která sama nahrává složku Stažené na Disk (cizí aplikace, zdarma s omezeními). OneDrive přímo z appky nedoporučeno (registrace aplikace u Microsoftu je pro osobní účet složitější, OneDrive pokryje sdílení z F0-13). Záloha telefonu do Googlu (Google One) data webové appky nezahrne (jsou uvnitř Chromu, ten data webů nezálohuje). Zvážit menší zálohu: ZIP (fotky jako JPEG soubory místo base64, které je o třetinu větší; údaje o trénincích zkomprimované 5–10×) nebo `.json.gz`, obojí umí Chrome bez knihovny (`CompressionStream`). U sdílení (F0-13) to nejde, `.zip` ani `.gz` Chrome na Androidu sdílet nedovolí; nahrávání přes Drive API typ souboru neomezuje.
 
 ### Fáze 1 – Ovládání při tréninku
 
@@ -249,7 +250,8 @@ UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravi
 | Spálené kalorie při tréninku | Odhad přes MET má u posilování chybu ±30–50 %, bez tepu nemá vypovídací hodnotu a svádí k „dojídání". Náhrada: trend tělesné váhy. |
 | Sledování jídla a příjmu kalorií | Samostatná velká aplikace, na to existují specializované appky. |
 | Napojení na hodinky / Health Connect | Z webové appky nedostupné, jen z nativní aplikace. |
-| Cloud, server, synchronizace dat | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01. (GitHub slouží jen pro kód a hosting.) |
+| Vlastní server, synchronizace dat mezi zařízeními | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01 a F0-13 (sdílení souboru na Disk). Záloha na vlastní Google Disk přímo z appky je samostatná úloha F0-14 (čeká na zkoušku). (GitHub slouží jen pro kód a hosting.) |
+| Záloha dat appky se zálohou telefonu (Google One) | Nejde: data nainstalované webové appky jsou uvnitř Chromu a Chrome data webů do zálohy telefonu nedává. Šlo by to jen u nativní appky (zjištěno u F0-13). |
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
 | Průvodce prvním spuštěním (onboarding) | Appku používá jeden uživatel, který ji zná (UX audit 27. 9. 2026). Prázdný stav bez fitka řeší F3-24. |
 | Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Řešit až při skutečném přechodu. |
@@ -274,7 +276,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Panel (vždy 2 klepnutí, žádný omyl). |
 | F1-16 | Skrýt na ostatních záložkách jen přečas, nebo i odpočet pauzy? Po kolika minutách přečas ukončit? | Jen přečas (odpočet s ±15 s a Přeskočit zůstane všude), konec přečasu po 5 min. |
 | F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
-| F0-13 | Kdy nabízet zálohu v souhrnu po tréninku a na kolik dní zkrátit připomínku? | **Rozhodnuto 27. 9. 2026 (podle návrhu):** tlačítko Zálohovat v souhrnu, když je poslední záloha do souboru starší než 7 dní nebo od ní přibylo 5 tréninků; připomínka na úvodní obrazovce po 7 dnech. |
+| F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
 | F3-25 | Co počítat jako rekord? Zůstanou malé (stříbrné) rekordy vidět? | **Nerozhodnuto (27. 9. 2026):** rozhodne se až po hlubší diskusi na začátku úlohy. Výchozí návrh k diskusi: v počtech a oslavě 1 rekord na cvik a trénink (první podle pořadí `REC_ORDER`: max. zátěž, odh. 1RM…); objem cviku a nejlepší série jen na stránce cviku, bez oslavy a mimo počty. |
 | F3-26 | Jak měřit změnu síly za období? | Odh. 1RM (u cviků s víc než 10 opakováními max. zátěž): nejlepší hodnota z posledních 2 tréninků v období proti prvním 2; cvik vázaný na fitko po fitkách. |

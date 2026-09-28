@@ -5255,8 +5255,9 @@
     );
     // obal s mezerami mezi rámečky (dřív je dělal panel .sheet-b)
     h += `<div class="stack wsum">${wSummary(w, o.saved)}</div>`;
-    // Sdílet vlevo od hlavního tlačítka (F4-08)
+    // Sdílet vlevo od hlavního tlačítka (F4-08), nad nimi po uložení nabídka zálohy (F0-13)
     h += `<div class="stack" style="margin-top:12px">
+      ${o.saved ? bkSumCard() : ""}
       <div class="row" style="align-items:stretch">
         <button class="btn" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
         ${
@@ -8801,8 +8802,28 @@
         const list = [
           [
             "Co je záloha",
-            "Jeden soubor JSON se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo telefon, " +
-              "třeba na Google Disk. Jak na to, ukáže tlačítko Jak na Disk?",
+            "Jeden soubor se vším (tréninky, šablony, cviky, fitka, měření). Ulož si ho mimo telefon, aby " +
+              "přežil i smazání dat Chromu nebo ztrátu telefonu.",
+          ],
+          [
+            "Sdílet",
+            "Nahraje zálohu do cloudu (Google Disk, OneDrive…) nebo ji pošle e-mailem: v nabídce vyber " +
+              "aplikaci, třeba Disk, a dej Uložit.",
+          ],
+          [
+            "Stáhnout",
+            "Stáhne zálohu do telefonu do složky Stažené. Mimo telefon ji pak pošleš sám: Chrome → tři " +
+              "tečky → Stažené soubory, podrž soubor a zvol Sdílet.",
+          ],
+          [
+            "Obnovit ze souboru",
+            "Vyber soubor zálohy, z Disku jde vybrat přímo. Záloha má příponu .json.txt (soubor .json Chrome " +
+              "sdílet nedovolí), obnova přijme i starší zálohy .json.",
+          ],
+          [
+            "Kdy appka připomene zálohu",
+            `Na úvodní obrazovce, když je poslední záloha do souboru starší než ${BK_REMIND_DAYS} dní. ` +
+              `V souhrnu po uložení tréninku navíc i dřív, když od zálohy přibylo ${BK_SUM_NEW} tréninků.`,
           ],
         ];
         if (photoStats().n) {
@@ -12541,6 +12562,9 @@
       case "export":
         doExport();
         break;
+      case "bkShare":
+        bkShare();
+        break;
       case "importOk":
         doImport(v);
         break;
@@ -12563,9 +12587,6 @@
       case "bkNoHelp":
         lsSet("bkHelpOff", true);
         closeSheet();
-        break;
-      case "bkHelp":
-        showBackupHelp(true);
         break;
       case "help":
         sheetHelp(v);
@@ -13053,18 +13074,20 @@
 
   /* ---------- záloha (F0-01) ----------
      Dvě vrstvy ochrany:
-     1) Záloha do souboru (JSON) — stáhne se do telefonu, odtud ručně na Disk / e-mail.
-        Datum poslední zálohy je v config/backup.last.
-        Po 7 dnech bez zálohy ukáže úvodní obrazovka pruh s připomínkou.
+     1) Záloha do souboru (JSON) — sdílením rovnou na Disk / OneDrive / e-mail (F0-13, bkShare), nebo se
+        stáhne do telefonu (doExport). Datum poslední zálohy je v config/backup.last.
+        Po BK_REMIND_DAYS (7) dnech bez zálohy ukáže úvodní obrazovka pruh s připomínkou.
      2) Body obnovy uvnitř appky (IndexedDB, úložiště "points"): automaticky jednou za 7 dní,
         vždy před obnovou ze zálohy a ručně. Drží se posledních BK_MAX_POINTS.
      Formát souboru: version 2 = version 1 + pole "photos" (fotky u cviků F2-05, jen v souboru
      s přepínačem „Zálohovat i fotky“; body obnovy mají photos prázdné, includes.photos = false).
      Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše" (fotky jen přidá).
      Verze formátu BK_VERSION, načtení a doplnění starých záloh normBackup (měnit jen zpětně kompatibilně).
-     Stažení souboru přes LocalDownloads (odkaz s download). */
+     Stažení souboru přes LocalDownloads (odkaz s download). Soubory zálohy i bodů obnovy mají příponu BK_EXT
+     (.json.txt, obsah JSON), obnova ze souboru bere i starší .json. */
   const BK_VERSION = 2,
-    BK_REMIND_DAYS = 14,
+    BK_EXT = ".json.txt", // přípona všech souborů zálohy (F0-13: .json Chrome na Androidu sdílet nedovolí)
+    BK_REMIND_DAYS = 7,
     BK_AUTO_DAYS = 7,
     BK_MAX_POINTS = 8;
   const BK_REASON = {
@@ -13094,7 +13117,7 @@
       templates: S.templates,
       months: S.months,
       body: S.body,
-      photos: {}, // F2-05: fotky doplní doExport (photosExport), formát viz sekce „FOTKY U CVIKU“
+      photos: {}, // F2-05: fotky doplní bkBuild (photosExport), formát viz sekce „FOTKY U CVIKU“
     };
   }
   // čas poslední zálohy do souboru (z databáze nebo z Local, novější z nich), jinak null
@@ -13117,7 +13140,7 @@
     return !last || daysAgo(last) >= BK_REMIND_DAYS;
   }
   /* připomínka na úvodní obrazovce (a oranžový řádek Data a záloha v Nastavení);
-     klepnutí na pruh otevře Nastavení → Data a záloha, tlačítko Zálohovat rovnou stáhne zálohu */
+     klepnutí na pruh otevře Nastavení → Data a záloha, tlačítko Zálohovat rovnou sdílí zálohu (F0-13) */
   function backupBanner() {
     if (!backupDue()) return "";
     const last = lastBackupAt();
@@ -13127,7 +13150,7 @@
     return (
       `<div class="banner act" data-act="setOpen" data-v="data" role="button">` +
       `<span class="grow">${txt}</span>` +
-      `<button class="btn" data-act="export">
+      `<button class="btn" data-act="bkShare">
         Zálohovat
       </button></div>`
     );
@@ -13151,16 +13174,20 @@
             ${fmtSize((ps.size * 4) / 3)} větší.</span></span>
       </label>`;
     }
-    h += `<div class="row wrap-r">
-      <button class="btn primary grow" data-act="export">Stáhnout zálohu</button>
-      <label class="btn grow" for="impFile">Obnovit ze souboru</label>
-      <input type="file" id="impFile" accept=".json,application/json" hidden>
-    </div>`;
-    h += `<div class="row">
-      <span class="xs muted grow">
-        Poslední záloha: ${last ? fmtDate(last) + " (" + agoLabel(last) + ")" : "zatím nikdy"}
-      </span>
-      <button class="btn sm ghost" data-act="bkHelp">Jak na Disk?</button>
+    // F0-13: kde jde sdílet soubor, je hlavní Sdílet (cloud, e-mail) a Stáhnout vedlejší
+    h += navigator.canShare
+      ? `<div class="row wrap-r">
+        <button class="btn primary grow" data-act="bkShare">Sdílet</button>
+        <button class="btn grow" data-act="export">Stáhnout</button>
+      </div>
+      <label class="btn" for="impFile">Obnovit ze souboru</label>`
+      : `<div class="row wrap-r">
+        <button class="btn primary grow" data-act="export">Stáhnout</button>
+        <label class="btn grow" for="impFile">Obnovit ze souboru</label>
+      </div>`;
+    h += `<input type="file" id="impFile" accept=".json,.txt,application/json,text/plain" hidden>`;
+    h += `<div class="xs muted">
+      Poslední záloha: ${last ? fmtDate(last) + " (" + agoLabel(last) + ")" : "zatím nikdy"}
     </div>`;
     h += "</div></section>";
 
@@ -13201,14 +13228,11 @@
     return h;
   }
 
-  /* stažení souboru */
-  async function doExport() {
+  /* obsah souboru zálohy jako text a název souboru bez přípony; fotky podle přepínače Zálohovat i fotky;
+     null = fotky se nepodařilo přidat */
+  async function bkBuild() {
     const o = snapshotAll();
-    const name = FILE_P + "-" + toDateInput(Date.now()) + ".json";
-    if (!downloads) {
-      toast("Stahování tady není dostupné.");
-      return;
-    }
+    const name = FILE_P + "-" + toDateInput(Date.now());
     if (lsGet("bkPhotos", true) && photoStats().n) {
       // F2-05: fotky jako base64 (soubor naroste asi o třetinu víc, než fotky zabírají)
       toast("Připravuji zálohu s fotkami…");
@@ -13217,16 +13241,26 @@
         o.includes.photos = true;
       } catch (e) {
         toast("Fotky se nepodařilo přidat do zálohy.");
-        return;
+        return null;
       }
     }
-    const data = JSON.stringify(o);
+    return { name, data: JSON.stringify(o) };
+  }
+  /* stažení souboru (b = už připravená záloha z bkBuild, jinak se připraví) */
+  async function doExport(b) {
+    if (!downloads) {
+      toast("Stahování tady není dostupné.");
+      return;
+    }
+    b = b || (await bkBuild());
+    if (!b) return;
+    const name = b.name + BK_EXT;
     try {
-      await downloads.save({ filename: name, data });
+      await downloads.save({ filename: name, data: b.data, type: "text/plain" });
       markBackup(Date.now());
       scheduleRender();
       if (!lsGet("bkHelpOff", false)) {
-        showBackupHelp(false, name);
+        showBackupHelp(name);
       } else {
         toast("Záloha stažena");
       }
@@ -13236,18 +13270,13 @@
       }
     }
   }
-  // okno s návodem, jak dostat zálohu na Disk (force = otevřené tlačítkem Jak na Disk?)
-  function showBackupHelp(force, name) {
-    let b = "";
-    if (!force) {
-      b +=
-        `<p style="margin:0">
-        Soubor <b>${esc(name || "workout-denik-….json")}</b> je v telefonu ve složce <b>Stažené</b> ` +
-        `(Download).
-      </p>`;
-    }
+  // okno po stažení zálohy s návodem, jak ji dostat mimo telefon (F0-13: dřív i tlačítko Jak na Disk?)
+  function showBackupHelp(name) {
+    let b = `<p style="margin:0">
+      Soubor <b>${esc(name)}</b> je v telefonu ve složce <b>Stažené</b> (Download).
+    </p>`;
     b += `<p class="small muted" style="margin:0">
-      Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj:
+      Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj (rychleji to jde tlačítkem Sdílet):
     </p>`;
     b += `<ol class="steps small">
       <li>
@@ -13260,11 +13289,91 @@
     b += `<p class="xs muted" style="margin:0">
       Obnova: Nastavení → Data a záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).
     </p>`;
-    const foot = force
-      ? '<button class="btn primary grow" data-act="closeSheet">Rozumím</button>'
-      : `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
+    const foot = `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
       <button class="btn primary grow" data-act="closeSheet">Hotovo</button>`;
-    openSheet(force ? "Záloha na Disk" : "Záloha stažena", b, foot);
+    openSheet("Záloha stažena", b, foot);
+  }
+
+  /* ---------- ZÁLOHA SDÍLENÍM A ZE SOUHRNU (F0-13) ----------
+     Tlačítko Zálohovat (připomínka na úvodní obrazovce, souhrn po tréninku) a Sdílet v Nastavení → Data a záloha
+     otevře systémovou nabídku sdílení se souborem zálohy: vybere se Disk, OneDrive, Gmail… a Uložit. Oproti
+     Stáhnout (doExport, složka Stažené) odpadá posílání souboru dál. V pruzích zůstává název Zálohovat, protože
+     souhrn má i Sdílet obrázku tréninku (F4-08).
+     - Chrome sdílí jen některé typy souborů (seznam přípon a typů v Chromu, .json v něm není) a navigator.canShare
+       to nekontroluje: .json projde, ale navigator.share ho pak odmítne (NotAllowedError). Záloha proto má všude
+       příponu BK_EXT (.json.txt, text/plain), obsah je stejný. Obnova ze souboru bere .json i .txt (readImport čte
+       obsah, přípona je jedno). Kde sdílení souborů nejde vůbec, záloha se stáhne.
+     - Za zálohu (markBackup) se počítá, až se sdílení splní (vybraný cíl). Zavření nabídky (AbortError) ne.
+       Android splní sdílení už výběrem cíle, i když se pak uložení v Disku zruší.
+     - Záloha s fotkami se připravuje déle a Chrome pak sdílení odmítne (NotAllowedError, vypršelo klepnutí,
+       stejně jako obrázek F4-08). Připravený soubor se podrží BK_READY_MS v bkReady a appka řekne „Klepni ještě
+       jednou“, druhé klepnutí ho sdílí hned. Když sdílení odmítne i podruhé, záloha se stáhne (žádná smyčka).
+     - Souhrn po uložení tréninku (vWorkout, S.wDetail.saved) ukáže nad tlačítky pruh bkSumCard, když je
+       poslední záloha do souboru starší než BK_SUM_DAYS nebo od ní přibylo BK_SUM_NEW tréninků (bkSumDue,
+       počet bkSince podle konce tréninku). Připomínka na úvodní obrazovce dál jen podle BK_REMIND_DAYS.
+     Automatické nahrávání na Google Disk přímo z appky je samostatná úloha F0-14. */
+  const BK_SUM_DAYS = 7,
+    BK_SUM_NEW = 5,
+    BK_READY_MS = 120000;
+  let bkReady = null; // připravená záloha {b, file, at} pro druhé klepnutí po NotAllowedError
+
+  // soubor zálohy ke sdílení (BK_EXT), nebo null, když sdílení nejde
+  function bkShareFile(b) {
+    if (!navigator.canShare) return null;
+    const f = new File([b.data], b.name + BK_EXT, { type: "text/plain" });
+    return navigator.canShare({ files: [f] }) ? f : null;
+  }
+  // Zálohovat: sdílení souboru zálohy, kde nejde, stažení
+  async function bkShare() {
+    const again = bkReady && Date.now() - bkReady.at < BK_READY_MS ? bkReady : null;
+    bkReady = null;
+    const b = again ? again.b : await bkBuild();
+    if (!b) return;
+    const f = again ? again.file : bkShareFile(b);
+    if (!f) {
+      toast("Sdílení tady nejde, záloha se stáhne.");
+      doExport(b);
+      return;
+    }
+    try {
+      await navigator.share({ files: [f] });
+      markBackup(Date.now());
+      scheduleRender();
+      toast("Záloha předána k uložení");
+    } catch (e) {
+      if (e && e.name === "NotAllowedError" && again) {
+        // odmítnuto i podruhé: nejde o vypršelé klepnutí, záloha se aspoň stáhne
+        toast("Sdílení se nepovedlo, záloha se stáhne.");
+        doExport(b);
+      } else if (e && e.name === "NotAllowedError") {
+        bkReady = { b, file: f, at: Date.now() };
+        toast("Záloha je připravená, klepni ještě jednou.");
+      } else if (!e || e.name !== "AbortError") {
+        toast("Sdílení se nepovedlo (" + ((e && e.name) || "chyba") + ")");
+      }
+    }
+  }
+  // počet tréninků uložených po čase t (podle konce tréninku), bez t všechny
+  const bkSince = (t) => derive().all.filter((w) => !t || (w.end || w.start) > t).length;
+  // nabídnout zálohu v souhrnu po tréninku: stará záloha nebo hodně nových tréninků
+  function bkSumDue() {
+    if (!countW(S.months)) return false;
+    const last = lastBackupAt();
+    return !last || daysAgo(last) >= BK_SUM_DAYS || bkSince(last) >= BK_SUM_NEW;
+  }
+  // pruh Zálohovat v souhrnu po uložení tréninku (stejný vzhled jako připomínka na úvodní obrazovce)
+  function bkSumCard() {
+    if (!bkSumDue()) return "";
+    const last = lastBackupAt();
+    const n = bkSince(last);
+    const txt = last
+      ? `Poslední záloha do souboru ${agoLabel(last)}, od té doby ${n} ` +
+        `${plural(n, "trénink", "tréninky", "tréninků")}.`
+      : "Zatím nemáš žádnou zálohu v souboru.";
+    return `<div class="banner act" style="margin-top:0">
+      <span class="grow">${txt}</span>
+      <button class="btn" data-act="bkShare">Zálohovat</button>
+    </div>`;
   }
 
   /* načtení a kontrola zálohy */
@@ -13578,8 +13687,9 @@
     try {
       const data = await fetchPoint(id);
       await downloads.save({
-        filename: FILE_P + "-bod-obnovy-" + toDateInput(p ? p.at : Date.now()) + ".json",
+        filename: FILE_P + "-bod-obnovy-" + toDateInput(p ? p.at : Date.now()) + BK_EXT,
         data,
+        type: "text/plain",
       });
       toast("Bod obnovy stažen");
     } catch (e) {
