@@ -8808,8 +8808,8 @@
           [
             "Sdílet zálohu a Stáhnout",
             "Sdílet zálohu otevře nabídku sdílení: vyber Disk (nebo OneDrive, Gmail) a Uložit. Stáhnout uloží " +
-              "soubor do složky Stažené a mimo telefon ho pošleš sám. Když Chrome nedovolí sdílet soubor " +
-              ".json, pošle se jako .json.txt; obnova ze souboru přijme oba.",
+              "soubor do složky Stažené a mimo telefon ho pošleš sám. Sdílený soubor má příponu .json.txt " +
+              "(soubor .json Chrome sdílet nedovolí), obsah je stejný a obnova ze souboru přijme oba.",
           ],
           [
             "Kdy appka připomene zálohu",
@@ -13308,14 +13308,15 @@
      Tlačítko Zálohovat (připomínka na úvodní obrazovce, souhrn po tréninku) a Sdílet zálohu v Nastavení → Data
      a záloha otevře systémovou nabídku sdílení se souborem zálohy: vybere se Disk, OneDrive, Gmail… a Uložit.
      Oproti stažení (doExport) odpadá cesta přes složku Stažené.
-     - Chrome sdílí jen některé typy souborů. Nejdřív se zkusí .json, když ho navigator.canShare odmítne,
-       stejný obsah jako .json.txt (text/plain). Obnova ze souboru bere .json i .txt (readImport čte obsah,
-       přípona je jedno). Kde sdílení souborů nejde vůbec, záloha se stáhne.
+     - Chrome sdílí jen některé typy souborů (seznam přípon a typů v Chromu, .json v něm není) a navigator.canShare
+       to nekontroluje: .json projde, ale navigator.share ho pak odmítne (NotAllowedError). Záloha se proto sdílí
+       vždy jako .json.txt (text/plain), obsah je stejný. Obnova ze souboru bere .json i .txt (readImport čte
+       obsah, přípona je jedno). Kde sdílení souborů nejde vůbec, záloha se stáhne.
      - Za zálohu (markBackup) se počítá, až se sdílení splní (vybraný cíl). Zavření nabídky (AbortError) ne.
        Android splní sdílení už výběrem cíle, i když se pak uložení v Disku zruší.
      - Záloha s fotkami se připravuje déle a Chrome pak sdílení odmítne (NotAllowedError, vypršelo klepnutí,
        stejně jako obrázek F4-08). Připravený soubor se podrží BK_READY_MS v bkReady a appka řekne „Klepni ještě
-       jednou“, druhé klepnutí ho sdílí hned.
+       jednou“, druhé klepnutí ho sdílí hned. Když sdílení odmítne i podruhé, záloha se stáhne (žádná smyčka).
      - Souhrn po uložení tréninku (vWorkout, S.wDetail.saved) ukáže nad tlačítky pruh bkSumCard, když je
        poslední záloha do souboru starší než BK_SUM_DAYS nebo od ní přibylo BK_SUM_NEW tréninků (bkSumDue,
        počet bkSince podle konce tréninku). Připomínka na úvodní obrazovce dál jen podle BK_REMIND_DAYS.
@@ -13323,33 +13324,25 @@
   const BK_SUM_DAYS = 7,
     BK_SUM_NEW = 5,
     BK_READY_MS = 120000;
-  let bkReady = null; // připravený soubor {file, at} pro druhé klepnutí po NotAllowedError
+  let bkReady = null; // připravená záloha {b, file, at} pro druhé klepnutí po NotAllowedError
 
-  // soubor zálohy, který Chrome dovolí sdílet (.json, jinak .json.txt), nebo null
+  // soubor zálohy ke sdílení (.json.txt, .json Chrome sdílet nedovolí), nebo null, když sdílení nejde
   function bkShareFile(b) {
-    const kinds = [
-      [b.name + ".json", "application/json"],
-      [b.name + ".json.txt", "text/plain"],
-    ];
-    for (const [fileName, type] of kinds) {
-      const f = new File([b.data], fileName, { type });
-      if (navigator.canShare({ files: [f] })) return f;
-    }
-    return null;
+    if (!navigator.canShare) return null;
+    const f = new File([b.data], b.name + ".json.txt", { type: "text/plain" });
+    return navigator.canShare({ files: [f] }) ? f : null;
   }
   // Zálohovat: sdílení souboru zálohy, kde nejde, stažení
   async function bkShare() {
-    let f = bkReady && Date.now() - bkReady.at < BK_READY_MS ? bkReady.file : null;
+    const again = bkReady && Date.now() - bkReady.at < BK_READY_MS ? bkReady : null;
     bkReady = null;
+    const b = again ? again.b : await bkBuild();
+    if (!b) return;
+    const f = again ? again.file : bkShareFile(b);
     if (!f) {
-      const b = await bkBuild();
-      if (!b) return;
-      f = navigator.canShare ? bkShareFile(b) : null;
-      if (!f) {
-        toast("Sdílení tady nejde, záloha se stáhne.");
-        doExport(b);
-        return;
-      }
+      toast("Sdílení tady nejde, záloha se stáhne.");
+      doExport(b);
+      return;
     }
     try {
       await navigator.share({ files: [f] });
@@ -13357,8 +13350,12 @@
       scheduleRender();
       toast("Záloha předána k uložení");
     } catch (e) {
-      if (e && e.name === "NotAllowedError") {
-        bkReady = { file: f, at: Date.now() };
+      if (e && e.name === "NotAllowedError" && again) {
+        // odmítnuto i podruhé: nejde o vypršelé klepnutí, záloha se aspoň stáhne
+        toast("Sdílení se nepovedlo, záloha se stáhne.");
+        doExport(b);
+      } else if (e && e.name === "NotAllowedError") {
+        bkReady = { b, file: f, at: Date.now() };
         toast("Záloha je připravená, klepni ještě jednou.");
       } else if (!e || e.name !== "AbortError") {
         toast("Sdílení se nepovedlo (" + ((e && e.name) || "chyba") + ")");
