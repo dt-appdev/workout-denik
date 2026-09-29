@@ -13329,7 +13329,8 @@
      Obnova umí "sloučit" (doplní chybějící, nic nepřepíše) a "nahradit vše" (fotky jen přidá).
      Verze formátu BK_VERSION, načtení a doplnění starých záloh normBackup (měnit jen zpětně kompatibilně).
      Stažení souboru přes LocalDownloads (odkaz s download). Soubory zálohy i bodů obnovy mají příponu BK_EXT
-     (.json.txt, obsah JSON), obnova ze souboru bere i starší .json. */
+     (.json.txt, obsah JSON), obnova ze souboru bere i starší .json.
+     Soubor je čitelně odsazený (bkJson, F0-15). */
   const BK_VERSION = 2,
     BK_EXT = ".json.txt", // přípona všech souborů zálohy (F0-13: .json Chrome na Androidu sdílet nedovolí)
     BK_REMIND_DAYS = 7,
@@ -13356,12 +13357,13 @@
       version: BK_VERSION,
       exported: new Date().toISOString(),
       includes: { photos: false },
+      // F0-15: pořadí pro čtení souboru (nastavení, šablony, tréninky, měření, cviky, fotky)
       cfg: S.cfg,
-      exercises: S.exLegacy || S.exLib,
-      exDb: S.exLegacy ? undefined : EX_V,
       templates: S.templates,
       months: S.months,
       body: S.body,
+      exercises: S.exLegacy || S.exLib,
+      exDb: S.exLegacy ? undefined : EX_V,
       photos: {}, // F2-05: fotky doplní bkBuild (photosExport), formát viz sekce „FOTKY U CVIKU“
     };
   }
@@ -13489,7 +13491,7 @@
         return null;
       }
     }
-    return { name, data: JSON.stringify(o) };
+    return { name, data: bkJson(o) };
   }
   /* stažení souboru (b = už připravená záloha z bkBuild, jinak se připraví) */
   async function doExport(b) {
@@ -13537,6 +13539,88 @@
     const foot = `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
       <button class="btn primary grow" data-act="closeSheet">Hotovo</button>`;
     openSheet("Záloha stažena", b, foot);
+  }
+
+  /* ---------- ČITELNÝ SOUBOR ZÁLOHY (F0-15) ----------
+     Soubor zálohy (Stáhnout, Sdílet, Zálohovat) je rozdělený na řádky a odsazený o 2 mezery, aby šel
+     přečíst a upravit v textovém editoru. Krátké části, které se vejdou do BK_WIDTH (100) znaků
+     i s odsazením (série, seznam partií, malé objekty), zůstanou na jednom řádku:
+     {"t": "n", "kg": 80, "reps": 8}. Fotka (base64) je vždy jeden dlouhý řádek. Obsah je stejný jako dřív,
+     jen s mezerami, obnova (JSON.parse) je nevnímá.
+     - bkJson(o) = text souboru, výsledek jako JSON.stringify (vynechá undefined, v poli z něj udělá null),
+       bkInline zkouší jednořádkovou podobu a skončí, jakmile přeroste zbylé místo (rychlé i u velké zálohy).
+     - Body obnovy v telefonu zůstávají na jednom řádku (makePoint, JSON.stringify), nikdo je nečte.
+     - Pořadí částí souboru určuje snapshotAll: hlavička, nastavení, šablony, tréninky, měření, cviky, fotky.
+     - Chyba v ručně upraveném souboru: hláška obnovy uvede řádek a sloupec (bkJsonErrAt podle zprávy
+       Chromu). */
+  const BK_WIDTH = 100;
+  // jednoduchá hodnota jako text JSON (undefined a funkce jako null, stejně jako v poli u JSON.stringify)
+  function bkPrim(v) {
+    const s = JSON.stringify(v);
+    return s === undefined ? "null" : s;
+  }
+  // klíče objektu, které JSON.stringify zapíše (bez undefined a funkcí)
+  function bkKeys(o) {
+    return Object.keys(o).filter((k) => o[k] !== undefined && typeof o[k] !== "function");
+  }
+  // hodnota na jednom řádku, nebo null, když se nevejde do max znaků
+  function bkInline(v, max) {
+    if (max < 2) return null;
+    if (v && typeof v.toJSON === "function") v = v.toJSON();
+    if (v === null || typeof v !== "object") {
+      const s = bkPrim(v);
+      return s.length <= max ? s : null;
+    }
+    const isArr = Array.isArray(v);
+    const keys = isArr ? null : bkKeys(v);
+    const n = isArr ? v.length : keys.length;
+    let s = isArr ? "[" : "{";
+    for (let i = 0; i < n; i++) {
+      const head = (i ? ", " : "") + (isArr ? "" : JSON.stringify(keys[i]) + ": ");
+      const part = bkInline(isArr ? v[i] : v[keys[i]], max - s.length - head.length - 1);
+      if (part === null) return null;
+      s += head + part;
+    }
+    s += isArr ? "]" : "}";
+    return s.length <= max ? s : null;
+  }
+  // hodnota odsazená podle struktury; ind = odsazení řádku, room = místo na řádku za klíčem
+  function bkFmt(v, ind, room) {
+    const one = bkInline(v, room);
+    if (one !== null) return one;
+    if (v && typeof v.toJSON === "function") v = v.toJSON();
+    if (v === null || typeof v !== "object") return bkPrim(v); // dlouhý text (fotka)
+    const inner = ind + "  ";
+    const lines = [];
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        lines.push(inner + bkFmt(item, inner, BK_WIDTH - inner.length - 1));
+      }
+      return "[\n" + lines.join(",\n") + "\n" + ind + "]";
+    }
+    for (const k of bkKeys(v)) {
+      const key = JSON.stringify(k) + ": ";
+      lines.push(inner + key + bkFmt(v[k], inner, BK_WIDTH - inner.length - key.length - 1));
+    }
+    return "{\n" + lines.join(",\n") + "\n" + ind + "}";
+  }
+  // text souboru zálohy
+  function bkJson(o) {
+    return bkFmt(o, "", BK_WIDTH) + "\n";
+  }
+  // kde je chyba v souboru, který nejde přečíst: " (řádek 56, sloupec 3)", " (soubor je neúplný)" nebo ""
+  function bkJsonErrAt(e, text) {
+    const msg = String((e && e.message) || "");
+    const lc = /line (\d+) column (\d+)/.exec(msg);
+    if (lc) return " (chyba na řádku " + lc[1] + ", sloupec " + lc[2] + ")";
+    const pos = /position (\d+)/.exec(msg);
+    if (pos && typeof text === "string") {
+      const before = text.slice(0, +pos[1]).split("\n");
+      const col = before[before.length - 1].length + 1;
+      return " (chyba na řádku " + before.length + ", sloupec " + col + ")";
+    }
+    if (/end of JSON/i.test(msg)) return " (soubor je neúplný, chybí konec)";
+    return "";
   }
 
   /* ---------- ZÁLOHA SDÍLENÍM A ZE SOUHRNU (F0-13) ----------
@@ -13657,7 +13741,8 @@
       try {
         importSheet(normBackup(JSON.parse(r.result)), "Soubor zálohy");
       } catch (e) {
-        toast(e instanceof SyntaxError ? "Soubor není platný JSON." : e.message);
+        const bad = e instanceof SyntaxError;
+        toast(bad ? "Soubor není platný JSON" + bkJsonErrAt(e, r.result) + "." : e.message);
       }
     };
     r.readAsText(f);
