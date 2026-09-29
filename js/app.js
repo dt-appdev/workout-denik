@@ -2539,10 +2539,11 @@
      - Stránka tréninku má tlačítko Kopírovat pro coache (coachCopy): coachText(w) do schránky, když to
        prohlížeč nedovolí, panel s textem k ručnímu zkopírování.
      Pravidla textu (coachText): čas telefonu, cviky v pořadí provedení (první odškrtnutá série, s.at), název
-     „cz (name) [exId]“, čísla s tečkou, série „kg×opak.“ + RIR/RPE jako v appce (effTxt: „RIR 2“), zahřívací
-     za „W “ oddělené „ | “, F = „70×8 F (odhad RIR 2)“, drop set „ + D …“ u předchozí série, BW / BW+kg / A-kg,
-     časové „60 s“. Plán ze šablony stejným zápisem (stejné pracovní série jako „3× 60×10“), Vynecháno a Navíc
-     jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se nevypisují. Text je vždy česky. */
+     „cz (name) [exId]“, čísla s tečkou, série „60 kg×10“ + RIR/RPE jako v appce (effTxt: „RIR 2“), zahřívací
+     za „W “ oddělené „ | “, F = „70 kg×8 F (odhad RIR 2)“, drop set „ + D …“ u předchozí série, BW×10 /
+     BW+5 kg×10 / A-10 kg×10, časové „60 s“, „20 kg×60 s“. Plán ze šablony stejným zápisem (stejné pracovní série
+     jako „3× 60 kg×10“), Vynecháno a Navíc jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se
+     nevypisují. Text je vždy česky. */
   const coachOn = () => S.cfg.coach === true;
   // posuvníky: popisek, rozsah, výchozí poloha nevyplněného posuvníku, text hodnoty
   const COACH_SL = {
@@ -2785,12 +2786,12 @@
     const reps = +s.reps || 0;
     const sec = Math.round(+s.sec || 0);
     if (kind === "time") return sec + " s";
-    if (kind === "timew") return (kg ? coachN(kg) + "×" : "") + sec + " s";
+    if (kind === "timew") return (kg ? coachN(kg) + " kg×" : "") + sec + " s";
     if (kind === "dist") return (+s.km ? coachN(s.km) + " km " : "") + sec + " s";
     if (kind === "bw") return "BW×" + reps;
-    if (kind === "bwplus") return (kg ? "BW+" + coachN(kg) : "BW") + "×" + reps;
-    if (kind === "assist") return (kg ? "A-" + coachN(kg) : "BW") + "×" + reps;
-    return coachN(kg) + "×" + reps;
+    if (kind === "bwplus") return (kg ? "BW+" + coachN(kg) + " kg" : "BW") + "×" + reps;
+    if (kind === "assist") return (kg ? "A-" + coachN(kg) + " kg" : "BW") + "×" + reps;
+    return coachN(kg) + " kg×" + reps; // váha vždy s jednotkou, ať se nesplete s opakováním
   }
   function coachSetTxt(kind, s) {
     let x = coachVal(kind, s);
@@ -2805,7 +2806,7 @@
     }
     return x;
   }
-  // série na jednom řádku: „W 40×10, 50×5 | 60×10 RIR 3, 60×8 F + D 50×6“; compact = plán („3× 60×10“)
+  // série na jednom řádku: „W 40 kg×10 | 60 kg×10 RIR 3, 60 kg×8 F + D 50 kg×6“; compact = plán („3× 60 kg×10“)
   function coachSets(kind, sets, compact) {
     const warm = [];
     const work = [];
