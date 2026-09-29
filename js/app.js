@@ -1188,6 +1188,7 @@
         progMax: PROG_REPS.defMax,
         progSets: "all",
         effort: "off",
+        coach: false,
       },
       c && typeof c === "object" ? c : {},
     );
@@ -2410,8 +2411,11 @@
     const rpe = effOf(s);
     let btn = "";
     if (s.t === "f") {
-      btn = `<button class="effb fix" id="${effId(e, j)}" data-act="effFix" data-i="${i}" data-j="${j}"
-          aria-label="${EFF_NAME[mode]} ${effVal(10, mode)}">${effVal(10, mode)}</button>`;
+      const est = coachEst(s); // odhad před selháním (F4-12)
+      btn = `<button class="effb fix${est ? " est" : ""}" id="${effId(e, j)}" data-act="effFix" data-i="${i}"
+          data-j="${j}" aria-label="${EFF_NAME[mode]} ${effVal(10, mode)}">${effVal(10, mode)}${
+            est ? `<small class="eff-est">${esc(est)}</small>` : ""
+          }</button>`;
     } else if (s.t !== "w") {
       const text = rpe != null ? effVal(rpe, mode) : "–";
       btn = `<button class="effb${rpe != null ? " on" : ""}" id="${effId(e, j)}" data-act="eff"
@@ -2426,7 +2430,11 @@
     if (s.t === "f") {
       return `<div class="eff">
         <small>${EFF_NAME[mode]}</small>
-        <span class="xs muted">Série do selhání má vždy ${EFF_NAME[mode]} ${effVal(10, mode)}.</span>
+        <span class="xs muted">
+          Série do selhání má vždy ${EFF_NAME[mode]} ${effVal(10, mode)}.${
+            coachEst(s) ? " Uložený " + esc(coachEst(s)) + "." : ""
+          }
+        </span>
       </div>`;
     }
     const cur = effOf(s);
@@ -2511,6 +2519,446 @@
         </div>
       </div>
     </section>`;
+  }
+
+  /* ---------- KOPÍROVAT PRO COACHE (F4-12) ----------
+     Osobní funkce vlastníka appky: textový souhrn tréninku pro AI coache (formát WD-LOG v1). Skrytá, dokud se
+     nezapne: Nastavení → O aplikaci, 7× rychle klepnout na kartu Verze aplikace (verTap) zapne S.cfg.coach
+     (výchozí false, coachOn). Vypíná se v Nastavení → Trénink → Pro coache (coachSettings, HELP.coach). Bez
+     zapnutí appka nic z této sekce neukazuje. Uložená data zůstanou i po vypnutí.
+     - Na konci tréninku (okno Dokončit, finishAsk) a v Upravit trénink (vEditor) je část „Pro coache“
+       (coachPart, otevřená, hlavičkou jde sbalit): posuvníky Pocit 1–10, Energie 1–10, Spánek 0–12 h (po 1 h) a
+       bolest (místo textem, intenzita posuvníkem 0–10, 0 = bez bolesti = „Bolest: ne“, cvik z tréninku),
+       poznámka k tréninku. Posuvník
+       začíná nevyplněný (šedý, „–“), hodnotu dostane až posunutím nebo klepnutím (coachSlide), křížek ji
+       smaže (coachClr). Změny jen v draftu bez překreslení; při uložení coachApply zapíše do tréninku pole
+       feel, energy, sleep, pain {where, level, exId} a note. Nevyplněné pole v tréninku není.
+     - Odhad u série do selhání: RIR/RPE zadané před přepnutím druhu série na F (cycType) se při zapnuté funkci
+       přesune do s.rpeEst (RPE jako s.rpe, F4-04) a ukáže se pod 0 v tabulce (effCell) a na stránce tréninku.
+       Přepnutí z F na jiný druh odhad maže. Nové a kopírované série ho nepřenášejí.
+     - Stránka tréninku má tlačítko Kopírovat pro coache (coachCopy): coachText(w) do schránky, když to
+       prohlížeč nedovolí, panel s textem k ručnímu zkopírování.
+     Pravidla textu (coachText): čas telefonu, cviky v pořadí provedení (první odškrtnutá série, s.at), název
+     „cz (name) [exId]“, čísla s tečkou, série „60 kg×10“ + RIR/RPE jako v appce (effTxt: „RIR 2“), zahřívací
+     za „W “ oddělené „ | “, F = „70 kg×8 F (odhad RIR 2)“, drop set „ + D …“ u předchozí série, BW×10 /
+     BW+5 kg×10 / A-10 kg×10, časové „60 s“, „20 kg×60 s“. Plán ze šablony stejným zápisem (stejné pracovní série
+     jako „3× 60 kg×10“), Vynecháno a Navíc jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se
+     nevypisují. Text je vždy česky. */
+  const coachOn = () => S.cfg.coach === true;
+  // posuvníky: popisek, rozsah, výchozí poloha nevyplněného posuvníku, text hodnoty
+  const COACH_SL = {
+    feel: { l: "Pocit", min: 1, max: 10, def: 5, txt: (v) => v + "/10" },
+    energy: { l: "Energie", min: 1, max: 10, def: 5, txt: (v) => v + "/10" },
+    sleep: { l: "Spánek předchozí noc", min: 0, max: 12, def: 7, txt: (v) => v + " h" },
+    pain: { l: "Intenzita", min: 0, max: 10, def: 3, txt: (v) => (v === 0 ? "žádná" : v + "/10") },
+  };
+  // platná hodnota posuvníku (celé číslo v rozsahu), jinak null
+  function coachNum(k, value) {
+    const c = COACH_SL[k];
+    const n = +value;
+    if (value == null || value === "" || !isFinite(n)) return null;
+    return n >= c.min && n <= c.max ? Math.round(n) : null;
+  }
+  // hodnota posuvníku v draftu nebo tréninku (pain = intenzita bolesti)
+  const coachGet = (d, k) => coachNum(k, k === "pain" ? d.pain && d.pain.level : d[k]);
+  // bolest k uložení: {where, level, exId} jen s vyplněnými údaji, bez místa i intenzity nic
+  function coachPain(d) {
+    const p = d.pain || {};
+    const o = {};
+    const where = String(p.where || "").trim();
+    if (where) {
+      o.where = where;
+    }
+    const level = coachNum("pain", p.level);
+    if (level != null) {
+      o.level = level;
+    }
+    if (!o.where && o.level == null) return null;
+    if (p.exId && (d.ex || []).some((e) => e.exId === p.exId)) {
+      o.exId = p.exId;
+    }
+    return o;
+  }
+  function coachSet(d, k, value) {
+    if (k === "pain") {
+      d.pain = Object.assign({}, d.pain);
+      if (value == null) {
+        delete d.pain.level;
+      } else {
+        d.pain.level = value;
+      }
+    } else if (value == null) {
+      delete d[k];
+    } else {
+      d[k] = value;
+    }
+    touchDraft();
+  }
+  // zapíše údaje pro coache z draftu do ukládaného tréninku (jen se zapnutou funkcí)
+  function coachApply(w, d) {
+    if (!coachOn()) return;
+    for (const k of ["feel", "energy", "sleep"]) {
+      const value = coachGet(d, k);
+      if (value == null) {
+        delete w[k];
+      } else {
+        w[k] = value;
+      }
+    }
+    const pain = coachPain(d);
+    if (pain) {
+      w.pain = pain;
+    } else {
+      delete w.pain;
+    }
+    const note = String(d.note || "").trim();
+    if (note) {
+      w.note = note;
+    } else {
+      delete w.note;
+    }
+  }
+  // krátký přehled vyplněného (hlavička sbalené části)
+  function coachSum(d) {
+    const parts = [];
+    for (const [k, l] of [
+      ["feel", "Pocit"],
+      ["energy", "Energie"],
+      ["sleep", "Spánek"],
+      ["pain", "Bolest"],
+    ]) {
+      const value = coachGet(d, k);
+      if (value != null) {
+        parts.push(l + " " + COACH_SL[k].txt(value));
+      }
+    }
+    return parts.length ? parts.join(" · ") : "Nevyplněno";
+  }
+  function coachSlider(d, k) {
+    const c = COACH_SL[k];
+    const value = coachGet(d, k);
+    const unset = value == null;
+    return `<div class="coach-sl${unset ? " unset" : ""}">
+      <div class="row">
+        <b class="grow">${c.l}</b>
+        <b class="num" data-cv>${unset ? "–" : c.txt(value)}</b>
+        <button class="btn sm coach-clr" data-act="coachClr" data-v="${k}" aria-label="Smazat: ${c.l}"
+            ${unset ? "hidden" : ""}>${icon("close")}</button>
+      </div>
+      <input type="range" class="range" data-f="coach" data-act="coachTap" data-v="${k}" min="${c.min}"
+          max="${c.max}" step="1" value="${unset ? c.def : value}" aria-label="${c.l}">
+    </div>`;
+  }
+  // část „Pro coache“ v okně Dokončit a v Upravit trénink
+  function coachPart(d) {
+    if (!coachOn() || d.mode === "template") return "";
+    const pain = d.pain || {};
+    const seen = new Set();
+    let opts = `<option value="">Bez vazby na cvik</option>`;
+    for (const e of d.ex) {
+      if (seen.has(e.exId)) continue;
+      seen.add(e.exId);
+      opts += `<option value="${esc(e.exId)}"${pain.exId === e.exId ? " selected" : ""}>
+        ${esc(coachCz(e.exId))}
+      </option>`;
+    }
+    return `<div class="card coach">
+      <button class="coach-h" data-act="coachFold" aria-expanded="true">
+        <span class="grow">
+          <b>Pro coache</b>
+          <span class="small muted" data-csum>${esc(coachSum(d))}</span>
+        </span>
+        ${icon("down", "coach-ic")}
+      </button>
+      <div class="coach-b">
+        ${coachSlider(d, "feel")}
+        ${coachSlider(d, "energy")}
+        ${coachSlider(d, "sleep")}
+        <div class="stack" style="gap:6px">
+          <b>Bolest</b>
+          <input class="inp" data-f="coachWhere" value="${esc(pain.where || "")}"
+              placeholder="Kde (např. pravé koleno)" aria-label="Kde bolí">
+          ${coachSlider(d, "pain")}
+          <select class="inp" data-f="coachEx" aria-label="Cvik, u kterého bolí">${opts}</select>
+        </div>
+        <label class="f">
+          Poznámka k tréninku
+          <textarea class="inp" rows="2" data-f="wNote">${esc(d.note || "")}</textarea>
+        </label>
+      </div>
+    </div>`;
+  }
+  // obnoví přehled v hlavičce části po změně
+  function coachSumRefresh(d) {
+    const el = document.querySelector("[data-csum]");
+    if (el) {
+      el.textContent = coachSum(d);
+    }
+  }
+  // posunutí nebo klepnutí na posuvník: uloží hodnotu a obnoví popisek bez překreslení
+  function coachSlide(t) {
+    const d = curDraft();
+    if (!d) return;
+    const k = t.dataset.v;
+    const value = coachNum(k, t.value);
+    coachSet(d, k, value);
+    const box = t.closest(".coach-sl");
+    box.classList.remove("unset");
+    box.querySelector("[data-cv]").textContent = COACH_SL[k].txt(value);
+    box.querySelector(".coach-clr").hidden = false;
+    coachSumRefresh(d);
+  }
+  function coachClear(t) {
+    const d = curDraft();
+    if (!d) return;
+    const k = t.dataset.v;
+    coachSet(d, k, null);
+    const box = t.closest(".coach-sl");
+    box.classList.add("unset");
+    box.querySelector("[data-cv]").textContent = "–";
+    box.querySelector("input").value = COACH_SL[k].def;
+    t.hidden = true;
+    coachSumRefresh(d);
+  }
+  function coachSettings() {
+    if (!coachOn()) return "";
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>Pro coache</h2>
+        ${helpBtn("coach")}
+      </div>
+      <div class="card stack">
+        <label class="switch">
+          <input type="checkbox" data-act="coach" checked>
+          <span><b>Kopírovat pro coache</b></span>
+        </label>
+      </div>
+    </section>`;
+  }
+  // 7 rychlých klepnutí na kartu Verze aplikace zapne funkci
+  function verTap() {
+    const now = Date.now();
+    verTap.n = now - (verTap.t || 0) < 1500 ? (verTap.n || 0) + 1 : 1;
+    verTap.t = now;
+    if (verTap.n < 7) return;
+    verTap.n = 0;
+    if (coachOn()) {
+      toast("Kopírování pro coache už je zapnuté.");
+      return;
+    }
+    put("config/main", Object.assign({}, S.cfg, { coach: true }));
+    toast("Kopírování pro coache je zapnuté. Vypnout jde v Nastavení → Trénink.");
+  }
+  // odhad u série do selhání jako text („odhad RIR 2“), jinak ""
+  function coachEst(s) {
+    if (!coachOn() || s.t !== "f") return "";
+    const est = effNum(s.rpeEst);
+    return est == null ? "" : "odhad " + effTxt({ rpe: est });
+  }
+
+  /* text pro coache */
+  const COACH_DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
+  // číslo s desetinnou tečkou (čárka v textu odděluje série)
+  const coachN = (v) => String(Math.round((+v || 0) * 100) / 100);
+  const coachDay = (t) => {
+    const x = new Date(t);
+    return x.getFullYear() + "-" + d2(x.getMonth() + 1) + "-" + d2(x.getDate());
+  };
+  const coachTime = (t) => {
+    const x = new Date(t);
+    return d2(x.getHours()) + ":" + d2(x.getMinutes());
+  };
+  const coachCz = (id) => {
+    const e = S.exLib[id];
+    return (e && (e.cz || e.name)) || id;
+  };
+  // „Český název (English name) [exId]“
+  function coachExName(id) {
+    const e = S.exLib[id] || {};
+    const cz = e.cz || "";
+    const en = e.name || "";
+    const name = cz && en && cz !== en ? cz + " (" + en + ")" : cz || en || id;
+    return name + " [" + id + "]";
+  }
+  // hodnota série bez druhu a RIR
+  function coachVal(kind, s) {
+    const kg = +s.kg || 0;
+    const reps = +s.reps || 0;
+    const sec = Math.round(+s.sec || 0);
+    if (kind === "time") return sec + " s";
+    if (kind === "timew") return (kg ? coachN(kg) + " kg×" : "") + sec + " s";
+    if (kind === "dist") return (+s.km ? coachN(s.km) + " km " : "") + sec + " s";
+    if (kind === "bw") return "BW×" + reps;
+    if (kind === "bwplus") return (kg ? "BW+" + coachN(kg) + " kg" : "BW") + "×" + reps;
+    if (kind === "assist") return (kg ? "A-" + coachN(kg) + " kg" : "BW") + "×" + reps;
+    return coachN(kg) + " kg×" + reps; // váha vždy s jednotkou, ať se nesplete s opakováním
+  }
+  function coachSetTxt(kind, s) {
+    let x = coachVal(kind, s);
+    if (s.t === "f") {
+      x += " F";
+      const est = effNum(s.rpeEst);
+      if (est != null) {
+        x += " (odhad " + effTxt({ rpe: est }) + ")";
+      }
+    } else if (s.t !== "w" && effTxt(s)) {
+      x += " " + effTxt(s);
+    }
+    return x;
+  }
+  // série na jednom řádku: „W 40 kg×10 | 60 kg×10 RIR 3, 60 kg×8 F + D 50 kg×6“; compact = plán („3× 60 kg×10“)
+  function coachSets(kind, sets, compact) {
+    const warm = [];
+    const work = [];
+    for (const s of sets) {
+      const x = coachSetTxt(kind, s);
+      if (s.t === "w") {
+        warm.push(x);
+      } else if (s.t === "d" && work.length) {
+        work[work.length - 1] += " + D " + x;
+      } else {
+        work.push((s.t === "d" ? "D " : "") + x);
+      }
+    }
+    let workTxt = work.join(", ");
+    if (compact && work.length > 1 && work.every((x) => x === work[0])) {
+      workTxt = work.length + "× " + work[0];
+    }
+    const parts = [];
+    if (warm.length) {
+      parts.push("W " + warm.join(", "));
+    }
+    if (work.length) {
+      parts.push(workTxt);
+    }
+    return parts.join(" | ");
+  }
+  function coachText(w) {
+    const L = ["WD-LOG v1"];
+    const end = w.end || w.start;
+    L.push(
+      `Datum: ${coachDay(w.start)} (${COACH_DAYS[new Date(w.start).getDay()]}) ` +
+        `${coachTime(w.start)}–${coachTime(end)} · ${Math.round((end - w.start) / 60000)} min`,
+    );
+    L.push("Fitko: " + gymName(w.gymId));
+    const tpl = w.tplId && S.templates[w.tplId];
+    if (tpl) {
+      L.push("Šablona: " + tpl.name);
+    }
+    // měření ze stejného dne (poslední toho dne)
+    const day = coachDay(w.start);
+    const body = Object.values(S.body || {})
+      .filter((b) => b && b.date && coachDay(b.date) === day)
+      .sort((a, b) => a.date - b.date)
+      .pop();
+    if (body) {
+      const m = [];
+      if (+body.weight > 0) {
+        m.push((+body.weight).toFixed(1) + " kg");
+      }
+      if (+body.fat > 0) {
+        m.push("tuk " + (+body.fat).toFixed(1) + " %");
+      }
+      if (+body.muscle > 0) {
+        m.push("svaly " + (+body.muscle).toFixed(1) + " %");
+      }
+      if (m.length) {
+        L.push("Měření: " + m.join(" · "));
+      }
+    }
+    const feel = [];
+    for (const [k, l] of [
+      ["feel", "Pocit"],
+      ["energy", "Energie"],
+      ["sleep", "Spánek"],
+    ]) {
+      const value = coachGet(w, k);
+      if (value != null) {
+        feel.push(l + " " + COACH_SL[k].txt(value));
+      }
+    }
+    if (feel.length) {
+      L.push(feel.join(" · "));
+    }
+    const pain = coachPain(w);
+    if (pain && pain.level === 0) {
+      L.push("Bolest: ne"); // intenzita 0 = bez bolesti, místo ani cvik se nevypisují
+    } else if (pain) {
+      const p = [pain.where, pain.level != null ? pain.level + "/10" : ""].filter(Boolean).join(" ");
+      L.push("Bolest: " + p + (pain.exId ? " – " + coachCz(pain.exId) : ""));
+    }
+    L.push("---");
+    // cviky v pořadí provedení (první odškrtnutá série), bez časů v pořadí seznamu
+    const list = (w.ex || []).map((e, i) => {
+      const times = e.sets.map((s) => +s.at).filter((x) => x > 0);
+      return { e, i, t: times.length ? Math.min(...times) : Infinity };
+    });
+    list.sort((a, b) => (a.t === b.t ? a.i - b.i : a.t - b.t));
+    const tplLeft = tpl ? (tpl.items || []).slice() : null;
+    const extra = [];
+    list.forEach(({ e }, n) => {
+      const kind = kindOf(e.exId);
+      let head = n + 1 + ". " + coachExName(e.exId);
+      if (tplLeft) {
+        const at = tplLeft.findIndex((it) => it.exId === e.exId);
+        if (at < 0) {
+          extra.push(coachExName(e.exId));
+        } else {
+          const ts = tplLeft[at].sets || [];
+          // šablona bez hodnot: jen počet sérií
+          const empty = ts.every((x) => !(+x.kg || +x.reps || +x.sec || +x.km));
+          const plan = empty
+            ? ts.length
+              ? ts.length + " " + plural(ts.length, "série", "série", "sérií")
+              : ""
+            : coachSets(kind, ts, true);
+          if (plan) {
+            head += " · plán " + plan;
+          }
+          tplLeft.splice(at, 1);
+        }
+      }
+      L.push(head);
+      L.push("   " + coachSets(kind, e.sets, false));
+      if (e.note) {
+        L.push("   Pozn.: " + e.note.replace(/\s*\n\s*/g, " "));
+      }
+    });
+    const tail = [];
+    if (tplLeft) {
+      tail.push(
+        "Vynecháno: " + (tplLeft.length ? tplLeft.map((it) => coachExName(it.exId)).join("; ") : "–"),
+      );
+      tail.push("Navíc: " + (extra.length ? extra.join("; ") : "–"));
+    }
+    if (w.note) {
+      tail.push("Poznámka: " + String(w.note).replace(/\s*\n\s*/g, " "));
+    }
+    if (tail.length) {
+      L.push("---", ...tail);
+    }
+    return L.join("\n");
+  }
+  // zkopíruje text do schránky; když to prohlížeč nedovolí, ukáže text k ručnímu zkopírování
+  function coachCopy(w) {
+    const text = coachText(w);
+    const n = [...text].length;
+    const manual = () =>
+      openSheet(
+        "Text pro coache",
+        `<textarea class="inp" rows="14" readonly style="font-family:monospace">${esc(text)}</textarea>`,
+        '<button class="btn grow" data-act="closeSheet">Zavřít</button>',
+      );
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      manual();
+      return;
+    }
+    navigator.clipboard
+      .writeText(text)
+      .then(
+        () => toast(`Zkopírováno pro coache (${fmtInt(n)} ${plural(n, "znak", "znaky", "znaků")})`),
+        manual,
+      );
   }
 
   /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
@@ -4419,6 +4867,7 @@
       </div>
       <div class="small muted" id="fin-info">${finInfo(d, end, lastAt)}</div>
     </div>`;
+    b += coachPart(d); // Pro coache (F4-12)
     // Dokončit a začít nový (F2-09): co začne po uložení
     if (runNext) {
       b += `<p class="small muted" style="margin:0">Po uložení začne ${esc(runNextName(runNext))}.</p>`;
@@ -4806,6 +5255,9 @@
       d.ex.map((e, i) => vExCard(d, e, i)),
     );
     h += "</div>";
+    if (mode === "edit" && coachOn()) {
+      h += `<div style="margin-top:12px">${coachPart(d)}</div>`; // Pro coache (F4-12)
+    }
     h += `<div class="stack" style="margin-top:12px">
         <button class="btn block" data-act="addEx">${icon("plus")}Přidat cvik</button>`;
     if (mode === "active") {
@@ -5013,6 +5465,9 @@
         if (rpe) {
           o.rpe = rpe;
         }
+        if (s.t === "f" && effNum(s.rpeEst) != null) {
+          o.rpeEst = s.rpeEst; // odhad před selháním (F4-12)
+        }
         if (s.at) {
           o.at = s.at;
         }
@@ -5051,6 +5506,10 @@
       endOrig: w.endOrig,
       tplId: w.tplId || null,
       note: w.note || "",
+      feel: w.feel, // Pro coache (F4-12)
+      energy: w.energy,
+      sleep: w.sleep,
+      pain: w.pain ? Object.assign({}, w.pain) : undefined,
       ex: (w.ex || []).map((e) => ({
         k: uid("e"),
         exId: e.exId,
@@ -5064,6 +5523,7 @@
           km: s.km ? numStr(s.km) : "",
           done: true,
           rpe: s.rpe,
+          rpeEst: s.rpeEst,
           at: s.at,
         })),
       })),
@@ -5475,6 +5935,13 @@
           Upravit
         </button>
       </div>
+      ${
+        coachOn()
+          ? `<button class="btn block" data-act="coachCopy" data-v="${esc(w.id)}" data-m="${w.mk}">
+            Kopírovat pro coache
+          </button>`
+          : ""
+      }
     </div>`;
     return h;
   }
@@ -5536,7 +6003,8 @@
                 return (
                   `<div>
                   <span class="lbl ${s.t}">${l}</span><span>${esc(setStr(k, s))}` +
-                  `${effTxt(s) ? " " + esc(effTxt(s)) : ""}</span>` +
+                  `${effTxt(s) ? " " + esc(effTxt(s)) : ""}` +
+                  `${coachEst(s) ? " (" + esc(coachEst(s)) + ")" : ""}</span>` +
                   `${
                     isWork(s.t) && r
                       ? `<span class="muted">1RM ≈ ${fmtKg(Math.round(r * 10) / 10)}</span>`
@@ -9072,6 +9540,33 @@
         ],
       ],
     },
+    coach: {
+      title: "Kopírovat pro coache",
+      items: () => [
+        [
+          "Co to dělá",
+          "Stránka tréninku má tlačítko Kopírovat pro coache. Zkopíruje do schránky krátký text o tréninku " +
+            "(formát WD-LOG v1), který vložíš AI coachovi: čas, fitko, šablona, měření ze stejného dne, cviky " +
+            "v pořadí, jak jsi je cvičil, série s RIR/RPE a porovnání se šablonou.",
+        ],
+        [
+          "Konec tréninku",
+          "V okně Dokončit trénink a v Upravit trénink je část Pro coache: pocit, energie, spánek, bolest " +
+            "a poznámka k tréninku. Vše je nepovinné, nevyplněné se do textu nevypíše. Bolest 0 = bez bolesti. " +
+            "Posuvník je šedý, dokud na něj nesáhneš, křížek hodnotu smaže.",
+        ],
+        [
+          "Odhad u selhání",
+          "Zadej RIR, když dosáhneš cílového počtu opakování, pak dojeď do selhání a přepni sérii na F. " +
+            "Zadané RIR zůstane jako odhad (v tabulce pod 0, v textu „F (odhad RIR 2)“).",
+        ],
+        [
+          "Vypnutí",
+          "Vypnutím se funkce schová, zapsané údaje zůstanou. Znovu ji zapneš 7 rychlými klepnutími na kartu " +
+            "Verze aplikace v Nastavení → O aplikaci.",
+        ],
+      ],
+    },
     hidden: {
       title: "Skryté cviky",
       items: () => [
@@ -9141,7 +9636,12 @@
       name: "Trénink",
       icon: "train",
       body: () =>
-        stepperSettings() + progSettings() + effortSettings() + restSettings() + bodyWeightSettings(),
+        stepperSettings() +
+        progSettings() +
+        effortSettings() +
+        restSettings() +
+        bodyWeightSettings() +
+        coachSettings(),
     },
     { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
@@ -11469,7 +11969,12 @@
       case "cycType": {
         const s = d.ex[i].sets[j];
         s.t = TYPES[(TYPES.indexOf(s.t) + 1) % TYPES.length];
+        delete s.rpeEst;
         if (s.t === "f") {
+          // odhad RIR před selháním (F4-12): zadané RIR/RPE se se zapnutou funkcí pro coache přesune
+          if (coachOn() && effNum(s.rpe) != null) {
+            s.rpeEst = effNum(s.rpe);
+          }
           delete s.rpe; // do selhání = vždy RIR 0 (F4-04), po přepnutí dál bude RIR prázdné
         }
         progTouch(d, d.ex[i]); // změna druhu série mění pracovní série (F4-01)
@@ -12187,6 +12692,7 @@
         if (Math.abs(end - sug) >= 60000) {
           w.endOrig = sug;
         }
+        coachApply(w, d); // Pro coache (F4-12)
         const id = uid("w");
         saveWorkout(id, w, null);
         if (upd && upd.checked) {
@@ -12256,6 +12762,7 @@
         if (w.endOrig && Math.abs(w.endOrig - w.start - (w.end - w.start)) < 60000) {
           delete w.endOrig;
         }
+        coachApply(w, d); // Pro coache (F4-12)
         saveWorkout(d.id, w, d.mk);
         S.editDraft = null;
         toast("Změny uloženy");
@@ -12744,6 +13251,31 @@
       case "effort":
         put("config/main", Object.assign({}, S.cfg, { effort: v }));
         break;
+      // kopírování pro coache (F4-12)
+      case "coach":
+        put("config/main", Object.assign({}, S.cfg, { coach: t.checked }));
+        if (!t.checked) {
+          toast("Vypnuto. Zapnout jde 7 klepnutími na kartu Verze aplikace v O aplikaci.");
+        }
+        break;
+      case "verTap":
+        verTap();
+        break;
+      case "coachTap":
+        coachSlide(t);
+        break;
+      case "coachClr":
+        coachClear(t);
+        break;
+      case "coachFold": {
+        const box = t.closest(".coach");
+        box.classList.toggle("fold");
+        t.setAttribute("aria-expanded", String(!box.classList.contains("fold")));
+        break;
+      }
+      case "coachCopy":
+        coachCopy(Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]));
+        break;
       case "screenOn":
       case "screenDim":
         put("config/main", Object.assign({}, S.cfg, { [act]: t.checked }));
@@ -12915,6 +13447,21 @@
       touchDraft();
       return;
     }
+    // Pro coache (F4-12)
+    if (f === "coach") {
+      coachSlide(t);
+      return;
+    }
+    if (f === "coachWhere") {
+      d.pain = Object.assign({}, d.pain, { where: t.value });
+      touchDraft();
+      return;
+    }
+    if (f === "wNote") {
+      d.note = t.value;
+      touchDraft();
+      return;
+    }
     if (f === "title") {
       d.title = t.value;
       touchDraft();
@@ -12995,6 +13542,11 @@
       readImport(t);
       return;
     }
+    if (f === "coachEx" && d) {
+      d.pain = Object.assign({}, d.pain, { exId: t.value });
+      touchDraft();
+      return;
+    } // cvik u bolesti (F4-12)
     if (f === "prog") {
       // výchozí rozsah opakování pro návrh progrese (F4-01): uloží se jen platná dvojice
       const res = progRangeCheck(
@@ -14053,7 +14605,8 @@
     let h = `<section class="sec">
       <div class="sec-h"><h2>Verze aplikace</h2></div>
       <div class="card stack">`;
-    h += `<div class="row"><b class="grow">${
+    // 7 rychlých klepnutí zapne kopírování pro coache (F4-12)
+    h += `<div class="row" data-act="verTap"><b class="grow">${
       TEST_PR
         ? "Testovací verze · PR #" + esc(TEST_PR)
         : BUILD.kanal === "main"
