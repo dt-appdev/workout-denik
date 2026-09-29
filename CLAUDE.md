@@ -167,6 +167,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Změna cviku mimo prvky s `data-i` volá `edMark` (návrat do tréninku). Konec tréninku vždy přes `activeEnd()`.
 - Hotová série rozdělaného tréninku má čas odškrtnutí `s.at`; série označená v okně Dokončit trénink má místo něj
   `s.atEnd` a čas dostane až při uložení (F1-14). Každé odškrtnutí nebo zrušení ✓ `atEnd` maže.
+- RIR/RPE série (F4-04) je vždy RPE v `s.rpe` (i při volbě RIR), text přes `effTxt` / `effVal`, série do selhání
+  má vždy 10 (`effOf`). Nové a kopírované série ho nepřenášejí (předvyplnění, šablony, Cvičit znovu).
 - Akce, které mění pracovní série bez hodnot (+ Série, smazání, změna druhu), volají `progTouch`.
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Nová volba nastavení patří do existující skupiny (`SET_PAGES`), nová sekce Statistik do jedné z částí
