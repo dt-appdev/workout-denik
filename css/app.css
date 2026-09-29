@@ -1295,6 +1295,70 @@ tr.done .okb {
   border-color: var(--good);
   color: var(--surface);
 }
+/* náročnost série RIR/RPE (F4-04): úzký sloupec před ✓, hodnota jako tlačítko ve tvaru políčka série */
+.sets .c-eff {
+  width: 2.8em;
+}
+.sets td.c-eff {
+  height: var(--tap);
+  position: relative;
+}
+.effb {
+  width: 100%;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--surface-2);
+  padding: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.effb.on {
+  color: var(--ink);
+}
+/* série do selhání: pevně RIR 0, bez rámečku políčka */
+.effb.fix {
+  background: none;
+}
+.effb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+/* tlačítka hodnot RIR/RPE v panelu a v krokovači */
+.eff {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.eff small {
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.eff-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.eff-row.rpe {
+  grid-template-columns: repeat(5, 1fr);
+}
+.eff-row .btn {
+  min-height: 40px;
+  padding: 0;
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+}
+.eff-row .btn[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
 /* krokovač: tlačítka +/− místo klávesnice (F1-03) */
 .cell[readonly] {
   caret-color: transparent;

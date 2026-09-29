@@ -1187,6 +1187,7 @@
         progMin: PROG_REPS.defMin,
         progMax: PROG_REPS.defMax,
         progSets: "all",
+        effort: "off",
       },
       c && typeof c === "object" ? c : {},
     );
@@ -1197,6 +1198,7 @@
       c.progMax = PROG_REPS.defMax;
     }
     c.stagN = STAG_N.includes(+c.stagN) ? +c.stagN : STAG_DEF;
+    c.effort = c.effort === "rir" || c.effort === "rpe" ? c.effort : "off"; // RIR/RPE (F4-04)
     c.gyms = (Array.isArray(c.gyms) ? c.gyms : [])
       .filter((g) => g && g.id)
       .map((g, i) =>
@@ -1327,7 +1329,7 @@
      nepřijme, „,5“ → „0,5“), jednotnou podobu po opuštění políčka a při ✓ dá numNormalize (čas „85“ → „1:25“,
      „1:5“ → „1:05“, „82.5“ → „82,5“). Před uložením setProblem / draftProblem (série) a inputProblem(id)
      (políčka ve formulářích). Uložené číslo do políčka vždy přes numStr (nejvýš 2 desetinná místa). ✓ série =
-     toggleSetDone. Nové číselné pole (F1-03, F1-08, F4-04…) vždy přes stejná pravidla. */
+     toggleSetDone. Nové číselné pole (F1-03, F1-08…) vždy přes stejná pravidla. */
   const NUM_RULES = {
     kg: { lab: "Váha", dec: 2, max: 999, unit: "kg" },
     reps: { lab: "Opakování", dec: 0, max: 999 },
@@ -2039,7 +2041,8 @@
      (kg i opakování, bez krokovače), dokud uživatel sérii neopustí (klepne jinam, na tlačítko nebo na ✓).
      kkKbd = začátek id políček série (kkSetId), focusout uvnitř série režim neukončí.
      „Série hotová“ zavře panel a odškrtne sérii přes toggleSetDone (kontrola čísel, velký skok, rekord,
-     pauza). Nic nového se neukládá do dat tréninku.
+     pauza). Nic nového se neukládá do dat tréninku, jen se zapnutým RIR/RPE (F4-04) je pod hodnotami řádek
+     jeho tlačítek (effRow), klepnutí ho zapíše do s.rpe bez zavření panelu.
      Políčka jsou readonly s data-act="kk", panel sheetStepper(i, j, f) (třída kk přes openSheet(…, nav.cls),
      stav kk, řádek tr.kk-on). − / + mají data-kk (kkPress, podržení opakuje), základ kkBase, meze z
      NUM_RULES. „Napsat“ = kkKeyboard. focusInput u políčka s krokovačem otevře panel místo klávesnice.
@@ -2147,11 +2150,7 @@
     if (document.activeElement) {
       document.activeElement.blur();
     }
-    // název série jako ve sloupci Série: pracovní se číslují, ostatní podle druhu
-    let label = TYPE_NAME[s.t];
-    if (s.t === "n") {
-      label = "Série " + e.sets.slice(0, j + 1).filter((x) => x.t === "n").length;
-    }
+    const label = setLabel(e, j);
     const prev = exHints(e, draftLast(d, e.exId))[j].p;
     const steps = flds
       .map(setRule)
@@ -2195,6 +2194,9 @@
         <button class="btn kk-b" data-kk="1" data-kf="${rule}" aria-label="Přidat">+</button>
       </div>`;
     }
+    if (effCol(d)) {
+      body += effRow(i, j, s); // RIR/RPE (F4-04)
+    }
     const foot = `<button class="btn grow" data-act="kkKbd">${icon("kbd")}Napsat</button>
       ${
         s.done
@@ -2208,6 +2210,12 @@
     kk = { i, j, f };
     kkMark();
     kkScroll();
+  }
+  // název série jako ve sloupci Série: pracovní se číslují, ostatní podle druhu
+  function setLabel(e, j) {
+    const s = e.sets[j];
+    if (s.t !== "n") return TYPE_NAME[s.t];
+    return "Série " + e.sets.slice(0, j + 1).filter((x) => x.t === "n").length;
   }
   // zvýrazní v tabulce řádek série, kterou krokovač upravuje (bez překreslení)
   function kkMark() {
@@ -2331,6 +2339,179 @@
     kkKbd = null;
     scheduleRender();
   });
+
+  /* ---------- NÁROČNOST SÉRIE RIR/RPE (F4-04) ----------
+     Volitelné: Nastavení → Trénink → Náročnost série (S.cfg.effort: "off" výchozí, "rir", "rpe").
+     RIR = kolik opakování ještě zbývalo (0–4 a 5+, celá čísla), RPE = náročnost do 10 (6–10 po půl bodu),
+     platí RPE = 10 − RIR. Ukládá se vždy jako RPE do s.rpe (číslo; pole znal už původní artefakt, data
+     z Hevy ho můžou mít), takže přepnutí RIR ↔ RPE nic nemění. Text hodnoty effVal (RIR ze 5 a víc = „5+“).
+     Zadání: se zapnutou volbou (effCol: ne v šabloně) má karta cviku sloupec RIR/RPE před ✓ (effCell,
+     tlačítko s id effId). Klepnutí otevře panel sheetEffort s tlačítky hodnot (effRow, akce effSet)
+     a Smazat (effDel). Stejný řádek tlačítek je v krokovači pod hodnotami série; tam se panel nezavře a
+     tlačítka i buňka v tabulce se změní bez překreslení (effShow). Klepnutí na vybranou hodnotu ji zruší.
+     Hodnota je nepovinná, ✓ série ji nevyžaduje.
+     Druh série: zahřívací série hodnotu nemá (prázdná buňka, při uložení se zahodí). Série do selhání (F)
+     má vždy RIR 0 / RPE 10 (effOf), změnit nejde (klepnutí = hláška effFix), při uložení se zapíše
+     (effSave). Přepnutí na F hodnotu série smaže, takže po přepnutí dál je prázdná. Opačně RIR 0 druh
+     série nemění: pracovní série na doraz zůstane pracovní (číslo série, návrh progrese F4-01).
+     S vypnutou volbou se s.rpe nemění ani při úpravě uloženého tréninku.
+     RIR/RPE nevstupuje do předvyplnění (F1-01, F1-13), Cvičit znovu, šablon, rekordů, objemu ani obrázku ke
+     sdílení; nové série (newSetFrom) ho nepřenášejí. Uložená hodnota za zápisem série effTxt („RIR 2“,
+     s RPE nebo vypnutou volbou „RPE 8“): stránka tréninku a historie na stránce cviku. F4-09 (CSV) má přidat
+     sloupec RPE. */
+  const EFF_NAME = { rir: "RIR", rpe: "RPE" };
+  const EFF_VALUES = {
+    rir: [10, 9, 8, 7, 6, 5], // uložené RPE pro RIR 0, 1, 2, 3, 4, 5+
+    rpe: [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10],
+  };
+  // vysvětlení do panelu (jedna věta)
+  const EFF_HINT = {
+    rir: "Kolik opakování by ještě šlo (0 = už ani jedno).",
+    rpe: "Náročnost série do 10 (10 = už ani jedno opakování, 8 = zbývala 2).",
+  };
+  // zvolený zápis: "rir", "rpe", nebo "" (vypnuto)
+  const effMode = () => (S.cfg.effort === "rir" || S.cfg.effort === "rpe" ? S.cfg.effort : "");
+  // má karta cviku sloupec RIR/RPE? (rozdělaný trénink a úprava uloženého tréninku, ne šablona)
+  const effCol = (d) => !!effMode() && d.mode !== "template";
+  const effId = (e, j) => "eff-" + e.k + "-" + j;
+  // platné RPE (nad 0, nejvýš 10), jinak null
+  function effNum(value) {
+    const n = +value;
+    return value != null && isFinite(n) && n > 0 && n <= 10 ? n : null;
+  }
+  // RPE série v rozdělaném tréninku: zahřívací žádné, do selhání vždy 10
+  function effOf(s) {
+    if (s.t === "w") return null;
+    if (s.t === "f") return 10;
+    return effNum(s.rpe);
+  }
+  // RPE k uložení (draftToWorkout): s vypnutou volbou beze změny
+  function effSave(s) {
+    if (!effMode()) return s.rpe;
+    return effOf(s);
+  }
+  // RPE jako text podle zápisu: RIR (10 − RPE, od 5 výš „5+“), nebo RPE
+  function effVal(rpe, mode) {
+    if (mode === "rir") {
+      const rir = 10 - rpe;
+      return rir >= 5 ? "5+" : numStr(rir);
+    }
+    return numStr(rpe);
+  }
+  // uložená hodnota za zápisem série: „RIR 2“, jinak „RPE 8“; bez hodnoty ""
+  function effTxt(s) {
+    const rpe = effNum(s.rpe);
+    if (rpe == null) return "";
+    return effMode() === "rir" ? "RIR " + effVal(rpe, "rir") : "RPE " + effVal(rpe, "rpe");
+  }
+  // buňka sloupce RIR/RPE v kartě cviku; delBtn = tlačítko Smazat, když je buňka poslední (úprava tréninku)
+  function effCell(e, i, j, s, delBtn) {
+    const mode = effMode();
+    const rpe = effOf(s);
+    let btn = "";
+    if (s.t === "f") {
+      btn = `<button class="effb fix" id="${effId(e, j)}" data-act="effFix" data-i="${i}" data-j="${j}"
+          aria-label="${EFF_NAME[mode]} ${effVal(10, mode)}">${effVal(10, mode)}</button>`;
+    } else if (s.t !== "w") {
+      const text = rpe != null ? effVal(rpe, mode) : "–";
+      btn = `<button class="effb${rpe != null ? " on" : ""}" id="${effId(e, j)}" data-act="eff"
+          data-i="${i}" data-j="${j}" aria-label="${EFF_NAME[mode]}">${text}</button>`;
+    }
+    return `<td class="c-eff${delBtn ? " sw-cell" : ""}">${btn}${delBtn}</td>`;
+  }
+  // tlačítka hodnot RIR/RPE série (panel sheetEffort i krokovač); zahřívací nic, do selhání jen text
+  function effRow(i, j, s) {
+    const mode = effMode();
+    if (s.t === "w") return "";
+    if (s.t === "f") {
+      return `<div class="eff">
+        <small>${EFF_NAME[mode]}</small>
+        <span class="xs muted">Série do selhání má vždy ${EFF_NAME[mode]} ${effVal(10, mode)}.</span>
+      </div>`;
+    }
+    const cur = effOf(s);
+    const btns = EFF_VALUES[mode]
+      .map(
+        (rpe) =>
+          `<button class="btn sm" data-act="effSet" data-i="${i}" data-j="${j}" data-v="${rpe}"
+              aria-pressed="${cur === rpe}">${effVal(rpe, mode)}</button>`,
+      )
+      .join("");
+    return `<div class="eff">
+      <small>${EFF_NAME[mode]}</small>
+      <div class="eff-row ${mode}" role="group" aria-label="${EFF_NAME[mode]}">${btns}</div>
+    </div>`;
+  }
+  // panel po klepnutí na buňku RIR/RPE: tlačítka hodnot, vysvětlení a Smazat
+  function sheetEffort(i, j) {
+    const d = curDraft();
+    const e = d && d.ex[i];
+    const s = e && e.sets[j];
+    const mode = effMode();
+    if (!s || !mode) return;
+    const body = `<div class="kk-sub"><span class="grow">${esc(setLabel(e, j))}</span></div>
+      ${effRow(i, j, s)}
+      <p class="xs muted" style="margin:0">${EFF_HINT[mode]}</p>`;
+    const foot =
+      effOf(s) != null
+        ? `<button class="btn grow" data-act="effDel" data-i="${i}" data-j="${j}">Smazat</button>`
+        : "";
+    openSheet(exName(e.exId), body, foot, false, { re: () => sheetEffort(i, j) });
+  }
+  // nastaví RPE série (null nebo vybraná hodnota znovu = smazat); v krokovači bez zavření panelu
+  function effSet(d, i, j, rpe) {
+    const s = d && d.ex[i] && d.ex[i].sets[j];
+    if (!s || s.t === "w" || s.t === "f") return;
+    if (rpe == null || effOf(s) === rpe) {
+      delete s.rpe;
+    } else {
+      s.rpe = rpe;
+    }
+    touchDraft();
+    if (kk) {
+      effShow(d, i, j);
+      return;
+    }
+    closeSheet();
+    scheduleRender();
+  }
+  // krokovač: vybraná hodnota v panelu a v buňce tabulky bez překreslení
+  function effShow(d, i, j) {
+    const e = d.ex[i];
+    const cur = effOf(e.sets[j]);
+    for (const btn of document.querySelectorAll('#sheetRoot [data-act="effSet"]')) {
+      btn.setAttribute("aria-pressed", String(+btn.dataset.v === cur));
+    }
+    const cell = document.getElementById(effId(e, j));
+    if (cell) {
+      cell.textContent = cur != null ? effVal(cur, effMode()) : "–";
+      cell.classList.toggle("on", cur != null);
+    }
+  }
+  /* Nastavení → Trénink → Náročnost série */
+  function effortSettings() {
+    const cur = effMode() || "off";
+    const opts = [
+      ["off", "Vypnuto"],
+      ["rir", "RIR"],
+      ["rpe", "RPE"],
+    ];
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>Náročnost série</h2>
+        ${helpBtn("effort")}
+      </div>
+      <div class="card stack">
+        <div class="seg seg-wide">
+          ${opts
+            .map(
+              ([k, l]) => `<button data-act="effort" data-v="${k}" aria-pressed="${cur === k}">${l}</button>`,
+            )
+            .join("")}
+        </div>
+      </div>
+    </section>`;
+  }
 
   /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
      V krokovači u zahřívací série cviku „Váha a opakování“ je tlačítko „60 % → 50 kg“. Nastaví váhu
@@ -4657,6 +4838,7 @@
     const lr = mode === "active" ? liveRecords(d, i) : { sets: {}, ex: [] };
     const inSs = ssRun(d.ex, i); // supersérie (F4-05): proužek vlevo
     const range = progRange(e.exId); // rozsah opakování pro návrh progrese (F4-01), pod nadpisem Opak.
+    const eff = effCol(d); // sloupec RIR/RPE (F4-04)
     /* F3-22: v hlavičce karty žádné štítky. Za názvem ikona „vázáno na fitko“ a medaile nového
        rekordu, klepnutí na ně ukáže vysvětlení (gdTip, recTip), klepnutí na název otevře Popis.
        Druh zápisu poznáš podle sloupců tabulky, supersérii podle proužku vlevo. */
@@ -4712,6 +4894,7 @@
           <th class="c-type">Série</th>
           ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
           ${flds.map((f) => `<th class="c-in">${thLabel(f)}</th>`).join("")}
+          ${eff ? `<th class="c-eff">${EFF_NAME[effMode()]}</th>` : ""}
           ${mode === "active" ? '<th class="c-ok" aria-label="Hotovo">' + icon("check") + "</th>" : ""}
         </tr>
       </thead>
@@ -4752,7 +4935,7 @@
         const id = kkInputId(e, j, f);
         // krokovač (F1-03): políčko jen ke čtení, klepnutí otevře panel s +/−
         const stepper = useStepper && !kkTyping(id) ? ` readonly data-act="kk" data-v="${f}"` : "";
-        const last = mode !== "active" && n === flds.length - 1;
+        const last = mode !== "active" && !eff && n === flds.length - 1;
         h += `<td class="c-in${last ? " sw-cell" : ""}">
           <input class="cell${numCls(fld, fval(s, fld))}" id="${id}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
@@ -4761,6 +4944,9 @@
           ${last ? delBtn : ""}
         </td>`;
       });
+      if (eff) {
+        h += effCell(e, i, j, s, mode !== "active" ? delBtn : "");
+      }
       if (mode === "active") {
         h += `<td class="c-ok sw-cell">
           <button class="okb" data-act="done" data-i="${i}" data-j="${j}" aria-pressed="${!!s.done}"
@@ -4823,8 +5009,9 @@
           }
         }
         if (!any) continue;
-        if (s.rpe) {
-          o.rpe = s.rpe;
+        const rpe = effSave(s); // RIR/RPE (F4-04)
+        if (rpe) {
+          o.rpe = rpe;
         }
         if (s.at) {
           o.at = s.at;
@@ -5349,7 +5536,7 @@
                 return (
                   `<div>
                   <span class="lbl ${s.t}">${l}</span><span>${esc(setStr(k, s))}` +
-                  `${s.rpe ? " @" + s.rpe : ""}</span>` +
+                  `${effTxt(s) ? " " + esc(effTxt(s)) : ""}</span>` +
                   `${
                     isWork(s.t) && r
                       ? `<span class="muted">1RM ≈ ${fmtKg(Math.round(r * 10) / 10)}</span>`
@@ -7628,7 +7815,7 @@
                   st.t !== "n"
                     ? `<span class="lbl ${st.t}" style="font-weight:700">${st.t.toUpperCase()}</span> `
                     : ""
-                }${esc(setStr(s.kind, st))}</span>`,
+                }${esc(setStr(s.kind, st))}${effTxt(st) ? " " + esc(effTxt(st)) : ""}</span>`,
             )
             .join(" · ")}
         </div>
@@ -8859,6 +9046,32 @@
         ],
       ],
     },
+    effort: {
+      title: "Náročnost série",
+      items: () => [
+        [
+          "RIR a RPE",
+          "RIR (opakování v rezervě) = kolik opakování by v sérii ještě šlo, 0 = už ani jedno. RPE = náročnost " +
+            "série na stupnici do 10, platí RPE = 10 − RIR (RPE 8 = RIR 2). Obojí se ukládá stejně, přepnout jde " +
+            "kdykoli. Vypnuto = sloupec v tréninku není, zapsané hodnoty zůstanou.",
+        ],
+        [
+          "Zadání",
+          `Karta cviku v tréninku má sloupec RIR nebo RPE před ${icon("check")}. Klepnutím vybereš hodnotu, ` +
+            "stejná tlačítka jsou i v panelu s tlačítky +/−. Hodnota je nepovinná, klepnutí na vybranou ji zruší.",
+        ],
+        [
+          "Druh série",
+          "Zahřívací série RIR nemá. Série do selhání (F) má vždy RIR 0 (RPE 10). Pracovní série, ve které jsi " +
+            "došel na doraz, zůstane pracovní a dostane RIR 0: má dál číslo a počítá se do návrhu progrese.",
+        ],
+        [
+          "Kde ho uvidíš",
+          "Za zápisem série na stránce tréninku a v historii cviku (např. 80×8 RIR 2, v RPE 80×8 RPE 8). " +
+            "Nepřebírá se z minula ani do šablon a nemá vliv na rekordy ani objem.",
+        ],
+      ],
+    },
     hidden: {
       title: "Skryté cviky",
       items: () => [
@@ -8927,7 +9140,8 @@
       id: "train",
       name: "Trénink",
       icon: "train",
-      body: () => stepperSettings() + progSettings() + restSettings() + bodyWeightSettings(),
+      body: () =>
+        stepperSettings() + progSettings() + effortSettings() + restSettings() + bodyWeightSettings(),
     },
     { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
@@ -11255,6 +11469,9 @@
       case "cycType": {
         const s = d.ex[i].sets[j];
         s.t = TYPES[(TYPES.indexOf(s.t) + 1) % TYPES.length];
+        if (s.t === "f") {
+          delete s.rpe; // do selhání = vždy RIR 0 (F4-04), po přepnutí dál bude RIR prázdné
+        }
         progTouch(d, d.ex[i]); // změna druhu série mění pracovní série (F4-01)
         touchDraft();
         scheduleRender();
@@ -11265,6 +11482,19 @@
         break;
       case "kk":
         sheetStepper(i, j, v);
+        break;
+      // RIR/RPE (F4-04)
+      case "eff":
+        sheetEffort(i, j);
+        break;
+      case "effFix":
+        toast("Série do selhání má vždy " + (effMode() === "rpe" ? "RPE 10" : "RIR 0") + ".");
+        break;
+      case "effSet":
+        effSet(d, i, j, +v);
+        break;
+      case "effDel":
+        effSet(d, i, j, null);
         break;
       case "kkStep": {
         const a = S.active;
@@ -12510,6 +12740,9 @@
         break;
       case "progSets":
         put("config/main", Object.assign({}, S.cfg, { progSets: v === "first" ? "first" : "all" }));
+        break;
+      case "effort":
+        put("config/main", Object.assign({}, S.cfg, { effort: v }));
         break;
       case "screenOn":
       case "screenDim":
@@ -13803,7 +14036,8 @@
       exId: "leg-extension-machine",
       note:
         "návrh progrese (F4-01) s různými vahami: se zapnutým návrhem 8–12 Všem sériím „42,5 kg × 8 · " +
-        "45 kg × 8 (1. a 2. série)“, Postupně „42,5 kg × 8 (1. série)“",
+        "45 kg × 8 (1. a 2. série)“, Postupně „42,5 kg × 8 (1. série)“; RIR/RPE (F4-04) v posledním tréninku " +
+        "(stránka tréninku a historie cviku: RIR 2, 1, 0, zahřívací bez)",
       sets: [
         null,
         null,
@@ -13816,9 +14050,9 @@
         ],
         [
           { t: "w", kg: 20, reps: 12 },
-          { t: "n", kg: 40, reps: 12 },
-          { t: "n", kg: 42.5, reps: 12 },
-          { t: "n", kg: 45, reps: 12 },
+          { t: "n", kg: 40, reps: 12, rpe: 8 },
+          { t: "n", kg: 42.5, reps: 12, rpe: 9 },
+          { t: "n", kg: 45, reps: 12, rpe: 10 },
         ],
       ],
     },

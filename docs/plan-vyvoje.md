@@ -94,7 +94,7 @@ flowchart LR
 17. **F1-07** Poznámky ke stroji podle fitka.
 18. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
 19. **F3-16** Rozepsaný formulář přežije zavření appky.
-20. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-04, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+20. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
 Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F1-15, F3-07.
 
@@ -215,7 +215,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F4-01** Návrh progrese (double progression)
 - [ ] **F4-02** Generátor rozcvičkových sérií z pracovní váhy.
 - [ ] **F4-03** Kalkulačka kotoučů na osu.
-- [ ] **F4-04** RIR/RPE u série (volitelné).
+- [x] **F4-04** RIR/RPE u série
 - [x] **F4-05** Supersérie se společnou pauzou
 - [x] **F4-06** Upozornění na stagnaci
 - [ ] **F4-07** Plánované tréninky v kalendáři.
