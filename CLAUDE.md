@@ -169,6 +169,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   `s.atEnd` a čas dostane až při uložení (F1-14). Každé odškrtnutí nebo zrušení ✓ `atEnd` maže.
 - RIR/RPE série (F4-04) je vždy RPE v `s.rpe` (i při volbě RIR), text přes `effTxt` / `effVal`, série do selhání
   má vždy 10 (`effOf`). Nové a kopírované série ho nepřenášejí (předvyplnění, šablony, Cvičit znovu).
+- Kopírování pro coache (F4-12) je skryté (`coachOn()`), bez zapnutí se nic z něj neukazuje. Nový údaj tréninku nebo
+  série, který má coach vidět, doplnit do `coachText`. Odhad před selháním `s.rpeEst` se do nových sérií nepřenáší.
 - Akce, které mění pracovní série bez hodnot (+ Série, smazání, změna druhu), volají `progTouch`.
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Nová volba nastavení patří do existující skupiny (`SET_PAGES`), nová sekce Statistik do jedné z částí

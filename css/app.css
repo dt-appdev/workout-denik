@@ -1412,6 +1412,71 @@ tr.done .okb {
   margin: 4px 0;
   accent-color: var(--accent);
 }
+/* Kopírovat pro coache (F4-12): část v okně Dokončit a v Upravit trénink */
+.coach {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.coach-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.coach-h .grow {
+  display: flex;
+  flex-direction: column;
+}
+.coach-ic {
+  transform: rotate(180deg);
+}
+.coach.fold .coach-ic {
+  transform: none;
+}
+.coach.fold .coach-b {
+  display: none;
+}
+.coach-b {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.coach-sl .row {
+  align-items: center;
+  min-height: 2.2em;
+}
+.coach-sl .coach-clr {
+  padding: 0 0.6em;
+}
+/* skrytý křížek drží místo, aby řádek neposkočil */
+.coach-sl .coach-clr[hidden] {
+  display: inline-flex;
+  visibility: hidden;
+}
+/* nevyplněný posuvník: šedý, hodnota „–“ */
+.coach-sl.unset .range {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+/* odhad RIR pod 0 u série do selhání */
+.effb.est {
+  height: auto;
+  min-height: 36px;
+  line-height: 1.05;
+}
+.eff-est {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-3);
+}
 .kk-row {
   display: grid;
   grid-template-columns: 72px 1fr 72px;
