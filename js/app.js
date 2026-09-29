@@ -2527,8 +2527,9 @@
      (výchozí false, coachOn). Vypíná se v Nastavení → Trénink → Pro coache (coachSettings, HELP.coach). Bez
      zapnutí appka nic z této sekce neukazuje. Uložená data zůstanou i po vypnutí.
      - Na konci tréninku (okno Dokončit, finishAsk) a v Upravit trénink (vEditor) je část „Pro coache“
-       (coachPart, otevřená, hlavičkou jde sbalit): posuvníky Pocit 1–10, Energie 1–10, Spánek 0–12 h (po 1 h)
-       a bolest (místo textem, intenzita posuvníkem 1–10, cvik z tréninku), poznámka k tréninku. Posuvník
+       (coachPart, otevřená, hlavičkou jde sbalit): posuvníky Pocit 1–10, Energie 1–10, Spánek 0–12 h (po 1 h) a
+       bolest (místo textem, intenzita posuvníkem 0–10, 0 = bez bolesti = „Bolest: ne“, cvik z tréninku),
+       poznámka k tréninku. Posuvník
        začíná nevyplněný (šedý, „–“), hodnotu dostane až posunutím nebo klepnutím (coachSlide), křížek ji
        smaže (coachClr). Změny jen v draftu bez překreslení; při uložení coachApply zapíše do tréninku pole
        feel, energy, sleep, pain {where, level, exId} a note. Nevyplněné pole v tréninku není.
@@ -2548,7 +2549,7 @@
     feel: { l: "Pocit", min: 1, max: 10, def: 5, txt: (v) => v + "/10" },
     energy: { l: "Energie", min: 1, max: 10, def: 5, txt: (v) => v + "/10" },
     sleep: { l: "Spánek předchozí noc", min: 0, max: 12, def: 7, txt: (v) => v + " h" },
-    pain: { l: "Intenzita", min: 1, max: 10, def: 3, txt: (v) => v + "/10" },
+    pain: { l: "Intenzita", min: 0, max: 10, def: 3, txt: (v) => (v === 0 ? "žádná" : v + "/10") },
   };
   // platná hodnota posuvníku (celé číslo v rozsahu), jinak null
   function coachNum(k, value) {
@@ -2879,7 +2880,9 @@
       L.push(feel.join(" · "));
     }
     const pain = coachPain(w);
-    if (pain) {
+    if (pain && pain.level === 0) {
+      L.push("Bolest: ne"); // intenzita 0 = bez bolesti, místo ani cvik se nevypisují
+    } else if (pain) {
       const p = [pain.where, pain.level != null ? pain.level + "/10" : ""].filter(Boolean).join(" ");
       L.push("Bolest: " + p + (pain.exId ? " – " + coachCz(pain.exId) : ""));
     }
@@ -9548,8 +9551,8 @@
         [
           "Konec tréninku",
           "V okně Dokončit trénink a v Upravit trénink je část Pro coache: pocit, energie, spánek, bolest " +
-            "a poznámka k tréninku. Vše je nepovinné, nevyplněné se do textu nevypíše. Posuvník je šedý, dokud " +
-            "na něj nesáhneš, křížek hodnotu smaže.",
+            "a poznámka k tréninku. Vše je nepovinné, nevyplněné se do textu nevypíše. Bolest 0 = bez bolesti. " +
+            "Posuvník je šedý, dokud na něj nesáhneš, křížek hodnotu smaže.",
         ],
         [
           "Odhad u selhání",
