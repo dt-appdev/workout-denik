@@ -2357,7 +2357,7 @@
      S vypnutou volbou se s.rpe nemění ani při úpravě uloženého tréninku.
      RIR/RPE nevstupuje do předvyplnění (F1-01, F1-13), Cvičit znovu, šablon, rekordů, objemu ani obrázku ke
      sdílení; nové série (newSetFrom) ho nepřenášejí. Uložená hodnota za zápisem série effTxt („RIR 2“,
-     s RPE nebo vypnutou volbou „@8“): stránka tréninku a historie na stránce cviku. F4-09 (CSV) má přidat
+     s RPE nebo vypnutou volbou „RPE 8“): stránka tréninku a historie na stránce cviku. F4-09 (CSV) má přidat
      sloupec RPE. */
   const EFF_NAME = { rir: "RIR", rpe: "RPE" };
   const EFF_VALUES = {
@@ -2398,11 +2398,11 @@
     }
     return numStr(rpe);
   }
-  // uložená hodnota za zápisem série: „RIR 2“, jinak „@8“; bez hodnoty ""
+  // uložená hodnota za zápisem série: „RIR 2“, jinak „RPE 8“; bez hodnoty ""
   function effTxt(s) {
     const rpe = effNum(s.rpe);
     if (rpe == null) return "";
-    return effMode() === "rir" ? "RIR " + effVal(rpe, "rir") : "@" + effVal(rpe, "rpe");
+    return effMode() === "rir" ? "RIR " + effVal(rpe, "rir") : "RPE " + effVal(rpe, "rpe");
   }
   // buňka sloupce RIR/RPE v kartě cviku; delBtn = tlačítko Smazat, když je buňka poslední (úprava tréninku)
   function effCell(e, i, j, s, delBtn) {
@@ -9067,7 +9067,7 @@
         ],
         [
           "Kde ho uvidíš",
-          "Za zápisem série na stránce tréninku a v historii cviku (např. 80×8 RIR 2, v RPE 80×8 @8). " +
+          "Za zápisem série na stránce tréninku a v historii cviku (např. 80×8 RIR 2, v RPE 80×8 RPE 8). " +
             "Nepřebírá se z minula ani do šablon a nemá vliv na rekordy ani objem.",
         ],
       ],
