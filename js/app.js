@@ -4294,7 +4294,9 @@
   const tplSaveOff = (d) => !tplClean(d.title) || !!tplNameProblem(d);
   // cviky a série šablony z uloženého tréninku (i supersérie)
   function tplItemsOf(w) {
-    return (w.ex || []).map((e) => Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e)));
+    return (w.ex || []).map((e) =>
+      Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e), noteOf(e)),
+    );
   }
   // nová šablona z uloženého tréninku (Uložit jako šablonu v souhrnu)
   function tplFromWorkout(w, name, gyms) {
@@ -4450,7 +4452,19 @@
     return n;
   }
 
-  /* ---------- EDITOR (rozdělaný trénink / úprava uloženého tréninku / šablona) ---------- */
+  /* ---------- EDITOR (rozdělaný trénink / úprava uloženého tréninku / šablona) ----------
+     Poznámka ke cviku (F2-10): patří ke cviku, ne ke stroji ani fitku, takže se přenáší vždy (i do jiného
+     fitka). Šablona ji má u cviku jako nepovinné pole note (bez něj nebo prázdná = pole se neukládá, staré
+     šablony fungují dál). Ze šablony se přes startWorkout vloží do rozdělaného tréninku, z uloženého
+     tréninku přes Cvičit znovu (startAgain). Zpět do šablony jde jen výslovně: Uložit šablonu, Uložit jako
+     šablonu, Aktualizovat šablonu a přepsání při shodě názvu. Poznámka se nepředvyplňuje z historie u cviku
+     přidaného ručně ani při nahrazení cviku (exReplace). Značku do objektu cviku dává noteOf(e), stejně jako
+     ssOf u supersérie; každé nové místo, které kopíruje cviky, ji přenáší přes noteOf. */
+  // poznámka cviku pro Object.assign (prázdný objekt = cvik nemá poznámku)
+  const noteOf = (e) => {
+    const note = e && typeof e.note === "string" ? e.note.trim() : "";
+    return note ? { note } : {};
+  };
   // série do šablony z uloženého tréninku (i čas a vzdálenost)
   function tplSet(s) {
     return { t: s.t, kg: s.kg || 0, reps: s.reps || 0, sec: s.sec || 0, km: s.km || 0 };
@@ -4509,7 +4523,7 @@
     };
     if (t) {
       for (const it of t.items || []) {
-        d.ex.push(Object.assign(exEntryFor(it.exId, gymId, it.sets), ssOf(it)));
+        d.ex.push(Object.assign(exEntryFor(it.exId, gymId, it.sets), ssOf(it), noteOf(it)));
       }
       ssNorm(d.ex);
     }
@@ -4707,11 +4721,7 @@
       ex: [],
     };
     for (const e of againEx(w)) {
-      const x = Object.assign(exEntryFor(e.exId, gymId, e.sets), ssOf(e));
-      if (e.note && gymId === w.gymId) {
-        x.note = e.note;
-      }
-      d.ex.push(x);
+      d.ex.push(Object.assign(exEntryFor(e.exId, gymId, e.sets), ssOf(e), noteOf(e)));
     }
     ssNorm(d.ex); // cvik, který už v appce není, mohl supersérii rozdělit
     again = null;
@@ -11959,7 +11969,7 @@
             k: uid("e"),
             exId: it.exId,
             ...ssOf(it),
-            note: "",
+            note: it.note || "",
             sets: (it.sets || []).map(newSetFrom),
           })),
         };
@@ -12825,6 +12835,7 @@
             d.ex.map((e) => ({
               exId: e.exId,
               ...ssOf(e),
+              ...noteOf(e),
               sets: e.sets.map((s) => ({
                 t: s.t,
                 kg: num(s.kg) || 0,

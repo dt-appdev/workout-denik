@@ -159,7 +159,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
 
 Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uvedené sekce `js/app.js`.
 
-- Kopírování cviků (šablona ↔ trénink) přenáší supersérii přes `ssOf(e)`, série do šablony vždy přes `tplSet`.
+- Kopírování cviků (šablona ↔ trénink) přenáší supersérii přes `ssOf(e)`, poznámku ke cviku přes `noteOf(e)` (F2-10),
+  série do šablony vždy přes `tplSet`.
 - Zápis šablony vždy přes `Object.assign` s původní šablonou. Každé místo, které vytváří šablonu, hlídá volný
   název (`tplClash`, `tplFreeName`); každé místo, které vytváří nebo přejmenovává cvik, hlídá název (`exClash`).
 - Předvyplnění sérií v rozdělaném tréninku vždy přes `draftHints(d, e)`, ne rovnou `exHints`. Změna hodnoty série
