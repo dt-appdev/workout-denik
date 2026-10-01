@@ -1012,6 +1012,26 @@ select.inp {
   all: unset;
   cursor: pointer;
 }
+/* Minule jako text pod názvem cviku (F1-19): nejvýš 2 řádky, klepnutím se rozbalí */
+.exc-prev {
+  all: unset;
+  box-sizing: border-box;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0 14px 8px;
+  width: calc(100% - 28px);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.exc-prev.open {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
 /* návrh progrese pod názvem cviku (F4-01), klepnutím se skryje */
 .exc-prog {
   display: flex;

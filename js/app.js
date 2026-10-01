@@ -1638,7 +1638,7 @@
      Série se párují podle druhu: zahřívací zvlášť, ostatní (pracovní, drop set, do selhání) spolu, v pořadí.
      Předvyplnění je šedé (placeholder), klepnutím na ✓ se převezme. Zdroj: odpovídající série z minula,
      jinak s.ph (hodnoty ze šablony u nikdy necvičeného cviku). Když ani jedno není, ukáže se „–“
-     ve sloupci Minule i v políčkách.
+     v políčkách (sloupec Minule je od F1-19 schovaný, viz prevLine).
      Předvyplnění ze série nad (F1-13, jen v rozdělaném tréninku, v draftHints): série bez minula, šablony
      i návrhu progrese dostane hodnoty nejbližší série nad ní ve stejném cviku, která má zapsané hodnoty
      (odškrtnutá i neodškrtnutá; aboveHint, setVals). Zahřívací bere jen ze zahřívací, ostatní (pracovní,
@@ -5286,6 +5286,43 @@
     h += "</div>";
     return h;
   }
+  /* ---------- MINULE JAKO TEXT (F1-19) ----------
+     Sloupec Minule v tabulce cviku je schovaný konstantou PREV_COL (false); kód sloupce zůstal a vrátí
+     se přepsáním na true. Místo něj je nad tabulkou řádek „Minule: Fitko · 24. 9. · 80×8 · 75×9 (RIR 1)“
+     (prevLine, klepnutí ho rozbalí, jinak nejvýš 2 řádky). Zdroj je stejný jako dřív ve sloupci:
+     draftLast (cvik vázaný na fitko jen v tomto fitku, při úpravě uloženého tréninku jen tréninky před ním).
+     Jen pracovní série (drop set i do selhání), zahřívací jen když jiné nejsou. RIR/RPE za sérií jen při
+     zapnuté volbě Náročnost série (effCol). Název fitka jen když jsou fitka aspoň dvě. Datum s rokem, když
+     je záznam starší než rok. Vázaný cvik bez záznamu v tomto fitku, ale s záznamem jinde: „v tomto fitku
+     ještě ne“. Úplně nový cvik: žádný řádek. V šabloně řádek není. Předvyplnění (exHints) se nemění. */
+  const PREV_COL = false;
+  function prevLine(d, e, last) {
+    const parts = [];
+    if (last) {
+      const kind = kindOf(e.exId);
+      const work = last.e.sets.filter((s) => isWork(s.t));
+      const shown = work.length ? work : last.e.sets;
+      const withEff = effCol(d);
+      const sets = shown.map((s) => {
+        const eff = withEff ? effTxt({ rpe: effOf(s) }) : "";
+        return setStr(kind, s) + (eff ? ` (${eff})` : "");
+      });
+      const old = last.w.start < Date.now() - 365 * 864e5;
+      if (S.cfg.gyms.length > 1) {
+        parts.push(esc(gymName(last.w.gymId)));
+      }
+      parts.push(esc(old ? fmtDate(last.w.start) : fmtDateS(last.w.start)));
+      parts.push(`<span class="num">${esc(sets.join(" · ") || "–")}</span>`);
+    } else if (S.exLib[e.exId] && S.exLib[e.exId].gymDep) {
+      if (!lastSession(e.exId, d.gymId, d.id, draftBefore(d), true)) return "";
+      parts.push("v tomto fitku ještě ne");
+    } else {
+      return "";
+    }
+    return `<button class="exc-prev" data-act="prevMore" aria-expanded="false">
+      Minule: ${parts.join(" · ")}
+    </button>`;
+  }
   /* ---------- karta cviku (F3-22) ----------
      V hlavičce žádné textové štítky. Stav cviku = ikona za názvem v barvě názvu
      (nameWithIcons): vázáno na fitko gdIcon(tip) (klepnutí gdTip = hláška GD_TIP), nový rekord medaile
@@ -5329,9 +5366,14 @@
         ${IC.more}
       </button>
       </div>`;
-    // minulé hodnoty jsou ve sloupci Minule (samostatný řádek „Minule (datum): …“ nad tabulkou už není)
+    // pod názvem: poznámka, Minule (F1-19), návrh progrese (F4-01), stagnace (F4-06)
+    if (e.note || e.showNote) {
+      h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
+          placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
+    }
     if (mode !== "template") {
-      h += progLine(d, e, i); // návrh progrese (F4-01)
+      h += prevLine(d, e, last);
+      h += progLine(d, e, i);
     }
     // stagnace (F4-06): jen v probíhajícím tréninku, klepnutí otevře Statistiky cviku
     const stag = mode === "active" ? stagInfo(e.exId, d.gymId) : null;
@@ -5340,10 +5382,6 @@
         <span class="stag-ico" aria-hidden="true">${IC.stag}</span>
         <span>${esc(stagCount(stag.n))} ${esc(stagSince(stag))}</span>
       </button>`;
-    }
-    if (e.note || e.showNote) {
-      h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
-          placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
     }
     // rozsah opakování (F4-01) za nadpisem sloupce Opak. (F3-22), bez místa se zalomí pod něj
     const repsRange = range
@@ -5354,7 +5392,7 @@
       <thead>
         <tr>
           <th class="c-type">Série</th>
-          ${mode !== "template" ? '<th class="c-prev">Minule</th>' : ""}
+          ${mode !== "template" && PREV_COL ? '<th class="c-prev">Minule</th>' : ""}
           ${flds.map((f) => `<th class="c-in">${thLabel(f)}</th>`).join("")}
           ${eff ? `<th class="c-eff">${EFF_NAME[effMode()]}</th>` : ""}
           ${mode === "active" ? '<th class="c-ok" aria-label="Hotovo">' + icon("check") + "</th>" : ""}
@@ -5389,7 +5427,7 @@
         }</span>
           </button>
         </td>`;
-      if (mode !== "template") {
+      if (mode !== "template" && PREV_COL) {
         h += `<td class="c-prev num">${p ? esc(setStr(kind, p)) : "–"}</td>`;
       }
       flds.forEach((f, n) => {
@@ -12110,6 +12148,11 @@
         break;
       case "recTip":
         toast("Nový rekord: " + v);
+        break;
+      // F1-19: řádek Minule se rozbalí / sbalí (bez překreslení)
+      case "prevMore":
+        t.classList.toggle("open");
+        t.setAttribute("aria-expanded", String(t.classList.contains("open")));
         break;
       case "exMenu": {
         const e = d.ex[i];
