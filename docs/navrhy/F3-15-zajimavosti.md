@@ -11,7 +11,7 @@ tréninků, nic nového se neukládá (bez rizika pro data a zálohu).
 
 ## Z čeho se dá počítat (ověřeno v kódu 25. 9. 2026)
 
-- Trénink: začátek a konec (`start`, `end`, ručně upravená délka `endOrig`), fitko, název, šablona.
+- Trénink: začátek a konec (`start`, `end`), fitko, název, šablona.
 - Série: druh (`t`, zahřívací `w`), kg, opakování, čas, km; objem přes `setVol` / `wVol`, délka `wDur`.
 - Čas odškrtnutí série `s.at`: jen u tréninků zapsaných v appce, starší historie z Hevy ho nemá.
 - Tělesná hmotnost z měření (`body/all`), rekordy tréninku `wRecs`, partie a skupiny `MGRP`.
