@@ -185,6 +185,17 @@
     edit: `<svg viewBox="0 0 24 24">
       <path d="M4.5 19.5l1-4L15.8 5.2a2 2 0 012.9 0l.1.1a2 2 0 010 2.9L8.5 18.5zM13.8 7.2l3 3"/>
     </svg>`,
+    // upravit cvik (F3-30): tužka nad řádkem; tužka bez řádku (edit) = ručně upravená hodnota
+    exEdit: `<svg viewBox="0 0 24 24">
+      <path
+          d="M5 15.5l.8-3.3L15.2 2.8a1.9 1.9 0 012.7 0l.3.3a1.9 1.9 0 010 2.7L8.8 15.2zM13 5l2.9 2.9
+            M4 20.5h16"/>
+    </svg>`,
+    // duplikovat cvik (F3-30): dva listy přes sebe
+    exCopy: `<svg viewBox="0 0 24 24">
+      <path d="M6 8h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8a2 2 0 012-2z"/>
+      <path d="M9 8V5.5A1.5 1.5 0 0110.5 4h8A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H15"/>
+    </svg>`,
     // zpět na aktuální měsíc (kalendář)
     today: '<svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9"/></svg>',
     // fotka nastavená jako první
@@ -8068,7 +8079,8 @@
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
         <div class="row wrap-r" style="margin-top:10px;gap:8px">
-          <button class="btn sm" data-act="editExDetail" data-v="${esc(id)}">Upravit cvik</button>
+          ${icoBtn("editExDetail", "exEdit", "Upravit cvik", id)}
+          ${icoBtn("dupEx", "exCopy", "Duplikovat cvik", id)}
         </div>
       </div>`;
       h +=
@@ -10157,7 +10169,7 @@
     );
     galRestore(document.getElementById("sheetRoot"));
   }
-  /* ---------- NOVÝ A UPRAVIT CVIK (F3-14) ----------
+  /* ---------- NOVÝ A UPRAVIT CVIK (F3-14, F3-30) ----------
      Formulář je samostatná stránka (route "exed") se šipkou ←, ne panel. Otevírá se jen přes exEdOpen,
      který si uloží místo návratu (navFrame, i s otevřeným panelem: výběr cviků, info o cviku, výsledky
      online hledání). Zpět i Uložit vrací přes exEdLeave. Hodnoty políček se průběžně ukládají do exEd.f
@@ -10165,37 +10177,48 @@
      exEdOpen(id, from, fx): from = list / detail / info / picker, fx = záznam z online hledání (předvyplnění
      se počítá jako změna). S neuloženými změnami se Zpět i záložka zeptají (akce exDiscard). exEdLeave(re):
      re = jiný panel než uložený (např. výběr cviků po uložení z výsledků hledání). Route exed se neukládá do
-     Local route (po restartu se neobnoví, F3-16). */
+     Local route (po restartu se neobnoví, F3-16).
+     Duplikovat cvik (F3-30): ikona na stránce cviku (akce dupEx) otevře exEdOpen(null, "detail", null, id)
+     = formulář Nový cvik s vlastnostmi originálu (názvy, partie, vybavení, druh, vázáno na fitko, popis,
+     odkaz, návrh progrese). Názvy dostanou „ (kopie)“, při shodě „ (kopie 2)“… (exCopyNames). Kopíruje se
+     jen to, co je ve formuláři; historie, rekordy, fotky a poznámky zůstávají u originálu, skrytí se
+     nepřenáší (kopie je vždy viditelná). Uloží se až po Uložit jako nový vlastní cvik, pak se otevře stránka
+     kopie a Zpět z ní vede tam, odkud se přišlo k originálu. Rozepsaná kopie se počítá jako změna
+     (exEdChanged). */
   // exEd = {id, from, fx, fxPh, f: hodnoty formuláře, orig: f a fxPh při otevření}
   let exEd = null;
   // from: odkud se přišlo – list (záložka Cviky), detail (stránka cviku), info (info o cviku ve výběru),
   // picker (výběr cviků); fx = záznam z free-exercise-db (F0-03), předvyplní nový cvik
-  function exEdOpen(id, from, fx) {
+  // copyOf = id cviku, ze kterého se dělá kopie (F3-30)
+  function exEdOpen(id, from, fx, copyOf) {
     const prev = exEd; // formulář pod stránkou cviku otevřenou z formuláře (F3-17), vrátí se po odchodu
     const e = id
       ? S.exLib[id]
-      : fx
-        ? {
-            name: fx.n,
-            cz: fx.cz,
-            equip: fx.e,
-            kind: fx.k,
-            gymDep: !!GYMDEP_EQUIP[fx.e],
-            pri: fx.p,
-            sec: fx.s,
-            desc: fx.d.join("\n"),
-          }
-        : {
-            name: (from === "list" ? S.exlQ : pick.q) || "",
-            equip: "machine",
-            gymDep: true,
-            pri: [],
-            sec: [],
-          };
+      : copyOf
+        ? Object.assign({}, S.exLib[copyOf], exCopyNames(S.exLib[copyOf]))
+        : fx
+          ? {
+              name: fx.n,
+              cz: fx.cz,
+              equip: fx.e,
+              kind: fx.k,
+              gymDep: !!GYMDEP_EQUIP[fx.e],
+              pri: fx.p,
+              sec: fx.s,
+              desc: fx.d.join("\n"),
+            }
+          : {
+              name: (from === "list" ? S.exlQ : pick.q) || "",
+              equip: "machine",
+              gymDep: true,
+              pri: [],
+              sec: [],
+            };
     exEd = {
       id,
       from: from || "picker",
       fx: fx || null,
+      copyOf: copyOf || null,
       fxPh: [], // vybrané fotky z online databáze (F2-05), stáhnou se po uložení cviku
       f: {
         name: e.name || "",
@@ -10229,10 +10252,21 @@
     go("exed");
   }
   const exEdSnap = () => JSON.stringify([exEd.f, exEd.fxPh]);
-  // formulář má neuložené změny; nový cvik předvyplněný z online databáze je rozepsaný vždy (vybraný záznam,
-  // fotky a předvyplněné hodnoty by se ztratily)
+  // názvy kopie cviku (F3-30): „Název (kopie)“, při shodě „Název (kopie 2)“…; český název stejný dovětek
+  function exCopyNames(orig) {
+    const tag = (n) => " (kopie" + (n > 1 ? " " + n : "") + ")";
+    let n = 1;
+    while (exClash("name", orig.name + tag(n), null)) {
+      n++;
+    }
+    return { name: orig.name + tag(n), cz: orig.cz ? orig.cz + tag(n) : "" };
+  }
+  // formulář má neuložené změny; nový cvik z online databáze nebo kopie je rozepsaný vždy
+  // (vybraný záznam, fotky a předvyplněné hodnoty by se ztratily)
   const exEdChanged = () =>
-    !!exEd && S.route === "exed" && (exEdSnap() !== exEd.orig || (!!exEd.fx && !exEd.id));
+    !!exEd &&
+    S.route === "exed" &&
+    (exEdSnap() !== exEd.orig || ((!!exEd.fx || !!exEd.copyOf) && !exEd.id));
   // opustí formulář tam, odkud se přišlo; re = jiné znovu otevření panelu než uložené (např. výběr cviků
   // místo výsledků hledání), null = žádný panel
   function exEdLeave(re) {
@@ -10417,13 +10451,13 @@
       have = fx && fedbHave(fx);
     const names = exNameMsgs(); // F3-17: shoda názvu s jiným cvikem
     let h = topbar(
-      id ? "Upravit cvik" : "Nový cvik",
-      id ? e.name || "" : "",
+      id ? "Upravit cvik" : exEd.copyOf ? "Kopie cviku" : "Nový cvik",
+      id ? e.name || "" : exEd.copyOf ? "podle: " + exOf(exEd.copyOf).name : "",
       `<button class="iconbtn" data-act="exEdBack" aria-label="Zpět">${IC.back}</button>`,
     );
     h += `<div class="card stack ex-form">
       ${
-        id
+        id || exEd.copyOf
           ? ""
           : fx
             ? `<div class="banner" style="margin-top:0">
@@ -12522,6 +12556,17 @@
             });
         }
         toast("Cvik uložen");
+        // F3-30: kopie cviku: rovnou její stránka, Zpět z ní vede tam, odkud se přišlo k originálu
+        if (exEd.copyOf && !v) {
+          const f = S.nav.pop();
+          exEd = (f && f.exEd) || null;
+          S.exDetail = id;
+          S.exPart = "info";
+          S.detailGym = "all";
+          S.exHistLimit = 25;
+          go("exd");
+          break;
+        }
         // F3-14: zpět tam, odkud se přišlo (stránka cviku, info o cviku, záložka Cviky, výběr cviků)
         if (exEd.from === "list" && !v) {
           // nový cvik ze záložky Cviky: rovnou jeho stránka, Zpět z ní vede na seznam cviků
@@ -12711,6 +12756,9 @@
       }
       case "editExDetail":
         exEdOpen(v, "detail");
+        break;
+      case "dupEx":
+        exEdOpen(null, "detail", null, v);
         break;
       case "editExInfo":
         exEdOpen(v, "info");
