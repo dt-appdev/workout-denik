@@ -1647,6 +1647,14 @@
      Změna hodnoty psaním nebo krokovačem hned obnoví šedé hodnoty sérií pod ní (hintsRefresh), aby ✓
      nepřevzal něco jiného, než je vidět. Supersérie nic nemění (jen v rámci jednoho cviku).
      Úprava uloženého tréninku a šablona předvyplnění ze série nad nemají.
+     Předvyplnění jen ze šablony nebo z tréninku (F2-11): série s s.phTpl bere šedé hodnoty jen ze s.ph (hodnoty
+     zdroje, exEntryFor s fromOnly), minule do nich nepřidá nic, ani když zdroj hodnotu nemá (vše nebo nic;
+     prázdné políčko, nebo „–“, když zdroj nemá nic). Platí pro trénink ze šablony, která má t.hints === "tpl"
+     (přepínač „Předvyplnění hodnot: Z minula / Ze šablony“ v úpravě šablony, tplHintsPick, akce tplHints,
+     d.hints; chybějící pole = „z minula“, výchozí u nových i starých šablon), a vždy pro Cvičit znovu
+     (hodnoty zvoleného tréninku). Při „z minula“ platí dosavadní pravidlo (s.ph jen u nikdy necvičeného cviku).
+     Sloupec/řádek Minule, návrh progrese (F4-01), kontrola velkého skoku (F1-10) a zahřívací 60 % (F1-08)
+     dál berou minule z historie. Série přidaná v tréninku navíc nemá s.phTpl, bere minule jako dřív.
      „Minule“ = lastSession: cvik vázaný na fitko jen v tomtéž fitku, při úpravě uloženého tréninku jen
      tréninky před ním (draftLast). exHints vrátí pro každou sérii minulou sérii (sloupec Minule) a
      předvyplnění. Nový cvik v tréninku má prázdné hodnoty; s.ph = hodnoty ze šablony jen u nikdy necvičeného
@@ -1666,7 +1674,8 @@
     return e.sets.map((s) => {
       const g = setGrp(s.t),
         p = prev[g][cnt[g]++] || null;
-      return { p, h: p || s.ph || null };
+      // série „jen ze šablony“ (s.phTpl, F2-11) minule do předvyplnění nebere, ani když šablona hodnotu nemá
+      return { p, h: s.phTpl ? s.ph || null : p || s.ph || null };
     });
   }
   // exHints pro cvik e rozdělaného tréninku d, u pracovních sérií s použitým návrhem progrese (F4-01),
@@ -4166,7 +4175,8 @@
      „Ostatní šablony“ (jako „Zobrazit další“ v Historii; tplOther, po otevření appky a změně fitka
      znovu skryté). Smazané fitko se ze šablon odebere (delGym), fitka, která už neexistují, se navíc
      nikdy nepočítají (tplGyms).
-     Šablona = {name, order, gyms, items}; gyms doplní tplNorm (při načtení i v normBackup), dotaz tplHere(t,
+     Šablona = {name, order, gyms, items, hints}; hints = "tpl" (předvyplnění jen ze šablony, F2-11, popis v sekci
+     MINULE A PŘEDVYPLNĚNÍ) nebo "last" / chybí (z minula); gyms doplní tplNorm (při načtení i v normBackup), dotaz tplHere(t,
      gymId). Výběr fitek v editoru tplGymPick (akce tplGym, d.gyms). Zápis šablony vždy přes Object.assign s
      původní šablonou (zachová pole, která editor nezná). */
   let tplOther = false; // ukázané ostatní šablony (klepnutí na tlačítko „Ostatní šablony“)
@@ -4346,6 +4356,27 @@
     h += "</div></section>";
     return h;
   }
+  // přepínač předvyplnění sérií v úpravě šablony (F2-11): z minula / ze šablony
+  function tplHintsPick(d) {
+    const opts = [
+      ["last", "Z minula"],
+      ["tpl", "Ze šablony"],
+    ];
+    return `<div class="stack" style="gap:6px">
+        <div class="row">
+          <div class="small" style="font-weight:600">Předvyplnění hodnot</div>
+          ${helpBtn("tplHints")}
+        </div>
+        <div class="seg seg-wide">
+          ${opts
+            .map(
+              ([k, l]) =>
+                `<button data-act="tplHints" data-v="${k}" aria-pressed="${d.hints === k}">${l}</button>`,
+            )
+            .join("")}
+        </div>
+      </div>`;
+  }
   // výběr fitek v úpravě šablony (víc najednou, žádné = všechna fitka)
   function tplGymPick(d) {
     const gyms = d.gyms || [];
@@ -4465,16 +4496,19 @@
     };
   }
   // nový cvik v tréninku: série podle šablony, jinak podle minula v tomto fitku;
-  // hodnoty zůstávají prázdné (šedé předvyplnění, F1-01)
-  function exEntryFor(exId, gymId, fromTplSets) {
+  // hodnoty zůstávají prázdné (šedé předvyplnění, F1-01). fromTplSets = série šablony nebo uloženého tréninku,
+  // fromOnly = předvyplnit jen z nich, vše nebo nic (F2-11); jinak jen u cviku, který nikdy necvičil
+  function exEntryFor(exId, gymId, fromTplSets, fromOnly) {
     const last = lastSession(exId, gymId);
     let sets;
     if (fromTplSets && fromTplSets.length) {
-      // hodnoty ze šablony jen u cviku, který nikdy necvičil
       const never = !lastSession(exId, gymId, null, 0, true);
       sets = fromTplSets.map((x) => {
         const n = newSetFrom({ t: x.t || "n" });
-        if (never) {
+        if (fromOnly) {
+          n.phTpl = true;
+        }
+        if (never || fromOnly) {
           const ph = {};
           for (const f of HINT_F) {
             if (+x[f] > 0) {
@@ -4508,7 +4542,8 @@
     };
     if (t) {
       for (const it of t.items || []) {
-        d.ex.push(Object.assign(exEntryFor(it.exId, gymId, it.sets), ssOf(it), noteOf(it)));
+        const fromOnly = t.hints === "tpl"; // F2-11: předvyplnění jen ze šablony
+        d.ex.push(Object.assign(exEntryFor(it.exId, gymId, it.sets, fromOnly), ssOf(it), noteOf(it)));
       }
       ssNorm(d.ex);
     }
@@ -4706,7 +4741,8 @@
       ex: [],
     };
     for (const e of againEx(w)) {
-      d.ex.push(Object.assign(exEntryFor(e.exId, gymId, e.sets), ssOf(e), noteOf(e)));
+      // F2-11: hodnoty jen ze zvoleného tréninku
+      d.ex.push(Object.assign(exEntryFor(e.exId, gymId, e.sets, true), ssOf(e), noteOf(e)));
     }
     ssNorm(d.ex); // cvik, který už v appce není, mohl supersérii rozdělit
     again = null;
@@ -5200,6 +5236,9 @@
     if (mode === "template" && S.cfg.gyms.length > 1) {
       h += tplGymPick(d);
     }
+    if (mode === "template") {
+      h += tplHintsPick(d);
+    }
     if (mode !== "template") {
       h +=
         `<div class="row wrap-r">
@@ -5385,7 +5424,13 @@
       </thead>
       <tbody>`;
     let wn = 0;
-    const hints = mode === "active" ? draftHints(d, e) : exHints(e, last);
+    // šablona „Ze šablony“ (F2-11) v editoru šedé minule neukazuje, v tréninku by se nepoužilo
+    const noHints = mode === "template" && d.hints === "tpl";
+    const hints = noHints
+      ? e.sets.map(() => ({ p: null, h: null }))
+      : mode === "active"
+        ? draftHints(d, e)
+        : exHints(e, last);
     const useStepper = kkOn(d);
     const fval = (s, f) =>
       f === "sec" ? s.sec || "" : f === "km" ? s.km || "" : f === "reps" ? s.reps || "" : s.kg || "";
@@ -9361,6 +9406,21 @@
      takže můžou záviset na nastavení. Parametr za dvojtečkou v klíči (např. "exRec:<id cviku>") dostane
      funkce items. Nová volba = nová položka v panelu své sekce, ne text pod přepínačem. */
   const HELP = {
+    tplHints: {
+      title: "Předvyplnění hodnot šablony",
+      items: () => [
+        [
+          "Z minula",
+          "Šedé hodnoty sérií jsou z minulého tréninku cviku (u cviku vázaného na fitko z tohoto fitka). " +
+            "Hodnoty ze šablony se použijí jen u cviku, který jsi ještě nikdy necvičil.",
+        ],
+        [
+          "Ze šablony",
+          "Šedé hodnoty sérií jsou vždy ty, které máš v šabloně, i když cvik znáš z dřívějška. Hodnota, " +
+            "kterou šablona nemá, zůstane prázdná. Minulý trénink ukazuje jen řádek Minule nad sériemi.",
+        ],
+      ],
+    },
     input: {
       title: "Zadávání čísel v tréninku",
       items: () => [
@@ -11975,6 +12035,7 @@
           // jedinečný název (F2-08): „Nová šablona“, když už je, „Nová šablona 2“…
           title: tplFreeName("Nová šablona", gyms, null),
           gyms,
+          hints: "last",
           ex: [],
         };
         goEdit();
@@ -11988,6 +12049,7 @@
           title: t.name,
           gymId: curGym(),
           gyms: tplGyms(t),
+          hints: t.hints === "tpl" ? "tpl" : "last",
           ex: (t.items || []).map((it) => ({
             k: uid("e"),
             exId: it.exId,
@@ -12859,6 +12921,7 @@
           // pořadí 0 (první šablona) se při uložení nesmí změnit
           order: items[id] ? items[id].order || 0 : tplNextOrder(items),
           gyms: tplGyms({ gyms: d.gyms }),
+          hints: d.hints === "tpl" ? "tpl" : "last",
           items: ssNorm(
             d.ex.map((e) => ({
               exId: e.exId,
@@ -12885,6 +12948,10 @@
         scheduleRender();
         break;
       }
+      case "tplHints":
+        d.hints = v === "tpl" ? "tpl" : "last";
+        scheduleRender();
+        break;
       case "tplOrder":
         sheetTplOrder();
         break;

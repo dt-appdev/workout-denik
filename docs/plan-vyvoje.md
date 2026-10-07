@@ -65,7 +65,7 @@ flowchart LR
 
 - ~~**F2-10** Poznámka ke cviku v šabloně a z historie~~ – hotovo 30. 9. 2026.
 - ~~**F1-19** Minule jako text u cviku místo sloupce~~ – hotovo 30. 9. 2026.
-- **F2-11** Předvyplnění ze šablony a z historie místo minula · *P2 · B · střední* – po F1-19.
+- ~~**F2-11** Předvyplnění ze šablony a z historie místo minula~~ – hotovo 7. 10. 2026.
 - **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik · *P3 · A · velmi nízká*.
 - **F2-12** Skrýt nepoužívanou šablonu · *P2 · B · nízká* (předstupeň F2-06).
 - **F3-30** Nový cvik kopií jiného cviku · *P2 · B · nízká–střední*.
@@ -182,7 +182,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F2-09** Úvodní obrazovka během tréninku
 - [x] **F2-07** Pořadí přetažením prstu
 - [x] **F2-10** Poznámka ke cviku v šabloně a z historie
-- [ ] **F2-11** Předvyplnění ze šablony a z historie místo z minula (přání 30. 9. 2026, Etapa 0; P2 · B · střední; po F1-19): trénink ze šablony předvyplní váhy, opakování, čas i km ze šablony, trénink spuštěný z historie (Cvičit znovu) ze zvoleného tréninku; co jsi cvičil naposled, ukazuje jen text Minule (F1-19). Ověřeno v kódu: `exEntryFor` ukládá hodnoty ze šablony do `s.ph` jen u cviku, který v tomto fitku nikdy necvičil (`never`), jinak se předvyplní minulé série (`exHints`: `p || s.ph`), takže šablonové váhy se skoro nikdy neuplatní; Cvičit znovu jde stejnou cestou (`startAgain` → `exEntryFor(e.exId, gymId, e.sets)`). Změna: `s.ph` se plní vždy, když zdroj (šablona, uložený trénink) má hodnotu, a v `exHints` má `s.ph` přednost před minulem; návrh progrese (F4-01, `progUse`) a předvyplnění ze série nad (F1-13) zůstanou jen pro série bez `s.ph`. Pozor na důsledky, popsat před implementací: (1) kontrola velkého skoku (F1-10) a zahřívací 60 % (F1-08) dál porovnávají s minulem, ne se šablonou; (2) cvik vázaný na fitko: šablona bez ohledu na fitko předvyplní stejné váhy, i když je stroj v jiném fitku jiný (F1-13 ukazuje při stejném případě hodnotu z jiného fitka); (3) kdo dnes spoléhá na minule jako startovní váhu pro progresi, musí teď hodnotu ze šablony ručně upravit, dokud šablona neobsahuje aktuální váhy (přes Aktualizovat šablonu). Sloupec Minule (skrytý v F1-19) tuto změnu neovlivní.
+- [x] **F2-11** Předvyplnění ze šablony a z historie místo z minula
 - [ ] **F2-12** Skrýt nepoužívanou šablonu (přání 30. 9. 2026, Etapa 0; P2 · B · nízká): na stránce Trénink jde šablonu skrýt (menu šablony, ikona), skryté se nezobrazují mezi šablonami (ani v „Ostatní šablony“, `tplOther`), a je tam ovládání „Skryté šablony (N)“, které je ukáže a jde je zase zobrazit. Návrh dat: nepovinné pole šablony `hidden: true`, zápis vždy přes `Object.assign` s původní šablonou (pravidlo v `CLAUDE.md`), zpětně kompatibilní se zálohou (`normBackup`). Skrytá šablona zůstane v záloze, u tréninků z ní (`tplId`) se nic nemění, v úvodu ji nevybere F2-04 (šablona na řadě) ani se s ní nepočítá. Kontrola názvů (`tplClash`, F2-08): skrytá šablona pořád blokuje stejný název ve stejném fitku (jinak by po zobrazení vznikl duplikát), nebo ji z kontroly vynechat – rozhodnout. Později ji nahradí nebo doplní archivace (F2-06, dnes jen fitka a tréninky; při jejím zpracování skryté šablony sloučit s archivem, ne zavádět druhý mechanismus).
 
 ### Fáze 3 – Statistiky a vzhled
@@ -290,7 +290,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 
 | Úloha | Otázka | Návrh |
 |---|---|---|
-| F2-11 | Když šablona i minulý trénink mají jiné hodnoty, co má přednost u cviku, který už jsi cvičil? Předvyplnit hodnoty ze šablony i u cviku vázaného na fitko v jiném fitku? Mají šablony získat tlačítko „Vzít hodnoty z minula“? | Přednost šablona (u Cvičit znovu uložený trénink), minule jen v textu (F1-19); u vázaného cviku stejně, protože šablona je záměr uživatele. Šablona bez hodnot (0) předvyplnění nepřebíjí: chybějící hodnota se doplní z minula jako dnes. Tlačítko zatím ne. |
 | F2-12 | Kde je ovládání skrytí a návratu? Blokuje skrytá šablona stejný název? | Ikona v menu šablony (Skrýt), pod seznamem odkaz „Skryté šablony (N)“ (jen když nějaké jsou), skryté v seznamu s ikonou Zobrazit. Název blokuje dál (jinak duplikát po zobrazení). Skrytí se týká všech fitek šablony. |
 | F3-30 | Kde je Duplikovat a co se z originálu zkopíruje? Duplikovat i výchozí cviky a cviky z online databáze? | Akce Duplikovat v menu cviku i na stránce cviku, otevře formulář Nový cvik s vyplněnými vlastnostmi a názvem „Název (kopie)“ (u shody `exClash` s dalším číslem), uloží se až po Uložit. Nekopíruje se historie, rekordy, fotky ani poznámky. Funguje pro všechny cviky včetně výchozích. Nový cvik se nezaměňuje s originálem ve statistikách (je to jiný cvik). |
 | F3-31 | Jak vypadá informace o vázání na fitko na stránce cviku? | Ikona `gdIcon` za názvem (už tam je) a jedna informační řádka v bloku údajů cviku s odkazem Upravit; vysvětlení do nápovědy. Bez přepínače. |
