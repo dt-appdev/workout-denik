@@ -4362,20 +4362,22 @@
       ["last", "Z minula"],
       ["tpl", "Ze šablony"],
     ];
-    return `<div class="stack" style="gap:6px">
-        <div class="row">
-          <div class="small" style="font-weight:600">Předvyplnění hodnot</div>
+    return `<section class="sec">
+        <div class="sec-h">
+          <h2>Předvyplnění hodnot</h2>
           ${helpBtn("tplHints")}
         </div>
-        <div class="seg seg-wide">
-          ${opts
-            .map(
-              ([k, l]) =>
-                `<button data-act="tplHints" data-v="${k}" aria-pressed="${d.hints === k}">${l}</button>`,
-            )
-            .join("")}
+        <div class="card stack">
+          <div class="seg seg-wide">
+            ${opts
+              .map(
+                ([k, l]) =>
+                  `<button data-act="tplHints" data-v="${k}" aria-pressed="${d.hints === k}">${l}</button>`,
+              )
+              .join("")}
+          </div>
         </div>
-      </div>`;
+      </section>`;
   }
   // výběr fitek v úpravě šablony (víc najednou, žádné = všechna fitka)
   function tplGymPick(d) {
@@ -5236,9 +5238,6 @@
     if (mode === "template" && S.cfg.gyms.length > 1) {
       h += tplGymPick(d);
     }
-    if (mode === "template") {
-      h += tplHintsPick(d);
-    }
     if (mode !== "template") {
       h +=
         `<div class="row wrap-r">
@@ -5283,6 +5282,9 @@
       </div>`;
     }
     h += "</div>";
+    if (mode === "template") {
+      h += tplHintsPick(d);
+    }
     h += '<div class="stack" style="margin-top:12px">';
     h += ssWrap(
       d.ex,
