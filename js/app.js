@@ -2541,9 +2541,9 @@
      Pravidla textu (coachText): čas telefonu, cviky v pořadí provedení (první odškrtnutá série, s.at), název
      „cz (name) [exId]“, čísla s tečkou, série „60 kg×10“ + RIR/RPE jako v appce (effTxt: „RIR 2“), zahřívací
      za „W “ oddělené „ | “, F = „70 kg×8 F (odhad RIR 2)“, drop set „ + D …“ u předchozí série, BW×10 /
-     BW+5 kg×10 / A-10 kg×10, časové „60 s“, „20 kg×60 s“. Plán ze šablony stejným zápisem (stejné pracovní série
-     jako „3× 60 kg×10“), Vynecháno a Navíc jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se
-     nevypisují. Text je vždy česky. */
+     BW+5 kg×10 / A-10 kg×10, časové „60 s“, „20 kg×60 s“. Plán ze šablony u cviku se nevypisuje (přání uživatele
+     7. 10. 2026), Vynecháno a Navíc jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se nevypisují.
+     Text je vždy česky. */
   const coachOn = () => S.cfg.coach === true;
   // posuvníky: popisek, rozsah, výchozí poloha nevyplněného posuvníku, text hodnoty
   const COACH_SL = {
@@ -2806,8 +2806,8 @@
     }
     return x;
   }
-  // série na jednom řádku: „W 40 kg×10 | 60 kg×10 RIR 3, 60 kg×8 F + D 50 kg×6“; compact = plán („3× 60 kg×10“)
-  function coachSets(kind, sets, compact) {
+  // série na jednom řádku: „W 40 kg×10 | 60 kg×10 RIR 3, 60 kg×8 F + D 50 kg×6“
+  function coachSets(kind, sets) {
     const warm = [];
     const work = [];
     for (const s of sets) {
@@ -2820,16 +2820,12 @@
         work.push((s.t === "d" ? "D " : "") + x);
       }
     }
-    let workTxt = work.join(", ");
-    if (compact && work.length > 1 && work.every((x) => x === work[0])) {
-      workTxt = work.length + "× " + work[0];
-    }
     const parts = [];
     if (warm.length) {
       parts.push("W " + warm.join(", "));
     }
     if (work.length) {
-      parts.push(workTxt);
+      parts.push(work.join(", "));
     }
     return parts.join(" | ");
   }
@@ -2898,28 +2894,17 @@
     const extra = [];
     list.forEach(({ e }, n) => {
       const kind = kindOf(e.exId);
-      let head = n + 1 + ". " + coachExName(e.exId);
+      const head = n + 1 + ". " + coachExName(e.exId);
       if (tplLeft) {
         const at = tplLeft.findIndex((it) => it.exId === e.exId);
         if (at < 0) {
           extra.push(coachExName(e.exId));
         } else {
-          const ts = tplLeft[at].sets || [];
-          // šablona bez hodnot: jen počet sérií
-          const empty = ts.every((x) => !(+x.kg || +x.reps || +x.sec || +x.km));
-          const plan = empty
-            ? ts.length
-              ? ts.length + " " + plural(ts.length, "série", "série", "sérií")
-              : ""
-            : coachSets(kind, ts, true);
-          if (plan) {
-            head += " · plán " + plan;
-          }
-          tplLeft.splice(at, 1);
+          tplLeft.splice(at, 1); // plán ze šablony se nevypisuje (jen Vynecháno a Navíc)
         }
       }
       L.push(head);
-      L.push("   " + coachSets(kind, e.sets, false));
+      L.push("   " + coachSets(kind, e.sets));
       if (e.note) {
         L.push("   Pozn.: " + e.note.replace(/\s*\n\s*/g, " "));
       }
