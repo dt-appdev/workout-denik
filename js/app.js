@@ -8049,10 +8049,6 @@
         `${esc(exLinkLabel(ex))}${icon("ext")}</a>
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
-        <div class="row" style="align-items:stretch;margin-top:10px">
-          <button class="btn grow" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
-          <button class="btn grow" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
-        </div>
       </div>`;
       h +=
         `<div class="card" style="margin-top:10px">
@@ -8083,6 +8079,11 @@
             : "S tímto cvikem zatím nemáš žádný záznam."
         }
       </p>`;
+      // akce cviku na konci stránky jako u uloženého tréninku (F3-30)
+      h += `<div class="row" style="align-items:stretch;margin-top:12px">
+        <button class="btn grow" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
+        <button class="btn grow" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
+      </div>`;
       return h;
     }
     // statistiky
