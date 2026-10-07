@@ -181,15 +181,9 @@
       <path d="M6.8 10.2h.01M10.3 10.2h.01M13.7 10.2h.01M17.2 10.2h.01M8 14h8"/>
     </svg>`,
     play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>',
-    // ručně upravená hodnota
+    // upravit (cvik, F3-30)
     edit: `<svg viewBox="0 0 24 24">
       <path d="M4.5 19.5l1-4L15.8 5.2a2 2 0 012.9 0l.1.1a2 2 0 010 2.9L8.5 18.5zM13.8 7.2l3 3"/>
-    </svg>`,
-    // upravit cvik (F3-30): tužka nad řádkem; tužka bez řádku (edit) = ručně upravená hodnota
-    exEdit: `<svg viewBox="0 0 24 24">
-      <path
-          d="M5 15.5l.8-3.3L15.2 2.8a1.9 1.9 0 012.7 0l.3.3a1.9 1.9 0 010 2.7L8.8 15.2zM13 5l2.9 2.9
-            M4 20.5h16"/>
     </svg>`,
     // duplikovat cvik (F3-30): dva listy přes sebe
     exCopy: `<svg viewBox="0 0 24 24">
@@ -5019,13 +5013,8 @@
     scheduleRender();
     finishAsk(d, keep, true);
   }
-  function durLabel(w) {
-    const dur = fmtDur((w.end || w.start) - w.start);
-    return w.endOrig
-      ? `<span title="Délka upravena ručně, původně ${fmtDur(w.endOrig - w.start)}">${dur} ` +
-          `<span class="edited">${icon("edit")}upraveno</span></span>`
-      : `<span>${dur}</span>`;
-  }
+  // délka tréninku jako text do řádku s údaji
+  const durLabel = (w) => `<span>${fmtDur((w.end || w.start) - w.start)}</span>`;
   function curDraft() {
     return S.route === "edit" ? S.editDraft : S.active;
   }
@@ -5594,7 +5583,6 @@
       gymId: w.gymId,
       start: w.start,
       end: w.end,
-      endOrig: w.endOrig,
       tplId: w.tplId || null,
       note: w.note || "",
       feel: w.feel, // Pro coache (F4-12)
@@ -6045,15 +6033,7 @@
         ${esc(gymName(w.gymId))}
       </span>
       <span>${fmtDay(w.start)} ${fmtTime(w.start)}</span>
-    </div>
-    ${
-      w.endOrig
-        ? `<div class="xs muted">
-          Délka upravena ručně: původně ${fmtDur(w.endOrig - w.start)} (konec ${fmtTime(w.endOrig)}),
-          uloženo ${fmtDur(w.end - w.start)} (konec ${fmtTime(w.end)}).
-        </div>`
-        : ""
-    }`;
+    </div>`;
     b += sumKpis(w, p) + sumCompare(w, p);
     const R = wRecs(w);
     if (justSaved || R.length) {
@@ -8079,7 +8059,7 @@
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
         <div class="row wrap-r" style="margin-top:10px;gap:8px">
-          ${icoBtn("editExDetail", "exEdit", "Upravit cvik", id)}
+          ${icoBtn("editExDetail", "edit", "Upravit cvik", id)}
           ${icoBtn("dupEx", "exCopy", "Duplikovat cvik", id)}
         </div>
       </div>`;
@@ -12839,9 +12819,6 @@
         if (typeof d.again === "string") {
           w.againOf = d.again;
         }
-        if (Math.abs(end - sug) >= 60000) {
-          w.endOrig = sug;
-        }
         coachApply(w, d); // Pro coache (F4-12)
         const id = uid("w");
         saveWorkout(id, w, null);
@@ -12905,13 +12882,7 @@
           gymId: d.gymId,
           ex,
         });
-        const oldDur = (old.end || old.start) - old.start;
-        if (Math.abs(d.end - d.start - oldDur) >= 60000 && !old.endOrig) {
-          w.endOrig = d.start + oldDur;
-        }
-        if (w.endOrig && Math.abs(w.endOrig - w.start - (w.end - w.start)) < 60000) {
-          delete w.endOrig;
-        }
+        delete w.endOrig; // původní délka se už nepamatuje (starší záznamy ji ještě mohou mít)
         coachApply(w, d); // Pro coache (F4-12)
         saveWorkout(d.id, w, d.mk);
         S.editDraft = null;

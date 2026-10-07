@@ -1754,18 +1754,6 @@ tr.done .okb {
   font-family: var(--display);
   font-weight: 700;
 }
-.edited {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2em;
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  color: var(--drop);
-  background: var(--drop-bg);
-  border-radius: 6px;
-  padding: 1px 6px;
-  white-space: nowrap;
-}
 .lbl.w {
   color: var(--warm);
 }
