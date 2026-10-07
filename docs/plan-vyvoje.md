@@ -69,7 +69,7 @@ flowchart LR
 - **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik · *P3 · A · velmi nízká*.
 - **F2-12** Skrýt nepoužívanou šablonu · *P2 · B · nízká* (předstupeň F2-06).
 - ~~**F3-30** Nový cvik kopií jiného cviku~~ – hotovo 7. 10. 2026.
-- **F3-32** Smazat vlastní cvik · *P3 · B · nízká–střední* (vzniklo u F3-30, ikona koše je v `docs/navrhy/F3-30/`).
+- **F3-32** Smazat vlastní cvik · *P3 · B · nízká–střední* (vzniklo u F3-30).
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -228,7 +228,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
 - [x] **F3-30** Nový cvik kopií jiného cviku
 - [ ] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik (přání 30. 9. 2026, Etapa 0; P3 · A · velmi nízká): zaškrtávátko „vázáno na fitko“ je dnes i na stránce cviku (`vExDetail`, `#gymDepToggle`, akce `toggleGymDep`, zapisuje rovnou přes `putEx`) a ve formuláři Upravit cvik (`#x-gd`, `f.gd`). Změna: přepínač zůstane jen ve formuláři Upravit cvik (a Nový cvik), na stránce cviku se ukáže pouze informace (řádek s ikonou `gdIcon` a stručným „Vázáno na fitko: statistiky, rekordy a předvyplnění se počítají zvlášť pro každé fitko“, a jak to změnit: Upravit). Pravidla `CLAUDE.md`: stav cviku jen ikona za názvem (F3-22), vysvětlivky do panelu nápovědy (`HELP`, F3-21), akce `toggleGymDep` z `switch` odstranit, i ze zkušebních dat, pokud ji používají. Data beze změny (pole `gymDep`).
-- [ ] **F3-32** Smazat vlastní cvik (vzniklo u F3-30, rozhodnuto 7. 10. 2026; P3 · B · nízká–střední): na stránce cviku třetí ikona v řadě Upravit · Duplikovat · Smazat (koš, červený, odsouhlasená ikona v `docs/navrhy/F3-30/`, do `IC` se přidá až s touto úlohou). Smazat jde jen vlastní cvik (`custom`, tedy i kopie z F3-30 a cvik uložený z online databáze), který není v žádném uloženém tréninku, rozdělaném tréninku ani šabloně; fotky cviku se smažou s ním (`photoDel`), potvrzovací panel `confirmSheet`. U použitého cviku tlačítko řekne, v kolika trénincích je, a nabídne stávající Skrýt z výběru (`archEx`). U výchozího cviku z `EX_DB` se Smazat nezobrazí (`exMerge` by ho vrátil), zůstává Skrýt. Ověřit i bod obnovy a obnovu ze zálohy (záloha cvik s fotkami obsahuje). Otázky v Otevřených otázkách.
+- [ ] **F3-32** Smazat vlastní cvik (vzniklo u F3-30, rozhodnuto 7. 10. 2026; P3 · B · nízká–střední): na stránce cviku tlačítko „Smazat cvik“ přes celou šířku pod řadou Upravit · Duplikovat, `btn ghost danger block` jako „Smazat trénink“ a „Smazat šablonu“ (bez ikony, rozhodnuto 7. 10. 2026 při F3-30). Smazat jde jen vlastní cvik (`custom`, tedy i kopie z F3-30 a cvik uložený z online databáze), který není v žádném uloženém tréninku, rozdělaném tréninku ani šabloně; fotky cviku se smažou s ním (`photoDel`), potvrzovací panel `confirmSheet`. U použitého cviku tlačítko řekne, v kolika trénincích je, a nabídne stávající Skrýt z výběru (`archEx`). U výchozího cviku z `EX_DB` se Smazat nezobrazí (`exMerge` by ho vrátil), zůstává Skrýt. Ověřit i bod obnovy a obnovu ze zálohy (záloha cvik s fotkami obsahuje). Otázky v Otevřených otázkách.
 
 
 ### Fáze 4 – Chytré funkce

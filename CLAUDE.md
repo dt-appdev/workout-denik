@@ -126,8 +126,7 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   popis, v)`. Text zůstává u velkých tlačítek přes celou šířku a u tlačítek v kartách a panelech. Krátký formulář
   (pár políček, např. fitko) = panel `openSheet`, dlouhý formulář nebo skládání seznamu cviků (trénink, šablona,
   Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“. Zobrazení jedné věci (cvik, uložený
-  trénink) = stránka se šipkou ←. Stejné akce vypadají všude stejně. Stránka cviku (F3-30): akce cviku (Upravit,
-  Duplikovat) jen jako ikony `icoBtn` s `aria-label`. Pořadí se mění jen tažením za úchyt
+  trénink) = stránka se šipkou ←. Stejné akce vypadají všude stejně. Pořadí se mění jen tažením za úchyt
   (`dndGrip`, sekce PŘETAŽENÍ), žádné šipky.
 - Ikony (přání uživatele, F3-20, sekce „ikony“): nikdy emoji ani znaky písma jako ikona (🏅, 🔥, ✓, ▶, ★, ↗, ‹ ›…),
   ani na obrázku ke sdílení a v návrzích. Vždy vlastní SVG v sadě `IC` ve stejném stylu (popis v sekci). Stejný

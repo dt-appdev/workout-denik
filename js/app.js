@@ -181,15 +181,6 @@
       <path d="M6.8 10.2h.01M10.3 10.2h.01M13.7 10.2h.01M17.2 10.2h.01M8 14h8"/>
     </svg>`,
     play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>',
-    // upravit (cvik, F3-30)
-    edit: `<svg viewBox="0 0 24 24">
-      <path d="M4.5 19.5l1-4L15.8 5.2a2 2 0 012.9 0l.1.1a2 2 0 010 2.9L8.5 18.5zM13.8 7.2l3 3"/>
-    </svg>`,
-    // duplikovat cvik (F3-30): dva listy přes sebe
-    exCopy: `<svg viewBox="0 0 24 24">
-      <path d="M6 8h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8a2 2 0 012-2z"/>
-      <path d="M9 8V5.5A1.5 1.5 0 0110.5 4h8A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H15"/>
-    </svg>`,
     // zpět na aktuální měsíc (kalendář)
     today: '<svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9"/></svg>',
     // fotka nastavená jako první
@@ -8058,9 +8049,9 @@
         `${esc(exLinkLabel(ex))}${icon("ext")}</a>
           <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
         </div>
-        <div class="row wrap-r" style="margin-top:10px;gap:8px">
-          ${icoBtn("editExDetail", "edit", "Upravit cvik", id)}
-          ${icoBtn("dupEx", "exCopy", "Duplikovat cvik", id)}
+        <div class="row" style="align-items:stretch;margin-top:10px">
+          <button class="btn grow" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
+          <button class="btn grow" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
         </div>
       </div>`;
       h +=
@@ -10158,7 +10149,7 @@
      se počítá jako změna). S neuloženými změnami se Zpět i záložka zeptají (akce exDiscard). exEdLeave(re):
      re = jiný panel než uložený (např. výběr cviků po uložení z výsledků hledání). Route exed se neukládá do
      Local route (po restartu se neobnoví, F3-16).
-     Duplikovat cvik (F3-30): ikona na stránce cviku (akce dupEx) otevře exEdOpen(null, "detail", null, id)
+     Duplikovat cvik (F3-30): tlačítko na stránce cviku vedle Upravit (akce dupEx) otevře exEdOpen(null, "detail", null, id)
      = formulář Nový cvik s vlastnostmi originálu (názvy, partie, vybavení, druh, vázáno na fitko, popis,
      odkaz, návrh progrese). Názvy dostanou „ (kopie)“, při shodě „ (kopie 2)“… (exCopyNames). Kopíruje se
      jen to, co je ve formuláři; historie, rekordy, fotky a poznámky zůstávají u originálu, skrytí se
