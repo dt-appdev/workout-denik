@@ -8060,9 +8060,12 @@
     return h;
   }
 
-  /* ---------- STRÁNKA CVIKU (F0-05) ----------
+  /* ---------- STRÁNKA CVIKU (F0-05, F3-31) ----------
      Route exd (vExDetail), části Popis a Statistiky (S.exPart); openEx volí část podle toho, odkud se přišlo
-     (data-p ji vynutí). */
+     (data-p ji vynutí).
+     Vázáno na fitko (F3-31): na stránce jen informace v řádku s vybavením („Kladka · vázáno na fitko“ + ikona,
+     klepnutí = gdTip), u nevázaného cviku nic. Měnit jde jen ve formuláři Upravit / Nový cvik (#x-gd), aby se
+     způsob počítání statistik nepřepnul omylem jedním klepnutím. */
   function vExDetail() {
     const id = S.exDetail;
     const ex = exOf(id);
@@ -8097,22 +8100,9 @@
         <div class="row wrap-r" style="justify-content:space-between">
           <a class="link" href="${esc(exLink(ex))}" target="_blank" rel="noopener">` +
         `${esc(exLinkLabel(ex))}${icon("ext")}</a>
-          <span class="xs muted">${esc(EQUIP[ex.equip] || "")}</span>
+          <span class="xs muted">` +
+        `${esc(EQUIP[ex.equip] || "")}${ex.gymDep ? " · vázáno na fitko" + gdIcon(true) : ""}</span>
         </div>
-      </div>`;
-      h +=
-        `<div class="card" style="margin-top:10px">
-        <label class="switch">
-          <input type="checkbox" id="gymDepToggle" data-act="toggleGymDep"
-              ${ex.gymDep ? "checked" : ""}>
-          <span><b>Vázáno na fitko${gdIcon()}</b><br>` +
-        `<span class="xs muted">${
-          ex.gymDep
-            ? "Každé fitko má vlastní progres, grafy i rekordy."
-            : "Data ze všech fitek se sčítají dohromady."
-        }` +
-        `</span></span>
-        </label>
       </div>`;
       if (ex.archived) {
         h += `<div class="card small" style="margin-top:10px">
@@ -8145,7 +8135,7 @@
       ex.gymDep
         ? `Vázáno na fitko${gdIcon()}: počítá se zvlášť pro každé fitko.`
         : "Nevázáno na fitko: data ze všech fitek se sčítají."
-    } Změníš v Popisu.</p>`;
+    } Změníš přes Upravit.</p>`;
     const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
     if (ex.gymDep && gymsWith.length > 1) {
       h += `<div class="sec">
@@ -13307,12 +13297,6 @@
         S.exHistLimit += 25;
         scheduleRender();
         break;
-      case "toggleGymDep": {
-        const items = Object.assign({}, S.exLib);
-        items[S.exDetail] = Object.assign({}, items[S.exDetail], { gymDep: t.checked });
-        putEx(items);
-        break;
-      }
       case "bodyMetric":
         S.bodyMetric = v;
         scheduleRender();
