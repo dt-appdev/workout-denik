@@ -10562,8 +10562,103 @@
         ${e.archived ? "Zobrazit ve výběru" : "Skrýt z výběru"}
       </button>`;
     }
+    if (exDelOk(id)) {
+      h += `<div class="bzone"></div>
+        <button class="btn danger line block" data-act="delEx" data-v="${esc(id)}">Smazat cvik</button>`;
+    }
     h += "</div>";
     return h;
+  }
+
+  /* ---------- SMAZAT CVIK (F3-32) ----------
+     Ve formuláři Upravit cvik dole za čárou tlačítko „Smazat cvik“ (akce delEx), jako Smazat trénink
+     a Smazat šablonu v jejich úpravě. Jen u vlastního cviku (exDelOk: není v EX_DB, výchozí by exMerge
+     vrátil, ten jde jen skrýt). Nepoužitý cvik: potvrzení (delExOk), pak exDelete smaže cvik (putEx), jeho
+     fotky (photoDel), uložený krok krokovače (kkStep) a výběr ve výběru cviků. Použitý cvik (exUses: uložené
+     tréninky, šablony, rozdělaný trénink, rozpracovaná úprava tréninku nebo šablony) smazat nejde, historie by
+     přišla o název a partie; panel řekne kde je a nabídne Skrýt z výběru (archEx). Po smazání zpět tam, odkud
+     se přišlo ke stránce cviku (stránka smazaného cviku se přeskočí), z info o cviku do výběru cviků.
+     Záloha beze změny: bod obnovy nebo starší záloha cvik i s fotkami vrátí. */
+  const exDelOk = (id) => !!id && !!S.exLib[id] && !EX_DB[id];
+  // kde je cvik použitý: počet uložených tréninků, názvy šablon, rozdělaný trénink / rozpracovaná úprava
+  function exUses(id) {
+    const has = (list) => (list || []).some((e) => e.exId === id);
+    const tpls = Object.values(S.templates)
+      .filter((t) => has(t.items))
+      .map((t) => t.name);
+    const draft = [S.active, S.editDraft].some((d) => d && has(d.ex));
+    return { w: derive().all.filter((w) => has(w.ex)).length, tpls, draft };
+  }
+  // „v 5 trénincích, v šabloně Push A a v rozdělaném tréninku“
+  function exUsesText(u) {
+    const parts = [];
+    if (u.w) {
+      parts.push("v " + u.w + " " + plural(u.w, "tréninku", "trénincích", "trénincích"));
+    }
+    if (u.tpls.length) {
+      parts.push(
+        (u.tpls.length === 1 ? "v šabloně " : "v šablonách ") + u.tpls.map((n) => "„" + n + "“").join(", "),
+      );
+    }
+    if (u.draft) {
+      parts.push("v rozdělaném tréninku");
+    }
+    return parts.length > 1 ? parts.slice(0, -1).join(", ") + " a " + parts[parts.length - 1] : parts[0];
+  }
+  // klepnutí na Smazat cvik: potvrzení, nebo vysvětlení, proč smazat nejde
+  function exDelAsk(id) {
+    const e = S.exLib[id];
+    const u = exUses(id);
+    if (u.w || u.tpls.length || u.draft) {
+      openSheet(
+        "Cvik nejde smazat",
+        `<p style="margin:0">Cvik je ${esc(exUsesText(u))}. Tréninky by přišly o jeho název a partie.
+          ${e.archived ? "Z výběru už je skrytý." : "Můžeš ho skrýt z výběru."}</p>`,
+        e.archived
+          ? '<button class="btn primary grow" data-act="closeSheet">Zavřít</button>'
+          : `<button class="btn grow" data-act="closeSheet">Zrušit</button>
+            <button class="btn primary grow" data-act="archExDel" data-v="${esc(id)}">Skrýt z výběru</button>`,
+      );
+      return;
+    }
+    const n = Object.values(S.photos).filter((p) => p.exId === id).length;
+    confirmSheet(
+      "Smazat cvik?",
+      `Cvik „${esc(e.name)}“${n ? " i " + n + " " + plural(n, "fotka", "fotky", "fotek") : ""} se smaže. ` +
+        "Nejde to vrátit.",
+      "Smazat",
+      "delExOk",
+      id,
+    );
+  }
+  async function exDelete(id) {
+    const items = Object.assign({}, S.exLib);
+    delete items[id];
+    putEx(items);
+    const steps = Local.get("kkStep", {});
+    for (const k of Object.keys(steps)) {
+      if (k.startsWith(id + "|")) {
+        delete steps[k];
+      }
+    }
+    Local.set("kkStep", steps);
+    pick.sel = pick.sel.filter((x) => x !== id);
+    delete galPos[id];
+    // zpět jako po uložení; z info o cviku do výběru cviků, stránka smazaného cviku se přeskočí
+    const fromInfo = exEd && exEd.from === "info";
+    exEdLeave(fromInfo ? () => renderPicker() : undefined);
+    if (S.route === "exd" && S.exDetail === id) {
+      navBack(true);
+    }
+    toast("Cvik smazán");
+    try {
+      for (const p of Object.values(S.photos).filter((x) => x.exId === id)) {
+        await photoDel(p.id);
+      }
+    } catch (e) {
+      console.warn("fotky", e);
+    }
+    scheduleRender();
   }
 
   /* ---------- hledání v databázi free-exercise-db (F0-03) ----------
@@ -12645,6 +12740,17 @@
         toast("Cvik vrácen na výchozí");
         break;
       }
+      // smazat cvik (F3-32)
+      case "delEx":
+        exDelAsk(v);
+        break;
+      case "delExOk":
+        closeSheet();
+        exDelete(v);
+        break;
+      case "archExDel": // Skrýt z výběru z panelu „Cvik nejde smazat“ (F3-32)
+        closeSheet();
+      // falls through
       case "archEx": {
         const items = Object.assign({}, S.exLib);
         const was = !!items[v].archived;

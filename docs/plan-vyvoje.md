@@ -69,7 +69,7 @@ flowchart LR
 - ~~**F3-31** Vázáno na fitko jen ve formuláři Upravit cvik~~ – hotovo 8. 10. 2026.
 - ~~**F2-12** Skrýt nepoužívanou šablonu~~ – hotovo 8. 10. 2026.
 - ~~**F3-30** Nový cvik kopií jiného cviku~~ – hotovo 7. 10. 2026.
-- **F3-32** Smazat vlastní cvik · *P3 · B · nízká–střední* (vzniklo u F3-30).
+- ~~**F3-32** Smazat vlastní cvik~~ – hotovo 8. 10. 2026.
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -228,7 +228,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
 - [x] **F3-30** Nový cvik kopií jiného cviku
 - [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
-- [ ] **F3-32** Smazat vlastní cvik (vzniklo u F3-30, rozhodnuto 7. 10. 2026; P3 · B · nízká–střední): na stránce cviku tlačítko „Smazat cvik“ přes celou šířku pod řadou Upravit · Duplikovat, `btn ghost danger block` jako „Smazat trénink“ a „Smazat šablonu“ (bez ikony, rozhodnuto 7. 10. 2026 při F3-30). Smazat jde jen vlastní cvik (`custom`, tedy i kopie z F3-30 a cvik uložený z online databáze), který není v žádném uloženém tréninku, rozdělaném tréninku ani šabloně; fotky cviku se smažou s ním (`photoDel`), potvrzovací panel `confirmSheet`. U použitého cviku tlačítko řekne, v kolika trénincích je, a nabídne stávající Skrýt z výběru (`archEx`). U výchozího cviku z `EX_DB` se Smazat nezobrazí (`exMerge` by ho vrátil), zůstává Skrýt. Ověřit i bod obnovy a obnovu ze zálohy (záloha cvik s fotkami obsahuje). Otázky v Otevřených otázkách.
+- [x] **F3-32** Smazat vlastní cvik
 
 
 ### Fáze 4 – Chytré funkce
@@ -292,7 +292,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 
 | Úloha | Otázka | Návrh |
 |---|---|---|
-| F3-32 | Co když je cvik v historii? Smazat i výchozí cvik? | Použitý cvik smazat nejde (historie by ztratila název a partie), nabídne se Skrýt. Výchozí cvik se nemaže, jen skrývá. Smazání použitého cviku s převodem historie na jiný cvik by byla samostatná větší úloha. |
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
