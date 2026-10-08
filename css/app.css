@@ -501,6 +501,15 @@ a.btn {
 .btn.block {
   width: 100%;
 }
+/* nebezpečná akce na konci stránky (F2-12): červený obrys za čárou .bzone, vždy až pod ostatními tlačítky */
+.btn.danger.line {
+  border-color: var(--fail);
+  background: transparent;
+}
+.bzone {
+  border-top: 1px solid var(--line-2);
+  margin-top: 4px;
+}
 .btn.sm {
   min-height: 34px;
   padding: 6px 10px;

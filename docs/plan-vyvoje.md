@@ -67,7 +67,7 @@ flowchart LR
 - ~~**F1-19** Minule jako text u cviku místo sloupce~~ – hotovo 30. 9. 2026.
 - ~~**F2-11** Předvyplnění ze šablony a z historie místo minula~~ – hotovo 7. 10. 2026.
 - **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik · *P3 · A · velmi nízká*.
-- **F2-12** Skrýt nepoužívanou šablonu · *P2 · B · nízká* (předstupeň F2-06).
+- ~~**F2-12** Skrýt nepoužívanou šablonu~~ – hotovo 8. 10. 2026.
 - ~~**F3-30** Nový cvik kopií jiného cviku~~ – hotovo 7. 10. 2026.
 - **F3-32** Smazat vlastní cvik · *P3 · B · nízká–střední* (vzniklo u F3-30).
 
@@ -184,7 +184,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F2-07** Pořadí přetažením prstu
 - [x] **F2-10** Poznámka ke cviku v šabloně a z historie
 - [x] **F2-11** Předvyplnění ze šablony a z historie místo z minula
-- [ ] **F2-12** Skrýt nepoužívanou šablonu (přání 30. 9. 2026, Etapa 0; P2 · B · nízká): na stránce Trénink jde šablonu skrýt (menu šablony, ikona), skryté se nezobrazují mezi šablonami (ani v „Ostatní šablony“, `tplOther`), a je tam ovládání „Skryté šablony (N)“, které je ukáže a jde je zase zobrazit. Návrh dat: nepovinné pole šablony `hidden: true`, zápis vždy přes `Object.assign` s původní šablonou (pravidlo v `CLAUDE.md`), zpětně kompatibilní se zálohou (`normBackup`). Skrytá šablona zůstane v záloze, u tréninků z ní (`tplId`) se nic nemění, v úvodu ji nevybere F2-04 (šablona na řadě) ani se s ní nepočítá. Kontrola názvů (`tplClash`, F2-08): skrytá šablona pořád blokuje stejný název ve stejném fitku (jinak by po zobrazení vznikl duplikát), nebo ji z kontroly vynechat – rozhodnout. Později ji nahradí nebo doplní archivace (F2-06, dnes jen fitka a tréninky; při jejím zpracování skryté šablony sloučit s archivem, ne zavádět druhý mechanismus).
+- [x] **F2-12** Skrýt nepoužívanou šablonu
 
 ### Fáze 3 – Statistiky a vzhled
 
@@ -292,7 +292,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 
 | Úloha | Otázka | Návrh |
 |---|---|---|
-| F2-12 | Kde je ovládání skrytí a návratu? Blokuje skrytá šablona stejný název? | Ikona v menu šablony (Skrýt), pod seznamem odkaz „Skryté šablony (N)“ (jen když nějaké jsou), skryté v seznamu s ikonou Zobrazit. Název blokuje dál (jinak duplikát po zobrazení). Skrytí se týká všech fitek šablony. |
 | F3-32 | Co když je cvik v historii? Smazat i výchozí cvik? | Použitý cvik smazat nejde (historie by ztratila název a partie), nabídne se Skrýt. Výchozí cvik se nemaže, jen skrývá. Smazání použitého cviku s převodem historie na jiný cvik by byla samostatná větší úloha. |
 | F3-31 | Jak vypadá informace o vázání na fitko na stránce cviku? | Ikona `gdIcon` za názvem (už tam je) a jedna informační řádka v bloku údajů cviku s odkazem Upravit; vysvětlení do nápovědy. Bez přepínače. |
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |

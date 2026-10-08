@@ -4204,6 +4204,21 @@
   function tplNextOrder(items) {
     return Object.values(items).reduce((m, t) => Math.max(m, (t.order || 0) + 1), 0);
   }
+  /* ---------- SKRYTÉ ŠABLONY (F2-12) ----------
+     Nepoužívanou šablonu jde skrýt: v úpravě šablony dole tlačítko „Skrýt šablonu“ / „Zobrazit šablonu“
+     (stejně jako „Skrýt z výběru“ v Upravit cvik, akce tplHide), běžné obrysové, ne červené (jde vrátit).
+     Spolu s tím se sjednotila tlačítka dole na všech stránkách (pravidlo v CLAUDE.md): hlavní akce plná, ostatní
+     obrysová pod sebou, nebezpečná červený obrys za čárou (.bzone, .btn.danger.line). Skrytá šablona má t.hidden = true
+     (pole je nepovinné, starší šablony a zálohy ho nemají = viditelná; zachová ho Object.assign i tplNorm).
+     Skrytá se neukazuje mezi šablonami na úvodu (ani v „Ostatní šablony“) ani v panelu Změnit pořadí šablon.
+     Pod seznamy je tlačítko „Skryté šablony (N)“ (jen když nějaké jsou, tplHid = ukázané skryté, po otevření
+     appky sbalené). Skrytá karta má Zobrazit a Upravit, Začít ne. Skrytí platí pro všechna fitka šablony.
+     Skrytá šablona zůstává v záloze, tréninky z ní (tplId) se nemění a pořád blokuje stejný název ve stejném
+     fitku (tplClash, F2-08; hláška řekne, že je skrytá). Funkce tplVisible (neskryté šablony), tplHidden.
+     Až vznikne F2-04 (šablona na řadě), musí vybírat jen z tplVisible(). Později sloučit s archivací (F2-06). */
+  let tplHid = false; // ukázané skryté šablony (klepnutí na „Skryté šablony (N)“)
+  const tplVisible = () => tplSorted().filter(([, t]) => !t.hidden);
+  const tplHidden = () => tplSorted().filter(([, t]) => t.hidden);
 
   /* ---------- JEDINEČNÉ NÁZVY ŠABLON (F2-08) ----------
      Stejný název nesmí mít šablony, které se ukazují ve stejném fitku (tplMeet; bez fitka = ve všech,
@@ -4257,9 +4272,10 @@
     const clash = tplClash(d.title, gyms, d.id);
     if (!clash.length) return "";
     const name = clash[0][1].name;
+    const hid = clash[0][1].hidden ? " (je skrytá)" : ""; // F2-12
     return S.cfg.gyms.length > 1
-      ? "Šablonu „" + name + "“ už máš ve stejném fitku, změň název nebo fitka"
-      : "Šablonu „" + name + "“ už máš, změň název";
+      ? "Šablonu „" + name + "“ už máš ve stejném fitku" + hid + ", změň název nebo fitka"
+      : "Šablonu „" + name + "“ už máš" + hid + ", změň název";
   }
   // zvýrazní název upravované šablony při shodě a napíše pod něj proč (hned při psaní, bez překreslení)
   function tplNameMark(d) {
@@ -4305,7 +4321,8 @@
     openSheet(
       "Šablona už existuje",
       `<p style="margin:0">
-        Šablonu „${esc(t.name)}“ už máš${where}. Můžeš ji přepsat cviky a sériemi z tohoto tréninku
+        Šablonu „${esc(t.name)}“ už máš${where}${t.hidden ? " (je skrytá a po přepsání zůstane skrytá)" : ""}.
+        Můžeš ji přepsat cviky a sériemi z tohoto tréninku
         (název, fitka a pořadí šablony zůstanou), nebo uložit novou šablonu s jiným názvem.
       </p>`,
       `<button class="btn primary full" data-act="tplAskNew">Uložit jako „${esc(tplAsk.name)}“</button>
@@ -4316,7 +4333,11 @@
 
   function vHomeTpls(all) {
     const gymId = curGym();
-    const tpls = tplSorted();
+    const tpls = tplVisible();
+    const hiddenTpls = tplHidden();
+    if (!hiddenTpls.length) {
+      tplHid = false;
+    }
     const here = tpls.filter(([, t]) => tplHere(t, gymId));
     const other = tpls.filter(([, t]) => !tplHere(t, gymId));
     let h = `<section class="sec">
@@ -4328,7 +4349,9 @@
           </div>
         </div>
         <div class="stack">`;
-    if (!tpls.length) {
+    if (!tpls.length && hiddenTpls.length) {
+      h += '<div class="empty">Všechny šablony jsou skryté.</div>';
+    } else if (!tpls.length) {
       h += '<div class="empty">Zatím žádné šablony. Vytvoř si třeba Push / Pull / Legs.</div>';
     } else if (!here.length) {
       h += '<div class="empty">Pro toto fitko zatím žádné šablony.</div>';
@@ -4342,15 +4365,34 @@
       h += '<button class="btn block" data-act="tplOther">Ostatní šablony</button>';
     }
     h += "</div></section>";
-    if (!other.length || (!tplOther && here.length)) return h;
-    h += `<section class="sec">
-        <div class="sec-h"><h2>Ostatní šablony</h2></div>
-        <div class="stack">`;
-    for (const [id, t] of other) {
-      h += tplCard(id, t, all, null);
+    if (other.length && (tplOther || !here.length)) {
+      h += `<section class="sec">
+          <div class="sec-h"><h2>Ostatní šablony</h2></div>
+          <div class="stack">`;
+      for (const [id, t] of other) {
+        h += tplCard(id, t, all, null);
+      }
+      h += "</div></section>";
     }
-    h += "</div></section>";
-    return h;
+    return h + vHomeTplsHidden(hiddenTpls, all);
+  }
+  // skryté šablony (F2-12): tlačítko „Skryté šablony (N)“ a po klepnutí jejich karty se Zobrazit / Upravit
+  function vHomeTplsHidden(hiddenTpls, all) {
+    if (!hiddenTpls.length) return "";
+    const btn = `<button class="btn block" data-act="tplHid" aria-pressed="${tplHid}">
+        Skryté šablony (${hiddenTpls.length})
+      </button>`;
+    if (!tplHid) return `<section class="sec"><div class="stack">${btn}</div></section>`;
+    return `<section class="sec">
+        <div class="sec-h">
+          <h2>Skryté šablony</h2>
+          ${helpBtn("tplHidden")}
+        </div>
+        <div class="stack">
+          ${hiddenTpls.map(([id, t]) => tplCard(id, t, all, null, true)).join("")}
+          ${btn}
+        </div>
+      </section>`;
   }
   // přepínač předvyplnění sérií v úpravě šablony (F2-11): z minula / ze šablony
   function tplHintsPick(d) {
@@ -4402,7 +4444,7 @@
   }
   /* karta šablony; gymId = šablona vybraného fitka: „naposledy“ přednostně z tohoto fitka (bez názvu fitka),
      jinak (i u ostatních šablon) poslední běh kdekoli s názvem fitka */
-  function tplCard(id, t, all, gymId) {
+  function tplCard(id, t, all, gymId, hidden) {
     const runs = all.filter((w) => sameRun({ tplId: id, title: t.name }, w));
     const lastHere = gymId ? runs.find((w) => w.gymId === gymId) : null;
     const last = lastHere || runs[0];
@@ -4431,7 +4473,11 @@
           <p class="xs">${(t.items || []).length} cviků${lastTxt}</p>
         </div>
         <div class="stack" style="gap:6px">
-          <button class="btn sm primary" data-act="startTpl" data-v="${id}">Začít</button>
+          ${
+            hidden
+              ? `<button class="btn sm primary" data-act="tplHide" data-v="${id}">Zobrazit</button>`
+              : `<button class="btn sm primary" data-act="startTpl" data-v="${id}">Začít</button>`
+          }
           <button class="btn sm" data-act="editTpl" data-v="${id}">Upravit</button>
         </div>
       </div>`;
@@ -5289,16 +5335,25 @@
         <button class="btn block" data-act="addEx">${icon("plus")}Přidat cvik</button>`;
     if (mode === "active") {
       h += `<button class="btn primary block" data-act="finish">Dokončit trénink</button>
-        <button class="btn ghost danger block" data-act="discard">Zahodit trénink</button>`;
+        <div class="bzone"></div>
+        <button class="btn danger line block" data-act="discard">Zahodit trénink</button>`;
     } else if (mode === "edit") {
       h += `<button class="btn primary block" data-act="saveEdit">Uložit změny</button>
-        <button class="btn ghost danger block" data-act="delWorkout">Smazat trénink</button>`;
+        <div class="bzone"></div>
+        <button class="btn danger line block" data-act="delWorkout">Smazat trénink</button>`;
     } else {
       const off = tplSaveOff(d); // F2-08: šedé při shodě nebo prázdném názvu
       h +=
         `<button class="btn primary block${off ? " off" : ""}" id="tpl-save" data-act="saveTpl"
             aria-disabled="${off}">Uložit šablonu</button>` +
-        `${d.id ? '<button class="btn ghost danger block" data-act="delTpl">Smazat šablonu</button>' : ""}`;
+        (d.id && S.templates[d.id]
+          ? `<button class="btn block" data-act="tplHide" data-v="${esc(d.id)}">
+              ${S.templates[d.id].hidden ? "Zobrazit šablonu" : "Skrýt šablonu"}
+            </button>`
+          : "") +
+        (d.id
+          ? '<div class="bzone"></div><button class="btn danger line block" data-act="delTpl">Smazat šablonu</button>'
+          : "");
     }
     h += "</div>";
     return h;
@@ -5984,27 +6039,22 @@
     );
     // obal s mezerami mezi rámečky (dřív je dělal panel .sheet-b)
     h += `<div class="stack wsum">${wSummary(w, o.saved)}</div>`;
-    // Sdílet vlevo od hlavního tlačítka (F4-08), nad nimi po uložení nabídka zálohy (F0-13)
+    // tlačítka pod sebou (F2-12): hlavní, pak Upravit, Sdílet (F4-08), Uložit jako šablonu a Kopírovat pro coache;
+    // po uložení nad nimi nabídka zálohy (F0-13)
     h += `<div class="stack" style="margin-top:12px">
       ${o.saved ? bkSumCard() : ""}
-      <div class="row" style="align-items:stretch">
-        <button class="btn" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
-        ${
-          o.saved
-            ? '<button class="btn primary grow" data-act="wBack">Dokončit</button>'
-            : `<button class="btn primary grow" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
-              Cvičit znovu
-            </button>`
-        }
-      </div>
-      <div class="row" style="align-items:stretch">
-        <button class="btn grow" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
-          Uložit jako šablonu
-        </button>
-        <button class="btn grow" data-act="editW" data-v="${esc(w.id)}" data-m="${w.mk}">
-          Upravit
-        </button>
-      </div>
+      ${
+        o.saved
+          ? '<button class="btn primary block" data-act="wBack">Dokončit</button>'
+          : `<button class="btn primary block" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
+            Cvičit znovu
+          </button>`
+      }
+      <button class="btn block" data-act="editW" data-v="${esc(w.id)}" data-m="${w.mk}">Upravit</button>
+      <button class="btn block" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
+      <button class="btn block" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
+        Uložit jako šablonu
+      </button>
       ${
         coachOn()
           ? `<button class="btn block" data-act="coachCopy" data-v="${esc(w.id)}" data-m="${w.mk}">
@@ -8080,9 +8130,9 @@
         }
       </p>`;
       // akce cviku na konci stránky jako u uloženého tréninku (F3-30)
-      h += `<div class="row" style="align-items:stretch;margin-top:12px">
-        <button class="btn grow" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
-        <button class="btn grow" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
+      h += `<div class="stack" style="margin-top:12px">
+        <button class="btn block" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
+        <button class="btn block" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
       </div>`;
       return h;
     }
@@ -9646,6 +9696,17 @@
         ],
       ],
     },
+    tplHidden: {
+      title: "Skryté šablony",
+      items: () => [
+        [
+          "Co znamená skrytá šablona",
+          "Skrytá šablona se nezobrazuje mezi šablonami a nejde z ní začít trénink. Tréninky podle ní i záloha " +
+            "zůstávají. Zobrazíš ji tlačítkem Zobrazit. Stejný název jako skrytá šablona jiná šablona ve stejném " +
+            "fitku mít nemůže.",
+        ],
+      ],
+    },
     hidden: {
       title: "Skryté cviky",
       items: () => [
@@ -10507,7 +10568,7 @@
       h += `<button class="btn block" data-act="resetEx" data-v="${esc(id)}">Vrátit na výchozí</button>`;
     }
     if (id) {
-      h += `<button class="btn ghost danger block" data-act="archEx" data-v="${esc(id)}">
+      h += `<button class="btn block" data-act="archEx" data-v="${esc(id)}">
         ${e.archived ? "Zobrazit ve výběru" : "Skrýt z výběru"}
       </button>`;
     }
@@ -10933,8 +10994,10 @@
         }
       }
     } else if (kind === "tpl") {
-      const ids = tplSorted().map(([id]) => id);
-      move(ids);
+      // skryté šablony (F2-12) zůstanou na svých místech, přetažené viditelné se řadí do volných míst
+      const visible = tplVisible().map(([id]) => id);
+      move(visible);
+      const ids = tplSorted().map(([id, t]) => (t.hidden ? id : visible.shift()));
       const items = {};
       ids.forEach((id, k) => (items[id] = Object.assign({}, S.templates[id], { order: k })));
       put("config/templates", { items });
@@ -10978,7 +11041,7 @@
   }
   // panel Změnit pořadí šablon (úvodní obrazovka); pořadí je společné pro všechna fitka
   function sheetTplOrder(noanim) {
-    const rows = tplSorted()
+    const rows = tplVisible()
       .map(([, t]) => {
         const gyms = tplGyms(t);
         return `<div class="card dnd-it dnd-row">
@@ -12972,6 +13035,28 @@
         tplOther = true;
         scheduleRender();
         break;
+      case "tplHid":
+        tplHid = !tplHid;
+        scheduleRender();
+        break;
+      // skrýt / zobrazit šablonu (F2-12); z úpravy šablony se po změně vrací na úvod (jako archEx u cviku)
+      case "tplHide": {
+        if (!S.templates[v]) break;
+        const was = !!S.templates[v].hidden;
+        const items = Object.assign({}, S.templates);
+        items[v] = Object.assign({}, items[v]);
+        if (was) {
+          delete items[v].hidden;
+        } else {
+          items[v].hidden = true;
+        }
+        put("config/templates", { items });
+        if (S.route === "edit") {
+          tplLeave();
+        }
+        toast(was ? "Šablona je znovu mezi šablonami" : "Šablona skrytá");
+        break;
+      }
       case "delTpl":
         confirmSheet(
           "Smazat šablonu?",
