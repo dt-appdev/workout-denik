@@ -128,6 +128,11 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   Nový / Upravit cvik) = stránka se šipkou ← a dotazem „Zahodit změny?“. Zobrazení jedné věci (cvik, uložený
   trénink) = stránka se šipkou ←. Stejné akce vypadají všude stejně. Pořadí se mění jen tažením za úchyt
   (`dndGrip`, sekce PŘETAŽENÍ), žádné šipky.
+- Tlačítka dole na stránce (F2-12, varianta B z `docs/navrhy/tlacitka-dole/`): vždy pod sebou přes celou šířku, nikdy
+  dvě vedle sebe. Pořadí: Přidat cvik (obrys s plusem, je-li) → hlavní akce (`btn primary block`, jen jedna, na stránce
+  cviku žádná) → ostatní obrysová `btn block` (Upravit první, pak Duplikovat / Sdílet / Uložit jako šablonu / Skrýt) →
+  čára `<div class="bzone">` → nebezpečná, nevratná akce `btn danger line block` (červený obrys, Smazat / Zahodit).
+  Skrýt a Zobrazit jdou vrátit, proto jsou neutrální, ne červené. Nikdy tlačítko jako holý text (`ghost`).
 - Ikony (přání uživatele, F3-20, sekce „ikony“): nikdy emoji ani znaky písma jako ikona (🏅, 🔥, ✓, ▶, ★, ↗, ‹ ›…),
   ani na obrázku ke sdílení a v návrzích. Vždy vlastní SVG v sadě `IC` ve stejném stylu (popis v sekci). Stejný
   význam = stejná ikona všude, jedna kresba = jeden význam. Novou nebo překreslenou ikonu nejdřív ukázat v náhledu

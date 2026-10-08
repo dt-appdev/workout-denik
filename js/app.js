@@ -4205,8 +4205,10 @@
     return Object.values(items).reduce((m, t) => Math.max(m, (t.order || 0) + 1), 0);
   }
   /* ---------- SKRYTÉ ŠABLONY (F2-12) ----------
-     Nepoužívanou šablonu jde skrýt: v úpravě šablony dole textové tlačítko „Skrýt šablonu“ / „Zobrazit
-     šablonu“ (stejně jako „Skrýt z výběru“ v Upravit cvik, akce tplHide). Skrytá šablona má t.hidden = true
+     Nepoužívanou šablonu jde skrýt: v úpravě šablony dole tlačítko „Skrýt šablonu“ / „Zobrazit šablonu“
+     (stejně jako „Skrýt z výběru“ v Upravit cvik, akce tplHide), běžné obrysové, ne červené (jde vrátit).
+     Spolu s tím se sjednotila tlačítka dole na všech stránkách (pravidlo v CLAUDE.md): hlavní akce plná, ostatní
+     obrysová pod sebou, nebezpečná červený obrys za čárou (.bzone, .btn.danger.line). Skrytá šablona má t.hidden = true
      (pole je nepovinné, starší šablony a zálohy ho nemají = viditelná; zachová ho Object.assign i tplNorm).
      Skrytá se neukazuje mezi šablonami na úvodu (ani v „Ostatní šablony“) ani v panelu Změnit pořadí šablon.
      Pod seznamy je tlačítko „Skryté šablony (N)“ (jen když nějaké jsou, tplHid = ukázané skryté, po otevření
@@ -5333,21 +5335,25 @@
         <button class="btn block" data-act="addEx">${icon("plus")}Přidat cvik</button>`;
     if (mode === "active") {
       h += `<button class="btn primary block" data-act="finish">Dokončit trénink</button>
-        <button class="btn ghost danger block" data-act="discard">Zahodit trénink</button>`;
+        <div class="bzone"></div>
+        <button class="btn danger line block" data-act="discard">Zahodit trénink</button>`;
     } else if (mode === "edit") {
       h += `<button class="btn primary block" data-act="saveEdit">Uložit změny</button>
-        <button class="btn ghost danger block" data-act="delWorkout">Smazat trénink</button>`;
+        <div class="bzone"></div>
+        <button class="btn danger line block" data-act="delWorkout">Smazat trénink</button>`;
     } else {
       const off = tplSaveOff(d); // F2-08: šedé při shodě nebo prázdném názvu
       h +=
         `<button class="btn primary block${off ? " off" : ""}" id="tpl-save" data-act="saveTpl"
             aria-disabled="${off}">Uložit šablonu</button>` +
         (d.id && S.templates[d.id]
-          ? `<button class="btn ghost danger block" data-act="tplHide" data-v="${esc(d.id)}">
+          ? `<button class="btn block" data-act="tplHide" data-v="${esc(d.id)}">
               ${S.templates[d.id].hidden ? "Zobrazit šablonu" : "Skrýt šablonu"}
             </button>`
           : "") +
-        `${d.id ? '<button class="btn ghost danger block" data-act="delTpl">Smazat šablonu</button>' : ""}`;
+        (d.id
+          ? '<div class="bzone"></div><button class="btn danger line block" data-act="delTpl">Smazat šablonu</button>'
+          : "");
     }
     h += "</div>";
     return h;
@@ -6033,27 +6039,22 @@
     );
     // obal s mezerami mezi rámečky (dřív je dělal panel .sheet-b)
     h += `<div class="stack wsum">${wSummary(w, o.saved)}</div>`;
-    // Sdílet vlevo od hlavního tlačítka (F4-08), nad nimi po uložení nabídka zálohy (F0-13)
+    // tlačítka pod sebou (F2-12): hlavní, pak Upravit, Sdílet (F4-08), Uložit jako šablonu a Kopírovat pro coache;
+    // po uložení nad nimi nabídka zálohy (F0-13)
     h += `<div class="stack" style="margin-top:12px">
       ${o.saved ? bkSumCard() : ""}
-      <div class="row" style="align-items:stretch">
-        <button class="btn" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
-        ${
-          o.saved
-            ? '<button class="btn primary grow" data-act="wBack">Dokončit</button>'
-            : `<button class="btn primary grow" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
-              Cvičit znovu
-            </button>`
-        }
-      </div>
-      <div class="row" style="align-items:stretch">
-        <button class="btn grow" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
-          Uložit jako šablonu
-        </button>
-        <button class="btn grow" data-act="editW" data-v="${esc(w.id)}" data-m="${w.mk}">
-          Upravit
-        </button>
-      </div>
+      ${
+        o.saved
+          ? '<button class="btn primary block" data-act="wBack">Dokončit</button>'
+          : `<button class="btn primary block" data-act="wAgain" data-v="${esc(w.id)}" data-m="${w.mk}">
+            Cvičit znovu
+          </button>`
+      }
+      <button class="btn block" data-act="editW" data-v="${esc(w.id)}" data-m="${w.mk}">Upravit</button>
+      <button class="btn block" data-act="wShare" data-v="${esc(w.id)}" data-m="${w.mk}">Sdílet</button>
+      <button class="btn block" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
+        Uložit jako šablonu
+      </button>
       ${
         coachOn()
           ? `<button class="btn block" data-act="coachCopy" data-v="${esc(w.id)}" data-m="${w.mk}">
@@ -8129,9 +8130,9 @@
         }
       </p>`;
       // akce cviku na konci stránky jako u uloženého tréninku (F3-30)
-      h += `<div class="row" style="align-items:stretch;margin-top:12px">
-        <button class="btn grow" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
-        <button class="btn grow" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
+      h += `<div class="stack" style="margin-top:12px">
+        <button class="btn block" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
+        <button class="btn block" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
       </div>`;
       return h;
     }
@@ -10567,7 +10568,7 @@
       h += `<button class="btn block" data-act="resetEx" data-v="${esc(id)}">Vrátit na výchozí</button>`;
     }
     if (id) {
-      h += `<button class="btn ghost danger block" data-act="archEx" data-v="${esc(id)}">
+      h += `<button class="btn block" data-act="archEx" data-v="${esc(id)}">
         ${e.archived ? "Zobrazit ve výběru" : "Skrýt z výběru"}
       </button>`;
     }
