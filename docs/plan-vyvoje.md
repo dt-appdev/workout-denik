@@ -66,7 +66,7 @@ flowchart LR
 - ~~**F2-10** Poznámka ke cviku v šabloně a z historie~~ – hotovo 30. 9. 2026.
 - ~~**F1-19** Minule jako text u cviku místo sloupce~~ – hotovo 30. 9. 2026.
 - ~~**F2-11** Předvyplnění ze šablony a z historie místo minula~~ – hotovo 7. 10. 2026.
-- **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik · *P3 · A · velmi nízká*.
+- ~~**F3-31** Vázáno na fitko jen ve formuláři Upravit cvik~~ – hotovo 8. 10. 2026.
 - ~~**F2-12** Skrýt nepoužívanou šablonu~~ – hotovo 8. 10. 2026.
 - ~~**F3-30** Nový cvik kopií jiného cviku~~ – hotovo 7. 10. 2026.
 - **F3-32** Smazat vlastní cvik · *P3 · B · nízká–střední* (vzniklo u F3-30).
@@ -227,7 +227,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F3-28** Stránka cviku: historie výš (UX audit 27. 9. 2026, §2 G, §4 a §6; P3 · B · nízká–střední): na stránce cviku je pořadí graf → osobní rekordy → poslední rekordy → historie a historie (nejčastější důvod návštěvy) začíná cca 1 300 px pod horním okrajem. Návrh: graf → historie → osobní rekordy, blok „Poslední rekordy“ vypustit nebo sbalit (opakuje Osobní rekordy a medaile v historii). Ze záložky Cviky otevírat cvik s historií rovnou na Statistikách (dnes Popis; z tréninku už Statistiky). Výchozí metrika grafu u cviků s víc než 10 opakováními Max. zátěž nebo Nejlepší série (odhad 1RM je tam nepřesný).
 - [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
 - [x] **F3-30** Nový cvik kopií jiného cviku
-- [ ] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik (přání 30. 9. 2026, Etapa 0; P3 · A · velmi nízká): zaškrtávátko „vázáno na fitko“ je dnes i na stránce cviku (`vExDetail`, `#gymDepToggle`, akce `toggleGymDep`, zapisuje rovnou přes `putEx`) a ve formuláři Upravit cvik (`#x-gd`, `f.gd`). Změna: přepínač zůstane jen ve formuláři Upravit cvik (a Nový cvik), na stránce cviku se ukáže pouze informace (řádek s ikonou `gdIcon` a stručným „Vázáno na fitko: statistiky, rekordy a předvyplnění se počítají zvlášť pro každé fitko“, a jak to změnit: Upravit). Pravidla `CLAUDE.md`: stav cviku jen ikona za názvem (F3-22), vysvětlivky do panelu nápovědy (`HELP`, F3-21), akce `toggleGymDep` z `switch` odstranit, i ze zkušebních dat, pokud ji používají. Data beze změny (pole `gymDep`).
+- [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
 - [ ] **F3-32** Smazat vlastní cvik (vzniklo u F3-30, rozhodnuto 7. 10. 2026; P3 · B · nízká–střední): na stránce cviku tlačítko „Smazat cvik“ přes celou šířku pod řadou Upravit · Duplikovat, `btn ghost danger block` jako „Smazat trénink“ a „Smazat šablonu“ (bez ikony, rozhodnuto 7. 10. 2026 při F3-30). Smazat jde jen vlastní cvik (`custom`, tedy i kopie z F3-30 a cvik uložený z online databáze), který není v žádném uloženém tréninku, rozdělaném tréninku ani šabloně; fotky cviku se smažou s ním (`photoDel`), potvrzovací panel `confirmSheet`. U použitého cviku tlačítko řekne, v kolika trénincích je, a nabídne stávající Skrýt z výběru (`archEx`). U výchozího cviku z `EX_DB` se Smazat nezobrazí (`exMerge` by ho vrátil), zůstává Skrýt. Ověřit i bod obnovy a obnovu ze zálohy (záloha cvik s fotkami obsahuje). Otázky v Otevřených otázkách.
 
 
@@ -293,7 +293,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | Úloha | Otázka | Návrh |
 |---|---|---|
 | F3-32 | Co když je cvik v historii? Smazat i výchozí cvik? | Použitý cvik smazat nejde (historie by ztratila název a partie), nabídne se Skrýt. Výchozí cvik se nemaže, jen skrývá. Smazání použitého cviku s převodem historie na jiný cvik by byla samostatná větší úloha. |
-| F3-31 | Jak vypadá informace o vázání na fitko na stránce cviku? | Ikona `gdIcon` za názvem (už tam je) a jedna informační řádka v bloku údajů cviku s odkazem Upravit; vysvětlení do nápovědy. Bez přepínače. |
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
