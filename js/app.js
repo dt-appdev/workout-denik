@@ -10079,11 +10079,10 @@
   }
 
   /* ---------- výběr cviků ----------
-     Panel Přidat cviky / Nahradit cvik (openPicker, stav pick). Má pevnou výšku (třída pick na .scrim), aby
+     Panel Přidat cviky / Nahradit cvik (openPicker, stav pick). Má pevnou výšku (třída picker na .scrim), aby
      vyhledávací pole při psaní neposkakovalo (F1-06). Seznam je ve třech sekcích (F1-06, pickerRows):
-     cviky cvičené ve fitku tréninku nebo šablony (pickGyms; šablona pro všechna fitka = vybrané fitko na
-     úvodu),
-     cviky cvičené jinde, ostatní. Cvičené od posledního tréninku (ve fitku podle posledního tréninku v něm),
+     cviky cvičené ve fitku tréninku nebo šablony (pickGyms; šablona pro všechna fitka = vybrané fitko
+     na úvodu), cviky cvičené jinde, ostatní. Cvičené od posledního tréninku (ve fitku podle posledního tréninku v něm),
      ostatní podle shody s hledáním (exRel) a abecedy. Nadpis sekce jen tam, kde je víc než jedna sekce. */
   let pick = { sel: [], q: "", m: "all", eq: "all", hist: false, mode: "add", replaceI: null };
   function openPicker(mode, replaceI) {
@@ -10249,7 +10248,7 @@
     </button>`;
     openSheet(pick.mode === "replace" ? "Nahradit cvik" : "Přidat cviky", pickerBody(), f, keep, {
       re: () => renderPicker(true),
-      cls: "pick",
+      cls: "picker",
     });
     const nb = document.querySelector(".sheet-b");
     if (nb && st) {

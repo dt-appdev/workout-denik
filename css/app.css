@@ -2029,7 +2029,7 @@ tr.done .okb {
 }
 
 /* výběr cviků (F1-06): pevná výška, aby vyhledávací pole při psaní neposkakovalo; nadpisy sekcí seznamu */
-.scrim.pick .sheet {
+.scrim.picker .sheet {
   height: 92%;
 }
 .pick-sec {
