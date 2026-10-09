@@ -1259,7 +1259,8 @@ select.inp {
   outline: none;
   box-shadow: inset 0 -2px 0 var(--accent);
 }
-tr.done .cell {
+tr.done .cell,
+tr.done .effb {
   background: transparent;
 }
 /* F1-10: neplatné číslo (červený rámeček) */
