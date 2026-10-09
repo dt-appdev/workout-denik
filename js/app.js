@@ -1107,6 +1107,7 @@
     sumPeriod: "month",
     exSearch: "",
     exMuscle: "all",
+    exSort: lsGet("exSort", "last") === "prog" ? "prog" : "last", // řazení Statistiky → Cviky (F3-26)
     detailMetric: "e1rm",
     detailRange: "1y",
     detailGym: "all",
@@ -7625,22 +7626,22 @@
       <div class="kpi"><b>${s.n ? fmtDurS(s.dur / s.n) : "–"}</b><span>Ø délka</span></div>
     </div>`;
   }
+  // pruhy: r = {label, v, txt, sw: barva s tečkou, col: barva pruhu bez tečky, cls: třída hodnoty, act, id}
   function hbarList(rows, stk) {
     if (!rows.length) return '<div class="muted small">Nic.</div>';
     const mx = Math.max(...rows.map((r) => r.v)) || 1;
     return `<div class="hbars${stk ? " stk" : ""}">
       ${rows
-        .map(
-          (r) =>
-            `<div class="hbar"${r.act ? ` role="button" data-act="${r.act}" data-v="${esc(r.id)}"` : ""}>
+        .map((r) => {
+          const bg = r.sw || r.col;
+          return `<div class="hbar"${r.act ? ` role="button" data-act="${r.act}" data-v="${esc(r.id)}"` : ""}>
               <span class="hl" title="${esc(r.label)}">
                 ${r.sw ? `<span class="sw" style="background:${r.sw}"></span>` : ""}${esc(r.label)}
               </span>
-              <div class="t"
-                  style="width:${Math.max(2, (r.v / mx) * 100)}%${r.sw ? ";background:" + r.sw : ""}"></div>
-              <span class="v">${esc(r.txt || String(r.v))}</span>
-            </div>`,
-        )
+              <div class="t" style="width:${Math.max(2, (r.v / mx) * 100)}%${bg ? ";background:" + bg : ""}"></div>
+              <span class="v${r.cls ? " " + r.cls : ""}">${esc(r.txt || String(r.v))}</span>
+            </div>`;
+        })
         .join("")}
     </div>`;
   }
@@ -7921,7 +7922,7 @@
     </section>`;
     return h;
   }
-  // Cviky: období, Nejčastější cviky, seznam cvičených cviků s hledáním a filtrem partie
+  // Cviky: období, Největší zlepšení (F3-26), Bez zlepšení, seznam cvičených cviků s hledáním a filtrem partie
   /* Statistiky → Cviky: cviky bez zlepšení (F4-06), jen cvičené posledních 30 dní (ve vybraném fitku).
      Nezávislé na volbě období, filtr fitka platí. */
   function statsStag(g) {
@@ -7964,42 +7965,166 @@
       </div>
     </section>`;
   }
-  function statsEx({ g, range, since, s }) {
-    let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
-    h += `<section class="sec">
-      <div class="sec-h"><h2>Nejčastější cviky</h2></div>
-      <div class="card">${hbarList(topExRows(s, 8), true)}</div>
-    </section>`;
-    h += statsStag(g);
-    // seznam cviků
-    const { byEx } = derive();
-    let rows = [];
-    for (const id in byEx) {
-      const ss = byEx[id].filter((x) => g === "all" || x.w.gymId === g);
-      if (!ss.length) continue;
-      const ex = exOf(id);
-      if (S.exMuscle !== "all" && exGroup(ex) !== S.exMuscle) continue;
-      if (!exMatch(ex, S.exSearch)) continue;
-      let best = 0;
-      for (const x of ss) {
-        if (x.best > best) {
-          best = x.best;
+  /* ---------- PROGRES PO CVICÍCH (F3-26) ----------
+     Statistiky → Cviky odpovídají na „zlepšuji se?“: u každého cviku aktuální hodnota a změna za zvolené
+     období, řazení Naposledy | Zlepšení (S.exSort, Local exSort) a blok Největší zlepšení (5 cviků s největší
+     změnou v %, místo Nejčastějších cviků). Nic se neukládá, počítá se z derive().byEx.
+     Ukazatel (progMetric) podle druhu cviku: váha × opakování odh. 1RM, ale když mají pracovní série obvykle
+     (medián) víc než PROG_HI_REPS opakování, max. zátěž (odhad 1RM je tam nepřesný); vlastní váha nejvíc
+     opakování v sérii (aby zlepšení nedělala tělesná hmotnost, jako stagnace F4-06); se zátěží a s dopomocí
+     odh. 1RM včetně tělesné hmotnosti (jako graf na stránce cviku); na čas nejdelší výdrž; vzdálenost tempo
+     (km/h, jako rekordy). Funkci může převzít i F3-28 (výchozí graf stránky cviku).
+     Změna (progOf): nejlepší hodnota z prvních PROG_EDGE tréninků v období proti nejlepší z posledních
+     PROG_EDGE, jen když je v období aspoň PROG_MIN tréninků s cvikem rozložených aspoň na PROG_SPAN dní, jinak
+     null (v seznamu –). Procenta vždy celá (progPct), změna pod 1 % = 0. Pokles šedě, ne červeně (není chyba).
+     Kontext jako rekordy a stagnace: cvik vázaný na fitko se počítá v každém fitku zvlášť, u Všech fitek má
+     každé fitko vlastní řádek. Platí filtr fitka a období, hledání a partie jen pro seznam. Bez zlepšení
+     (statsStag) zůstává nezávislé na období, proto může být cvik v obou blocích. Vysvětlení v HELP.prog. */
+  const PROG_EDGE = 2; // kolik tréninků na začátku a na konci období se porovnává
+  const PROG_MIN = 3; // nejméně tréninků s cvikem v období
+  const PROG_SPAN = 14 * DAY; // nejkratší rozpětí mezi prvním a posledním tréninkem v období
+  const PROG_HI_REPS = 10; // nad tolik opakování (medián) se místo odh. 1RM bere max. zátěž
+  // medián opakování pracovních sérií ve výskytech cviku ss
+  function repsMedian(ss) {
+    const reps = [];
+    for (const x of ss) {
+      for (const s of x.e.sets) {
+        if (isWork(s.t) && +s.reps > 0) {
+          reps.push(+s.reps);
         }
       }
-      const inR = ss.filter((x) => x.w.start >= since).length;
-      rows.push({
-        id,
-        ex,
-        n: ss.length,
-        inR,
-        last: ss[0].w.start,
-        best,
-        gyms: new Set(ss.map((x) => x.w.gymId)).size,
-      });
     }
-    rows.sort((a, b) => b.last - a.last);
+    if (!reps.length) return 0;
+    reps.sort((a, b) => a - b);
+    return reps[Math.floor(reps.length / 2)];
+  }
+  /* ukazatel cviku pro porovnání: {key: pole ve výskytu z derive().byEx, l: popisek, unit, fmt: hodnota jako
+     text, fmtD: změna jako text bez znaménka}; ss = výskyty, podle kterých se rozhodne o max. zátěži */
+  function progMetric(exId, ss) {
+    const kind = kindOf(exId);
+    const kg = (v) => fmtKg(Math.round(v * 10) / 10);
+    if (kind === "time" || kind === "timew") {
+      return { key: "maxSec", l: "výdrž", fmt: fmtSec, fmtD: fmtSec };
+    }
+    if (kind === "dist") {
+      return { key: "speed", l: "tempo km/h", fmt: kg, fmtD: (d) => kg(d) + " km/h" };
+    }
+    if (kind === "bw") {
+      return { key: "maxReps", l: "opak.", fmt: fmtInt, fmtD: (d) => fmtInt(d) + " opak." };
+    }
+    if (kind === "wr" && repsMedian(ss) > PROG_HI_REPS) {
+      return { key: "maxKg", l: "max. zátěž", fmt: kg, fmtD: (d) => kg(d) + " kg" };
+    }
+    return { key: "best", l: "odh. 1RM", fmt: (v) => fmtKg(Math.round(v)), fmtD: (d) => kg(d) + " kg" };
+  }
+  // změna v celých procentech (−0 → 0)
+  const progPct = (p) => Math.round(p.pct) || 0;
+  /* hodnota a změna cviku v jednom kontextu: ss = výskyty od nejnovějšího (jen jedno fitko u vázaného cviku),
+     since = začátek období. Vrací {m: ukazatel, v: aktuální hodnota, d: změna, pct} (d a pct null = málo
+     dat), nebo null, když cvik ukazatel nemá (např. série bez hodnot). */
+  function progOf(exId, ss, since) {
+    const inR = ss.filter((x) => x.w.start >= since);
+    const m = progMetric(exId, inR.length ? inR : ss);
+    const vals = ss.filter((x) => x[m.key] > 0);
+    if (!vals.length) return null;
+    const best = (list) => Math.max(...list.map((x) => x[m.key]));
+    const r = { m, v: best(vals.slice(0, PROG_EDGE)), d: null, pct: null };
+    const sel = vals.filter((x) => x.w.start >= since);
+    if (sel.length < PROG_MIN || sel[0].w.start - sel[sel.length - 1].w.start < PROG_SPAN) return r;
+    const from = best(sel.slice(-PROG_EDGE));
+    r.d = r.v - from;
+    r.pct = (r.d / from) * 100;
+    return r;
+  }
+  // změna jako text s trojúhelníkem (pct = v procentech); pokles šedě
+  function progChg(p, pct) {
+    if (p.d == null) return '<span class="flat">–</span>';
+    const pc = progPct(p);
+    if (!pc) return `<span class="flat">${SAME}</span>`;
+    const txt = pct ? Math.abs(pc) + " %" : p.m.fmtD(Math.abs(p.d));
+    return pc > 0
+      ? `<span class="gain">${TRI.up} +${txt}</span>`
+      : `<span class="flat">${TRI.down} −${txt}</span>`;
+  }
+  /* řádky seznamu Cviky: jeden za cvik, u cviku vázaného na fitko při Všech fitkách jeden za každé fitko
+     ({id, ex, gymId (jen vázaný cvik cvičený ve víc fitkách, jinak null), n, inR, last, p: progOf}) */
+  function progRows(g, since) {
+    const { byEx } = derive();
+    const rows = [];
+    for (const id in byEx) {
+      const ex = exOf(id);
+      const all = byEx[id].filter((x) => g === "all" || x.w.gymId === g);
+      if (!all.length) continue;
+      const groups = {};
+      for (const x of all) {
+        const k = ex.gymDep && g === "all" ? x.w.gymId : "*";
+        (groups[k] = groups[k] || []).push(x);
+      }
+      // název fitka v řádku, jen když cvik vázaný na fitko má řádky ve víc fitkách
+      const multi = Object.keys(groups).length > 1;
+      for (const k in groups) {
+        const ss = groups[k];
+        rows.push({
+          id,
+          ex,
+          gymId: multi ? k : null,
+          n: ss.length,
+          inR: ss.filter((x) => x.w.start >= since).length,
+          last: ss[0].w.start,
+          p: progOf(id, ss, since),
+        });
+      }
+    }
+    return rows;
+  }
+  // blok Největší zlepšení: 5 řádků s největší kladnou změnou v %, bez nich se neukáže
+  function progBest(rows) {
+    const top = rows
+      .filter((r) => r.p && r.p.d != null && progPct(r.p) > 0)
+      .sort((a, b) => b.p.pct - a.p.pct)
+      .slice(0, 5);
+    if (!top.length) return "";
+    const list = top.map((r) => ({
+      id: r.id,
+      act: "openEx",
+      label: r.ex.name + (r.gymId ? " · " + gymName(r.gymId) : ""),
+      v: r.p.pct,
+      col: "var(--good)",
+      cls: "gain",
+      txt: "+" + progPct(r.p) + " %",
+    }));
+    return `<section class="sec">
+      <div class="sec-h"><h2>Největší zlepšení</h2>${helpBtn("prog")}</div>
+      <div class="card">${hbarList(list, true)}</div>
+    </section>`;
+  }
+  // řazení Zlepšení: cviky se změnou podle % (největší nahoře), pak bez změny podle posledního tréninku
+  function progSort(a, b) {
+    const ha = a.p && a.p.d != null,
+      hb = b.p && b.p.d != null;
+    if (ha !== hb) return ha ? -1 : 1;
+    if (ha && progPct(a.p) !== progPct(b.p)) return b.p.pct - a.p.pct;
+    return b.last - a.last;
+  }
+  function statsEx({ g, range, since }) {
+    let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
+    const all = progRows(g, since);
+    h += progBest(all);
+    h += statsStag(g);
+    // seznam cviků
+    const pct = S.exSort === "prog";
+    const rows = all.filter(
+      (r) => (S.exMuscle === "all" || exGroup(r.ex) === S.exMuscle) && exMatch(r.ex, S.exSearch),
+    );
+    rows.sort(pct ? progSort : (a, b) => b.last - a.last);
     h += `<section class="sec">
-      <div class="sec-h"><h2>Cviky</h2><span class="xs muted">${rows.length}</span></div>
+      <div class="sec-h">
+        <h2>Cviky</h2><span class="xs muted">${rows.length}</span>
+        <div class="seg" style="margin-left:auto">
+          <button data-act="exSort" data-v="last" aria-pressed="${!pct}">Naposledy</button>
+          <button data-act="exSort" data-v="prog" aria-pressed="${pct}">Zlepšení</button>
+        </div>
+      </div>
       <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
           value="${esc(S.exSearch)}">
       <div class="chips" data-ck="exMuscle" style="margin-top:8px">
@@ -8018,18 +8143,20 @@
       </div>
       <div class="stack" style="margin-top:10px;gap:6px">`;
     for (const r of rows.slice(0, S.exLimit || 60)) {
+      const p = r.p;
       h +=
         `<button class="exrow" data-act="openEx" data-v="${esc(r.id)}">
         <div class="grow">
           <div class="n">${esc(r.ex.name)}</div>
           ${r.ex.cz ? `<div class="cz">${esc(r.ex.cz)}</div>` : ""}
           <div class="m">
-            ${esc(MUSCLES[exGroup(r.ex)] || "")} · ${r.n}×` +
-        `${range !== "all" ? " (" + r.inR + "× v období)" : ""} · naposledy ${fmtDateS(r.last)}` +
-        `${r.ex.gymDep && r.gyms > 1 && g === "all" ? " · " + r.gyms + " fitka" : ""}
+            ${esc(MUSCLES[exGroup(r.ex)] || "")}${r.gymId ? " · " + esc(gymName(r.gymId)) : ""} · ${r.n}×` +
+        `${range !== "all" ? " (" + r.inR + "× v období)" : ""} · naposledy ${fmtDateS(r.last)}
           </div>
         </div>
-        <div class="r">${r.best ? `${fmtKg(Math.round(r.best))}<small>odh. 1RM</small>` : "–"}</div>
+        <div class="r">
+          ${p ? `${esc(p.m.fmt(p.v))}<small>${p.m.l}</small><span class="chg">${progChg(p, pct)}</span>` : "–"}
+        </div>
       </button>`;
     }
     if (rows.length > (S.exLimit || 60)) {
@@ -9681,6 +9808,35 @@
         ],
         ["Oslava po uložení tréninku", "Nad souhrnem tréninku, se všemi rekordy po cvicích."],
         ["Zvuk oslavy", "Hraje přes hlasitost médií."],
+      ],
+    },
+    prog: {
+      title: "Zlepšení za období",
+      items: () => [
+        [
+          "Změna u cviku",
+          "Porovná nejlepší hodnotu z prvních 2 tréninků v období s nejlepší z posledních 2. Ukáže se, když jsou " +
+            "v období aspoň 3 tréninky s cvikem rozložené aspoň na 14 dní, jinak –. Změna pod 1 % se bere jako 0.",
+        ],
+        [
+          "Co se porovnává",
+          "Váha a opakování: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
+            "nepřesný). Vlastní váha: nejvíc opakování v sérii. Se zátěží a s dopomocí: odhad 1RM včetně " +
+            "tělesné hmotnosti. Na čas: nejdelší výdrž. Vzdálenost: tempo v km/h.",
+        ],
+        [
+          "Největší zlepšení a řazení Zlepšení",
+          "Podle změny v procentech, aby lehké cviky nebyly vždy pod těžkými. Platí zvolené období a fitko.",
+        ],
+        [
+          "Bez zlepšení",
+          "Sleduje jen poslední tréninky s cvikem, ne období. Cvik proto může být v obou: za 3 měsíce se " +
+            "zlepšil, poslední týdny stojí.",
+        ],
+        [
+          "Cvik vázaný na fitko",
+          "Počítá se v každém fitku zvlášť, u Všech fitek má každé fitko vlastní řádek.",
+        ],
       ],
     },
     stag: {
@@ -13479,6 +13635,11 @@
         S.exMuscle = v;
         scheduleRender();
         break;
+      case "exSort":
+        S.exSort = v;
+        lsSet("exSort", v);
+        scheduleRender();
+        break;
       case "exMore":
         S.exLimit = (S.exLimit || 60) + 60;
         scheduleRender();
@@ -15177,6 +15338,18 @@
       exId: "pull-up",
       note: "vlastní váha, pořád se zlepšuje (nic)",
       sets: FAKE_DAYS.map((_, i) => fakeSets(0, 6 + i, 3)),
+    },
+    {
+      exId: "lateral-raise-dumbbell",
+      note:
+        "progres po cvicích (F3-26): 15 opakování, Statistiky → Cviky ukazují max. zátěž (ne odh. 1RM), " +
+        "+2 kg a v Největším zlepšení +25 %",
+      sets: [fakeSets(8, 15, 3), null, fakeSets(8, 15, 3), fakeSets(9, 15, 3), null, fakeSets(10, 15, 3)],
+    },
+    {
+      exId: "triceps-extension-cable",
+      note: "progres po cvicích (F3-26): pokles, ve Statistikách → Cviky šedě „▼ −3,2 kg“ (řazení Zlepšení −8 %)",
+      sets: [fakeSets(30, 8, 3), fakeSets(30, 8, 3), null, fakeSets(27.5, 8, 3), fakeSets(27.5, 8, 3), null],
     },
     {
       exId: "bicep-curl-dumbbell",
