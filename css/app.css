@@ -1903,6 +1903,17 @@ tr.done .okb {
   color: var(--ink-3);
   text-transform: uppercase;
 }
+/* Statistiky → Cviky (F3-26): změna za období pod hodnotou, zelená hodnota v bloku Největší zlepšení */
+.exrow .r .chg {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--body);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.hbar .v.gain {
+  color: var(--good);
+}
 .prt {
   width: 100%;
   border-collapse: collapse;
