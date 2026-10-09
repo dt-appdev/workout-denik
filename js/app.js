@@ -3196,12 +3196,22 @@
     return { range };
   }
 
-  /* ---------- REKORDY (F3-02) ----------
-     Počítají se chronologicky z celé historie (zpětně i pro importovaná data).
+  /* ---------- REKORDY (F3-02, F3-25) ----------
+     Počítají se chronologicky z celé historie (zpětně i pro importovaná data), nic se neukládá.
      Kontext: cvik vázaný na fitko -> zvlášť pro každé fitko, jinak globálně.
-     První trénink s cvikem v kontextu (a první výskyt daného typu) rekord nezakládá.
      Typy: maxKg (max. váha), e1rm (odh. 1RM), bestSet (kg × opak. nejvyšší součin),
-           vol (objem cviku v tréninku), reps (max. opakování bez zátěže u cviků s vlastní vahou). */
+           vol (objem cviku v tréninku), reps (max. opakování bez zátěže u cviků s vlastní vahou).
+     Rekord jako skutečná událost (F3-25): dřív se počítal každý překonaný typ zvlášť (78 rekordů za 30 dní
+     na 13 tréninků). Teď:
+     - zlepšení = překonaná nejlepší hodnota libovolného typu, až od REC_FROM. tréninku cviku v kontextu
+       (první trénink zakládá výchozí hodnoty, druhý je hledání správné váhy, hlavně u nového stroje),
+     - rekord = zlepšení velkého typu (REC_BIG, zlatá medaile), nejvýš 1 na cvik a trénink: hlavní je první
+       podle REC_ORDER, ostatní velké typy téhož cviku jsou v r.also (v oslavě a souhrnu drobně pod ním),
+     - malé typy (objem cviku, nejlepší série, celkový čas a vzdálenost) jsou jen stříbrná zlepšení na
+       stránce cviku, bez počtů a bez oslavy.
+     computeRecords vrací byW (jen rekordy, pro všechny počty, souhrn, sdílení a oslavu), byEx (všechna
+     zlepšení cviku, rekord má r.main), best a cnt (počet tréninků v kontextu, pro liveRecords).
+     Počty i oslava berou rekordy vždy přes wRecs(w). */
   const REC = {
     maxKg: "Max. zátěž",
     e1rm: "Odh. 1RM",
@@ -3229,6 +3239,7 @@
     "speed",
   ];
   const EPS = 1e-6;
+  const REC_FROM = 3; // rekord a zlepšení až od 3. tréninku cviku v kontextu (F3-25)
   // kontext rekordu: cvik, u cviku vázaného na fitko navíc fitko („bench|*“, „leg-press|g2“)
   function recCtx(exId, gymId) {
     const e = S.exLib[exId];
@@ -3316,12 +3327,13 @@
     return any ? m : null;
   }
   /* projde všechny tréninky od nejstaršího a zapíše, kde padl rekord:
-     byW = rekordy podle tréninku, byEx = podle cviku, best = nejlepší hodnoty v každém kontextu */
+     byW = rekordy podle tréninku (1 na cvik), byEx = zlepšení podle cviku, best = nejlepší hodnoty
+     v každém kontextu, cnt = počet tréninků v každém kontextu */
   function computeRecords() {
     const best = {}; // ctx -> {type:{v,set,w}}
-    const seen = {}; // ctx -> true po prvním tréninku
-    const byW = {}; // workoutId -> [{exId,type,v,prev,set}]
-    const byEx = {}; // exId -> [{w,type,v,prev,set,ctx}]
+    const cnt = {}; // ctx -> počet tréninků s cvikem
+    const byW = {}; // workoutId -> [{exId,type,v,prev,set,also}]
+    const byEx = {}; // exId -> [{w,type,v,prev,set,ctx,main}]
     const list = derive().all.slice().reverse();
     for (const w of list) {
       // sloučit případné duplicitní cviky v tréninku
@@ -3334,8 +3346,8 @@
         if (!m) continue;
         const ctx = recCtx(exId, w.gymId);
         const b = best[ctx] || (best[ctx] = {});
-        const first = !seen[ctx];
-        seen[ctx] = true;
+        const n = (cnt[ctx] = (cnt[ctx] || 0) + 1);
+        const found = [];
         for (const type in m) {
           const cur = m[type],
             prev = b[type];
@@ -3344,8 +3356,8 @@
             continue;
           }
           if (cur.v > prev.v + EPS) {
-            if (!first) {
-              const r = {
+            if (n >= REC_FROM) {
+              found.push({
                 exId,
                 type,
                 v: cur.v,
@@ -3354,16 +3366,23 @@
                 prevSet: prev.set,
                 ctx,
                 gymId: w.gymId,
-              };
-              (byW[w.id] = byW[w.id] || []).push(r);
-              (byEx[exId] = byEx[exId] || []).push(Object.assign({ w }, r));
+              });
             }
             b[type] = { v: cur.v, set: cur.set, w };
           }
         }
+        if (!found.length) continue;
+        found.sort((x, y) => REC_ORDER.indexOf(x.type) - REC_ORDER.indexOf(y.type));
+        const big = found.filter((r) => REC_BIG[r.type]);
+        if (big.length) {
+          (byW[w.id] = byW[w.id] || []).push(Object.assign({ also: big.slice(1) }, big[0]));
+        }
+        for (const r of found) {
+          (byEx[exId] = byEx[exId] || []).push(Object.assign({ w, main: r === big[0] }, r));
+        }
       }
     }
-    return { best, byW, byEx };
+    return { best, byW, byEx, cnt };
   }
   // rekordy (computeRecords), spočítané jednou po každé změně dat
   function recs() {
@@ -3373,18 +3392,19 @@
     }
     return d.rec;
   }
-  // rekordy, které padly v tréninku w
+  // rekordy, které padly v tréninku w (nejvýš 1 na cvik, další velké typy v r.also)
   function wRecs(w) {
     return recs().byW[w.id] || [];
   }
-  // živé medaile pro rozdělaný trénink: vrací {j:[types]} pro cvik i, seznam typů
-  // cviku a jejich hodnoty v ({typ:{v,set,prev,prevSet}})
+  /* živé medaile pro rozdělaný trénink: vrací {j:[types]} pro cvik i, seznam typů
+     cviku a jejich hodnoty v ({typ:{v,set,prev,prevSet}}). Jen velké typy (REC_BIG) a až od
+     REC_FROM. tréninku cviku v kontextu, stejně jako počty (F3-25). */
   function liveRecords(d, i) {
     const e = d.ex[i];
-    const kind = kindOf(e.exId);
-    const b = recs().best[recCtx(e.exId, d.gymId)];
+    const ctx = recCtx(e.exId, d.gymId);
+    const b = recs().best[ctx];
     const out = { sets: {}, ex: [], v: {} };
-    if (!b) return out; // první trénink s cvikem v tomto kontextu
+    if (!b || (recs().cnt[ctx] || 0) + 1 < REC_FROM) return out;
     const conv = (s) => ({
       t: s.t,
       kg: num(s.kg) || 0,
@@ -3405,7 +3425,8 @@
     });
     const m = exMetrics(e.exId, done.concat(extra), d.start);
     if (!m) return out;
-    for (const type in m) {
+    const types = REC_ORDER.filter((t) => m[t] && REC_BIG[t]);
+    for (const type of types) {
       const prev = b[type];
       if (!prev || !(m[type].v > prev.v + EPS)) continue;
       out.ex.push(type);
@@ -3420,10 +3441,10 @@
   function recListHtml(list, withEx) {
     if (!list.length) return "";
     if (withEx) {
-      // po cvicích: název na vlastním řádku, pod ním každý rekord zvlášť
+      // po cvicích: název na vlastním řádku, pod ním rekord a další překonané velké typy (r.also, F3-25)
       const g = {};
       for (const r of list) {
-        (g[r.exId] = g[r.exId] || []).push(r);
+        (g[r.exId] = g[r.exId] || []).push(r, ...(r.also || []));
       }
       return `<div class="reclist">
         ${Object.keys(g)
@@ -3577,8 +3598,9 @@
 
   /* ---------- OSLAVA REKORDU (F3-02) ----------
      Medaile přes celou obrazovku: v rozdělaném tréninku po dokončení cviku (odškrtnuté všechny pracovní
-     série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Zlatá = aspoň jeden velký rekord
-     (REC_BIG), jinak stříbrná; v seznamu jsou vždy všechny. Co už se oslavilo, si pamatuje cvik v rozdělaném
+     série, zahřívací se nepočítají) a po uložení tréninku nad souhrnem. Slaví se jen rekordy (F3-25: velké
+     typy REC_BIG, 1 na cvik, další překonané typy drobně pod ním), proto je medaile zlatá; stříbrná
+     zlepšení se neslaví. Co už se oslavilo, si pamatuje cvik v rozdělaném
      tréninku (e.cel = {typ: hodnota}, do uloženého tréninku se nedostane); znovu se slaví jen vyšší hodnota
      nebo nový typ. Nastavení v config/main: recCelEx (po cviku; vypnuto = jen hláška po sérii jako dřív),
      recCelW (po tréninku), recSnd (id zvuku z CEL_SOUNDS, "off" = bez zvuku). Zvuky se tvoří přes Web Audio.
@@ -3612,10 +3634,9 @@
     for (const t of nw) {
       e.cel[t] = lr.v[t].v;
     }
-    celebrate(
-      nw.map((t) => Object.assign({ exId: e.exId, type: t }, lr.v[t])),
-      exName(e.exId),
-    );
+    // jeden rekord za cvik, další typy drobně pod ním (F3-25); lr.ex je seřazený podle REC_ORDER
+    const R = nw.map((t) => Object.assign({ exId: e.exId, type: t }, lr.v[t]));
+    celebrate([Object.assign({ also: R.slice(1) }, R[0])], exName(e.exId));
   }
   function celMedal(k) {
     const m =
@@ -3661,34 +3682,28 @@
       </g>
     </svg>`;
   }
+  /* R = rekordy z wRecs (1 na cvik), další překonané typy cviku v r.also se ukážou drobně pod rekordem */
   function celebrate(R, sub) {
     celClose(true);
     const gold = R.some((r) => REC_BIG[r.type]),
-      k = gold ? "gold" : "silver",
-      rank = (t) => (REC_BIG[t] ? 0 : 100) + REC_ORDER.indexOf(t);
-    const g = {};
-    for (const r of R) {
-      (g[r.exId] = g[r.exId] || []).push(r);
-    }
-    const ids = Object.keys(g);
-    const list = ids
-      .map(
-        (id) =>
-          (ids.length > 1 ? `<div class="cel-g">${esc(exName(id))}</div>` : "") +
-          g[id]
-            .sort((a, b) => rank(a.type) - rank(b.type))
-            .map((r) => {
-              const b = REC_BIG[r.type];
-              return `<div class="cel-r${b ? "" : " small"}">
-                ${medal([r.type])}
-                <span>${esc(REC[r.type])}</span>
-                <b>${esc(recFmt(r.type, r.v, r.set))}</b>
-                <span class="was">dříve ${esc(recFmt(r.type, r.prev, r.prevSet))}</span>
-              </div>`;
-            })
-            .join(""),
-      )
-      .join("");
+      k = gold ? "gold" : "silver";
+    // další překonaný typ: jeden drobný řádek pod rekordem
+    const also = (x) =>
+      `<div class="cel-also">
+        ${esc(REC[x.type])}: <b>${esc(recFmt(x.type, x.v, x.set))}</b>` +
+      `<span> (dříve ${esc(recFmt(x.type, x.prev, x.prevSet))})</span>
+      </div>`;
+    const list = R.map(
+      (r) =>
+        (R.length > 1 ? `<div class="cel-g">${esc(exName(r.exId))}</div>` : "") +
+        `<div class="cel-r">
+          ${medal([r.type])}
+          <span>${esc(REC[r.type])}</span>
+          <b>${esc(recFmt(r.type, r.v, r.set))}</b>
+          <span class="was">dříve ${esc(recFmt(r.type, r.prev, r.prevSet))}</span>
+        </div>` +
+        (r.also || []).map(also).join(""),
+    ).join("");
     let sp = "";
     for (let i = 0; i < 14; i++) {
       sp +=
@@ -6439,11 +6454,10 @@
     }
     const sets = wSets(w);
     const ids = [...new Set((w.ex || []).map((e) => e.exId))];
-    // rekordy: nejdřív velké (REC_BIG), pak podle pořadí druhů
-    const rank = (t) => (REC_BIG[t] ? 0 : 100) + REC_ORDER.indexOf(t);
+    // rekordy (1 na cvik, F3-25) podle pořadí druhů
     const R = wRecs(w)
       .slice()
-      .sort((a, b) => rank(a.type) - rank(b.type));
+      .sort((a, b) => REC_ORDER.indexOf(a.type) - REC_ORDER.indexOf(b.type));
     return {
       title: w.title || "Trénink",
       date: date + " · " + fmtTime(w.start),
@@ -8436,7 +8450,7 @@
       ps += s.nWork;
     }
     const pr = (recs().byEx[id] || []).filter(
-      (r) => r.w.start >= since && (!ex.gymDep || S.detailGym === "all" || r.gymId === S.detailGym),
+      (r) => r.main && r.w.start >= since && (!ex.gymDep || S.detailGym === "all" || r.gymId === S.detailGym),
     ).length;
     h += `<section class="sec">
       ${rangeSeg("detailRange", S.detailRange)}
@@ -8589,7 +8603,7 @@
     const rl = (R.byEx[id] || []).slice().reverse().slice(0, 8);
     if (rl.length) {
       h += `<div class="card" style="margin-top:8px">
-        <div class="subh" style="margin-top:0">Poslední rekordy</div>
+        <div class="subh" style="margin-top:0">Poslední rekordy a zlepšení</div>
         ${rl
           .map(
             (r) =>
@@ -8611,14 +8625,14 @@
       <div class="sec-h"><h2>Historie cviku</h2><span class="xs muted">${list.length}×</span></div>
       <div class="stack" style="gap:6px">`;
     for (const s of list.slice(0, S.exHistLimit || 25)) {
-      const recs = wRecs(s.w).filter((r) => r.exId === id);
-      const nr = recs.length;
+      // medaile: zlatá za rekord, stříbrná za zlepšení (F3-25), bez počtu
+      const imp = (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
       h +=
         `<div class="card" style="padding:10px 12px">
         <div class="row small">
           <b class="grow">
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
-        `${nr ? " " + recCount(recs, nr > 1 ? "×" + nr : "") : ""}
+        `${imp.length ? " " + recCount(imp, "") : ""}
           </b>
           <span class="pill">
             <span class="sw" style="background:${gymColor(s.w.gymId)}"></span>
@@ -9802,8 +9816,9 @@
       items: () => [
         [
           "Medaile",
-          "Při novém rekordu vyskočí medaile se všemi rekordy. Zlatá za max. zátěž, odhad 1RM, opakování, " +
-            "výdrž, vzdálenost a tempo, stříbrná za objem, nejlepší sérii a celkový čas nebo vzdálenost.",
+          "Při novém rekordu vyskočí medaile. Rekord je překonaná max. zátěž, odhad 1RM, opakování, výdrž, " +
+            "vzdálenost nebo tempo, nejvýš jeden za cvik a trénink, další překonané údaje jsou drobně pod ním. " +
+            "Počítá se od 3. tréninku s cvikem (u cviku vázaného na fitko v každém fitku zvlášť).",
         ],
         [
           "Oslava po dokončení cviku",
@@ -9988,8 +10003,11 @@
         const ex = exOf(id),
           kind = kindOf(id);
         let text =
-          "Odhad 1RM podle Epleyho: váha × (1 + opakování / 30). Zahřívací série se nepočítají. První " +
-          `trénink s cvikem${ex.gymDep ? " v každém fitku" : ""} rekord nezakládá.`;
+          "Zlatá medaile = rekord: překonaná max. zátěž, odhad 1RM, opakování, výdrž, vzdálenost nebo " +
+          "tempo, v jednom tréninku nejvýš jeden. Stříbrná = zlepšení objemu, nejlepší série nebo celkového " +
+          "času či vzdálenosti, ukazuje se jen tady. Počítá se od 3. tréninku s cvikem" +
+          `${ex.gymDep ? " v každém fitku zvlášť" : ""}, první dva určí výchozí hodnoty. Odhad 1RM podle ` +
+          "Epleyho: váha × (1 + opakování / 30). Zahřívací série se nepočítají.";
         if (hasReps(kind) && kind !== "wr") {
           text +=
             " U tohoto typu se zátěž počítá z tvé tělesné hmotnosti (" +
