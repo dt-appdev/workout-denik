@@ -88,7 +88,7 @@ flowchart LR
 
 8. **F2-04** Šablona na řadě jako hlavní akce úvodu · *Úvod · P2 · B · střední* – nejčastější akce nemá největší váhu.
 9. ~~**F3-26** Progres po cvicích ve Statistikách~~ – hotovo 9. 10. 2026.
-10. **F3-25** Rekord jako skutečná událost · *Rekordy · P2 · B/D · střední* – 89 rekordů za 30 dní, rekord přestal být signálem. Předpoklad pro F5-01 a F5-03. Začít hlubší diskusí o definici rekordu.
+10. ~~**F3-25** Rekord jako skutečná událost~~ – hotovo 10. 10. 2026.
 11. **F3-27** Porovnání s předchozím obdobím · *Statistiky · B · nízká–střední* – čísla Přehledu bez srovnání nic neříkají.
 
 #### Etapa 4 – Drobnosti a doladění (P3, rychlé)
@@ -221,7 +221,7 @@ Předpoklad: F0-02 (svalové partie).
   - Historie: „0 dní volna“ bez kontextu → popisek „dní od tréninku“,
   - nadpis „Probíhá trénink“ se při písmu Největší zalomí na 2 řádky → kratší („Trénink“ a čas),
   - `enterkeyhint="next"` / `"done"` v políčkách série, jen pokud ověření v telefonu ukáže, že Gboard nepřechází z kg na Opak.
-- [ ] **F3-25** Rekord jako skutečná událost (UX audit 27. 9. 2026, §3, §6 a §11; P2 · B/D · střední): rekord se počítá za každou metriku zvlášť (max. zátěž, odh. 1RM, nejlepší série, objem cviku…) a u cviků vázaných na fitko zvlášť po fitkách, takže jedna dobrá série udělá 2–3 rekordy (v auditu 28 rekordů na 20 tréninků bench pressu, 89 za 30 dní) a dlaždice Rekordy nic neříká. Návrh: v počtech (Statistiky, Historie, souhrn, obrázek ke sdílení) a v oslavě jen 1 rekord na cvik a trénink (nejvyšší metrika); objem cviku (roste už přidáním série) nepočítat jako rekord, nebo ho ukazovat jen na stránce cviku. Navazuje na dělení zlatá / stříbrná medaile (F3-20, `REC_BIG`). Rekordy se počítají z historie, změna definice nic neztratí. Předpoklad pro F5-01 a F5-03. Kde: sekce REKORDY (F3-02) a OSLAVA REKORDU. **Definice rekordu se rozhodne až po hlubší diskusi na začátku úlohy** (27. 9.; výchozí návrh v Otevřených otázkách).
+- [x] **F3-25** Rekord jako skutečná událost
 - [x] **F3-26** Progres po cvicích ve Statistikách
 - [ ] **F3-27** Porovnání s předchozím obdobím (UX audit 27. 9. 2026, §6; B · nízká–střední): dlaždice Přehledu (tréninky, čas, objem, série) s rozdílem proti stejně dlouhému předchozímu období („14 tréninků · +1“), stejně Souhrn minulý měsíc / pololetí / rok. Přesunuto z F3-04 (karty s rozdíly), bez radaru. Platí filtr fitka. Souhrn tréninku už porovnává s minulým tréninkem (`dHtml`), stejný vzhled rozdílů.
 - [ ] **F3-28** Stránka cviku: historie výš (UX audit 27. 9. 2026, §2 G, §4 a §6; P3 · B · nízká–střední): na stránce cviku je pořadí graf → osobní rekordy → poslední rekordy → historie a historie (nejčastější důvod návštěvy) začíná cca 1 300 px pod horním okrajem. Návrh: graf → historie → osobní rekordy, blok „Poslední rekordy“ vypustit nebo sbalit (opakuje Osobní rekordy a medaile v historii). Ze záložky Cviky otevírat cvik s historií rovnou na Statistikách (dnes Popis; z tréninku už Statistiky). Výchozí metrika grafu u cviků s víc než 10 opakováními Max. zátěž nebo Nejlepší série (odhad 1RM je tam nepřesný).
@@ -297,7 +297,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
 | F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
-| F3-25 | Co počítat jako rekord? Zůstanou malé (stříbrné) rekordy vidět? | **Nerozhodnuto (27. 9. 2026):** rozhodne se až po hlubší diskusi na začátku úlohy. Výchozí návrh k diskusi: v počtech a oslavě 1 rekord na cvik a trénink (první podle pořadí `REC_ORDER`: max. zátěž, odh. 1RM…); objem cviku a nejlepší série jen na stránce cviku, bez oslavy a mimo počty. |
 | F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
 | F3-23 | Redesign jako vizuální přestavba, nebo úzké zadání podle auditu? | **Rozhodnuto 27. 9. 2026:** zatím jen úzké zadání (barvy podle významu, jedna hlavní akce na obrazovce, dotyková plocha 44–48 px); vizuální přestavbu zvážit až potom. |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |

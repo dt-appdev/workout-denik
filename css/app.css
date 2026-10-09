@@ -3396,8 +3396,14 @@ textarea.inp {
   align-items: baseline;
   font-size: var(--fs-md);
 }
-.cel-r.small {
+/* další překonaný typ pod rekordem (F3-25) */
+.cel-also {
+  padding-left: calc(1.35em + 8px);
+  font-size: var(--fs-sm);
   color: var(--ink-2);
+}
+.cel-also span {
+  color: var(--ink-3);
 }
 .cel-r b {
   font-family: var(--display);
