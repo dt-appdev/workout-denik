@@ -2469,6 +2469,10 @@
      tlačítko s id effId). Klepnutí otevře panel sheetEffort s tlačítky hodnot (effRow, akce effSet)
      a Smazat (effDel). Stejný řádek tlačítek je v krokovači pod hodnotami série; tam se panel nezavře a
      tlačítka i buňka v tabulce se změní bez překreslení (effShow). Klepnutí na vybranou hodnotu ji zruší.
+     V rozdělaném tréninku se zapnutým krokovačem (kkOn) otevře klepnutí na buňku místo sheetEffort celý
+     krokovač série (sheetStepper), stejně jako klepnutí na kg nebo opakování; RIR se tam ruší opětovným
+     klepnutím na vybranou hodnotu. U hotové série (tr.done) má buňka průhledné pozadí jako políčka série,
+     u série otevřené v krokovači (tr.kk-on) červený rámeček (kromě série do selhání).
      Hodnota je nepovinná, ✓ série ji nevyžaduje.
      Druh série: zahřívací série hodnotu nemá (prázdná buňka, při uložení se zahodí). Série do selhání (F)
      má vždy RIR 0 / RPE 10 (effOf), změnit nejde (klepnutí = hláška effFix), při uložení se zapíše
@@ -12553,7 +12557,12 @@
         break;
       // RIR/RPE (F4-04)
       case "eff":
-        sheetEffort(i, j);
+        // v rozdělaném tréninku s krokovačem celý panel série (kg, opakování, RIR), jinak jen RIR
+        if (kkOn(d)) {
+          sheetStepper(i, j, kFields(kindOf(d.ex[i].exId))[0]);
+        } else {
+          sheetEffort(i, j);
+        }
         break;
       case "effFix":
         toast("Série do selhání má vždy " + (effMode() === "rpe" ? "RPE 10" : "RIR 0") + ".");

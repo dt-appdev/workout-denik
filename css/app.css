@@ -1259,7 +1259,8 @@ select.inp {
   outline: none;
   box-shadow: inset 0 -2px 0 var(--accent);
 }
-tr.done .cell {
+tr.done .cell,
+tr.done .effb {
   background: transparent;
 }
 /* F1-10: neplatné číslo (červený rámeček) */
@@ -1401,7 +1402,8 @@ tr.done .okb {
 .sets tr.kk-on td {
   background: var(--accent-soft);
 }
-.sets tr.kk-on .cell {
+.sets tr.kk-on .cell,
+.sets tr.kk-on .effb:not(.fix) {
   border-color: var(--accent);
   background: var(--surface);
 }
