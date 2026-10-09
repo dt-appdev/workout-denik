@@ -185,7 +185,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Vývojové nástroje (záznam oznámení, zkušební data `FAKE_PLAN`) jen v `DEV` (testovací verze a lokálně), ve vydané
   verzi nikdy. Nová úloha může do `FAKE_PLAN` přidat své scénáře.
 - Odmítnuté nápady, znovu nenavrhovat: udržování telefonu vzhůru neslyšitelným tónem (F1-04), swipe na ✓ série
-  (tah od levého okraje je v Chromu Zpět), tlačítko Vrátit u smazané série (F2-03).
+  (tah od levého okraje je v Chromu Zpět), tlačítko Vrátit u smazané série (F2-03),
+  schovat přečas pauzy mimo záložku Trénink (F1-16).
 
 ## Datová vrstva (js/app.js, sekce „DATOVÁ VRSTVA")
 

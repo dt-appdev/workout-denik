@@ -81,7 +81,7 @@ flowchart LR
 
 4. ~~**F1-15** Druh série výběrem místo cyklu~~ – odloženo 28. 9. 2026 (uživatel se nikdy neuklikl), viz `docs/navrhy/F1-15-druh-serie.md`.
 5. ~~**F1-18** Větší dotykové plochy v tréninku~~ – hotovo 28. 9. 2026.
-6. **F1-16** Přečas pauzy jen na záložce Trénink · *Pauza · P2 · B · nízká* – pruh přečasu zakrývá obsah ostatních záložek.
+6. ~~**F1-16** Pruh pauzy nezakrývá obsah~~ – hotovo 9. 10. 2026.
 7. **F1-06** Přidávání cviku a hledání po slovech · *Výběr cviku · P2 · A · střední* – abecední výsledky, víceslovné hledání jen přesnou frází.
 
 #### Etapa 3 – „Co dnes?“ a „Zlepšuji se?“ (P2, větší úpravy)
@@ -166,7 +166,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-13** Předvyplnění ze série nad
 - [x] **F1-14** Neoznačené série s hodnotami při dokončení
 - [ ] **F1-15** Druh série výběrem místo cyklu (UX audit 27. 9. 2026, §5 nález 2): klepnutí na číslo série by místo přepnutí dokola otevřelo panel se 4 druhy (jako v Hevy). **Odloženo 28. 9. 2026:** uživatel se nikdy neuklikl a zapsané hodnoty ani předvyplnění se přepnutím neztratí. Ověřené chování, podoba v Hevy a návrh v `docs/navrhy/F1-15-druh-serie.md`. Od F1-18 (28. 9.) reaguje odznak na klepnutí v celé buňce; kdyby se tím začal druh série měnit omylem, vrátit se k F1-15.
-- [ ] **F1-16** Přečas pauzy jen na záložce Trénink (UX audit 27. 9. 2026, §3 a §8; P2 · B · nízká): pruh pauzy je nad spodní lištou na všech záložkách a korálový přečas (volba Počítat přečas) zmizí až po 15 min (`REST_OVER_MAX`), takže po tréninku zakrývá obsah Statistik a Těla. Návrh: na ostatních záložkách místo pruhu přečasu jen malý ukazatel na záložce Trénink, přečas ukončit po 5 min, barva přečasu ne korálová (sladit s F3-23). Odpočet pauzy (±15 s, Přeskočit) zůstane na všech záložkách (Otevřené otázky).
+- [x] **F1-16** Pruh pauzy nezakrývá obsah
 - [ ] **F1-17** Kratší pauza po zahřívací sérii (UX audit 27. 9. 2026, §5 nález 4; P3 · B · nízká): po zahřívací sérii dnes běží stejná pauza jako po pracovní (výchozí 2:00), takže se často přeskakuje. Návrh: vlastní délka pauzy po zahřívací sérii v Nastavení → Trénink → Odpočinek mezi sériemi (např. výchozí 1:00, volba i Bez pauzy). Jednodušší než celé F1-09. Kde: výběr délky pauzy v `toggleSetDone` (jako `ssRest` u supersérie, F4-05), nová položka v `HELP`.
 - [x] **F1-18** Větší dotykové plochy v tréninku
 - [x] **F1-19** Minule jako text u cviku místo sloupce
@@ -295,7 +295,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
-| F1-16 | Skrýt na ostatních záložkách jen přečas, nebo i odpočet pauzy? Po kolika minutách přečas ukončit? | Jen přečas (odpočet s ±15 s a Přeskočit zůstane všude), konec přečasu po 5 min. |
 | F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
 | F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
