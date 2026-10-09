@@ -281,6 +281,10 @@ button {
   padding-inline: 16px;
   padding-block: 0 calc(96px + env(safe-area-inset-bottom, 0px));
 }
+/* pruh pauzy nad spodní lištou nesmí zakrýt konec stránky: místo navíc o výšku pruhu (F1-16) */
+body:has(#rest:not([hidden])) .wrap {
+  padding-bottom: calc(96px + 16px + max(38px, var(--fs-4xl)) + 8px + env(safe-area-inset-bottom, 0px));
+}
 
 /* top bar */
 .top {
@@ -416,6 +420,22 @@ button {
   height: 7px;
   border-radius: 50%;
   background: var(--accent);
+}
+/* přečas pauzy mimo záložku Trénink: tečka bliká (F1-16) */
+.tabs .dot.over {
+  animation: dotOver 1.2s ease-in-out infinite;
+}
+@keyframes dotOver {
+  50% {
+    opacity: 0.25;
+    transform: scale(1.4);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tabs .dot.over {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
 }
 
 /* generic */
@@ -1641,10 +1661,10 @@ tr.done .okb {
 .rest-in button:last-child::after {
   right: -8px;
 }
-.rest-in.over {
-  background: var(--accent);
-  color: var(--accent-ink);
-} /* přečas po konci pauzy (F1-04) */
+/* přečas po konci pauzy (F1-04): tmavý jako odpočet, zvýrazněný jen čas; konečná barva podle F3-23 (F1-16) */
+.rest-in.over b {
+  color: var(--accent);
+}
 /* ztmavení během pauzy (F1-02): černá obrazovka jen s odpočtem, po konci pauzy světlejší */
 .dim {
   position: fixed;

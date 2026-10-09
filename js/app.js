@@ -9515,7 +9515,8 @@
         [
           "Počítat přečas",
           "Po konci pauzy lišta zůstane a ukazuje, jak dlouho už odpočíváš (+0:25), dokud neodškrtneš další " +
-            "sérii.",
+            "sérii, nejvýš 5 minut. Lišta je vidět jen na záložce Trénink, jinde přečas ukazuje blikající " +
+            "tečka u záložky Trénink.",
         ],
         [
           "Oznámení na pozadí",
@@ -11286,6 +11287,11 @@
      - appka byla na pozadí nebo displej zhasnutý → systémové oznámení z service workeru
        (sw.js, zpráva "rest"; Chrome udrží worker vzhůru nejvýš ~5 min), po návratu už nepípá.
      S.cfg.restOver = po konci pauzy počítat přečas, dokud se neodškrtne další série.
+     Přečas jen na záložce Trénink (F1-16): pruh přečasu se ukazuje jen na trasách train / home (restOnTrain),
+     na ostatních záložkách pruh zmizí a přečas ukazuje jen blikající tečka u záložky Trénink (.dot.over).
+     Odpočet pauzy (±15, Přeskočit) zůstává na všech záložkách. Přečas skončí po 5 min (REST_OVER_MAX),
+     s ním i zapnutý displej (F1-02). Barva přečasu zatím tmavá jako odpočet, čas zvýrazněný; konečná barva
+     podle F3-23. Když je pruh vidět, má obsah stránky dole místo navíc (CSS .wrap), aby nic nezakryl.
      Po ✓ poslední neodškrtnuté série tréninku se pauza nespustí a běžící se zastaví (allSetsDone).
      Start jen přes restStart(). Nastavení v config/main: restOn (hlavní vypínač, vypnuto = po ✓ žádná pauza,
      F4-05), restSec, restSs (po pracovní supersérii, F4-05), restAlert (both / sound / vib), restOver,
@@ -11296,7 +11302,7 @@
      vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat. */
   const REST_SECS = [60, 90, 120, 150, 180]; // volby délky pauzy v Nastavení (výchozí i po supersérii)
   const REST_VIB = [700, 300, 700],
-    REST_OVER_MAX = 15 * 60; // 2 dlouhé vibrace; přečas zmizí po 15 min
+    REST_OVER_MAX = 5 * 60; // 2 dlouhé vibrace; přečas zmizí po 5 min (F1-16)
   let audioCtx = null,
     visibleSince = document.hidden ? Infinity : Date.now();
   {
@@ -11514,14 +11520,21 @@
     restSave();
     renderRest();
   }
+  // záložka Trénink: rozdělaný trénink nebo úvod (F1-16)
+  const restOnTrain = () => S.route === "train" || S.route === "home";
   function renderRest() {
     const el = document.getElementById("rest");
-    if (!S.restEnd || !S.active) {
+    const left = S.restEnd ? (S.restEnd - Date.now()) / 1000 : 0,
+      over = !!(S.restEnd && S.active && left <= 0);
+    el.dataset.over = over ? "1" : "";
+    const dot = document.querySelector("#tabs .dot");
+    if (dot) {
+      dot.classList.toggle("over", over);
+    }
+    if (!S.restEnd || !S.active || (over && !restOnTrain())) {
       el.hidden = true;
       return;
     }
-    const left = (S.restEnd - Date.now()) / 1000,
-      over = left <= 0;
     el.hidden = false;
     el.innerHTML = `<div class="rest-in${over ? " over" : ""}">
       ${
@@ -11581,7 +11594,7 @@
     }
     const c = document.getElementById("restClock"),
       b = document.getElementById("restBar");
-    if (left <= 0 && !document.querySelector(".rest-in.over")) {
+    if (left <= 0 && document.getElementById("rest").dataset.over !== "1") {
       renderRest();
       return;
     }
