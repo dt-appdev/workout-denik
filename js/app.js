@@ -2471,7 +2471,8 @@
      tlačítka i buňka v tabulce se změní bez překreslení (effShow). Klepnutí na vybranou hodnotu ji zruší.
      V rozdělaném tréninku se zapnutým krokovačem (kkOn) otevře klepnutí na buňku místo sheetEffort celý
      krokovač série (sheetStepper), stejně jako klepnutí na kg nebo opakování; RIR se tam ruší opětovným
-     klepnutím na vybranou hodnotu. U hotové série (tr.done) má buňka průhledné pozadí jako políčka série.
+     klepnutím na vybranou hodnotu. U hotové série (tr.done) má buňka průhledné pozadí jako políčka série,
+     u série otevřené v krokovači (tr.kk-on) červený rámeček (kromě série do selhání).
      Hodnota je nepovinná, ✓ série ji nevyžaduje.
      Druh série: zahřívací série hodnotu nemá (prázdná buňka, při uložení se zahodí). Série do selhání (F)
      má vždy RIR 0 / RPE 10 (effOf), změnit nejde (klepnutí = hláška effFix), při uložení se zapíše

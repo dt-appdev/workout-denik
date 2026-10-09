@@ -1402,7 +1402,8 @@ tr.done .okb {
 .sets tr.kk-on td {
   background: var(--accent-soft);
 }
-.sets tr.kk-on .cell {
+.sets tr.kk-on .cell,
+.sets tr.kk-on .effb:not(.fix) {
   border-color: var(--accent);
   background: var(--surface);
 }
