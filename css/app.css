@@ -421,22 +421,6 @@ body:has(#rest:not([hidden])) .wrap {
   border-radius: 50%;
   background: var(--accent);
 }
-/* přečas pauzy mimo záložku Trénink: tečka bliká (F1-16) */
-.tabs .dot.over {
-  animation: dotOver 1.2s ease-in-out infinite;
-}
-@keyframes dotOver {
-  50% {
-    opacity: 0.25;
-    transform: scale(1.4);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tabs .dot.over {
-    animation: none;
-    box-shadow: 0 0 0 3px var(--accent-soft);
-  }
-}
 
 /* generic */
 .sec {
