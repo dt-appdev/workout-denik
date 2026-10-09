@@ -82,7 +82,7 @@ flowchart LR
 4. ~~**F1-15** Druh série výběrem místo cyklu~~ – odloženo 28. 9. 2026 (uživatel se nikdy neuklikl), viz `docs/navrhy/F1-15-druh-serie.md`.
 5. ~~**F1-18** Větší dotykové plochy v tréninku~~ – hotovo 28. 9. 2026.
 6. ~~**F1-16** Pruh pauzy nezakrývá obsah~~ – hotovo 9. 10. 2026.
-7. **F1-06** Přidávání cviku a hledání po slovech · *Výběr cviku · P2 · A · střední* – abecední výsledky, víceslovné hledání jen přesnou frází.
+7. ~~**F1-06** Přidávání cviku a hledání po slovech~~ – hotovo 9. 10. 2026.
 
 #### Etapa 3 – „Co dnes?“ a „Zlepšuji se?“ (P2, větší úpravy)
 
@@ -156,7 +156,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-03** Krokovač +/− pro váhu a opakování
 - [x] **F1-04** Časovač pauzy z času konce, vibrace, oznámení
 - [x] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče
-- [ ] **F1-06** Přidávání cviku a hledání po slovech (doplněno podle UX auditu 27. 9. 2026, §2 B; P2 · A · střední): naposledy cvičené nahoře, sekce „cvičil jsi v tomto fitku“, hledání bez diakritiky v CZ i EN názvu (hledání bez diakritiky hotové už v F0-05). Z auditu: výsledky hledání řadit podle používání, ne abecedně (cvičené v tomto fitku nahoru, pak ostatní cvičené, pak zbytek; dnes „squat“ vrátí jako první Assisted Pistol Squats); hledat po slovech v libovolném pořadí (dnes `exMatch` hledá celý dotaz jako jeden text, „tah kladky“ ani „tlak na lavici“ nenajde nic); zvážit synonyma („tlak na lavici“ → bench press). Platí ve výběru cviků i v záložce Cviky (F3-18).
+- [x] **F1-06** Přidávání cviku a hledání po slovech
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
 - [x] **F1-08** Zahřívací série „60 %“ z minula
 - [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04). Po kole pracovních sérií supersérie má přednost Časovač po pracovní supersérii (rozhodnuto u F4-05), délka pauzy se vybírá v `toggleSetDone` přes `ssRest`. Kratší pauza po zahřívací sérii je samostatně v F1-17 (jednodušší, dá se udělat dřív).
@@ -284,7 +284,6 @@ Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle pozn
 - Jemnější dělení partií (biceps/triceps, kvadricepsy/hamstringy/hýždě): podle odpovědi na otevřenou otázku.
 - Méně záložek ve spodní liště (dnes 6, Material Design doporučuje 3–5; UX audit 27. 9. 2026, D): audit doporučuje neměnit, přínos je malý a změna zvyku velká. Vrátit se, jen když přibude záložka nebo to začne vadit (Ověřit při používání).
 - Filtry v záložce Cviky schované pod jedno tlačítko „Filtr“ (audit, C): není nutné.
-- Hledání ve výběru cviků dole u palce (audit, C/B): nezvyklé; nejdřív F1-06, které potřebu hledat sníží.
 
 ## Otevřené otázky
 
