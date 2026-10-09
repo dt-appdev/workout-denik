@@ -2028,6 +2028,23 @@ tr.done .okb {
   flex: 1 0 100%;
 }
 
+/* výběr cviků (F1-06): pevná výška, aby vyhledávací pole při psaní neposkakovalo; nadpisy sekcí seznamu */
+.scrim.picker .sheet {
+  height: 92%;
+}
+.pick-sec {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 8px 0 0;
+}
+.pick-sec:first-child {
+  margin-top: 0;
+}
+
 /* sdílení souhrnu jako obrázek (F4-08): panel má pevnou výšku, ovládání dole je vždy vidět a náhled
    (canvas v plném rozlišení zmenšený na obrazovku) vyplní zbylé místo nad ním */
 .scrim.shr .sheet {

@@ -470,11 +470,6 @@
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
-  const exMatch = (e, q) => {
-    if (!q) return true;
-    q = fold(q).trim();
-    return fold(e.name).includes(q) || fold(e.cz).includes(q);
-  };
   const isAssisted = (id) => /assisted/.test(id);
   const isBodyweight = (id) => {
     const e = S.exLib[id];
@@ -941,6 +936,124 @@
       }
     },
   };
+
+  /* ---------- HLEDÁNÍ CVIKŮ (F1-06) ----------
+     Hledání ve výběru cviků i v záložce Cviky (exMatch). Dotaz se bez diakritiky rozdělí na slova (exWords),
+     jednopísmenná slova (s, v, z, k…) se vynechají. Cvik musí obsahovat všechna slova v libovolném pořadí,
+     každé v anglickém nebo českém názvu, i uvnitř jiného slova („tah kladky“ najde „Stahování kladky“).
+     Slova se zkracují o koncovku (exStem: „jednoručky“ najde „jednoručkami“, „dřepy“ najde „Dřep“).
+     Synonyma EX_SYN: skupiny stejných výrazů (český ↔ anglický); slovo nebo fráze ze skupiny v dotazu najde
+     cvik s kterýmkoli výrazem skupiny („tlak na lavici“ najde Bench Press). Rozložený dotaz = seznam
+     podmínek, podmínka = seznam možností, možnost = seznam kmenů slov (exQuery, poslední dotaz v paměti).
+     Pořadí výsledků (exRel): necvičené cviky (zbytek) mají nahoře ty, jejichž název napsaným slovem začíná
+     („squat“: Squat před Assisted Pistol Squats), pak ty, jejichž název začíná synonymem, pak ty, kde všechna
+     slova začínají slovo názvu, pak ostatní; uvnitř podle abecedy. Výběr cviků řadí navíc do sekcí podle
+     fitka (pickerRows, sekce výběr cviků). */
+  // skupiny synonym: každý výraz ve skupině najde i cviky s ostatními výrazy (diakritika a koncovky nevadí)
+  const EX_SYN = [
+    ["bench", "tlak na lavici", "tlak vleže"],
+    ["squat", "dřep"],
+    ["deadlift", "mrtvý tah", "mrtvák"],
+    ["pull up", "pullup", "shyby"],
+    ["chin up", "chinup", "shyby podhmatem"],
+    ["push up", "pushup", "kliky"],
+    ["dips", "kliky na bradlech", "bradla"],
+    ["row", "veslování"],
+    ["pulldown", "stahování"],
+    ["cable", "kladka"],
+    ["dumbbell", "jednoručky"],
+    ["barbell", "velká činka"],
+    ["smith", "multipress"],
+    ["machine", "stroj"],
+    ["band", "guma"],
+    ["lunge", "výpady"],
+    ["calf", "výpony", "lýtka"],
+    ["fly", "rozpažování"],
+    ["lateral raise", "upažování"],
+    ["front raise", "předpažování"],
+    ["reverse fly", "zapažování"],
+    ["overhead press", "shoulder press", "military press", "tlak nad hlavu", "tlak na ramena"],
+    ["leg extension", "předkopávání"],
+    ["leg curl", "zakopávání"],
+    ["curl", "zdvih"],
+    ["crunch", "zkracovačky", "sklapovačky"],
+    ["shrug", "krčení ramen"],
+    ["plank", "prkno"],
+    ["hyperextension", "hyperextenze", "zakláňění"],
+    ["leg press", "nožní lis"],
+    ["hip thrust", "zvedání pánve"],
+  ];
+  // kmen slova: bez jedné koncovky (pády a množné číslo), aspoň 3 písmena; slovo už je bez diakritiky
+  function exStem(w) {
+    if (w.length < 4) return w;
+    const m = w.match(/(ami|ach|ich|emi|ou|em|a|e|i|o|u|y|s)$/);
+    if (!m || w.length - m[1].length < 3) return w;
+    return w.slice(0, -m[1].length);
+  }
+  // text rozdělený na slova bez diakritiky (jednopísmenná slova pryč)
+  const exWords = (t) =>
+    fold(t)
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 1);
+  // synonyma jako kmeny: skupina = seznam výrazů, výraz = seznam kmenů
+  let exSynStems = null;
+  function exSyn() {
+    if (!exSynStems) {
+      exSynStems = EX_SYN.map((g) => g.map((x) => exWords(x).map(exStem)));
+    }
+    return exSynStems;
+  }
+  // rozložený dotaz: [podmínka], podmínka = [možnost], možnost = [kmen]; poslední dotaz v paměti
+  let exQ = { q: null, terms: [] };
+  function exQuery(q) {
+    if (exQ.q === q) return exQ.terms;
+    const stems = exWords(q).map(exStem);
+    const terms = [];
+    let i = 0;
+    while (i < stems.length) {
+      // nejdelší výraz ze synonym, který v dotazu začíná na pozici i (slovo dotazu může být delší)
+      let best = null,
+        len = 0;
+      for (const g of exSyn()) {
+        for (const x of g) {
+          if (x.length > len && x.every((st, k) => stems[i + k] && stems[i + k].startsWith(st))) {
+            best = g;
+            len = x.length;
+          }
+        }
+      }
+      if (best) {
+        terms.push([stems.slice(i, i + len)].concat(best));
+        i += len;
+      } else {
+        terms.push([[stems[i]]]);
+        i++;
+      }
+    }
+    exQ = { q, terms };
+    return terms;
+  }
+  // anglický a český název bez diakritiky, slova oddělená mezerou (i na začátku, kvůli hledání začátku slova)
+  const exText = (e) => " " + exWords((e.name || "") + " " + (e.cz || "")).join(" ");
+  // odpovídá cvik dotazu q? (všechny podmínky, každá aspoň jednou možností)
+  function exMatch(e, q) {
+    const terms = exQuery(q || "");
+    if (!terms.length) return true;
+    const text = exText(e);
+    return terms.every((alts) => alts.some((x) => x.every((st) => text.includes(st))));
+  }
+  /* jak dobře cvik odpovídá dotazu: 3 = název začíná napsaným slovem, 2 = název začíná synonymem napsaného,
+     1 = slova dotazu začínají slova názvu, 0 = jinak */
+  function exRel(e, q) {
+    const terms = exQuery(q || "");
+    if (!terms.length) return 0;
+    const names = [e.name, e.cz].map((t) => " " + exWords(t || "").join(" "));
+    const starts = (x) => names.some((t) => t.startsWith(" " + x.join(" ")));
+    if (starts(terms[0][0])) return 3;
+    if (terms[0].some(starts)) return 2;
+    const text = exText(e);
+    return terms.every((alts) => alts.some((x) => x.every((st) => text.includes(" " + st)))) ? 1 : 0;
+  }
 
   /* ---------- stav appky (S) a zápis dat (applyDoc, put) ---------- */
   const S = {
@@ -7927,8 +8040,9 @@
   }
 
   /* ---------- ZÁLOŽKA CVIKY (F0-05) ----------
-     Route ex (vExList), filtry S.exlM / S.exlEq / S.exlSort v localStorage. Hledání přes exMatch ignoruje
-     diakritiku. */
+     Route ex (vExList), filtry S.exlM / S.exlEq / S.exlSort v localStorage. Hledání přes exMatch (po slovech,
+     bez diakritiky, se synonymy; sekce HLEDÁNÍ CVIKŮ, F1-06). Bez rozdělení podle fitka (to má jen výběr
+     cviků). */
   function vExList() {
     const { byEx } = derive();
     const all = Object.entries(S.exLib);
@@ -7948,11 +8062,12 @@
       )
       .map(([id, e]) => {
         const l = byEx[id];
-        return { id, e, n: l ? l.length : 0, last: l ? l[0].w.start : 0 };
+        return { id, e, n: l ? l.length : 0, last: l ? l[0].w.start : 0, rel: l ? 0 : exRel(e, S.exlQ) };
       });
-    // Naposledy: cvičené nahoře od posledního, pod nimi ostatní podle abecedy; A–Z: všechny podle abecedy
+    // Naposledy: cvičené nahoře od posledního, pod nimi ostatní podle shody s hledáním (F1-06) a abecedy;
+    // A–Z: všechny podle abecedy
     const az = (a, b) => a.e.name.localeCompare(b.e.name, "cs");
-    rows.sort(S.exlSort === "az" ? az : (a, b) => b.last - a.last || az(a, b));
+    rows.sort(S.exlSort === "az" ? az : (a, b) => b.last - a.last || b.rel - a.rel || az(a, b));
     const lim = S.exlLimit || 100;
     let h = topbar("Cviky", all.length + " " + plural(all.length, "cvik", "cviky", "cviků") + " v databázi");
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
@@ -9963,35 +10078,58 @@
     );
   }
 
-  /* ---------- výběr cviků ---------- */
+  /* ---------- výběr cviků ----------
+     Panel Přidat cviky / Nahradit cvik (openPicker, stav pick). Má pevnou výšku (třída picker na .scrim), aby
+     vyhledávací pole při psaní neposkakovalo (F1-06). Seznam je ve třech sekcích (F1-06, pickerRows):
+     cviky cvičené ve fitku tréninku nebo šablony (pickGyms; šablona pro všechna fitka = vybrané fitko
+     na úvodu), cviky cvičené jinde, ostatní. Cvičené od posledního tréninku (ve fitku podle posledního tréninku v něm),
+     ostatní podle shody s hledáním (exRel) a abecedy. Nadpis sekce jen tam, kde je víc než jedna sekce. */
   let pick = { sel: [], q: "", m: "all", eq: "all", hist: false, mode: "add", replaceI: null };
   function openPicker(mode, replaceI) {
     pick = { sel: [], q: "", m: "all", eq: "all", hist: pick.hist, mode, replaceI };
     renderPicker();
   }
+  // fitka, pro která se vybírá: fitko tréninku, fitka šablony (bez fitka = vybrané fitko na úvodu)
+  function pickGyms() {
+    const d = curDraft();
+    if (d && d.mode === "template") {
+      const gyms = S.cfg.gyms.filter((g) => (d.gyms || []).includes(g.id)).map((g) => g.id);
+      return gyms.length ? gyms : [curGym()].filter(Boolean);
+    }
+    return [d && d.gymId ? d.gymId : curGym()].filter(Boolean);
+  }
+  // seznam výběru: [{id, e, sec}], sec = 0 cvičené v tomto fitku, 1 cvičené jinde, 2 ostatní
   function pickerRows() {
     const { byEx } = derive();
-    const recent = {};
-    for (const w of derive().all.slice(0, 60)) {
-      for (const e of w.ex || []) {
-        recent[e.exId] = (recent[e.exId] || 0) + 1;
+    const gyms = pickGyms();
+    const rows = [];
+    for (const [id, e] of Object.entries(S.exLib)) {
+      if (
+        e.archived ||
+        (pick.m !== "all" && exGroup(e) !== pick.m) ||
+        (pick.eq !== "all" && e.equip !== pick.eq) ||
+        (pick.hist && !byEx[id]) ||
+        !exMatch(e, pick.q)
+      ) {
+        continue;
       }
+      const list = byEx[id] || [];
+      const here = list.find((x) => gyms.includes(x.w.gymId));
+      const sec = here ? 0 : list.length ? 1 : 2;
+      const last = here ? here.w.start : list.length ? list[0].w.start : 0;
+      rows.push({ id, e, sec, last, rel: sec === 2 ? exRel(e, pick.q) : 0 });
     }
-    let arr = Object.entries(S.exLib).filter(
-      ([id, e]) =>
-        !e.archived &&
-        (pick.m === "all" || exGroup(e) === pick.m) &&
-        (pick.eq === "all" || e.equip === pick.eq) &&
-        (!pick.hist || byEx[id]) &&
-        exMatch(e, pick.q),
+    rows.sort(
+      (a, b) => a.sec - b.sec || b.last - a.last || b.rel - a.rel || a.e.name.localeCompare(b.e.name, "cs"),
     );
-    arr.sort(
-      (a, b) =>
-        (recent[b[0]] || 0) - (recent[a[0]] || 0) ||
-        (byEx[b[0]] ? 1 : 0) - (byEx[a[0]] ? 1 : 0) ||
-        a[1].name.localeCompare(b[1].name),
-    );
-    return arr;
+    return rows;
+  }
+  // nadpis sekce výběru (jedno fitko jménem, víc fitek šablony společně)
+  function pickSecTitle(sec) {
+    if (sec === 2) return "Ostatní";
+    if (sec === 1) return "Cvičené jinde";
+    const gyms = pickGyms();
+    return gyms.length > 1 ? "Cvičené ve fitkách šablony" : "Cvičené ve fitku " + gymName(gyms[0]);
   }
   function pickerList() {
     const { byEx } = derive();
@@ -10011,8 +10149,15 @@
         `</div>`
       );
     }
+    // nadpisy sekcí jen když je v seznamu víc než jedna sekce
+    const heads = new Set(arr.map((r) => r.sec)).size > 1;
     let h = "";
-    for (const [id, e] of arr.slice(0, pick.limit || 120)) {
+    let sec = -1;
+    for (const { id, e, sec: rs } of arr.slice(0, pick.limit || 120)) {
+      if (heads && rs !== sec) {
+        h += `<h3 class="pick-sec">${esc(pickSecTitle(rs))}</h3>`;
+      }
+      sec = rs;
       const on = pick.sel.includes(id);
       const n = byEx[id] ? byEx[id].length : 0;
       h +=
@@ -10048,6 +10193,7 @@
     }
     return h;
   }
+  const pickCount = (n) => n + " " + plural(n, "cvik", "cviky", "cviků");
   function pickerBody() {
     const n = pickerRows().length;
     return `<input class="inp" id="pickQ" data-f="pickQ" placeholder="Hledat cvik (anglicky i česky)…"
@@ -10082,7 +10228,7 @@
     <div class="row wrap-r" style="gap:8px">
       <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
       <span class="row" style="margin-left:auto">
-        <span class="xs muted">${n} ${plural(n, "cvik", "cviky", "cviků")}</span>
+        <span class="xs muted" id="pickN">${pickCount(n)}</span>
         ${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "picker")}
         ${icoBtn("newEx", "plus", "Nový cvik")}
       </span>
@@ -10102,6 +10248,7 @@
     </button>`;
     openSheet(pick.mode === "replace" ? "Nahradit cvik" : "Přidat cviky", pickerBody(), f, keep, {
       re: () => renderPicker(true),
+      cls: "picker",
     });
     const nb = document.querySelector(".sheet-b");
     if (nb && st) {
@@ -10116,6 +10263,11 @@
       return;
     }
     el.innerHTML = pickerList();
+    // počet nad seznamem se při psaní mění s výsledky (F1-06)
+    const cnt = document.getElementById("pickN");
+    if (cnt) {
+      cnt.textContent = pickCount(pickerRows().length);
+    }
   }
   /* info o cviku nad výběrem – výběr i hledání zůstanou zachované */
   function sheetExInfo(id) {
