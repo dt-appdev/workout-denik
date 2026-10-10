@@ -16,6 +16,10 @@ v `docs/hotovo.md`, log v `docs/log.md`.
   návrh výchozí volby). **Implementovat začni až po výslovném pokynu uživatele** („implementuj“,
   „pusť se do toho“…). Odpovědi na otázky samy o sobě pokyn nejsou. Uživatel to nechce pokaždé
   připomínat.
+- **Změnu vzhledu nejdřív ukaž v náhledu** (F3-23): artefakt se snímky Dnes / Po změně ze skutečné appky
+  (Playwright, zkušební data, šířka 412 px, světlý i tmavý motiv, úprava nasimulovaná přidaným stylem), ke každé
+  změně popis a pole pro komentář. Komentáře si přečti, zapracuj a implementuj až po pokynu. Když uživatel žádá jen
+  kontrolu („ověř, jestli…“), odpověz zjištěním a změnu navrhni jen u skutečné nekonzistence.
 - Jen řešení zdarma, žádné placené služby, API ani knihovny.
 - Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí. Nasazuje
   GitHub Actions (`.github/workflows/nasazeni.yml`, F0-04): `main` = vydaná verze
@@ -131,8 +135,14 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
 - Tlačítka dole na stránce (F2-12, varianta B z `docs/navrhy/tlacitka-dole/`): vždy pod sebou přes celou šířku, nikdy
   dvě vedle sebe. Pořadí: Přidat cvik (obrys s plusem, je-li) → hlavní akce (`btn primary block`, jen jedna, na stránce
   cviku žádná) → ostatní obrysová `btn block` (Upravit první, pak Duplikovat / Sdílet / Uložit jako šablonu / Skrýt) →
-  čára `<div class="bzone">` → nebezpečná, nevratná akce `btn danger line block` (červený obrys, Smazat / Zahodit).
+  čára `<div class="bzone">` → nebezpečná, nevratná akce `btn danger block` (červený obrys, Smazat / Zahodit).
+  Výjimka (F3-23): v rozdělaném tréninku bez hotové série je hlavní akcí Přidat cvik a Dokončit trénink je obrys.
   Skrýt a Zobrazit jdou vrátit, proto jsou neutrální, ne červené. Nikdy tlačítko jako holý text (`ghost`).
+- Tlačítka v panelu (F3-23, `openSheet`): v patičce nejvýš dvě vedle sebe, stejně široká (`btn grow`), vedlejší vlevo,
+  hlavní (`btn primary grow`) vpravo; pod sebou (`full`) hlavní nahoře. Formulář s mazáním: Smazat (`btn danger grow`)
+  vlevo, Uložit vpravo; nový záznam jen Uložit. Potvrzovací okno: Zrušit vlevo, potvrzení plné (`btn primary`) vpravo,
+  i když maže. Nevratná akce mimo potvrzovací okno je vždy `btn danger` (červený obrys), v nabídce panelu za čárou
+  `bzone`. Vratné odebrání (hodnota RIR/RPE, fotka z obrázku ke sdílení) neutrální.
 - Ikony (přání uživatele, F3-20, sekce „ikony“): nikdy emoji ani znaky písma jako ikona (🏅, 🔥, ✓, ▶, ★, ↗, ‹ ›…),
   ani na obrázku ke sdílení a v návrzích. Vždy vlastní SVG v sadě `IC` ve stejném stylu (popis v sekci). Stejný
   význam = stejná ikona všude, jedna kresba = jeden význam. Novou nebo překreslenou ikonu nejdřív ukázat v náhledu
@@ -154,7 +164,21 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
 - Barvy (F3-01): šedý text `--ink-2`/`--ink-3` je zesílený kvůli čitelnosti, drobný text nedělat světlejší.
   Skupiny partií `MGRP` / `MGRP_OF` (6 skupin), barva `mgCol(k)` = `--g-<skupina>`. `musFigs(m, small, grp)`: `grp` =
   postava v barvách skupin (Statistiky, souhrn), jinak červená (stránka cviku). Barva fitka jen z `g.col` (`--sN`),
-  nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`.
+  nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`. Hlavní barva `--accent` (F3-23) jen pro hlavní akci
+  a vybrané / aktivní (záložka, čip, přepínač, rámeček políčka), ne pro názvy, stavy a informace.
+- Písmo voleb (F3-23): název volby (zaškrtávátko, popisek nad přepínačem, vedle políčka) a hodnota v řádku obyčejně,
+  `--fs-base`; tučně jen název věci v seznamu (fitko, cvik, trénink) a čísla, kvůli kterým se na obrazovku chodí.
+  Číslo v políčku vždy na střed (`.inp[data-num]`), krátký údaj jedním řádkem `.frow` (název vlevo, políčko vpravo).
+- Závislé volby (F3-23): volba pod vypínačem se neschovává, s vypnutým vypínačem zešedne a je `inert` (`.dep.off`),
+  aby stránka neposkakovala. Žádné vysvětlující věty, které se objeví jen při vypnutí.
+- Dotyková plocha (F3-23, sekce „JEDNOTNÝ VZHLED“): každý ovládací prvek aspoň `--tap` (44 px) na výšku, menší
+  s rámečkem neviditelným okrajem `::after` (vzhled zůstává). Uživatel chce kompaktní rozložení: kvůli ploše nikdy
+  viditelně nezvětšovat prvky ani mezery (zamítnuto: vyšší přepínače `.seg`, ✓ 52 × 40, který zvýšil řádek série).
+  Okraj sahá nejvýš do poloviny mezery k sousednímu prvku, plochy se nesmí překrývat (zaškrtávátka 36 px).
+  Všechny prvky v řádku série mají výšku `--row-h` (odznak, políčka, RIR/RPE, ✓), řádek `--tap`.
+- Formuláře (F3-23): políčka `.inp` a rozbalovací výběry mají všude stejnou velikost (aspoň 44 px, písmo `--fs-lg`),
+  jednotlivě se nezmenšují (zamítnuto: menší výběr fitka v tréninku). Delší formulář v panelu se dělí na sekce
+  nadpisem `.subh` (formulář měření: Hmotnost a složení, Obvody).
 - Grafy (F3-08, sekce „grafy (SVG, F3-08)“): `chartPh(spec, výška)`, jednotky a formát jen přes `spec.yUnit`, `spec.unit`,
   `spec.fmt` (`CH_FMT`) a `spec.whole`.
 - Čísla (F1-10, sekce „KONTROLA ČÍSEL“): každé číselné políčko má `data-num="<pravidlo z NUM_RULES>"`, před uložením
@@ -188,7 +212,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Odmítnuté nápady, znovu nenavrhovat: udržování telefonu vzhůru neslyšitelným tónem (F1-04), swipe na ✓ série
   (tah od levého okraje je v Chromu Zpět), tlačítko Vrátit u smazané série (F2-03),
   schovat přečas pauzy mimo záložku Trénink (F1-16), kratší pauza po zahřívací sérii (F1-17), výchozí graf Max
-  zátěž u cviků s vysokými opakováními na stránce cviku (F3-28).
+  zátěž u cviků s vysokými opakováními na stránce cviku (F3-28), viditelně vyšší přepínače, větší ✓ zvyšující řádek
+  a menší výběr fitka v tréninku (F3-23).
 
 ## Datová vrstva (js/app.js, sekce „DATOVÁ VRSTVA")
 

@@ -127,8 +127,10 @@ img {
   --shadow: 0 1px 2px rgba(19, 22, 27, 0.06), 0 4px 16px rgba(19, 22, 27, 0.06);
   --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  /* nejmenší dotyková plocha (F1-18): výška buněk ✓ a druhu série; zbytek appky převezme F3-23 */
+  /* nejmenší dotyková plocha (F1-18, F3-23): řádek série, přepínače, ikonová tlačítka, okraj čipů */
   --tap: 44px;
+  /* výška všech prvků v řádku série (F3-23): odznak druhu, políčka kg / opak., RIR/RPE a ✓ */
+  --row-h: 36px;
   /* Stupnice písma (F3-11): jiné velikosti písma než tyto nepoužívat.
      --fs-k = zvětšení písma z Nastavení → Vzhled (data-fs na <html>, fontScale v js/app.js). */
   --fs-k: 1;
@@ -499,16 +501,16 @@ a.btn {
   border-color: transparent;
   background: transparent;
 }
+/* nebezpečná, nevratná akce (Smazat, Zahodit, Odebrat…) vždy červeným obrysem, všude stejně (F2-12, F3-23):
+   na stránce za čárou .bzone pod ostatními tlačítky, v patičce panelu vlevo; v potvrzovacím okně je potvrzení
+   plné (btn primary), protože je to akce, kvůli které se okno otevřelo */
 .btn.danger {
   color: var(--fail);
+  border-color: var(--fail);
+  background: transparent;
 }
 .btn.block {
   width: 100%;
-}
-/* nebezpečná akce na konci stránky (F2-12): červený obrys za čárou .bzone, vždy až pod ostatními tlačítky */
-.btn.danger.line {
-  border-color: var(--fail);
-  background: transparent;
 }
 .bzone {
   border-top: 1px solid var(--line-2);
@@ -519,6 +521,21 @@ a.btn {
   padding: 6px 10px;
   font-size: var(--fs-sm);
   border-radius: 8px;
+  position: relative;
+}
+/* F3-23: malé prvky (čip, .btn.sm, přepínač, přehrání zvuku) reagují na prst aspoň v pásu vysokém --tap,
+   vzhled zůstává; okraj jen nahoru a dolů (vedle sebe leží těsně), vyšší prvky ho mají menší */
+.chip::after,
+.btn.sm::after,
+.seg button::after,
+.spr-p::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: max(100%, var(--tap));
+  transform: translateY(-50%);
 }
 .btn:disabled,
 .btn.off {
@@ -541,8 +558,8 @@ a.btn {
 .iconbtn {
   border: 0;
   background: transparent;
-  width: 40px;
-  height: 40px;
+  width: var(--tap); /* bez rámečku, větší plocha nemění vzhled (F3-23) */
+  height: var(--tap);
   border-radius: 10px;
   display: inline-flex;
   align-items: center;
@@ -725,7 +742,10 @@ a.btn {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  /* místo pro neviditelný okraj čipů (F3-23): posuvný řádek by okraj mimo padding ořízl;
+     záporný okraj vrátí rozložení stránky, jak bylo */
+  padding-block: calc((var(--tap) - 34px) / 2);
+  margin-block: calc((34px - var(--tap)) / 2);
   scrollbar-width: none;
 }
 .chips::-webkit-scrollbar {
@@ -733,6 +753,7 @@ a.btn {
 }
 .chip {
   flex: none;
+  position: relative;
   border: 1px solid var(--line-2);
   background: var(--surface);
   border-radius: 999px;
@@ -792,13 +813,31 @@ label.f,
   background: var(--surface);
   border-radius: 9px;
   padding: 9px 11px;
-  min-height: 42px;
+  min-height: var(--tap); /* všechna políčka stejně vysoká, i v panelu s menším řádkováním (F3-23) */
   width: 100%;
   font-size: var(--fs-lg);
   text-transform: none;
   letter-spacing: 0;
   font-weight: 500;
   color: var(--ink);
+}
+/* číslo v políčku vždy na střed jako v sérii (F3-23) */
+.inp[data-num] {
+  text-align: center;
+}
+/* údaj jedním řádkem (F3-23): název vlevo, úzké políčko vpravo (Tělesná hmotnost, formulář měření) */
+.frow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-base);
+}
+.frow .inp {
+  flex: none;
+  width: 6.5em;
+}
+.frow .inp[type="date"] {
+  width: auto;
 }
 select.inp {
   appearance: none;
@@ -1018,7 +1057,7 @@ select.inp {
   font-size: var(--fs-lg);
   font-weight: 700;
   line-height: 1.2;
-  color: var(--accent-2);
+  color: var(--ink); /* F3-23: hlavní barva jen pro akce a výběr, klikatelnost nese ikona grafu */
 }
 .exc-h h3 button,
 .linkbtn {
@@ -1195,8 +1234,8 @@ select.inp {
   font-size: var(--fs-md);
 }
 .stype {
-  width: 34px;
-  height: 32px;
+  width: var(--row-h);
+  height: var(--row-h);
   border-radius: 8px;
   border: 0;
   padding: 0;
@@ -1231,7 +1270,7 @@ select.inp {
   border: 1px solid transparent;
   background: var(--surface-2);
   border-radius: 8px;
-  height: 36px;
+  height: var(--row-h);
   text-align: center;
   font-size: var(--fs-lg);
   font-weight: 600;
@@ -1305,8 +1344,8 @@ tr.done .effb {
   background: none;
 }
 .okb {
-  width: 44px;
-  height: 34px;
+  width: 50px;
+  height: var(--row-h); /* stejně vysoké jako políčka série (F3-23) */
   border-radius: 8px;
   border: 1px solid var(--line-2);
   background: var(--surface);
@@ -1339,7 +1378,7 @@ tr.done .okb {
 }
 .effb {
   width: 100%;
-  height: 36px;
+  height: var(--row-h);
   border: 1px solid transparent;
   border-radius: 8px;
   background: var(--surface-2);
@@ -1446,6 +1485,11 @@ tr.done .okb {
   width: 100%;
   margin: 4px 0;
   accent-color: var(--accent);
+}
+/* posuvník zahřívací série (F3-23): blíž k popisku a vyšší plocha pro prst, rozložení o 8 px nižší */
+.warm-set .range {
+  height: 24px;
+  margin: -6px 0 -2px;
 }
 /* Kopírovat pro coache (F4-12): část v okně Dokončit a v Upravit trénink */
 .coach {
@@ -1597,6 +1641,7 @@ tr.done .okb {
   height: 3px;
   background: var(--accent);
 }
+/* odpočet i přečas (.over) v barvě textu pruhu: přečas je informace, ne chyba ani akce (F3-23) */
 .rest-in b {
   font-family: var(--display);
   font-size: var(--fs-4xl);
@@ -1646,10 +1691,6 @@ tr.done .okb {
 }
 .rest-in button:last-child::after {
   right: -8px;
-}
-/* přečas po konci pauzy (F1-04): tmavý jako odpočet, zvýrazněný jen čas; konečná barva podle F3-23 (F1-16) */
-.rest-in.over b {
-  color: var(--accent);
 }
 /* ztmavení během pauzy (F1-02): černá obrazovka jen s odpočtem, po konci pauzy světlejší */
 .dim {
@@ -1945,13 +1986,15 @@ tr.done .okb {
 .tscroll {
   overflow-x: auto;
 }
+/* přepínač bez overflow: hidden, aby neořízl neviditelný okraj tlačítek (F3-23);
+   rohy dělají krajní tlačítka */
 .seg {
   display: inline-flex;
   border: 1px solid var(--line-2);
   border-radius: 9px;
-  overflow: hidden;
 }
 .seg button {
+  position: relative;
   border: 0;
   background: var(--surface);
   padding: 6px 10px;
@@ -1959,6 +2002,15 @@ tr.done .okb {
   font-weight: 600;
   min-height: 34px;
   color: var(--ink-2);
+}
+.seg button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.seg button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.seg button:only-child {
+  border-radius: 8px;
 }
 .seg button[aria-pressed="true"] {
   background: var(--ink);
@@ -2235,10 +2287,21 @@ tr.done .okb {
   max-width: calc(100% - 32px);
 }
 .switch {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: var(--fs-md);
+  font-size: var(--fs-base); /* jako ostatní názvy nastavení, obyčejné písmo (F3-23) */
+}
+/* F3-23: plocha zaškrtávátka i do poloviny mezery k sousednímu (mezera 10 px), plochy se nepřekrývají */
+.switch::after {
+  content: "";
+  position: absolute;
+  inset: -5px 0;
+}
+/* volba závislá na vypínači (F3-23): zůstává na místě, s vypnutým vypínačem šedá a s atributem inert */
+.dep.off {
+  opacity: 0.5;
 }
 .switch input {
   width: 20px;
@@ -2711,6 +2774,10 @@ tr.done .okb {
   color: var(--ink-3);
   font-weight: 700;
   margin: 14px 0 8px;
+}
+/* nadpis sekce formuláře v panelu (F3-23): rozestupy dává mezera panelu */
+.sheet-b > .subh {
+  margin: 6px 0 0;
 }
 .hbar .hl {
   white-space: nowrap;
@@ -3599,6 +3666,7 @@ textarea.inp {
 }
 .spr-p {
   flex: none;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
