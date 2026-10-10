@@ -1660,77 +1660,81 @@
     const byEx = {};
     for (const w of all) {
       for (const e of w.ex || []) {
-        const kind = kindOf(e.exId);
-        let vol = 0,
-          maxKg = 0,
-          best = 0,
-          bestSet = null,
-          maxReps = 0,
-          nWork = 0,
-          maxSec = 0,
-          totSec = 0,
-          maxKm = 0,
-          totKm = 0,
-          speed = 0;
-        for (const s of e.sets) {
-          if (!isWork(s.t)) continue;
-          nWork++;
-          if (hasReps(kind)) {
-            const L = setLoad(kind, s, w.start),
-              reps = +s.reps || 0;
-            vol += L * reps;
-            if (L > maxKg) {
-              maxKg = L;
-            }
-            if (reps > maxReps) {
-              maxReps = reps;
-            }
-            const r = e1rm(L, reps);
-            if (r > best) {
-              best = r;
-              bestSet = Object.assign({}, s, { load: L });
-            }
-          }
-          if (isTimed(kind)) {
-            const sec = +s.sec || 0;
-            totSec += sec;
-            if (sec > maxSec) {
-              maxSec = sec;
-            }
-          }
-          if (kind === "dist") {
-            const km = +s.km || 0,
-              sec = +s.sec || 0;
-            totKm += km;
-            if (km > maxKm) {
-              maxKm = km;
-            }
-            const v = sec > 0 ? km / (sec / 3600) : 0;
-            if (v > speed) {
-              speed = v;
-            }
-          }
-        }
-        (byEx[e.exId] = byEx[e.exId] || []).push({
-          w,
-          e,
-          kind,
-          vol,
-          maxKg,
-          best,
-          bestSet,
-          maxReps,
-          nWork,
-          maxSec,
-          totSec,
-          maxKm,
-          totKm,
-          speed,
-        });
+        (byEx[e.exId] = byEx[e.exId] || []).push(exSum(w, e));
       }
     }
     D = { all, byEx };
     return D;
+  }
+  // souhrn jednoho cviku v tréninku w: hodnoty pracovních sérií (objem, max, odh. 1RM, čas, vzdálenost…)
+  function exSum(w, e) {
+    const kind = kindOf(e.exId);
+    let vol = 0,
+      maxKg = 0,
+      best = 0,
+      bestSet = null,
+      maxReps = 0,
+      nWork = 0,
+      maxSec = 0,
+      totSec = 0,
+      maxKm = 0,
+      totKm = 0,
+      speed = 0;
+    for (const s of e.sets) {
+      if (!isWork(s.t)) continue;
+      nWork++;
+      if (hasReps(kind)) {
+        const L = setLoad(kind, s, w.start),
+          reps = +s.reps || 0;
+        vol += L * reps;
+        if (L > maxKg) {
+          maxKg = L;
+        }
+        if (reps > maxReps) {
+          maxReps = reps;
+        }
+        const r = e1rm(L, reps);
+        if (r > best) {
+          best = r;
+          bestSet = Object.assign({}, s, { load: L });
+        }
+      }
+      if (isTimed(kind)) {
+        const sec = +s.sec || 0;
+        totSec += sec;
+        if (sec > maxSec) {
+          maxSec = sec;
+        }
+      }
+      if (kind === "dist") {
+        const km = +s.km || 0,
+          sec = +s.sec || 0;
+        totKm += km;
+        if (km > maxKm) {
+          maxKm = km;
+        }
+        const v = sec > 0 ? km / (sec / 3600) : 0;
+        if (v > speed) {
+          speed = v;
+        }
+      }
+    }
+    return {
+      w,
+      e,
+      kind,
+      vol,
+      maxKg,
+      best,
+      bestSet,
+      maxReps,
+      nWork,
+      maxSec,
+      totSec,
+      maxKm,
+      totKm,
+      speed,
+    };
   }
   // fitko, ve kterém se cvik porovnává: u cviku vázaného na fitko gymId, jinak null (všechna fitka)
   function exCtxGym(exId, gymId) {
@@ -8428,13 +8432,20 @@
      Filtr fitek (exGymChips) jen u cviku vázaného na fitko cvičeného ve 2 a víc fitkách, výběr S.detailGym
      je společný pro Statistiky i Historii; první čip je na Statistikách „Všechna (zvlášť)“ (čára za každé
      fitko), na Historii „Všechna“.
+     Rozdělaný trénink (jen ✓ série) a výběr fitka podle tréninku, odkud se přišlo: sekce F3-34 (exLive).
      Vázáno na fitko (F3-31): na stránce jen informace v řádku s vybavením („Kladka · vázáno na fitko“ + ikona,
      klepnutí = gdTip), u nevázaného cviku nic. Měnit jde jen ve formuláři Upravit / Nový cvik (#x-gd), aby se
      způsob počítání statistik nepřepnul omylem jedním klepnutím. */
   function vExDetail() {
     const id = S.exDetail;
     const ex = exOf(id);
-    const list = derive().byEx[id] || [];
+    const live = exLive(id); // rozdělaný trénink (F3-34)
+    const list = exListLive(id, live);
+    const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
+    // vybrané fitko mezi čipy není (cvik se v něm ještě necvičil): všechna fitka
+    if (S.detailGym !== "all" && !gymsWith.includes(S.detailGym)) {
+      S.detailGym = "all";
+    }
     let h = topbar(
       ex.name,
       ex.cz || "",
@@ -8497,7 +8508,7 @@
       <div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>`;
     }
     if (S.exPart === "hist") {
-      return h + vExHist(id, ex, list);
+      return h + vExHist(id, ex, list, gymsWith, live);
     }
     // statistiky
     h += `<p class="xs muted" style="margin:0 0 8px">${
@@ -8505,7 +8516,6 @@
         ? `Vázáno na fitko${gdIcon()}: počítá se zvlášť pro každé fitko.`
         : "Nevázáno na fitko: data ze všech fitek se sčítají."
     } Změníš přes Upravit.</p>`;
-    const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
     h += exGymChips(ex, gymsWith, "Všechna (zvlášť)");
     const kind = kindOf(id);
     const M =
@@ -8539,9 +8549,13 @@
       pv += s.vol;
       ps += s.nWork;
     }
-    const pr = (recs().byEx[id] || []).filter(
-      (r) => r.main && r.w.start >= since && (!ex.gymDep || S.detailGym === "all" || r.gymId === S.detailGym),
-    ).length;
+    const prIn = (start, gymId) =>
+      start >= since && (!ex.gymDep || S.detailGym === "all" || gymId === S.detailGym);
+    let pr = (recs().byEx[id] || []).filter((r) => r.main && prIn(r.w.start, r.gymId)).length;
+    // rekord z rozdělaného tréninku (F3-34), nejvýš 1 jako u uloženého
+    if (live && live.lr.ex.length && prIn(live.list[0].w.start, live.list[0].w.gymId)) {
+      pr++;
+    }
     h += `<section class="sec">
       ${rangeSeg("detailRange", S.detailRange)}
       <div class="kpis k4" style="margin-top:10px">
@@ -8652,8 +8666,8 @@
     const ctxs = ex.gymDep
       ? gymsWith
           .filter((g) => S.detailGym === "all" || S.detailGym === g)
-          .map((g) => ({ g, name: gymName(g), b: R.best[id + "|" + g] }))
-      : [{ g: null, name: "", b: R.best[id + "|*"] }];
+          .map((g) => ({ g, name: gymName(g), b: exBestLive(id, g, live) }))
+      : [{ g: null, name: "", b: exBestLive(id, null, live) }];
     h += `<section class="sec">
         <div class="sec-h">
           <h2>Osobní rekordy</h2>
@@ -8686,7 +8700,7 @@
             return `<div class="rg-r">
               <span class="rg-l">${REC[t]}</span>
               <b>${esc(recFmt(t, r.v, r.set))}</b>
-              <span class="rg-s">${sub}${fmtDate(r.w.start)}</span>
+              <span class="rg-s">${sub}${fmtDate(r.w.start)}${r.w.live ? " · probíhá" : ""}</span>
             </div>`;
           })
           .join("")}` +
@@ -8721,8 +8735,7 @@
   }
 
   // záložka Historie (F3-28): filtr fitek a tréninky se sériemi, nejnovější nahoře
-  function vExHist(id, ex, list) {
-    const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
+  function vExHist(id, ex, list, gymsWith, live) {
     let h = exGymChips(ex, gymsWith, "Všechna");
     const sel =
       ex.gymDep && gymsWith.length > 1 && S.detailGym !== "all"
@@ -8732,14 +8745,16 @@
     h += `<section class="sec">
       <div class="stack" style="gap:6px">`;
     for (const s of sel.slice(0, S.exHistLimit || 25)) {
-      // medaile: zlatá za rekord, stříbrná za zlepšení (F3-25), bez počtu
-      const imp = (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
+      // medaile: zlatá za rekord, stříbrná za zlepšení (F3-25), bez počtu; rozdělaný trénink: živý rekord
+      const imp = s.w.live
+        ? live.lr.ex.slice(0, 1).map((type) => ({ type }))
+        : (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
       h +=
         `<div class="card" style="padding:10px 12px">
         <div class="row small">
           <b class="grow">
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
-        `${imp.length ? " " + recCount(imp, "") : ""}
+        `${s.w.live ? " · probíhá" : ""}${imp.length ? " " + recCount(imp, "") : ""}
           </b>
           ${s.w.gymId ? gymPill(s.w.gymId) : ""}
         </div>
@@ -8762,6 +8777,82 @@
     }
     h += "</div></section>";
     return h;
+  }
+
+  /* ---------- STATISTIKY CVIKU S ROZDĚLANÝM TRÉNINKEM (F3-34) ----------
+     Stránka cviku (Statistiky i Historie) ukazuje i rozdělaný trénink (S.active), jen jeho odškrtnuté série
+     (✓), stejně jako živé medaile (liveRecords). Jde do dlaždic, grafu, Osobních rekordů (hodnota
+     s „probíhá“) a Historie (karta nahoře, „probíhá“). Do derive() se nepřidává: z něj se počítá Minule,
+     předvyplnění, návrh progrese, Bez zlepšení i rekordy a trénink by se srovnával sám se sebou.
+     exLive(id) = {list (souhrny exSum jako v derive().byEx, w.live), m (exMetrics), ctx (recCtx), lr
+     (liveRecords prvního výskytu cviku)} nebo null; exListLive(id, live) = derive().byEx[id] + rozdělaný trénink,
+     od nejnovějšího; exBestLive(id, g, live) = nejlepší hodnoty kontextu (R.best) přepsané lepšími z rozdělaného
+     tréninku.
+     Fitko (openEx, exOpenGym): stránka otevřená z tréninku (rozdělaného i upravovaného) nebo ze stránky
+     uloženého tréninku vybere u cviku vázaného na fitko čip fitka toho tréninku. Když fitko mezi čipy není
+     (cvik se tam ještě necvičil), vExDetail vrátí výběr na „Všechna“. Odjinud (Cviky, Statistiky, šablona)
+     „Všechna“. */
+  const LIVE_ID = "live";
+  function exLive(id) {
+    const d = S.active;
+    if (!d) return null;
+    const i = d.ex.findIndex((x) => x.exId === id);
+    if (i < 0) return null;
+    // hodnoty série jsou v rozdělaném tréninku text, souhrny počítají s čísly
+    const conv = (s) =>
+      Object.assign({}, s, {
+        kg: num(s.kg) || 0,
+        reps: num(s.reps) || 0,
+        sec: parseSec(s.sec) || 0,
+        km: num(s.km) || 0,
+      });
+    const entries = d.ex
+      .filter((x) => x.exId === id)
+      .map((x) => ({ exId: id, sets: x.sets.filter((s) => s.done).map(conv) }))
+      .filter((x) => x.sets.length);
+    if (!entries.length) return null;
+    const w = { id: LIVE_ID, live: true, start: d.start, gymId: d.gymId, ex: entries };
+    const allSets = entries.flatMap((e) => e.sets);
+    return {
+      list: entries.map((e) => exSum(w, e)),
+      m: exMetrics(id, allSets, d.start),
+      ctx: recCtx(id, d.gymId),
+      lr: liveRecords(d, i),
+    };
+  }
+  function exListLive(id, live) {
+    const base = derive().byEx[id] || [];
+    if (!live) return base;
+    return live.list.concat(base).sort((a, b) => b.w.start - a.w.start);
+  }
+  // nejlepší hodnoty cviku v kontextu (g = fitko, null = všechna) včetně rozdělaného tréninku
+  function exBestLive(id, g, live) {
+    const ctx = id + "|" + (g == null ? "*" : g);
+    const b = recs().best[ctx];
+    if (!live || !live.m || live.ctx !== ctx) return b;
+    const out = Object.assign({}, b);
+    const w = live.list[0].w;
+    for (const type in live.m) {
+      const cur = live.m[type];
+      if (!out[type] || cur.v > out[type].v + EPS) {
+        out[type] = { v: cur.v, set: cur.set, w };
+      }
+    }
+    return out;
+  }
+  // fitko pro filtr stránky cviku podle toho, odkud se otevírá (u nevázaného cviku vždy „all“)
+  function exOpenGym(exId) {
+    let gymId = null;
+    if (S.route === "train" && S.active) {
+      gymId = S.active.gymId;
+    } else if (S.route === "edit" && S.editDraft) {
+      gymId = S.editDraft.gymId;
+    } else if (S.route === "wd" && S.wDetail) {
+      const o = S.wDetail;
+      const w = S.months[o.mk] && S.months[o.mk][o.id];
+      gymId = w ? w.gymId : null;
+    }
+    return exCtxGym(exId, gymId) || "all";
   }
 
   /* ---------- FOTKY U CVIKU (F2-05) ----------
@@ -13827,7 +13918,7 @@
         closeSheet();
         S.exPart = t.dataset.p || (S.route === "ex" && !(derive().byEx[v] || []).length ? "info" : "stats");
         S.exDetail = v;
-        S.detailGym = "all";
+        S.detailGym = exOpenGym(v); // fitko tréninku, odkud se přišlo (F3-34)
         S.exHistLimit = 25;
         if (f) {
           S.prevRoute = S.route;

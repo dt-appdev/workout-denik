@@ -126,6 +126,17 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   pole v `config/main`). Enter v číselných políčkách mimo sérii (Nastavení, formulář
   měření, délka tréninku, rozsah opakování) schová klávesnici jako v textových polích (F1-11; dřív nedělal nic). Popis
   v úvodním komentáři sekce „VÝŠKA A BMI (F3-33)“ v `js/app.js`.
+- [x] **F3-34** Statistiky cviku z tréninku: fitko tréninku a rozdělaný trénink (přání uživatele 10. 10. 2026): ikona
+  statistik na kartě cviku v tréninku otevírala stránku cviku vždy na čipu „Všechna (zvlášť)“ a statistiky ukazovaly
+  jen uložené tréninky. Teď se u cviku vázaného na fitko vybere čip fitka tréninku (rozdělaného i upravovaného, i ze
+  stránky uloženého tréninku a z řádku Bez zlepšení); když se cvik v tom fitku ještě necvičil, zůstane „Všechna“.
+  Ze záložek Cviky a Statistiky a ze šablony dál „Všechna“. U nevázaného cviku filtr fitek není (data se sčítají).
+  Stránka cviku navíc započítá rozdělaný trénink, jen odškrtnuté série (✓): dlaždice, graf (poslední bod), Osobní
+  rekordy (lepší hodnota s „· probíhá“, počet Rekordy podle živé medaile) a Historie (karta nahoře „· probíhá“
+  s medailí). Do `derive()` se nepřidává, Minule, předvyplnění, návrh progrese, Bez zlepšení a rekordy v historii
+  dál jen z uložených tréninků. Hlavní záložka Statistiky beze změny. Výpočet souhrnu cviku vytažený z `derive()` do
+  `exSum`. Data ani záloha beze změny. Popis v úvodním komentáři sekce „STATISTIKY CVIKU S ROZDĚLANÝM TRÉNINKEM
+  (F3-34)“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -154,6 +165,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 | F2-11 | Co má přednost, když šablona i minulý trénink mají jiné hodnoty? Předvyplnit ze šablony i u cviku vázaného na fitko v jiném fitku? Tlačítko „Vzít hodnoty z minula“? Dotaz při spuštění? | Rozhodnuto 7. 10. 2026: dotaz při každém spuštění ne; místo toho přepínač u šablony (jen v úpravě šablony, výchozí „z minula“, nové šablony i Uložit jako šablonu z tréninku také „z minula“). Cvičit znovu vždy hodnoty zvoleného tréninku bez přepínače. Vše nebo nic: při „Ze šablony“ se chybějící hodnota z minula nedoplňuje (minule ukazuje řádek Minule). Vázaný cvik v jiném fitku stejně jako jinde. Tlačítko „Vzít hodnoty z minula“ ne. Kontrola velkého skoku dál podle minula. |
 | F2-12 | Kde je ovládání skrytí a návratu? Blokuje skrytá šablona stejný název? | Vyřešeno 8. 10.: ovládání jako u cviku (textové tlačítko dole v úpravě šablony, bez ikon); skrytá šablona blokuje stejný název dál (hláška uvádí, že je skrytá); skrytí platí pro všechna fitka. |
 | F3-28 | Historie výš na Statistikách, nebo zvlášť? Výchozí metrika grafu u vysokých opakování? Filtr fitek v Historii? | Rozhodnuto 10. 10. 2026 po náhledech: třetí záložka Historie, cvik ze Cviků se otevírá na Statistikách. Výchozí metrika zůstává Odh. 1RM (Max zátěž u vysokých opakování nevidí růst opakování), znovu nenavrhovat. Filtr fitek stejně jako na Statistikách, společný výběr, štítek fitka na každé kartě. |
+| F3-34 | Které série rozdělaného tréninku? Rekordy? Odkud předvybírat fitko? Hlavní Statistiky? | Rozhodnuto 10. 10. 2026 (výchozí volby): jen odškrtnuté série; Osobní rekordy a dlaždice Rekordy ano (jako živé medaile, „probíhá“); fitko z rozdělaného i upravovaného tréninku a ze stránky uloženého tréninku, odjinud „Všechna“; hlavní záložka Statistiky ne (případně samostatná úloha). |
 | F3-32 | Co když je cvik v historii? Smazat i výchozí cvik? | Rozhodnuto 7. a 8. 10. 2026: Použitý cvik smazat nejde (historie by ztratila název a partie), nabídne se Skrýt. Výchozí cvik se nemaže, jen skrývá. Smazání použitého cviku s převodem historie na jiný cvik by byla samostatná větší úloha. Tlačítko ve formuláři Upravit cvik (ne na stránce cviku), cvik jen v šabloně se taky nemaže, u výchozího cviku se nic nepřidává. |
 | F3-31 | Jak vypadá informace o vázání na fitko na stránce cviku? | Vyřešeno 8. 10. 2026: jen ikona s textem „vázáno na fitko“ v řádku s vybavením (jako v kartě cviku v seznamu), klepnutí na ikonu ukáže krátké vysvětlení; u nevázaného cviku nic; v horní liště ikona není (v plánu mylně „už tam je“). Samostatná řádka s vysvětlením zamítnuta (F3-21). Ve Statistikách „Změníš přes Upravit.“ |
 | F3-30 | Kde je Duplikovat a co se z originálu zkopíruje? Duplikovat i výchozí cviky a cviky z online databáze? | Rozhodnuto 7. 10. 2026: akce jen na stránce cviku (záložka Cviky a panel info o cviku ji nemají), jako ikona vedle ikony Upravit; název „Název (kopie)“ s číslováním; kopíruje se i návrh progrese; kopie vždy viditelná; po uložení otevřít stránku kopie. Funguje pro všechny cviky včetně výchozích a z online databáze. Nekopíruje se historie, rekordy, fotky ani poznámky. Mazání cviku odděleno do F3-32. |

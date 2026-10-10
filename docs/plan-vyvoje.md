@@ -226,6 +226,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
 - [x] **F3-32** Smazat vlastní cvik
 - [x] **F3-33** Výška v Nastavení a BMI z hmotnosti
+- [x] **F3-34** Statistiky cviku z tréninku: fitko tréninku a rozdělaný trénink
 
 
 ### Fáze 4 – Chytré funkce
