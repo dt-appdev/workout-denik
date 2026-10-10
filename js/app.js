@@ -8384,7 +8384,8 @@
      bez počtu záznamů v názvu. openEx volí záložku podle toho, odkud se přišlo (data-p ji vynutí): ze záložky
      Cviky Statistiky, když má cvik záznam, jinak Popis.
      Statistiky (F3-28): filtr fitek, období a dlaždice, graf, Bez zlepšení, Osobní rekordy (bez bloku
-     Poslední rekordy, ten opakoval kartu rekordů a medaile v historii). Historie (vExHist): filtr fitek
+     Poslední rekordy, ten opakoval kartu rekordů a medaile v historii); Bez zlepšení a Osobní rekordy
+     ukazují jen fitka podle filtru fitek. Historie (vExHist): filtr fitek
      a tréninky se sériemi (25, pak Starší), štítek fitka přes gymPill na každé kartě.
      Filtr fitek (exGymChips) jen u cviku vázaného na fitko cvičeného ve 2 a víc fitkách, výběr S.detailGym
      je společný pro Statistiky i Historii; první čip je na Statistikách „Všechna (zvlášť)“ (čára za každé
@@ -8609,8 +8610,11 @@
     }
     // rekordy
     const R = recs();
+    // u vázaného cviku jen fitka podle filtru fitek (jako Bez zlepšení)
     const ctxs = ex.gymDep
-      ? gymsWith.map((g) => ({ g, name: gymName(g), b: R.best[id + "|" + g] }))
+      ? gymsWith
+          .filter((g) => S.detailGym === "all" || S.detailGym === g)
+          .map((g) => ({ g, name: gymName(g), b: R.best[id + "|" + g] }))
       : [{ g: null, name: "", b: R.best[id + "|*"] }];
     h += `<section class="sec">
         <div class="sec-h">
