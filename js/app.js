@@ -8379,9 +8379,16 @@
     return h;
   }
 
-  /* ---------- STRÁNKA CVIKU (F0-05, F3-31) ----------
-     Route exd (vExDetail), části Popis a Statistiky (S.exPart); openEx volí část podle toho, odkud se přišlo
-     (data-p ji vynutí).
+  /* ---------- STRÁNKA CVIKU (F0-05, F3-31, F3-28) ----------
+     Route exd (vExDetail), záložky Popis | Statistiky | Historie (S.exPart "info" | "stats" | "hist"),
+     bez počtu záznamů v názvu. openEx volí záložku podle toho, odkud se přišlo (data-p ji vynutí): ze záložky
+     Cviky Statistiky, když má cvik záznam, jinak Popis.
+     Statistiky (F3-28): filtr fitek, období a dlaždice, graf, Bez zlepšení, Osobní rekordy (bez bloku
+     Poslední rekordy, ten opakoval kartu rekordů a medaile v historii). Historie (vExHist): filtr fitek
+     a tréninky se sériemi (25, pak Starší), štítek fitka přes gymPill na každé kartě.
+     Filtr fitek (exGymChips) jen u cviku vázaného na fitko cvičeného ve 2 a víc fitkách, výběr S.detailGym
+     je společný pro Statistiky i Historii; první čip je na Statistikách „Všechna (zvlášť)“ (čára za každé
+     fitko), na Historii „Všechna“.
      Vázáno na fitko (F3-31): na stránce jen informace v řádku s vybavením („Kladka · vázáno na fitko“ + ikona,
      klepnutí = gdTip), u nevázaného cviku nic. Měnit jde jen ve formuláři Upravit / Nový cvik (#x-gd), aby se
      způsob počítání statistik nepřepnul omylem jedním klepnutím. */
@@ -8398,7 +8405,8 @@
     h += `<div class="seg seg-wide" style="margin-bottom:10px">
       ${[
         ["info", "Popis"],
-        ["stats", "Statistiky" + (list.length ? " (" + list.length + "×)" : "")],
+        ["stats", "Statistiky"],
+        ["hist", "Historie"],
       ]
         .map(
           ([k, l]) =>
@@ -8406,7 +8414,7 @@
         )
         .join("")}
     </div>`;
-    if (S.exPart !== "stats") {
+    if (S.exPart !== "stats" && S.exPart !== "hist") {
       // popis
       h +=
         `<div class="card exinfo">
@@ -8445,37 +8453,21 @@
       </div>`;
       return h;
     }
-    // statistiky
     if (!list.length) {
       return `${h}
       <div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>`;
     }
+    if (S.exPart === "hist") {
+      return h + vExHist(id, ex, list);
+    }
+    // statistiky
     h += `<p class="xs muted" style="margin:0 0 8px">${
       ex.gymDep
         ? `Vázáno na fitko${gdIcon()}: počítá se zvlášť pro každé fitko.`
         : "Nevázáno na fitko: data ze všech fitek se sčítají."
     } Změníš přes Upravit.</p>`;
     const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
-    if (ex.gymDep && gymsWith.length > 1) {
-      h += `<div class="sec">
-        <div class="chips" data-ck="detailGym">
-          <button class="chip" data-act="detailGym" data-v="all"
-              aria-pressed="${S.detailGym === "all"}">
-            Všechna (zvlášť)
-          </button>
-          ${gymsWith
-            .map(
-              (g) =>
-                `<button class="chip" data-act="detailGym" data-v="${g}"
-                    aria-pressed="${S.detailGym === g}">
-                  <span class="sw" style="background:${gymColor(g)}"></span>
-                  ${esc(gymName(g))}
-                </button>`,
-            )
-            .join("")}
-        </div>
-      </div>`;
-    }
+    h += exGymChips(ex, gymsWith, "Všechna (zvlášť)");
     const kind = kindOf(id);
     const M =
       isTimed(kind) && kind !== "dist"
@@ -8659,31 +8651,45 @@
         `</div>`;
     }
     h += "</div>";
-    const rl = (R.byEx[id] || []).slice().reverse().slice(0, 8);
-    if (rl.length) {
-      h += `<div class="card" style="margin-top:8px">
-        <div class="subh" style="margin-top:0">Poslední rekordy a zlepšení</div>
-        ${rl
+    h += "</section>"; // jak se rekordy počítají: panel s otazníkem v nadpisu (F3-21)
+    return h;
+  }
+
+  // filtr fitek na stránce cviku (S.detailGym), jen u vázaného cviku ze 2 a víc fitek; all = první čip
+  function exGymChips(ex, gymsWith, all) {
+    if (!ex.gymDep || gymsWith.length < 2) return "";
+    return `<div class="sec">
+      <div class="chips" data-ck="detailGym">
+        <button class="chip" data-act="detailGym" data-v="all"
+            aria-pressed="${S.detailGym === "all"}">
+          ${esc(all)}
+        </button>
+        ${gymsWith
           .map(
-            (r) =>
-              `<div class="rec">
-                <span class="md">${medal([r.type])}</span>
-                <div class="grow">
-                  ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
-              `<span class="muted">· ` +
-              `${fmtDate(r.w.start)}${ex.gymDep ? " · " + esc(gymName(r.gymId)) : ""}</span>
-                </div>
-              </div>`,
+            (g) =>
+              `<button class="chip" data-act="detailGym" data-v="${g}"
+                  aria-pressed="${S.detailGym === g}">
+                <span class="sw" style="background:${gymColor(g)}"></span>
+                ${esc(gymName(g))}
+              </button>`,
           )
           .join("")}
-      </div>`;
-    }
-    h += "</section>"; // jak se rekordy počítají: panel s otazníkem v nadpisu (F3-21)
-    // historie
+      </div>
+    </div>`;
+  }
+
+  // záložka Historie (F3-28): filtr fitek a tréninky se sériemi, nejnovější nahoře
+  function vExHist(id, ex, list) {
+    const gymsWith = [...new Set(list.map((s) => s.w.gymId))].sort((a, b) => gymIdx(a) - gymIdx(b));
+    let h = exGymChips(ex, gymsWith, "Všechna");
+    const sel =
+      ex.gymDep && gymsWith.length > 1 && S.detailGym !== "all"
+        ? list.filter((s) => s.w.gymId === S.detailGym)
+        : list;
+    const R = recs();
     h += `<section class="sec">
-      <div class="sec-h"><h2>Historie cviku</h2><span class="xs muted">${list.length}×</span></div>
       <div class="stack" style="gap:6px">`;
-    for (const s of list.slice(0, S.exHistLimit || 25)) {
+    for (const s of sel.slice(0, S.exHistLimit || 25)) {
       // medaile: zlatá za rekord, stříbrná za zlepšení (F3-25), bez počtu
       const imp = (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
       h +=
@@ -8693,10 +8699,7 @@
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
         `${imp.length ? " " + recCount(imp, "") : ""}
           </b>
-          <span class="pill">
-            <span class="sw" style="background:${gymColor(s.w.gymId)}"></span>
-            ${esc(gymName(s.w.gymId))}
-          </span>
+          ${s.w.gymId ? gymPill(s.w.gymId) : ""}
         </div>
         <div class="small num" style="margin-top:4px">
           ${s.e.sets
@@ -8712,7 +8715,7 @@
         </div>
       </div>`;
     }
-    if (list.length > (S.exHistLimit || 25)) {
+    if (sel.length > (S.exHistLimit || 25)) {
       h += '<button class="btn block" data-act="exHistMore">Starší</button>';
     }
     h += "</div></section>";
@@ -13731,11 +13734,12 @@
         S.exLimit = (S.exLimit || 60) + 60;
         scheduleRender();
         break;
-      // ze záložky Cviky a z výběru se otevře Popis, odjinud (trénink, historie, statistiky) Statistiky
+      // ze záložky Cviky Statistiky, když má cvik záznam, jinak Popis (F3-28); odjinud (trénink, historie,
+      // statistiky) Statistiky
       case "openEx": {
         const f = S.route !== "exd" ? navFrame() : null;
         closeSheet();
-        S.exPart = t.dataset.p || (S.route === "ex" ? "info" : "stats");
+        S.exPart = t.dataset.p || (S.route === "ex" && !(derive().byEx[v] || []).length ? "info" : "stats");
         S.exDetail = v;
         S.detailGym = "all";
         S.exHistLimit = 25;
