@@ -89,7 +89,7 @@ flowchart LR
 8. **F2-04** Šablona na řadě jako hlavní akce úvodu · *Úvod · P2 · B · střední* – nejčastější akce nemá největší váhu.
 9. ~~**F3-26** Progres po cvicích ve Statistikách~~ – hotovo 9. 10. 2026.
 10. ~~**F3-25** Rekord jako skutečná událost~~ – hotovo 10. 10. 2026.
-11. **F3-27** Porovnání s předchozím obdobím · *Statistiky · B · nízká–střední* – čísla Přehledu bez srovnání nic neříkají.
+11. ~~**F3-27** Porovnání s předchozím obdobím~~ – hotovo 10. 10. 2026.
 
 #### Etapa 4 – Drobnosti a doladění (P3, rychlé)
 
@@ -223,7 +223,7 @@ Předpoklad: F0-02 (svalové partie).
   - `enterkeyhint="next"` / `"done"` v políčkách série, jen pokud ověření v telefonu ukáže, že Gboard nepřechází z kg na Opak.
 - [x] **F3-25** Rekord jako skutečná událost
 - [x] **F3-26** Progres po cvicích ve Statistikách
-- [ ] **F3-27** Porovnání s předchozím obdobím (UX audit 27. 9. 2026, §6; B · nízká–střední): dlaždice Přehledu (tréninky, čas, objem, série) s rozdílem proti stejně dlouhému předchozímu období („14 tréninků · +1“), stejně Souhrn minulý měsíc / pololetí / rok. Přesunuto z F3-04 (karty s rozdíly), bez radaru. Platí filtr fitka. Souhrn tréninku už porovnává s minulým tréninkem (`dHtml`), stejný vzhled rozdílů.
+- [x] **F3-27** Porovnání s předchozím obdobím
 - [ ] **F3-28** Stránka cviku: historie výš (UX audit 27. 9. 2026, §2 G, §4 a §6; P3 · B · nízká–střední): na stránce cviku je pořadí graf → osobní rekordy → poslední rekordy → historie a historie (nejčastější důvod návštěvy) začíná cca 1 300 px pod horním okrajem. Návrh: graf → historie → osobní rekordy, blok „Poslední rekordy“ vypustit nebo sbalit (opakuje Osobní rekordy a medaile v historii). Ze záložky Cviky otevírat cvik s historií rovnou na Statistikách (dnes Popis; z tréninku už Statistiky). Výchozí metrika grafu u cviků s víc než 10 opakováními Max. zátěž nebo Nejlepší série (odhad 1RM je tam nepřesný).
 - [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
 - [x] **F3-30** Nový cvik kopií jiného cviku

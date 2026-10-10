@@ -7634,16 +7634,6 @@
     }
     return s;
   }
-  function kpiGrid(s) {
-    return `<div class="kpis k6">
-      <div class="kpi"><b>${s.n}</b><span>Tréninky</span></div>
-      <div class="kpi"><b>${fmtHours(s.dur)}</b><span>Čas</span></div>
-      <div class="kpi"><b>${fmtVol(s.vol)}</b><span>Objem</span></div>
-      <div class="kpi"><b>${fmtInt(s.sets)}</b><span>Série</span></div>
-      <div class="kpi"><b>${s.recs}</b><span>Rekordy</span></div>
-      <div class="kpi"><b>${s.n ? fmtDurS(s.dur / s.n) : "–"}</b><span>Ø délka</span></div>
-    </div>`;
-  }
   // pruhy: r = {label, v, txt, sw: barva s tečkou, col: barva pruhu bez tečky, cls: třída hodnoty, act, id}
   function hbarList(rows, stk) {
     if (!rows.length) return '<div class="muted small">Nic.</div>';
@@ -7685,15 +7675,15 @@
         txt: n + "× · " + Math.round((n / s.n) * 100) + " %",
       }));
   }
-  function summaryBlock(s, withGyms) {
-    let h = kpiGrid(s);
+  function summaryBlock(s, withGyms, p) {
+    let h = kpiGrid(s, p);
     h += `<div class="subh">Nejčastější cviky</div>${hbarList(topExRows(s, 5), true)}`;
     if (withGyms) {
       h += `<div class="subh">Podle fitek</div>${hbarList(gymRows(s))}`;
     }
     return h;
   }
-  // kalendářní období
+  // kalendářní období, pa = začátek předchozího stejného období (konec = a, F3-27)
   function calPeriods() {
     const now = new Date();
     const y = now.getFullYear(),
@@ -7702,18 +7692,25 @@
       lmE = new Date(y, m, 1);
     const hy =
       m >= 6
-        ? { a: new Date(y, 0, 1), b: new Date(y, 6, 1), l: "Leden–červen " + y }
-        : { a: new Date(y - 1, 6, 1), b: new Date(y, 0, 1), l: "Červenec–prosinec " + (y - 1) };
+        ? { a: new Date(y, 0, 1), b: new Date(y, 6, 1), l: "Leden–červen " + y, pa: new Date(y - 1, 6, 1) }
+        : {
+            a: new Date(y - 1, 6, 1),
+            b: new Date(y, 0, 1),
+            l: "Červenec–prosinec " + (y - 1),
+            pa: new Date(y - 1, 0, 1),
+          };
     return {
       month: {
         a: lm.getTime(),
         b: lmE.getTime(),
+        pa: new Date(y, m - 2, 1).getTime(),
         l: MONTHS_FULL[lm.getMonth()].replace(/^./, (c) => c.toUpperCase()) + " " + lm.getFullYear(),
         short: "Minulý měsíc",
       },
-      half: { a: hy.a.getTime(), b: hy.b.getTime(), l: hy.l, short: "Pololetí" },
+      half: { a: hy.a.getTime(), b: hy.b.getTime(), pa: hy.pa.getTime(), l: hy.l, short: "Pololetí" },
       year: {
         a: new Date(y - 1, 0, 1).getTime(),
+        pa: new Date(y - 2, 0, 1).getTime(),
         b: new Date(y, 0, 1).getTime(),
         l: "Rok " + (y - 1),
         short: "Minulý rok",
@@ -7855,9 +7852,10 @@
   }
   // Přehled: období s dlaždicemi, Průběh, Podle fitek, souhrn za kalendářní období
   function statsOver({ g, range, wsAll, ws, s }) {
+    const pr = rangePrev(range);
     let h = `<section class="sec">
       ${rangeSeg("statsRange", range)}
-      <div style="margin-top:10px">${kpiGrid(s)}</div>
+      <div style="margin-top:10px">${kpiGrid(s, pr && prevSum(wsAll, pr.a, pr.b))}</div>
     </section>`;
     // graf
     const m = S.statsMetric;
@@ -7914,7 +7912,7 @@
       <div class="card">
         ${
           ps.n
-            ? summaryBlock(ps, g === "all")
+            ? summaryBlock(ps, g === "all", prevSum(wsAll, p.pa, p.a))
             : '<div class="muted small">V tomto období žádný trénink.</div>'
         }
       </div>
@@ -7982,6 +7980,56 @@
           .join("")}
       </div>
     </section>`;
+  }
+  /* ---------- POROVNÁNÍ S PŘEDCHOZÍM OBDOBÍM (F3-27) ----------
+     Porovnání s předchozím obdobím (F3-27): dlaždice Přehledu ukazují pod číslem rozdíl proti stejně dlouhému
+     období těsně před vybraným (30 dní = 31.–60. den zpět), Souhrn minulý měsíc / pololetí / rok proti
+     předchozímu kalendářnímu období. Platí filtr fitka. Vzhled jako v souhrnu tréninku (`dHtml`): Tréninky,
+     Objem (i procenta) a Série zeleně / červeně, Čas a Ø délka šedě, Rekordy bez rozdílu (na začátku jich
+     padá víc, rozdíl by klamal). Rozdíl se neukáže (`prevSum` vrátí null), když předchozí období neexistuje
+     (Vše), sahá před první uložený trénink nebo v něm nebyl žádný trénink. Nic se neukládá.
+     Hlavní funkce: prevSum, kpiGrid(s, p), rangePrev, calPeriods (pa). */
+  // souhrn předchozího období [a, b) ze seznamu tréninků, null když nejde porovnat
+  function prevSum(wsAll, a, b) {
+    if (!isFinite(a)) return null;
+    const all = derive().all;
+    const first = all.length ? all[all.length - 1].start : Infinity;
+    if (first > a) return null;
+    const ps = summarize(wsAll.filter((w) => w.start >= a && w.start < b));
+    return ps.n ? ps : null;
+  }
+  // předchozí období k období Přehledu: [od, do), u Vše null
+  function rangePrev(k) {
+    const r = RANGES.find((x) => x[0] === k);
+    if (!r || !r[2]) return null;
+    const since = rangeSince(k);
+    return { a: since - r[2] * DAY, b: since };
+  }
+  // dlaždice souhrnu, p = souhrn předchozího období (rozdíly pod čísly, F3-27)
+  function kpiGrid(s, p) {
+    const avg = (x) => (x.n ? x.dur / x.n : 0);
+    const mins = (ms) => Math.round(ms / 60000);
+    let dVol = "";
+    if (p) {
+      const pc = p.vol > 0 ? Math.round(((s.vol - p.vol) / p.vol) * 100) : 0;
+      dVol =
+        dHtml(s.vol - p.vol, fmtVol, "dl") +
+        (pc
+          ? `<span class="dl pc ${pc > 0 ? "gain" : "loss"}">
+            ${pc > 0 ? "+" : "−"}${Math.abs(pc)} %
+          </span>`
+          : "");
+    }
+    const kpi = (v, l, dl) => `<div class="kpi"><b>${v}</b><span>${l}</span>${p ? dl : ""}</div>`;
+    const dDur = (a, b) => (p ? dHtml(mins(a) - mins(b), (m) => fmtHours(m * 60000), "dl", true) : "");
+    return `<div class="kpis k6">
+      ${kpi(s.n, "Tréninky", p ? dHtml(s.n - p.n, String, "dl") : "")}
+      ${kpi(fmtHours(s.dur), "Čas", dDur(s.dur, p && p.dur))}
+      ${kpi(fmtVol(s.vol), "Objem", dVol)}
+      ${kpi(fmtInt(s.sets), "Série", p ? dHtml(s.sets - p.sets, fmtInt, "dl") : "")}
+      ${kpi(s.recs, "Rekordy", "")}
+      ${kpi(s.n ? fmtDurS(avg(s)) : "–", "Ø délka", s.n ? dDur(avg(s), p && avg(p)) : "")}
+    </div>`;
   }
   /* ---------- PROGRES PO CVICÍCH (F3-26) ----------
      Statistiky → Cviky odpovídají na „zlepšuji se?“: u každého cviku aktuální hodnota a změna za zvolené
