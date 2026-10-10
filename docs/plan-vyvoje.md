@@ -94,7 +94,7 @@ flowchart LR
 #### Etapa 4 – Drobnosti a doladění (P3, rychlé)
 
 12. ~~**F3-24** Texty a drobnosti z auditu~~ – hotovo 10. 10. 2026.
-13. **F1-17** Kratší pauza po zahřívací sérii · *Pauza · P3 · B · nízká*.
+13. ~~**F1-17** Kratší pauza po zahřívací sérii~~ – zamítnuto 10. 10. 2026, viz Co neděláme.
 14. **F3-28** Stránka cviku: historie výš · *Stránka cviku · P3 · B · nízká–střední*.
 15. **F3-29** Formulář měření jen s používanými údaji · *Tělo · P3 · B · nízká*.
 
@@ -159,7 +159,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-06** Přidávání cviku a hledání po slovech
 - [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
 - [x] **F1-08** Zahřívací série „60 %“ z minula
-- [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04). Po kole pracovních sérií supersérie má přednost Časovač po pracovní supersérii (rozhodnuto u F4-05), délka pauzy se vybírá v `toggleSetDone` přes `ssRest`. Kratší pauza po zahřívací sérii je samostatně v F1-17 (jednodušší, dá se udělat dřív).
+- [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04). Po kole pracovních sérií supersérie má přednost Časovač po pracovní supersérii (rozhodnuto u F4-05), délka pauzy se vybírá v `toggleSetDone` přes `ssRest`.
 - [x] **F1-10** Kontrola čísel, upozornění na velký skok
 - [ ] **F1-12** Ruční spuštění pauzy (nápad, rozhodnout později; vzniklo u F4-05): s vypnutým časovačem pauzy (hlavní vypínač v Nastavení → Odpočinek) jít pauzu spustit ručně, např. klepnutím na čas tréninku nahoře.
 - [x] **F1-11** Opravy z používání při tréninku (návrat na naposledy změněný cvik…)
@@ -167,7 +167,6 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-14** Neoznačené série s hodnotami při dokončení
 - [ ] **F1-15** Druh série výběrem místo cyklu (UX audit 27. 9. 2026, §5 nález 2): klepnutí na číslo série by místo přepnutí dokola otevřelo panel se 4 druhy (jako v Hevy). **Odloženo 28. 9. 2026:** uživatel se nikdy neuklikl a zapsané hodnoty ani předvyplnění se přepnutím neztratí. Ověřené chování, podoba v Hevy a návrh v `docs/navrhy/F1-15-druh-serie.md`. Od F1-18 (28. 9.) reaguje odznak na klepnutí v celé buňce; kdyby se tím začal druh série měnit omylem, vrátit se k F1-15.
 - [x] **F1-16** Pruh pauzy nezakrývá obsah
-- [ ] **F1-17** Kratší pauza po zahřívací sérii (UX audit 27. 9. 2026, §5 nález 4; P3 · B · nízká): po zahřívací sérii dnes běží stejná pauza jako po pracovní (výchozí 2:00), takže se často přeskakuje. Návrh: vlastní délka pauzy po zahřívací sérii v Nastavení → Trénink → Odpočinek mezi sériemi (např. výchozí 1:00, volba i Bez pauzy). Jednodušší než celé F1-09. Kde: výběr délky pauzy v `toggleSetDone` (jako `ssRest` u supersérie, F4-05), nová položka v `HELP`.
 - [x] **F1-18** Větší dotykové plochy v tréninku
 - [x] **F1-19** Minule jako text u cviku místo sloupce
 
@@ -272,6 +271,7 @@ UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravi
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
 | Průvodce prvním spuštěním (onboarding) | Appku používá jeden uživatel, který ji zná (UX audit 27. 9. 2026). Prázdný stav bez fitka řeší F3-24. |
 | Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Řešit až při skutečném přechodu. |
+| Kratší pauza po zahřívací sérii (F1-17, UX audit 27. 9. 2026) | Zamítnuto 10. 10. 2026: uživatele stejná pauza po zahřívací sérii neobtěžuje, další volba v nastavení by byla zbytečná. Kdyby to někdy začalo vadit, řešit spíš v rámci F1-09 (pauza podle cviku); krátká pauza po poslední zahřívací sérii před první pracovní by škodila. |
 
 Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle poznámky u nich):
 
@@ -290,7 +290,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
-| F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
 | F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
 | F2-06 | Archivované fitko: zmizí jeho tréninky i ze součtů ve Statistikách a z rekordů jiných fitek? Šablona pro víc fitek? Rozdělaný trénink v archivovaném fitku? Smazání fitka s tréninky: smazat, nebo štítek „Smazané fitko“? | Archivace skryje tréninky všude (i součty a rekordy, po obnovení se vrátí); šablona pro víc fitek zůstane u ostatních; archivovat nejde během tréninku v tom fitku. Smazání nabídne obě volby, výchozí „ponechat se štítkem“. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
