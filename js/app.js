@@ -4096,6 +4096,18 @@
     );
   }
 
+  /* zvýrazněná záložka dole (F3-34): stránka cviku, formulář cviku a úprava tréninku / šablony svítí pod
+     záložkou stránky, odkud se na ně přišlo (podle S.nav, stejně jako vede šipka ←): z tréninku Trénink,
+     ze stránky uloženého tréninku Historie, ze Statistik Statistiky, ze Cviků Cviky. Stránka uloženého
+     tréninku vždy Historie (F3-19), i hned po uložení. n = kolik kroků S.nav patří pod stránku route. */
+  function tabOf(route, n) {
+    if (route === "wd") return "hist";
+    if (route === "home") return "train";
+    if (route !== "exd" && route !== "exed" && route !== "edit") return route;
+    const f = S.nav[n - 1];
+    if (f) return tabOf(f.route, n - 1);
+    return route === "edit" ? "train" : "ex";
+  }
   function renderTabs() {
     const t = [
       ["train", "Trénink"],
@@ -4105,20 +4117,7 @@
       ["body", "Tělo"],
       ["set", "Nastavení"],
     ];
-    // stránka cviku patří pod Statistiky, jen když se na ni přišlo odtamtud, jinak pod Cviky;
-    // formulář cviku (F3-14) pod záložku, odkud se na něj přišlo
-    const top = S.nav[S.nav.length - 1];
-    const r = S.route === "exed" ? (top ? top.route : "ex") : S.route;
-    const cur =
-      r === "exd"
-        ? S.prevRoute === "stats"
-          ? "stats"
-          : "ex"
-        : r === "wd"
-          ? "hist"
-          : r === "home"
-            ? "train"
-            : r;
+    const cur = tabOf(S.route, S.nav.length);
     document.getElementById("tabs").innerHTML = t
       .map(
         ([k, l]) =>
@@ -4234,11 +4233,10 @@
       galReset();
     } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
-    const base = (r) =>
-      r === "edit" || r === "exd" || r === "home" ? "train" : r === "exed" ? "ex" : r === "wd" ? "hist" : r;
-    // formulář cviku (F3-14) se po restartu neobnoví, zůstane uložené místo, odkud se na něj přišlo
+    // po restartu se otevře záložka, pod kterou stránka svítí (tabOf, F3-34); formulář cviku (F3-14) se
+    // neobnoví, zůstane uložené místo, odkud se na něj přišlo
     if (route !== "exed") {
-      lsSet("route", route === "exd" ? base(S.prevRoute || "ex") : base(route));
+      lsSet("route", tabOf(route, S.nav.length));
     }
     render.keepScroll = false;
     scheduleRender();
