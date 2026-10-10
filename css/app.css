@@ -2685,8 +2685,12 @@ tr.done .okb {
 .kpis.k4 {
   grid-template-columns: repeat(4, 1fr);
 }
+/* souhrn bez dlaždice Rekordy (F3-24): 3 dlaždice v řadě, písmo stejné jako u 4 */
+.kpis.k4.k3 {
+  grid-template-columns: repeat(3, 1fr);
+}
 /* s největším písmem (F3-11) se 4 dlaždice na šířku nevejdou, jsou 2 × 2 */
-:root[data-fs="xl"] .kpis.k4 {
+:root[data-fs="xl"] .kpis.k4:not(.k3) {
   grid-template-columns: repeat(2, 1fr);
 }
 .kpi b {
