@@ -132,6 +132,7 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   dvě vedle sebe. Pořadí: Přidat cvik (obrys s plusem, je-li) → hlavní akce (`btn primary block`, jen jedna, na stránce
   cviku žádná) → ostatní obrysová `btn block` (Upravit první, pak Duplikovat / Sdílet / Uložit jako šablonu / Skrýt) →
   čára `<div class="bzone">` → nebezpečná, nevratná akce `btn danger line block` (červený obrys, Smazat / Zahodit).
+  Výjimka (F3-23): v rozdělaném tréninku bez hotové série je hlavní akcí Přidat cvik a Dokončit trénink je obrys.
   Skrýt a Zobrazit jdou vrátit, proto jsou neutrální, ne červené. Nikdy tlačítko jako holý text (`ghost`).
 - Ikony (přání uživatele, F3-20, sekce „ikony“): nikdy emoji ani znaky písma jako ikona (🏅, 🔥, ✓, ▶, ★, ↗, ‹ ›…),
   ani na obrázku ke sdílení a v návrzích. Vždy vlastní SVG v sadě `IC` ve stejném stylu (popis v sekci). Stejný
@@ -154,7 +155,10 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
 - Barvy (F3-01): šedý text `--ink-2`/`--ink-3` je zesílený kvůli čitelnosti, drobný text nedělat světlejší.
   Skupiny partií `MGRP` / `MGRP_OF` (6 skupin), barva `mgCol(k)` = `--g-<skupina>`. `musFigs(m, small, grp)`: `grp` =
   postava v barvách skupin (Statistiky, souhrn), jinak červená (stránka cviku). Barva fitka jen z `g.col` (`--sN`),
-  nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`.
+  nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`. Hlavní barva `--accent` (F3-23) jen pro hlavní akci
+  a vybrané / aktivní (záložka, čip, přepínač, rámeček políčka), ne pro názvy, stavy a informace.
+- Dotyková plocha (F3-23, sekce „JEDNOTNÝ VZHLED“): každý ovládací prvek aspoň `--tap` (44 px) na výšku, menší
+  s rámečkem neviditelným okrajem `::after` (vzhled zůstává). Prvky v řádku série mají výšku `--row-h`.
 - Grafy (F3-08, sekce „grafy (SVG, F3-08)“): `chartPh(spec, výška)`, jednotky a formát jen přes `spec.yUnit`, `spec.unit`,
   `spec.fmt` (`CH_FMT`) a `spec.whole`.
 - Čísla (F1-10, sekce „KONTROLA ČÍSEL“): každé číselné políčko má `data-num="<pravidlo z NUM_RULES>"`, před uložením

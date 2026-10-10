@@ -100,7 +100,7 @@ flowchart LR
 
 #### Etapa 5 – Jednotný vzhled
 
-16. **F3-23** Redesign v úzkém rozsahu (barvy podle významu, jedna hlavní akce na obrazovce, dotyková plocha) · *Vzhled · B, zbytek C · střední* – až po etapách 1–3, které mění úvod a trénink.
+16. ~~**F3-23** Jednotný vzhled v úzkém rozsahu~~ – hotovo 10. 10. 2026.
 
 #### Etapa 6 – Zbytek plánu
 
@@ -214,7 +214,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-20** Vlastní ikony místo emoji
 - [x] **F3-21** Kratší nápovědy (otazník v nadpisu sekce)
 - [x] **F3-22** Karta cviku bez štítků
-- [ ] **F3-23** Redesign appky (přání 27. 9. 2026, nic nerozhodnuto): jednotný vzhled celé appky, tedy systém (barvy, rozestupy, písmo, karty), tlačítka a ikony. Rozsah a podobu probrat, až bude úloha na řadě. **UX audit 27. 9. 2026 (§7) doporučuje místo vizuální přestavby úzké zadání**, protože systém už existuje (barvy v `:root`, stupnice `--fs-*`, ikony `IC`, panely `openSheet`): (1) barvy podle významu – korálová dnes znamená hlavní akci, odkaz (název cviku), aktivní záložku, zničující akci (Zahodit trénink) i přečas pauzy; návrh: názvy cviků v barvě textu (klikatelnost nese ikona grafu), zničující akce červeně nebo neutrálním textem, přečas neutrálně; (2) jedna hlavní akce na obrazovce – úvod řeší F2-04, v tréninku bez hotové série má být hlavní Přidat cvik, ne Dokončit trénink; (3) jedna minimální dotyková plocha 44–48 px pro čipy, segmenty a ikonová tlačítka (dnes 34 px; trénink řeší F1-18, hodnota v proměnné `--tap` v `:root`, 44 px; jak zvětšit plochu bez změny vzhledu, popisuje sekce VĚTŠÍ DOTYKOVÉ PLOCHY v `js/app.js`). Tam taky zvážit viditelně větší ✓ (asi 52 × 40 px, v `em`), v F1-18 uživatel chtěl nejdřív jen větší plochu. Ostatní je vkus (C). **Rozhodnuto 27. 9.: zatím jen v tomto úzkém rozsahu**, vizuální přestavbu zvážit až potom.
+- [x] **F3-23** Jednotný vzhled v úzkém rozsahu
 - [x] **F3-24** Texty a drobnosti z auditu
 - [x] **F3-25** Rekord jako skutečná událost
 - [x] **F3-26** Progres po cvicích ve Statistikách
@@ -294,7 +294,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F2-06 | Archivované fitko: zmizí jeho tréninky i ze součtů ve Statistikách a z rekordů jiných fitek? Šablona pro víc fitek? Rozdělaný trénink v archivovaném fitku? Smazání fitka s tréninky: smazat, nebo štítek „Smazané fitko“? | Archivace skryje tréninky všude (i součty a rekordy, po obnovení se vrátí); šablona pro víc fitek zůstane u ostatních; archivovat nejde během tréninku v tom fitku. Smazání nabídne obě volby, výchozí „ponechat se štítkem“. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
 | F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
-| F3-23 | Redesign jako vizuální přestavba, nebo úzké zadání podle auditu? | **Rozhodnuto 27. 9. 2026:** zatím jen úzké zadání (barvy podle významu, jedna hlavní akce na obrazovce, dotyková plocha 44–48 px); vizuální přestavbu zvážit až potom. |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
 | F3-04 | 6 hlavních partií, nebo jemnější dělení? | 6 partií |
 | F5-02 | Počítat do týdenního cíle všechna fitka? Co když cíl změním v průběhu? | Všechna fitka; změna cíle platí od aktuálního týdne, starší týdny se hodnotí podle cíle, který tehdy platil (nebo zjednodušeně podle aktuálního). |

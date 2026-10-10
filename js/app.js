@@ -5385,7 +5385,23 @@
      - −15 / +15 / Přeskočit v pruhu pauzy: okraj sahá až k hornímu a dolnímu okraji pruhu a do poloviny
        mezery k sousednímu tlačítku (.rest-in button::after).
      Tlačítko Smazat (.sw-del, F2-03) leží mimo buňku ✓, tah doleva funguje i z okraje ✓.
-     Stejné pravidlo pro zbytek appky (čipy, segmenty, ikonová tlačítka) převezme F3-23 (--tap). */
+     Stejné pravidlo pro zbytek appky (čipy, segmenty, ikonová tlačítka) převzala F3-23 (--tap). */
+
+  /* ---------- JEDNOTNÝ VZHLED (F3-23) ----------
+     Úzké zadání podle UX auditu 27. 9. 2026 (§7), ne vizuální přestavba. Většina je v css/app.css.
+     - Barvy podle významu: hlavní barva (--accent) znamená jen hlavní akci (btn primary) a vybrané
+       nebo aktivní (záložka, čip, přepínač, rámeček políčka). Název cviku v kartě (.exc-h h3) je v barvě
+       textu, klikatelnost nese ikona grafu vedle. Přečas pauzy (.rest-in.over) je v barvě textu pruhu.
+       Smazat / Zahodit se od hlavní akce liší tvarem a místem (obrys pod čarou, F2-12), odstín zůstává.
+     - Jedna hlavní akce: v rozdělaném tréninku bez hotové série je plné Přidat cvik a Dokončit trénink
+       jen obrys, od první ✓ naopak (anyDone ve vEditor). Úvodní obrazovku řeší F2-04.
+     - Řádek série: odznak druhu, políčka kg / opak., RIR/RPE a ✓ mají stejnou výšku --row-h (36 px) z :root,
+       celý řádek --tap (44 px). ✓ je 50 × 36 px. Nový prvek v řádku série = výška --row-h.
+     - Dotyková plocha aspoň --tap (44 px): přepínače .seg viditelně (neviditelný okraj by .seg ořízl),
+       ikonová tlačítka .iconbtn rozměrem (nemají rámeček), čipy, .btn.sm a .spr-p neviditelným okrajem
+       nahoru a dolů (::after jako F1-18; posuvný řádek .chips má pro okraj místo v padding). */
+  // má trénink aspoň jednu hotovou sérii? (hlavní tlačítko dole, F3-23)
+  const anyDone = (d) => d.ex.some((e) => e.sets.some((s) => s.done));
 
   function vEditor(d) {
     const mode = d.mode;
@@ -5480,10 +5496,14 @@
     if (mode === "edit" && coachOn()) {
       h += `<div style="margin-top:12px">${coachPart(d)}</div>`; // Pro coache (F4-12)
     }
+    // jedna hlavní akce (F3-23): v tréninku bez hotové série Přidat cvik, od první ✓ Dokončit trénink
+    const addMain = mode === "active" && !anyDone(d);
     h += `<div class="stack" style="margin-top:12px">
-        <button class="btn block" data-act="addEx">${icon("plus")}Přidat cvik</button>`;
+        <button class="btn${addMain ? " primary" : ""} block" data-act="addEx">
+          ${icon("plus")}Přidat cvik
+        </button>`;
     if (mode === "active") {
-      h += `<button class="btn primary block" data-act="finish">Dokončit trénink</button>
+      h += `<button class="btn${addMain ? "" : " primary"} block" data-act="finish">Dokončit trénink</button>
         <div class="bzone"></div>
         <button class="btn danger line block" data-act="discard">Zahodit trénink</button>`;
     } else if (mode === "edit") {
