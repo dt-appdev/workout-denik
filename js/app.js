@@ -5397,9 +5397,10 @@
        jen obrys, od první ✓ naopak (anyDone ve vEditor). Úvodní obrazovku řeší F2-04.
      - Řádek série: odznak druhu, políčka kg / opak., RIR/RPE a ✓ mají stejnou výšku --row-h (36 px) z :root,
        celý řádek --tap (44 px). ✓ je 50 × 36 px. Nový prvek v řádku série = výška --row-h.
-     - Dotyková plocha aspoň --tap (44 px): přepínače .seg viditelně (neviditelný okraj by .seg ořízl),
-       ikonová tlačítka .iconbtn rozměrem (nemají rámeček), čipy, .btn.sm a .spr-p neviditelným okrajem
-       nahoru a dolů (::after jako F1-18; posuvný řádek .chips má pro okraj místo v padding). */
+     - Dotyková plocha aspoň --tap (44 px): ikonová tlačítka .iconbtn rozměrem (nemají rámeček), čipy,
+       přepínače .seg, .btn.sm a .spr-p neviditelným okrajem nahoru a dolů (::after jako F1-18), vzhled
+       zůstává. Posuvný řádek .chips má pro okraj místo v padding, .seg nemá overflow: hidden (rohy dělají
+       krajní tlačítka). Přepínač viditelně 44 px vysoký uživatel zamítl (méně se vejde na stránku). */
   // má trénink aspoň jednu hotovou sérii? (hlavní tlačítko dole, F3-23)
   const anyDone = (d) => d.ex.some((e) => e.sets.some((s) => s.done));
 
@@ -8220,7 +8221,7 @@
       </div>
       <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
           value="${esc(S.exSearch)}">
-      <div class="chips" data-ck="exMuscle" style="margin-top:8px">
+      <div class="chips" data-ck="exMuscle" style="margin-top:3px">
         <button class="chip" data-act="exMuscle" data-v="all" aria-pressed="${S.exMuscle === "all"}">
           Vše
         </button>
@@ -8296,7 +8297,7 @@
     let h = topbar("Cviky", countTxt);
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(S.exlQ)}" autocomplete="off">`;
-    h += `<div class="chips" data-ck="exlM" style="margin-top:8px">
+    h += `<div class="chips" data-ck="exlM" style="margin-top:3px">
       <button class="chip" data-act="exlM" data-v="all" aria-pressed="${S.exlM === "all"}">
         Všechny partie
       </button>
@@ -8310,7 +8311,7 @@
         )
         .join("")}
     </div>`;
-    h += `<div class="chips" data-ck="exlEq" style="margin-top:6px">
+    h += `<div class="chips" data-ck="exlEq" style="margin-top:1px">
       <button class="chip" data-act="exlEq" data-v="all" aria-pressed="${S.exlEq === "all"}">
         Všechno vybavení
       </button>

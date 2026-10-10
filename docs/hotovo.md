@@ -80,9 +80,10 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   cvik a obrysové Dokončit trénink, od první ✓ naopak (`anyDone` ve `vEditor`, pravidlo tlačítek v `CLAUDE.md`
   doplněné); úvodní obrazovka zůstává na F2-04; (3) řádek série v jedné výšce: odznak druhu 36 × 36 px (dřív
   34 × 32), ✓ 50 × 36 px (dřív 44 × 34), políčka kg / opak. a RIR/RPE 36 px, vše z proměnné `--row-h`, řádek
-  dál 44 px; (4) dotyková plocha aspoň `--tap` (44 px): přepínače `.seg` viditelně 44 px, `.iconbtn` 44 × 44
-  (dřív 40), čipy, `.btn.sm` a přehrání zvuku rekordu (`.spr-p`) neviditelným okrajem nahoru a dolů, řádek `.chips`
-  má pro okraj o 5 px víc místa nahoře i dole. Popis v sekci JEDNOTNÝ VZHLED (F3-23) v `js/app.js`.
+  dál 44 px; (4) dotyková plocha aspoň `--tap` (44 px): `.iconbtn` 44 × 44 (dřív 40), čipy, přepínače `.seg`,
+  `.btn.sm` a přehrání zvuku rekordu (`.spr-p`) neviditelným okrajem nahoru a dolů, řádek `.chips` má pro okraj
+  o 5 px víc místa nahoře i dole, `.seg` bez `overflow: hidden` (rohy zakulatí krajní tlačítka). Přepínače
+  viditelně 44 px vysoké byly v první verzi PR, uživatel je po zkoušce v telefonu zamítl (méně kompaktní). Popis v sekci JEDNOTNÝ VZHLED (F3-23) v `js/app.js`.
 - [x] **F3-24** Texty a drobnosti z auditu (UX audit 27. 9. 2026, §3, §4, §8 a §10; P3 · A/B · velmi nízká). Samé malé úpravy bez změny dat:
   - skloňování všude přes `plural` („4 cviků“ u šablony na úvodní obrazovce; okno Dokončit trénink opravila F1-14),
   - počet cviků ve výběru cviků a v záložce Cviky podle filtru (dnes pořád „388 cviků“),
@@ -114,7 +115,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
 | F3-23 | Redesign jako vizuální přestavba, nebo úzké zadání podle auditu? | **Rozhodnuto 27. 9. 2026:** zatím jen úzké zadání; vizuální přestavbu zvážit až potom. |
-| F3-23 | Prohazovat hlavní tlačítko v tréninku? Barva přečasu? Viditelně větší ✓? Plocha čipů a přepínačů? | Rozhodnuto 10. 10. 2026: prohazovat (bez hotové série Přidat cvik, od první ✓ Dokončit); přečas neutrálně v barvě pruhu; ✓ jen 50 × 36 px, řádek série nesmí být vyšší (verze 52 × 40 zamítnutá), všechny prvky řádku stejně vysoké (36 px, i odznak druhu); čipy neviditelným okrajem, přepínače viditelně 44 px; odstín červené beze změny; úvod řeší F2-04. |
+| F3-23 | Prohazovat hlavní tlačítko v tréninku? Barva přečasu? Viditelně větší ✓? Plocha čipů a přepínačů? | Rozhodnuto 10. 10. 2026: prohazovat (bez hotové série Přidat cvik, od první ✓ Dokončit); přečas neutrálně v barvě pruhu; ✓ jen 50 × 36 px, řádek série nesmí být vyšší (verze 52 × 40 zamítnutá), všechny prvky řádku stejně vysoké (36 px, i odznak druhu); čipy i přepínače neviditelným okrajem (viditelně vyšší přepínače zamítnuté po zkoušce v telefonu); odstín červené beze změny; úvod řeší F2-04. |
 | F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Rozhodnuto 10. 10. 2026: nic, úloha zamítnuta (pauza po zahřívací sérii uživatele neobtěžuje). |
 | F3-24 | Hláška po uložení dolů, nebo vynechat? Dlaždice Rekordy při 0? Text v den tréninku? `enterkeyhint`? „Neznámé fitko“? | Rozhodnuto 10. 10.: hlášku vynechat (zůstává jen u Dokončit a začít nový). Rekordy schovat při 0 a bez rozdílu proti minule, 3 dlaždice se stejným písmem. V den tréninku „Dnes trénink“. Enter v telefonu nic nedělal, proto přechod do dalšího políčka. Bez fitka žádný štítek, smazané fitko „Smazané fitko“; archivace a smazání fitka s tréninky do F2-06. |
 | F3-27 | Porovnávat i Rekordy a Ø délku? Období Vše? Předchozí období jen zčásti s daty nebo bez tréninku? Procenta? Barvy? Souhrn? | Rozhodnuto 10. 10.: Ø délka šedě jako čas, Rekordy bez rozdílu (na začátku jich padá víc). Vše bez rozdílů. Předchozí období před prvním tréninkem nebo bez tréninku = rozdíl skrýt. Jen absolutní rozdíl, u objemu v tunách bez procent (upřesněno 10. 10.). Barvy jako v souhrnu tréninku. V Souhrnu jen dlaždice, Nejčastější cviky a Podle fitek beze změny. |

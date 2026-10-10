@@ -523,10 +523,11 @@ a.btn {
   border-radius: 8px;
   position: relative;
 }
-/* F3-23: malé prvky (čip, .btn.sm, přehrání zvuku) reagují na prst aspoň v pásu vysokém --tap,
+/* F3-23: malé prvky (čip, .btn.sm, přepínač, přehrání zvuku) reagují na prst aspoň v pásu vysokém --tap,
    vzhled zůstává; okraj jen nahoru a dolů (vedle sebe leží těsně), vyšší prvky ho mají menší */
 .chip::after,
 .btn.sm::after,
+.seg button::after,
 .spr-p::after {
   content: "";
   position: absolute;
@@ -741,8 +742,10 @@ a.btn {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  /* místo pro neviditelný okraj čipů (F3-23): posuvný řádek by okraj mimo padding ořízl */
+  /* místo pro neviditelný okraj čipů (F3-23): posuvný řádek by okraj mimo padding ořízl;
+     záporný okraj vrátí rozložení stránky, jak bylo */
   padding-block: calc((var(--tap) - 34px) / 2);
+  margin-block: calc((34px - var(--tap)) / 2);
   scrollbar-width: none;
 }
 .chips::-webkit-scrollbar {
@@ -1960,20 +1963,31 @@ tr.done .okb {
 .tscroll {
   overflow-x: auto;
 }
+/* přepínač bez overflow: hidden, aby neořízl neviditelný okraj tlačítek (F3-23);
+   rohy dělají krajní tlačítka */
 .seg {
   display: inline-flex;
   border: 1px solid var(--line-2);
   border-radius: 9px;
-  overflow: hidden;
 }
 .seg button {
+  position: relative;
   border: 0;
   background: var(--surface);
   padding: 6px 10px;
   font-size: var(--fs-sm);
   font-weight: 600;
-  min-height: var(--tap); /* viditelně, neviditelný okraj by .seg (overflow: hidden) ořízl (F3-23) */
+  min-height: 34px;
   color: var(--ink-2);
+}
+.seg button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.seg button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.seg button:only-child {
+  border-radius: 8px;
 }
 .seg button[aria-pressed="true"] {
   background: var(--ink);
