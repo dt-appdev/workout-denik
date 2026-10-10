@@ -813,13 +813,31 @@ label.f,
   background: var(--surface);
   border-radius: 9px;
   padding: 9px 11px;
-  min-height: 42px;
+  min-height: var(--tap); /* všechna políčka stejně vysoká, i v panelu s menším řádkováním (F3-23) */
   width: 100%;
   font-size: var(--fs-lg);
   text-transform: none;
   letter-spacing: 0;
   font-weight: 500;
   color: var(--ink);
+}
+/* číslo v políčku vždy na střed jako v sérii (F3-23) */
+.inp[data-num] {
+  text-align: center;
+}
+/* údaj jedním řádkem (F3-23): název vlevo, úzké políčko vpravo (Tělesná hmotnost, formulář měření) */
+.frow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-base);
+}
+.frow .inp {
+  flex: none;
+  width: 6.5em;
+}
+.frow .inp[type="date"] {
+  width: auto;
 }
 select.inp {
   appearance: none;
@@ -1467,6 +1485,11 @@ tr.done .okb {
   width: 100%;
   margin: 4px 0;
   accent-color: var(--accent);
+}
+/* posuvník zahřívací série (F3-23): blíž k popisku a vyšší plocha pro prst, rozložení o 8 px nižší */
+.warm-set .range {
+  height: 24px;
+  margin: -6px 0 -2px;
 }
 /* Kopírovat pro coache (F4-12): část v okně Dokončit a v Upravit trénink */
 .coach {
@@ -2264,10 +2287,21 @@ tr.done .okb {
   max-width: calc(100% - 32px);
 }
 .switch {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: var(--fs-md);
+  font-size: var(--fs-base); /* jako ostatní názvy nastavení, obyčejné písmo (F3-23) */
+}
+/* F3-23: plocha zaškrtávátka i do poloviny mezery k sousednímu (mezera 10 px), plochy se nepřekrývají */
+.switch::after {
+  content: "";
+  position: absolute;
+  inset: -5px 0;
+}
+/* volba závislá na vypínači (F3-23): zůstává na místě, s vypnutým vypínačem šedá a s atributem inert */
+.dep.off {
+  opacity: 0.5;
 }
 .switch input {
   width: 20px;

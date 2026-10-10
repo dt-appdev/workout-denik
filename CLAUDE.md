@@ -157,6 +157,11 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   postava v barvách skupin (Statistiky, souhrn), jinak červená (stránka cviku). Barva fitka jen z `g.col` (`--sN`),
   nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`. Hlavní barva `--accent` (F3-23) jen pro hlavní akci
   a vybrané / aktivní (záložka, čip, přepínač, rámeček políčka), ne pro názvy, stavy a informace.
+- Písmo voleb (F3-23): název volby (zaškrtávátko, popisek nad přepínačem, vedle políčka) a hodnota v řádku obyčejně,
+  `--fs-base`; tučně jen název věci v seznamu (fitko, cvik, trénink) a čísla, kvůli kterým se na obrazovku chodí.
+  Číslo v políčku vždy na střed (`.inp[data-num]`), krátký údaj jedním řádkem `.frow` (název vlevo, políčko vpravo).
+- Závislé volby (F3-23): volba pod vypínačem se neschovává, s vypnutým vypínačem zešedne a je `inert` (`.dep.off`),
+  aby stránka neposkakovala. Žádné vysvětlující věty, které se objeví jen při vypnutí.
 - Dotyková plocha (F3-23, sekce „JEDNOTNÝ VZHLED“): každý ovládací prvek aspoň `--tap` (44 px) na výšku, menší
   s rámečkem neviditelným okrajem `::after` (vzhled zůstává). Prvky v řádku série mají výšku `--row-h`.
 - Grafy (F3-08, sekce „grafy (SVG, F3-08)“): `chartPh(spec, výška)`, jednotky a formát jen přes `spec.yUnit`, `spec.unit`,

@@ -2859,7 +2859,7 @@
       <div class="card stack">
         <label class="switch">
           <input type="checkbox" data-act="coach" checked>
-          <span><b>Kopírovat pro coache</b></span>
+          <span>Kopírovat pro coache</span>
         </label>
       </div>
     </section>`;
@@ -3117,28 +3117,27 @@
   }
   const warmLabel = (warm) => `${warm.pct} % <span>→</span> ${esc(numStr(warm.kg))} kg`;
 
-  /* Nastavení → Trénink → Zadávání čísel v tréninku */
+  /* Nastavení → Trénink → Zadávání hodnot v tréninku */
   function stepperSettings() {
     const on = S.cfg.stepper !== false;
     return `<section class="sec">
       <div class="sec-h">
-        <h2>Zadávání čísel v tréninku</h2>
+        <h2>Zadávání hodnot v tréninku</h2>
         ${helpBtn("input")}
       </div>
       <div class="card stack">
         <label class="switch">
           <input type="checkbox" data-act="stepper" ${on ? "checked" : ""}>
-          <span><b>Tlačítka +/−</b></span>
+          <span>Tlačítka +/−</span>
         </label>
         <div class="warm-set${on ? "" : " off"}">
           <div class="row">
-            <b class="grow">Zahřívací série</b>
-            <b class="num" id="warmPctV">${S.cfg.warmPct} %</b>
+            <span class="grow">Zahřívací série</span>
+            <span class="num" id="warmPctV">${S.cfg.warmPct} %</span>
           </div>
           <input type="range" class="range" id="warmPct" min="${WARM_PCT.min}" max="${WARM_PCT.max}"
               step="${WARM_PCT.step}" value="${S.cfg.warmPct}" aria-label="Zahřívací série v procentech"
               ${on ? "" : "disabled"}>
-          ${on ? "" : '<div class="xs muted">Funguje jen se zapnutými tlačítky +/−.</div>'}
         </div>
       </div>
     </section>`;
@@ -3155,15 +3154,15 @@
       <div class="card stack">
         <label class="switch">
           <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
-          <span><b>U všech cviků</b></span>
+          <span>U všech cviků</span>
         </label>
         <div class="row">
-          <b class="grow">Výchozí rozsah opakování</b>
+          <span class="grow">Výchozí rozsah opakování</span>
           ${progRangeInputs("progMin", "progMax", [S.cfg.progMin, S.cfg.progMax], "prog")}
         </div>
         <span class="fmsg" id="prog-msg"></span>
         <div class="stack" style="gap:6px">
-          <b>Přidat váhu</b>
+          <span>Přidat váhu</span>
           <div class="seg seg-wide">
             ${[
               ["all", "Všem sériím"],
@@ -3969,41 +3968,43 @@
       <div class="card stack">`;
     h += `<label class="switch">
       <input type="checkbox" data-act="recCelEx" ${c.recCelEx ? "checked" : ""}>
-      <span><b>Oslava po dokončení cviku</b></span>
+      <span>Oslava po dokončení cviku</span>
     </label>`;
     h += `<label class="switch">
       <input type="checkbox" data-act="recCelW" ${c.recCelW ? "checked" : ""}>
-      <span><b>Oslava po uložení tréninku</b></span>
+      <span>Oslava po uložení tréninku</span>
     </label>`;
-    if (c.recCelEx || c.recCelW) {
-      h += `<div class="stack" style="gap:6px">
-        <span>Zvuk oslavy</span>
-        <div class="spick">
-          ${[["off", "Vypnuto"]]
-            .concat(CEL_SOUNDS.map((x) => [x.id, x.name]))
-            .map(
-              ([id, l]) =>
-                `<div class="spr">
-                  <button class="spr-l" data-act="recSnd" data-v="${id}"
-                      aria-pressed="${c.recSnd === id}">
-                    <span class="rad"></span>
-                    ${l}
-                  </button>
-                  ${
-                    id === "off"
-                      ? ""
-                      : `<button class="spr-p" data-act="recSndPlay" data-v="${id}"
-                          aria-label="Přehrát zvuk ${l}">
-                        ${icon("play")}
-                      </button>`
-                  }
-                </div>`,
-            )
-            .join("")}
-        </div>
-      </div>`;
-      h += '<button class="btn block" data-act="recTry">Vyzkoušet</button>';
-    }
+    // volby zvuku zůstávají na místě, bez oslavy jen zešednou (F3-23)
+    const celOn = c.recCelEx || c.recCelW;
+    h += `<div class="stack dep${celOn ? "" : " off"}"${celOn ? "" : " inert"}>`;
+    h += `<div class="stack" style="gap:6px">
+      <span>Zvuk oslavy</span>
+      <div class="spick">
+        ${[["off", "Vypnuto"]]
+          .concat(CEL_SOUNDS.map((x) => [x.id, x.name]))
+          .map(
+            ([id, l]) =>
+              `<div class="spr">
+                <button class="spr-l" data-act="recSnd" data-v="${id}"
+                    aria-pressed="${c.recSnd === id}">
+                  <span class="rad"></span>
+                  ${l}
+                </button>
+                ${
+                  id === "off"
+                    ? ""
+                    : `<button class="spr-p" data-act="recSndPlay" data-v="${id}"
+                        aria-label="Přehrát zvuk ${l}">
+                      ${icon("play")}
+                    </button>`
+                }
+              </div>`,
+          )
+          .join("")}
+      </div>
+    </div>`;
+    h += '<button class="btn block" data-act="recTry">Vyzkoušet</button>';
+    h += "</div>";
     return `${h}</div></section>`;
   }
 
@@ -4018,20 +4019,20 @@
       <div class="card stack">`;
     h += `<label class="switch">
       <input type="checkbox" data-act="stagOn" ${c.stagOn ? "checked" : ""}>
-      <span><b>Upozornit na cvik bez zlepšení</b></span>
+      <span>Upozornit na cvik bez zlepšení</span>
     </label>`;
-    if (c.stagOn) {
-      h += `<div class="stack" style="gap:6px">
-        <span>Po kolika trénincích bez zlepšení</span>
-        <div class="seg seg-wide">
-          ${STAG_N.map(
-            (n) =>
-              `<button data-act="stagN" data-v="${n}" aria-pressed="${c.stagN === n}">` +
-              `${n} ${plural(n, "trénink", "tréninky", "tréninků")}</button>`,
-          ).join("")}
-        </div>
-      </div>`;
-    }
+    // počet tréninků zůstává na místě, s vypnutým upozorněním jen zešedne (F3-23)
+    const off = c.stagOn ? "" : " off";
+    h += `<div class="stack dep${off}" style="gap:6px"${c.stagOn ? "" : " inert"}>
+      <span>Po kolika trénincích bez zlepšení</span>
+      <div class="seg seg-wide">
+        ${STAG_N.map(
+          (n) =>
+            `<button data-act="stagN" data-v="${n}" aria-pressed="${c.stagN === n}">` +
+            `${n} ${plural(n, "trénink", "tréninky", "tréninků")}</button>`,
+        ).join("")}
+      </div>
+    </div>`;
     return `${h}</div></section>`;
   }
 
@@ -5400,7 +5401,15 @@
      - Dotyková plocha aspoň --tap (44 px): ikonová tlačítka .iconbtn rozměrem (nemají rámeček), čipy,
        přepínače .seg, .btn.sm a .spr-p neviditelným okrajem nahoru a dolů (::after jako F1-18), vzhled
        zůstává. Posuvný řádek .chips má pro okraj místo v padding, .seg nemá overflow: hidden (rohy dělají
-       krajní tlačítka). Přepínač viditelně 44 px vysoký uživatel zamítl (méně se vejde na stránku). */
+       krajní tlačítka). Přepínač viditelně 44 px vysoký uživatel zamítl (méně se vejde na stránku).
+       Zaškrtávátka (.switch) mají okraj jen do poloviny mezery k sousednímu, plochy se nepřekrývají.
+     - Písmo nastavení: názvy voleb (zaškrtávátko, nad přepínačem, vedle políčka) i hodnota v řádku obyčejně
+       a 15 px, tučně jen název věci v seznamu (fitko, bod obnovy) a nadpisy.
+     - Závislé volby (pod vypínačem) se neschovávají: zůstávají na místě, s vypnutým vypínačem šedé a inert
+       (.dep.off; recSettings, stagSettings, restSettings, wakeSettings), stránka neposkakuje.
+     - Číselné políčko .inp[data-num] má číslo na středu. Údaj jedním řádkem .frow (název vlevo, políčko
+       vpravo): Tělesná hmotnost v Nastavení a formulář měření (sheetBody). Výběr fitka v tréninku zůstává
+       velký jako ostatní rozbalovací výběry (Upravit cvik), menší uživatel zamítl. */
   // má trénink aspoň jednu hotovou sérii? (hlavní tlačítko dole, F3-23)
   const anyDone = (d) => d.ex.some((e) => e.sets.some((s) => s.done));
 
@@ -9062,7 +9071,7 @@
       <div class="xs muted">„Bez fitka“ = fotka se ukáže ve všech fitkách.</div>
       <label class="switch">
         <input type="checkbox" data-act="phAddFirst" ${a.first ? "checked" : ""}>
-        <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, před ostatními
+        <span>Nastavit jako první<br><span class="xs muted">Hned za postavou, před ostatními
             fotkami.</span></span>
       </label>
       <div class="xs muted">Po zmenšení ${fmtSize(size)}, uloží se jen v tomto telefonu.</div>`;
@@ -9181,7 +9190,7 @@
       ${pv.gymOpen ? phGymChips("pvSetGym", p.gymId) : ""}
       <label class="switch">
         <input type="checkbox" data-act="pvFirst" ${p.first ? "checked" : ""}>
-        <span><b>Nastavit jako první</b><br><span class="xs muted">Hned za postavou, před ostatními
+        <span>Nastavit jako první<br><span class="xs muted">Hned za postavou, před ostatními
             fotkami.</span></span>
       </label>
       </div>`;
@@ -9385,7 +9394,7 @@
       ${phGymChips("fpGym", fp.gym)}
       <label class="switch">
         <input type="checkbox" data-act="fpFirst" ${fp.first ? "checked" : ""}>
-        <span><b>Nastavit jako první</b></span>
+        <span>Nastavit jako první</span>
       </label>
       <div class="xs muted">Stažení potřebuje internet, uložené fotky pak fungují i offline.</div>
       ${
@@ -9746,22 +9755,21 @@
   const bodyRule = (unit) => (unit === "%" ? "pct" : unit === "kcal" ? "kcal" : "body");
   function sheetBody(id, nav) {
     const v = id ? S.body[id] : { date: Date.now() };
-    let b = `<label class="f">
-      Datum
+    // údaje po řádcích jako Tělesná hmotnost v Nastavení: název vlevo, políčko vpravo (F3-23)
+    let b = `<label class="frow">
+      <span class="grow">Datum</span>
       <input class="inp" type="date" id="b-date" value="${toDateInput(v.date)}">
-    </label>
-    <div class="grid2">`;
+    </label>`;
     for (const [k, l, u] of BODY_F) {
       const rule = bodyRule(u);
       const val = v[k] != null ? numStr(v[k]).replace(".", ",") : "";
-      b += `<label class="f">
-        ${esc(l)}${u ? " (" + esc(u) + ")" : ""}
+      b += `<label class="frow">
+        <span class="grow">${esc(l)}${u ? " (" + esc(u) + ")" : ""}</span>
         <input class="inp${numCls(rule, val)}" id="b-${k}" inputmode="decimal" data-num="${rule}"
             data-lab="${esc(l)}" value="${esc(val)}">
       </label>`;
     }
-    b += `</div>
-    <label class="f">Poznámka<input class="inp" id="b-note" value="${esc(v.note || "")}"></label>`;
+    b += `<label class="f">Poznámka<input class="inp" id="b-note" value="${esc(v.note || "")}"></label>`;
     openSheet(
       id ? "Upravit měření" : "Nové měření",
       b,
@@ -9795,7 +9803,7 @@
       ],
     },
     input: {
-      title: "Zadávání čísel v tréninku",
+      title: "Zadávání hodnot v tréninku",
       items: () => [
         [
           "Tlačítka +/−",
@@ -10270,14 +10278,11 @@
         ${helpBtn("bw")}
       </div>
       <div class="card stack">
-        <div class="row">
-          <span class="grow small">Pro cviky s vlastní vahou.</span>
-          <label class="f" style="width:110px">
-            kg
-            <input class="inp${numCls("bw", S.cfg.bodyWeight || 80)}" id="bwInp" data-f="bodyWeight"
-                data-num="bw" inputmode="decimal" value="${esc(S.cfg.bodyWeight || 80)}">
-          </label>
-        </div>
+        <label class="frow">
+          <span class="grow">Hmotnost (kg)</span>
+          <input class="inp${numCls("bw", S.cfg.bodyWeight || 80)}" id="bwInp" data-f="bodyWeight"
+              data-num="bw" inputmode="decimal" value="${esc(S.cfg.bodyWeight || 80)}">
+        </label>
       </div>
     </section>`;
   }
@@ -10952,7 +10957,7 @@
       </label>
       <label class="switch">
         <input type="checkbox" id="x-gd" ${f.gd ? "checked" : ""}>
-        <span><b>Vázáno na fitko${gdIcon()}</b><br>
+        <span>Vázáno na fitko${gdIcon()}<br>
           <span class="xs muted">Zapni u strojů a kladek — v každém fitku
             mají jiný odpor.</span></span>
       </label>
@@ -11634,7 +11639,7 @@
     const on = c.restOn !== false;
     h += `<label class="switch">
       <input type="checkbox" data-act="restOn" ${on ? "checked" : ""}>
-      <span><b>Časovač pauzy</b></span>
+      <span>Časovač pauzy</span>
     </label>`;
     h += `<div class="stack rest-set${on ? "" : " off"}"${on ? "" : " inert"}>`;
     h += `<div class="stack" style="gap:6px">
@@ -11664,31 +11669,32 @@
     </div>`;
     h += `<label class="switch">
       <input type="checkbox" data-act="restOver" ${c.restOver ? "checked" : ""}>
-      <span><b>Počítat přečas</b></span>
+      <span>Počítat přečas</span>
     </label>`;
     h += `<label class="switch">
       <input type="checkbox" data-act="restNotify"
           ${c.restNotify ? "checked" : ""}${ns === "none" ? " disabled" : ""}>
-      <span><b>Oznámení na pozadí</b></span>
+      <span>Oznámení na pozadí</span>
     </label>`;
-    if (c.restNotify) {
-      if (ns === "none") {
-        h += '<div class="xs muted">Tento prohlížeč oznámení nepodporuje.</div>';
-      } else if (ns === "denied") {
-        h += `<div class="xs muted">
-          Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník
-          → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).
-        </div>`;
-      } else if (ns === "default") {
-        h += '<button class="btn block" data-act="notifAsk">Povolit oznámení</button>';
-      } else {
-        h += `<div class="row">
-          <span class="grow xs muted">
-            Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.
-          </span>
-          <button class="btn sm" data-act="notifTest">Vyzkoušet</button>
-        </div>`;
-      }
+    // stav oznámení zůstává na místě, s vypnutými oznámeními jen zešedne (F3-23)
+    const dep = c.restNotify ? "dep" : "dep off";
+    const inert = c.restNotify ? "" : " inert";
+    if (ns === "none") {
+      h += '<div class="xs muted">Tento prohlížeč oznámení nepodporuje.</div>';
+    } else if (ns === "denied") {
+      h += `<div class="xs muted ${dep}"${inert}>
+        Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník
+        → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).
+      </div>`;
+    } else if (ns === "default") {
+      h += `<button class="btn block ${dep}" data-act="notifAsk"${inert}>Povolit oznámení</button>`;
+    } else {
+      h += `<div class="row ${dep}"${inert}>
+        <span class="grow xs muted">
+          Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.
+        </span>
+        <button class="btn sm" data-act="notifTest">Vyzkoušet</button>
+      </div>`;
     }
     h += wakeSettings();
     return `${h}</div></div></section>`;
@@ -12199,18 +12205,18 @@
     let h = `<label class="switch">
       <input type="checkbox" data-act="screenOn"
           ${c.screenOn ? "checked" : ""}${wakeApi ? "" : " disabled"}>
-      <span><b>Displej nezhasne během pauzy</b></span>
+      <span>Displej nezhasne během pauzy</span>
     </label>`;
     if (!wakeApi) {
       h += '<div class="xs muted">Tento prohlížeč neumí držet displej zapnutý.</div>';
       return h;
     }
-    if (!c.screenOn) return h;
-    h += `<label class="switch">
+    // ztmavení zůstává na místě, s vypnutou volbou Displej nezhasne jen zešedne (F3-23)
+    h += `<label class="switch dep${c.screenOn ? "" : " off"}"${c.screenOn ? "" : " inert"}>
       <input type="checkbox" data-act="screenDim" ${c.screenDim ? "checked" : ""}>
-      <span><b>Po 30 s ztmavit obrazovku</b></span>
+      <span>Po 30 s ztmavit obrazovku</span>
     </label>`;
-    if (batteryLow()) {
+    if (c.screenOn && batteryLow()) {
       h += `<div class="banner" style="margin-top:0">
         Baterie je pod ${WAKE_BATT * 100} %, displej teď během pauzy zhasne jako obvykle. Znovu to začne
         fungovat nad ${WAKE_BATT * 100} % nebo při nabíjení.
@@ -14725,7 +14731,7 @@
     if (ps.n) {
       h += `<label class="switch">
         <input type="checkbox" data-act="bkPhotos" ${lsGet("bkPhotos", true) ? "checked" : ""}>
-        <span><b>Zálohovat i fotky</b><br><span class="xs muted">Fotky u cviků: ${fmtInt(ps.n)}
+        <span>Zálohovat i fotky<br><span class="xs muted">Fotky u cviků: ${fmtInt(ps.n)}
             ${plural(ps.n, "fotka", "fotky", "fotek")} · ${fmtSize(ps.size)}, záloha s nimi bude asi o
             ${fmtSize((ps.size * 4) / 3)} větší.</span></span>
       </label>`;
@@ -15609,7 +15615,7 @@
           <button class="btn grow" data-act="fakeAdd">
             ${has ? "Obnovit data" : "Přidat zkušební data"}
           </button>
-          ${has ? '<button class="btn danger grow" data-act="fakeDel">Smazat</button>' : ""}
+          ${has ? '<button class="btn danger line grow" data-act="fakeDel">Smazat</button>' : ""}
         </div>
       </div>
     </section>`;
