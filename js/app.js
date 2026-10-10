@@ -14193,10 +14193,12 @@
     }
   });
   /* F1-11: Enter (✓ na klávesnici) v jednořádkovém textovém poli (hledání, názvy, poznámka u měření) schová
-     klávesnici, napsaný text zůstane; číselná políčka (data-num), datum a čas beze změny */
+     klávesnici, napsaný text zůstane. Od F3-33 i v číselných políčkách mimo sérii (hmotnost a výška
+     v Nastavení, formulář měření, délka tréninku, rozsah opakování). Políčka série (.cell) řeší setEnter,
+     datum a čas beze změny. */
   document.addEventListener("keydown", (ev) => {
     const t = ev.target;
-    if (ev.key !== "Enter" || t.tagName !== "INPUT" || (t.dataset && t.dataset.num)) return;
+    if (ev.key !== "Enter" || t.tagName !== "INPUT" || t.classList.contains("cell")) return;
     if (!["text", "search", "url", "email"].includes(t.type)) return;
     ev.preventDefault();
     t.blur();

@@ -123,7 +123,9 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   Tělo má novou položku Výška. Formulář měření: u nového měření se BMI předvyplní hned po zadání hmotnosti, u uloženého
   měření až po změně hmotnosti ve formuláři (oprava poznámky BMI nedoplní). Hmotnost s červeným rámečkem nebo 0 předvyplnění
   nemá. Šedé předvyplnění čísla (`.inp[data-num]::placeholder`) má barvu jako v sérii. Data ani záloha beze změny (nové
-  pole v `config/main`). Popis v úvodním komentáři sekce „VÝŠKA A BMI (F3-33)“ v `js/app.js`.
+  pole v `config/main`). Enter v číselných políčkách mimo sérii (Nastavení, formulář
+  měření, délka tréninku, rozsah opakování) schová klávesnici jako v textových polích (F1-11; dřív nedělal nic). Popis
+  v úvodním komentáři sekce „VÝŠKA A BMI (F3-33)“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
