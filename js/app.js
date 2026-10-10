@@ -7985,7 +7985,7 @@
      Porovnání s předchozím obdobím (F3-27): dlaždice Přehledu ukazují pod číslem rozdíl proti stejně dlouhému
      období těsně před vybraným (30 dní = 31.–60. den zpět), Souhrn minulý měsíc / pololetí / rok proti
      předchozímu kalendářnímu období. Platí filtr fitka. Vzhled jako v souhrnu tréninku (`dHtml`): Tréninky,
-     Objem (i procenta) a Série zeleně / červeně, Čas a Ø délka šedě, Rekordy bez rozdílu (na začátku jich
+     Objem (v tunách, bez procent) a Série zeleně / červeně, Čas a Ø délka šedě, Rekordy bez rozdílu (na začátku jich
      padá víc, rozdíl by klamal). Rozdíl se neukáže (`prevSum` vrátí null), když předchozí období neexistuje
      (Vše), sahá před první uložený trénink nebo v něm nebyl žádný trénink. Nic se neukládá.
      Hlavní funkce: prevSum, kpiGrid(s, p), rangePrev, calPeriods (pa). */
@@ -8009,23 +8009,14 @@
   function kpiGrid(s, p) {
     const avg = (x) => (x.n ? x.dur / x.n : 0);
     const mins = (ms) => Math.round(ms / 60000);
-    let dVol = "";
-    if (p) {
-      const pc = p.vol > 0 ? Math.round(((s.vol - p.vol) / p.vol) * 100) : 0;
-      dVol =
-        dHtml(s.vol - p.vol, fmtVol, "dl") +
-        (pc
-          ? `<span class="dl pc ${pc > 0 ? "gain" : "loss"}">
-            ${pc > 0 ? "+" : "−"}${Math.abs(pc)} %
-          </span>`
-          : "");
-    }
+    // rozdíl objemu vždy v tunách na desetiny, bez procent
+    const tons = (kg) => fmtKg(Math.round(kg / 100) / 10) + " t";
     const kpi = (v, l, dl) => `<div class="kpi"><b>${v}</b><span>${l}</span>${p ? dl : ""}</div>`;
     const dDur = (a, b) => (p ? dHtml(mins(a) - mins(b), (m) => fmtHours(m * 60000), "dl", true) : "");
     return `<div class="kpis k6">
       ${kpi(s.n, "Tréninky", p ? dHtml(s.n - p.n, String, "dl") : "")}
       ${kpi(fmtHours(s.dur), "Čas", dDur(s.dur, p && p.dur))}
-      ${kpi(fmtVol(s.vol), "Objem", dVol)}
+      ${kpi(fmtVol(s.vol), "Objem", p ? dHtml(s.vol - p.vol, tons, "dl") : "")}
       ${kpi(fmtInt(s.sets), "Série", p ? dHtml(s.sets - p.sets, fmtInt, "dl") : "")}
       ${kpi(s.recs, "Rekordy", "")}
       ${kpi(s.n ? fmtDurS(avg(s)) : "–", "Ø délka", s.n ? dDur(avg(s), p && avg(p)) : "")}
