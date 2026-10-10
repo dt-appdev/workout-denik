@@ -501,16 +501,16 @@ a.btn {
   border-color: transparent;
   background: transparent;
 }
+/* nebezpečná, nevratná akce (Smazat, Zahodit, Odebrat…) vždy červeným obrysem, všude stejně (F2-12, F3-23):
+   na stránce za čárou .bzone pod ostatními tlačítky, v patičce panelu vlevo; v potvrzovacím okně je potvrzení
+   plné (btn primary), protože je to akce, kvůli které se okno otevřelo */
 .btn.danger {
   color: var(--fail);
+  border-color: var(--fail);
+  background: transparent;
 }
 .btn.block {
   width: 100%;
-}
-/* nebezpečná akce na konci stránky (F2-12): červený obrys za čárou .bzone, vždy až pod ostatními tlačítky */
-.btn.danger.line {
-  border-color: var(--fail);
-  background: transparent;
 }
 .bzone {
   border-top: 1px solid var(--line-2);
@@ -2774,6 +2774,10 @@ tr.done .okb {
   color: var(--ink-3);
   font-weight: 700;
   margin: 14px 0 8px;
+}
+/* nadpis sekce formuláře v panelu (F3-23): rozestupy dává mezera panelu */
+.sheet-b > .subh {
+  margin: 6px 0 0;
 }
 .hbar .hl {
   white-space: nowrap;

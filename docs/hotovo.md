@@ -91,7 +91,11 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   k popisku s plochou 24 px, „Zadávání čísel“ přejmenované na „Zadávání hodnot v tréninku“, Tělesná hmotnost
   a formulář měření po řádcích (`.frow`), čísla v políčkách na střed, Smazat zkušební data červeným obrysem,
   všechna políčka aspoň 44 px. Zamítnuto: menší výběr fitka v tréninku (rozbalovací výběry jsou všude stejné),
-  užší tlačítko přehrání zvuku (zůstává 44 × 34). Popis v sekci JEDNOTNÝ VZHLED (F3-23) v `js/app.js`.
+  užší tlačítko přehrání zvuku (zůstává 44 × 34).
+  Panely a mazání (třetí artefakt): formulář měření ve dvou sekcích (Hmotnost a složení, Obvody), patička Upravit
+  měření / Upravit fitko Smazat | Uložit stejně široké (Smazat na konec formuláře uživatel zamítl), `.btn.danger` vždy
+  červený obrys (třída `line` zrušena), Odebrat cvik v menu za čárou, Smazat fotku? s plným potvrzením. Pravidla
+  pro panely, kompaktnost, formuláře a náhledy změn vzhledu zapsána v `CLAUDE.md`. Vzniklá úloha F3-33 (výška, BMI). Popis v sekci JEDNOTNÝ VZHLED (F3-23) v `js/app.js`.
 - [x] **F3-24** Texty a drobnosti z auditu (UX audit 27. 9. 2026, §3, §4, §8 a §10; P3 · A/B · velmi nízká). Samé malé úpravy bez změny dat:
   - skloňování všude přes `plural` („4 cviků“ u šablony na úvodní obrazovce; okno Dokončit trénink opravila F1-14),
   - počet cviků ve výběru cviků a v záložce Cviky podle filtru (dnes pořád „388 cviků“),

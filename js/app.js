@@ -4355,7 +4355,7 @@
      Nepoužívanou šablonu jde skrýt: v úpravě šablony dole tlačítko „Skrýt šablonu“ / „Zobrazit šablonu“
      (stejně jako „Skrýt z výběru“ v Upravit cvik, akce tplHide), běžné obrysové, ne červené (jde vrátit).
      Spolu s tím se sjednotila tlačítka dole na všech stránkách (pravidlo v CLAUDE.md): hlavní akce plná, ostatní
-     obrysová pod sebou, nebezpečná červený obrys za čárou (.bzone, .btn.danger.line). Skrytá šablona má t.hidden = true
+     obrysová pod sebou, nebezpečná červený obrys za čárou (.bzone, .btn.danger). Skrytá šablona má t.hidden = true
      (pole je nepovinné, starší šablony a zálohy ho nemají = viditelná; zachová ho Object.assign i tplNorm).
      Skrytá se neukazuje mezi šablonami na úvodu (ani v „Ostatní šablony“) ani v panelu Změnit pořadí šablon.
      Pod seznamy je tlačítko „Skryté šablony (N)“ (jen když nějaké jsou, tplHid = ukázané skryté, po otevření
@@ -5409,7 +5409,11 @@
        (.dep.off; recSettings, stagSettings, restSettings, wakeSettings), stránka neposkakuje.
      - Číselné políčko .inp[data-num] má číslo na středu. Údaj jedním řádkem .frow (název vlevo, políčko
        vpravo): Tělesná hmotnost v Nastavení a formulář měření (sheetBody). Výběr fitka v tréninku zůstává
-       velký jako ostatní rozbalovací výběry (Upravit cvik), menší uživatel zamítl. */
+       velký jako ostatní rozbalovací výběry (Upravit cvik), menší uživatel zamítl. Formulář měření má sekce
+       Hmotnost a složení / Obvody (.subh).
+     - Mazání: .btn.danger je vždy červený obrys. Patička panelu: vedlejší vlevo, hlavní vpravo, stejně široká
+       (Smazat | Uložit u měření a fitka); potvrzovací okno má plné potvrzení (Smazat fotku?), menu cviku
+       Odebrat cvik za čárou .bzone. */
   // má trénink aspoň jednu hotovou sérii? (hlavní tlačítko dole, F3-23)
   const anyDone = (d) => d.ex.some((e) => e.sets.some((s) => s.done));
 
@@ -5515,11 +5519,11 @@
     if (mode === "active") {
       h += `<button class="btn${addMain ? "" : " primary"} block" data-act="finish">Dokončit trénink</button>
         <div class="bzone"></div>
-        <button class="btn danger line block" data-act="discard">Zahodit trénink</button>`;
+        <button class="btn danger block" data-act="discard">Zahodit trénink</button>`;
     } else if (mode === "edit") {
       h += `<button class="btn primary block" data-act="saveEdit">Uložit změny</button>
         <div class="bzone"></div>
-        <button class="btn danger line block" data-act="delWorkout">Smazat trénink</button>`;
+        <button class="btn danger block" data-act="delWorkout">Smazat trénink</button>`;
     } else {
       const off = tplSaveOff(d); // F2-08: šedé při shodě nebo prázdném názvu
       h +=
@@ -5531,7 +5535,7 @@
             </button>`
           : "") +
         (d.id
-          ? '<div class="bzone"></div><button class="btn danger line block" data-act="delTpl">Smazat šablonu</button>'
+          ? '<div class="bzone"></div><button class="btn danger block" data-act="delTpl">Smazat šablonu</button>'
           : "");
     }
     h += "</div>";
@@ -9220,7 +9224,7 @@
       `<p style="margin:0">Fotka se smaže z telefonu. Smazání nejde vrátit (fotky nejsou v bodech
         obnovy, jen v záloze do souboru s fotkami).</p>`,
       `<button class="btn grow" data-act="pvDelNo">Zrušit</button>
-      <button class="btn danger grow" data-act="pvDelOk">Smazat</button>`,
+      <button class="btn primary grow" data-act="pvDelOk">Smazat</button>`,
       false,
       { lv: (pv.from === "info" ? 3 : 1) + 1, back: renderViewer, re: renderViewer },
     );
@@ -9760,9 +9764,14 @@
       <span class="grow">Datum</span>
       <input class="inp" type="date" id="b-date" value="${toDateInput(v.date)}">
     </label>`;
+    // nadpisy sekcí formuláře před prvním údajem skupiny (F3-23)
+    const groups = { weight: "Hmotnost a složení", waist: "Obvody" };
     for (const [k, l, u] of BODY_F) {
       const rule = bodyRule(u);
       const val = v[k] != null ? numStr(v[k]).replace(".", ",") : "";
+      if (groups[k]) {
+        b += `<div class="subh">${groups[k]}</div>`;
+      }
       b += `<label class="frow">
         <span class="grow">${esc(l)}${u ? " (" + esc(u) + ")" : ""}</span>
         <input class="inp${numCls(rule, val)}" id="b-${k}" inputmode="decimal" data-num="${rule}"
@@ -9773,7 +9782,8 @@
     openSheet(
       id ? "Upravit měření" : "Nové měření",
       b,
-      `${id ? `<button class="btn danger" data-act="delBody" data-v="${id}">Smazat</button>` : ""}
+      // patička panelu (F3-23): Smazat vlevo, Uložit vpravo, stejně široká
+      `${id ? `<button class="btn danger grow" data-act="delBody" data-v="${id}">Smazat</button>` : ""}
       <button class="btn primary grow" data-act="saveBody" data-v="${id || ""}">Uložit</button>`,
       false,
       nav,
@@ -10342,7 +10352,7 @@
       b,
       `${
         id && !cnt && S.cfg.gyms.length > 1
-          ? `<button class="btn danger" data-act="delGym" data-v="${id}">Smazat</button>`
+          ? `<button class="btn danger grow" data-act="delGym" data-v="${id}">Smazat</button>`
           : ""
       }<button class="btn primary grow" data-act="saveGym" data-v="${id || ""}">Uložit</button>`,
     );
@@ -10986,7 +10996,7 @@
     }
     if (exDelOk(id)) {
       h += `<div class="bzone"></div>
-        <button class="btn danger line block" data-act="delEx" data-v="${esc(id)}">Smazat cvik</button>`;
+        <button class="btn danger block" data-act="delEx" data-v="${esc(id)}">Smazat cvik</button>`;
     }
     h += "</div>";
     return h;
@@ -12814,6 +12824,7 @@
             <button class="btn block" data-act="openEx" data-v="${esc(e.exId)}">
               Stránka cviku (popis, statistiky)
             </button>
+            <div class="bzone"></div>
             <button class="btn block danger" data-act="exRemove" data-i="${i}">
               Odebrat cvik z tréninku
             </button>
@@ -15615,7 +15626,7 @@
           <button class="btn grow" data-act="fakeAdd">
             ${has ? "Obnovit data" : "Přidat zkušební data"}
           </button>
-          ${has ? '<button class="btn danger line grow" data-act="fakeDel">Smazat</button>' : ""}
+          ${has ? '<button class="btn danger grow" data-act="fakeDel">Smazat</button>' : ""}
         </div>
       </div>
     </section>`;

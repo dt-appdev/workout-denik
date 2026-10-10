@@ -104,10 +104,11 @@ flowchart LR
 
 #### Etapa 6 – Zbytek plánu
 
-17. **F1-07** Poznámky ke stroji podle fitka.
-18. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
-19. **F3-16** Rozepsaný formulář přežije zavření appky.
-20. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+17. **F3-33** Výška v Nastavení a BMI z hmotnosti · *Tělo · B · nízká* – hned po sloučení F3-23 (stejný formulář).
+18. **F1-07** Poznámky ke stroji podle fitka.
+19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
+20. **F3-16** Rozepsaný formulář přežije zavření appky.
+21. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
 Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F1-15, F3-07.
 
@@ -224,6 +225,13 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-30** Nový cvik kopií jiného cviku
 - [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
 - [x] **F3-32** Smazat vlastní cvik
+- [ ] **F3-33** Výška v Nastavení a BMI z hmotnosti (přání 10. 10. 2026 u F3-23, náhled schválen; B · nízká): Nastavení →
+  Trénink → sekce „Tělesná hmotnost“ se přejmenuje na „Tělo“ a dostane druhý řádek Výška (cm) (`S.cfg.height`, prázdná
+  jako výchozí, `cfgNorm`; nové pravidlo čísla 100–250 cm, celé). Že hmotnost z Nastavení platí jen do prvního měření
+  (`bodyWeightAt`), vysvětlí nápověda „?“. Formulář měření (`sheetBody`): po zadání hmotnosti a s vyplněnou výškou
+  ukáže políčko BMI šedé předvyplnění (kg / m², jedno desetinné místo, např. 82 kg a 180 cm = 25,3); prázdné políčko
+  se uloží s touto hodnotou, napsané číslo (z váhy) má přednost. Bez výšky beze změny. **Rozhodnuto:** předvyplnění,
+  ne povinný výpočet; stará měření se nepřepočítávají; výška v Nastavení → Trénink. Dělat až po sloučení F3-23.
 
 
 ### Fáze 4 – Chytré funkce
