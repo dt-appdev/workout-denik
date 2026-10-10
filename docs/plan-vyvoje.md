@@ -95,7 +95,7 @@ flowchart LR
 
 12. ~~**F3-24** Texty a drobnosti z auditu~~ – hotovo 10. 10. 2026.
 13. ~~**F1-17** Kratší pauza po zahřívací sérii~~ – zamítnuto 10. 10. 2026, viz Co neděláme.
-14. **F3-28** Stránka cviku: historie výš · *Stránka cviku · P3 · B · nízká–střední*.
+14. ~~**F3-28** Stránka cviku: záložka Historie~~ – hotovo 10. 10. 2026.
 15. **F3-29** Formulář měření jen s používanými údaji · *Tělo · P3 · B · nízká*.
 
 #### Etapa 5 – Jednotný vzhled
@@ -219,7 +219,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-25** Rekord jako skutečná událost
 - [x] **F3-26** Progres po cvicích ve Statistikách
 - [x] **F3-27** Porovnání s předchozím obdobím
-- [ ] **F3-28** Stránka cviku: historie výš (UX audit 27. 9. 2026, §2 G, §4 a §6; P3 · B · nízká–střední): na stránce cviku je pořadí graf → osobní rekordy → poslední rekordy → historie a historie (nejčastější důvod návštěvy) začíná cca 1 300 px pod horním okrajem. Návrh: graf → historie → osobní rekordy, blok „Poslední rekordy“ vypustit nebo sbalit (opakuje Osobní rekordy a medaile v historii). Ze záložky Cviky otevírat cvik s historií rovnou na Statistikách (dnes Popis; z tréninku už Statistiky). Výchozí metrika grafu u cviků s víc než 10 opakováními Max. zátěž nebo Nejlepší série (odhad 1RM je tam nepřesný).
+- [x] **F3-28** Stránka cviku: záložka Historie
 - [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
 - [x] **F3-30** Nový cvik kopií jiného cviku
 - [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
