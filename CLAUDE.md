@@ -178,6 +178,7 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Kopírování pro coache (F4-12) je skryté (`coachOn()`), bez zapnutí se nic z něj neukazuje. Nový údaj tréninku nebo
   série, který má coach vidět, doplnit do `coachText`. Odhad před selháním `s.rpeEst` se do nových sérií nepřenáší.
 - Akce, které mění pracovní série bez hodnot (+ Série, smazání, změna druhu), volají `progTouch`.
+- Štítek fitka u tréninku jen přes `gymPill` (trénink bez fitka štítek nemá, smazané fitko „Smazané fitko“, F3-24).
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Nová volba nastavení patří do existující skupiny (`SET_PAGES`), nová sekce Statistik do jedné z částí
   (`STATS_PARTS`), nový údaj na obrázek ke sdílení do `shrData` a oba jazyky do `SHR_TXT`.

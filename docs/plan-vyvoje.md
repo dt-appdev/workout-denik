@@ -93,7 +93,7 @@ flowchart LR
 
 #### Etapa 4 – Drobnosti a doladění (P3, rychlé)
 
-12. **F3-24** Texty a drobnosti z auditu · *Texty, úvod, souhrn, Historie · P3 · A/B · velmi nízká* – skloňování, počty, popisky, prázdný stav fitek.
+12. ~~**F3-24** Texty a drobnosti z auditu~~ – hotovo 10. 10. 2026.
 13. **F1-17** Kratší pauza po zahřívací sérii · *Pauza · P3 · B · nízká*.
 14. **F3-28** Stránka cviku: historie výš · *Stránka cviku · P3 · B · nízká–střední*.
 15. **F3-29** Formulář měření jen s používanými údaji · *Tělo · P3 · B · nízká*.
@@ -117,7 +117,7 @@ Audit testoval v prohlížeči v režimu telefonu, ne v telefonu. Tohle rozhodne
 
 - Jak často cvičíš cvik, který v daném fitku nemá historii (přínos F1-13).
 - Chodí oznámení a vibrace konce pauzy se zhasnutým displejem a appkou na pozadí? (F1-04; Android uspává časovače.)
-- Gboard po Napsat: přejde klávesa Další z kg na Opak.? Nezakryje klávesnice řádek? (`enterkeyhint` v F3-24.)
+- Gboard po Napsat: nezakryje klávesnice řádek? (Přechod klávesou Další z kg na Opak. vyřešila F3-24.)
 - Prediktivní gesto Zpět (Android 14+) v nainstalované appce (F0-06).
 - Čitelnost šedého předvyplnění na slunci a v ostře osvětlené posilovně ve světlém motivu (F3-01, F3-23).
 - Vadí 6 záložek ve spodní liště? (Odloženo, viz Co neděláme.)
@@ -179,7 +179,10 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [ ] **F2-04** Šablona na řadě jako hlavní akce úvodu (rotace programu; doplněno podle UX auditu 27. 9. 2026, §2 B, §4 Úvod a §11; P2 · B · střední): appka ukáže, která šablona je na řadě. Dnes je na úvodní obrazovce nejvýraznější „Začít prázdný trénink“ a všechna „Začít“ u šablon jsou stejně korálová, i když běžný den začíná šablonou. Návrh: nahoře karta „Dnes na řadě: Pull“ s jediným hlavním tlačítkem Začít, pod ní ostatní šablony s vedlejším Začít, prázdný trénink jako vedlejší tlačítko. Nejjednodušší pravidlo bez nových dat: na řadě je nejdéle necvičená šablona ve vybraném fitku (Otevřené otázky). Dlaždici Objem 30 dní nahradit údajem „Poslední trénink: před 2 dny (Legs)“. Během tréninku zůstává „Probíhá trénink“ (F2-09).
 - [x] **F2-05** Vlastní fotky u cviku
 - [x] **F2-08** Jedinečné názvy šablon
-- [ ] **F2-06** Archivace starých fitek a tréninků (vzniklo u F3-01, rozhodnout později): fitko, kam už se nechodí, zmizí z výběru a filtrů, tréninky a statistiky zůstanou.
+- [ ] **F2-06** Archivace a smazání fitka (vzniklo u F3-01; zadání upřesněno 10. 10. 2026 u F3-24; D · střední):
+  - **Archivovat fitko** (Nastavení → Fitka → Upravit fitko): fitko zmizí z výběru „Kde dnes cvičíš“ a z filtrů. Skryje se i vše, co k němu patří: jeho tréninky (Historie, kalendář), šablony jen pro toto fitko a jeho data ve Statistikách (počty, objem, rekordy, grafy, progres cviků). Nic se nemaže, archivaci jde vrátit (Obnovit) a vše se ukáže zpátky. Archivovaná fitka v Nastavení → Fitka zvlášť dole.
+  - **Smazat fitko**: dnes nejde smazat fitko, které má tréninky (hláška v panelu fitka). Nově se zeptá, co s tréninky a šablonami: smazat je, nebo je nechat se štítkem „Smazané fitko“ (štítek i bez barvy umí od F3-24 `gymPill` / `gymName`). Mazání tréninků nevratné, proto dotaz s počtem a předtím připomínka zálohy.
+  - Rozhodnout (Otevřené otázky): šablona přiřazená k víc fitkům (zůstane u ostatních), rozdělaný trénink v archivovaném fitku, cviky vázané na fitko (jejich hodnoty z minula), rekordy počítané napříč fitky (přepočítat bez archivovaných?), co ukáže záloha (archivace se zálohuje, nová vlastnost fitka `archived` s výchozí hodnotou `false`). Kde: sekce barva fitka (F0-07) a Nastavení → Fitka (`sheetGym`, akce `delGym`).
 - [x] **F2-09** Úvodní obrazovka během tréninku
 - [x] **F2-07** Pořadí přetažením prstu
 - [x] **F2-10** Poznámka ke cviku v šabloně a z historie
@@ -213,14 +216,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-21** Kratší nápovědy (otazník v nadpisu sekce)
 - [x] **F3-22** Karta cviku bez štítků
 - [ ] **F3-23** Redesign appky (přání 27. 9. 2026, nic nerozhodnuto): jednotný vzhled celé appky, tedy systém (barvy, rozestupy, písmo, karty), tlačítka a ikony. Rozsah a podobu probrat, až bude úloha na řadě. **UX audit 27. 9. 2026 (§7) doporučuje místo vizuální přestavby úzké zadání**, protože systém už existuje (barvy v `:root`, stupnice `--fs-*`, ikony `IC`, panely `openSheet`): (1) barvy podle významu – korálová dnes znamená hlavní akci, odkaz (název cviku), aktivní záložku, zničující akci (Zahodit trénink) i přečas pauzy; návrh: názvy cviků v barvě textu (klikatelnost nese ikona grafu), zničující akce červeně nebo neutrálním textem, přečas neutrálně; (2) jedna hlavní akce na obrazovce – úvod řeší F2-04, v tréninku bez hotové série má být hlavní Přidat cvik, ne Dokončit trénink; (3) jedna minimální dotyková plocha 44–48 px pro čipy, segmenty a ikonová tlačítka (dnes 34 px; trénink řeší F1-18, hodnota v proměnné `--tap` v `:root`, 44 px; jak zvětšit plochu bez změny vzhledu, popisuje sekce VĚTŠÍ DOTYKOVÉ PLOCHY v `js/app.js`). Tam taky zvážit viditelně větší ✓ (asi 52 × 40 px, v `em`), v F1-18 uživatel chtěl nejdřív jen větší plochu. Ostatní je vkus (C). **Rozhodnuto 27. 9.: zatím jen v tomto úzkém rozsahu**, vizuální přestavbu zvážit až potom.
-- [ ] **F3-24** Texty a drobnosti z auditu (UX audit 27. 9. 2026, §3, §4, §8 a §10; P3 · A/B · velmi nízká). Samé malé úpravy bez změny dat:
-  - skloňování všude přes `plural` („4 cviků“ u šablony na úvodní obrazovce; okno Dokončit trénink opravila F1-14),
-  - počet cviků ve výběru cviků a v záložce Cviky podle filtru (dnes pořád „388 cviků“),
-  - úvodní obrazovka bez fitka: místo prázdného „Kde dnes cvičíš“ tlačítko „+ Přidat fitko“ (dnes jen přes Nastavení → Fitka),
-  - souhrn po tréninku: hláška „Trénink uložen“ zakrývá nadpis (přesunout dolů nad lištu, nebo vynechat, souhrn sám je potvrzení), dlaždice Rekordy se při 0 neukáže,
-  - Historie: „0 dní volna“ bez kontextu → popisek „dní od tréninku“,
-  - nadpis „Probíhá trénink“ se při písmu Největší zalomí na 2 řádky → kratší („Trénink“ a čas),
-  - `enterkeyhint="next"` / `"done"` v políčkách série, jen pokud ověření v telefonu ukáže, že Gboard nepřechází z kg na Opak.
+- [x] **F3-24** Texty a drobnosti z auditu
 - [x] **F3-25** Rekord jako skutečná událost
 - [x] **F3-26** Progres po cvicích ve Statistikách
 - [x] **F3-27** Porovnání s předchozím obdobím
@@ -296,6 +292,7 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
 | F1-17 | Pauza po zahřívací sérii: pevná délka, polovina výchozí, nebo žádná? | Volba v Nastavení → Odpočinek (Bez pauzy / 0:30 / 1:00 / 1:30 / jako po pracovní), výchozí 1:00. |
 | F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
+| F2-06 | Archivované fitko: zmizí jeho tréninky i ze součtů ve Statistikách a z rekordů jiných fitek? Šablona pro víc fitek? Rozdělaný trénink v archivovaném fitku? Smazání fitka s tréninky: smazat, nebo štítek „Smazané fitko“? | Archivace skryje tréninky všude (i součty a rekordy, po obnovení se vrátí); šablona pro víc fitek zůstane u ostatních; archivovat nejde během tréninku v tom fitku. Smazání nabídne obě volby, výchozí „ponechat se štítkem“. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
 | F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
 | F3-23 | Redesign jako vizuální přestavba, nebo úzké zadání podle auditu? | **Rozhodnuto 27. 9. 2026:** zatím jen úzké zadání (barvy podle významu, jedna hlavní akce na obrazovce, dotyková plocha 44–48 px); vizuální přestavbu zvážit až potom. |

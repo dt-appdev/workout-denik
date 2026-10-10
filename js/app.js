@@ -1258,7 +1258,8 @@
   const exName = (id) => (S.exLib[id] && S.exLib[id].name) || id;
   const gymName = (id) => {
     const g = S.cfg.gyms.find((g) => g.id === id);
-    return g ? g.name : "Neznámé fitko";
+    if (g) return g.name;
+    return id ? "Smazané fitko" : "Bez fitka"; // trénink ze smazaného fitka / bez fitka (F3-24)
   };
   const gymIdx = (id) => {
     const i = S.cfg.gyms.findIndex((g) => g.id === id);
@@ -1271,6 +1272,11 @@
   const gymColor = (id) => {
     const g = S.cfg.gyms.find((g) => g.id === id);
     return "var(--s" + (g && g.col ? g.col : (gymIdx(id) % GYM_COLORS) + 1) + ")";
+  };
+  // štítek fitka u tréninku; smazané fitko bez barevné tečky (F3-24), trénink bez fitka štítek nemá
+  const gymPill = (id) => {
+    const dot = gymExists(id) ? `<span class="sw" style="background:${gymColor(id)}"></span>` : "";
+    return `<span class="pill">${dot}${esc(gymName(id))}</span>`;
   };
   /* doplní výchozí hodnoty nastavení; fitkům bez barvy dá barvu podle pořadí (= barva, kterou měla dřív) */
   function cfgNorm(c) {
@@ -2959,7 +2965,9 @@
       `Datum: ${coachDay(w.start)} (${COACH_DAYS[new Date(w.start).getDay()]}) ` +
         `${coachTime(w.start)}–${coachTime(end)} · ${Math.round((end - w.start) / 60000)} min`,
     );
-    L.push("Fitko: " + gymName(w.gymId));
+    if (w.gymId) {
+      L.push("Fitko: " + gymName(w.gymId));
+    }
     const tpl = w.tplId && S.templates[w.tplId];
     if (tpl) {
       L.push("Šablona: " + tpl.name);
@@ -4270,8 +4278,13 @@
           30 dní</span>
       </div>
     </div>`;
+    // bez fitka místo prázdných čipů tlačítko Přidat fitko (F3-24)
+    const addGym = S.cfg.gyms.length
+      ? ""
+      : `<button class="btn block" data-act="addGym">${icon("plus")}Přidat fitko</button>`;
     h += `<section class="sec">
       <div class="sec-h"><h2>Kde dnes cvičíš</h2></div>
+      ${addGym}
       <div class="chips" data-ck="selGym">
         ${S.cfg.gyms
           .map(
@@ -4583,7 +4596,10 @@
     const last = lastHere || runs[0];
     const lastTxt = !last
       ? ""
-      : " · naposledy " + fmtDateS(last.start) + (lastHere ? "" : " (" + esc(gymName(last.gymId)) + ")");
+      : " · naposledy " +
+        fmtDateS(last.start) +
+        (lastHere || !last.gymId ? "" : " (" + esc(gymName(last.gymId)) + ")");
+    const nEx = (t.items || []).length;
     // u ostatních šablon, kam patří
     const gyms = gymId ? [] : tplGyms(t);
     return `<div class="card tpl">
@@ -4603,7 +4619,7 @@
               </p>`
               : ""
           }
-          <p class="xs">${(t.items || []).length} cviků${lastTxt}</p>
+          <p class="xs">${nEx} ${plural(nEx, "cvik", "cviky", "cviků")}${lastTxt}</p>
         </div>
         <div class="stack" style="gap:6px">
           ${
@@ -4872,7 +4888,7 @@
     const w = again.w,
       n = (w.ex || []).length - againEx(w).length;
     return (
-      (again.gym !== w.gymId
+      (w.gymId && again.gym !== w.gymId
         ? `<p class="small muted" style="margin:0">
           Trénink byl v ${esc(gymName(w.gymId))}. Hodnoty z minula se vezmou z vybraného fitka.
         </p>`
@@ -5383,7 +5399,7 @@
           : "Nová šablona"
         : mode === "edit"
           ? "Úprava tréninku"
-          : "Probíhá trénink";
+          : "Trénink";
     h += topbar(heading, mode === "active" ? "Začátek " + fmtTime(d.start) : "", left);
     const durMin = Math.round(((d.end || d.start) - d.start) / 60000); // délka v úpravě tréninku (min)
     let vol = 0,
@@ -5647,8 +5663,10 @@
         // krokovač (F1-03): políčko jen ke čtení, klepnutí otevře panel s +/−
         const stepper = useStepper && !kkTyping(id) ? ` readonly data-act="kk" data-v="${f}"` : "";
         const last = mode !== "active" && !eff && n === flds.length - 1;
+        // klávesa Enter: Další do dalšího políčka série, v posledním Hotovo (F3-24, setEnter)
+        const enter = n === flds.length - 1 ? "done" : "next";
         h += `<td class="c-in${last ? " sw-cell" : ""}">
-          <input class="cell${numCls(fld, fval(s, fld))}" id="${id}"
+          <input class="cell${numCls(fld, fval(s, fld))}" id="${id}" enterkeyhint="${enter}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
               value="${esc(fval(s, fld))}" placeholder="${esc(hintStr(hn, fld))}"
               aria-label="${FLD[f].lab}"${stepper}>
@@ -5814,7 +5832,7 @@
   function vHist() {
     const { all } = derive();
     const list = all.filter((w) => S.histGym === "all" || w.gymId === S.histGym);
-    let h = topbar("Historie", list.length + " tréninků");
+    let h = topbar("Historie", list.length + " " + plural(list.length, "trénink", "tréninky", "tréninků"));
     h += `<div class="seg seg-wide" style="margin-bottom:10px">${[
       ["cal", "Kalendář"],
       ["list", "Seznam"],
@@ -5844,10 +5862,7 @@
             ${esc(w.title)}` +
         `${wRecs(w).length ? " " + recCount(wRecs(w)) : ""}
           </h3>
-          <span class="pill">
-            <span class="sw" style="background:${gymColor(w.gymId)}"></span>
-            ${esc(gymName(w.gymId))}
-          </span>
+          ${w.gymId ? gymPill(w.gymId) : ""}
         </div>
         <div class="line num">
           <span>${fmtDay(w.start)} ${fmtTime(w.start)}</span>
@@ -6023,6 +6038,8 @@
       vol = wVol(w),
       sets = wSets(w),
       rec = wRecs(w).length;
+    // dlaždice Rekordy jen s rekordem nebo s rozdílem proti minule, jinak 3 dlaždice (F3-24)
+    const showRec = rec > 0 || (p && wRecs(p).length > 0);
     const kpi = (v, l, dl) => `<div class="kpi"><b>${v}</b><span>${l}</span>${p ? dl : ""}</div>`;
     let dv = "";
     if (p) {
@@ -6037,7 +6054,7 @@
           : "");
     }
     return (
-      `<div class="kpis k4">
+      `<div class="kpis k4${showRec ? "" : " k3"}">
       ${kpi(
         fmtDurS(dur),
         "Čas",
@@ -6052,7 +6069,7 @@
       )}` +
       `${kpi(fmtVol(vol), "Objem", dv)}` +
       `${kpi(sets, "Série", p ? dHtml(sets - wSets(p), String, "dl") : "")}` +
-      `${kpi(rec, "Rekordy", p ? dHtml(rec - wRecs(p).length, String, "dl") : "")}
+      `${showRec ? kpi(rec, "Rekordy", p ? dHtml(rec - wRecs(p).length, String, "dl") : "") : ""}
     </div>`
     );
   }
@@ -6202,10 +6219,7 @@
   function wSummary(w, justSaved) {
     const p = prevRun(w);
     let b = `<div class="row wrap-r small muted num">
-      <span class="pill">
-        <span class="sw" style="background:${gymColor(w.gymId)}"></span>
-        ${esc(gymName(w.gymId))}
-      </span>
+      ${w.gymId ? gymPill(w.gymId) : ""}
       <span>${fmtDay(w.start)} ${fmtTime(w.start)}</span>
     </div>`;
     b += sumKpis(w, p) + sumCompare(w, p);
@@ -7370,6 +7384,10 @@
     const act = S.active && (S.histGym === "all" || S.active.gymId === S.histGym) ? S.active : null;
     const streak = calStreak(all),
       rest = calRest(all);
+    // dny od posledního tréninku, v den tréninku „Dnes trénink“ (F3-24)
+    const restNum = rest == null ? "–" : rest === 0 ? "Dnes" : rest;
+    const restTxt =
+      rest === 0 ? "trénink" : (rest == null ? "dní" : plural(rest, "den", "dny", "dní")) + " od tréninku";
     let h =
       `<div class="kpis cal-k">
       <div class="kpi">
@@ -7377,9 +7395,8 @@
         <span>${plural(streak, "týden", "týdny", "týdnů")} v řadě</span>
       </div>
       <div class="kpi">
-        <b>${rest == null ? "–" : rest}</b>` +
-      `<span>${rest == null ? "dní" : plural(rest, "den", "dny", "dní")} ` +
-      `volna</span>
+        <b>${restNum}</b>` +
+      `<span>${restTxt}</span>
       </div>
     </div>`;
     const isNow = y === now.getFullYear() && mo === now.getMonth();
@@ -7500,10 +7517,7 @@
       b += `<button class="hw" data-act="calW" data-v="${esc(w.id)}" data-m="${w.mk}" data-k="${k}">
         <div class="row">
           <h3 class="grow">${esc(w.title)}</h3>
-          <span class="pill">
-            <span class="sw" style="background:${gymColor(w.gymId)}"></span>
-            ${esc(gymName(w.gymId))}
-          </span>
+          ${w.gymId ? gymPill(w.gymId) : ""}
         </div>
         <div class="line num">
           <span>${fmtTime(w.start)}</span>
@@ -7662,7 +7676,7 @@
         act: "openEx",
         label: exName(id),
         v: r.sets,
-        txt: r.n + "× · " + r.sets + " sérií",
+        txt: r.n + "× · " + r.sets + " " + plural(r.sets, "série", "série", "sérií"),
       }));
   }
   function gymRows(s) {
@@ -8253,7 +8267,11 @@
     const az = (a, b) => a.e.name.localeCompare(b.e.name, "cs");
     rows.sort(S.exlSort === "az" ? az : (a, b) => b.last - a.last || b.rel - a.rel || az(a, b));
     const lim = S.exlLimit || 100;
-    let h = topbar("Cviky", all.length + " " + plural(all.length, "cvik", "cviky", "cviků") + " v databázi");
+    // počet podle hledání a filtrů, bez nich celá databáze (F3-24)
+    const filtered = S.exlQ || S.exlHid || S.exlM !== "all" || S.exlEq !== "all";
+    const nShow = filtered ? rows.length : all.length;
+    const countTxt = nShow + " " + plural(nShow, "cvik", "cviky", "cviků") + (filtered ? "" : " v databázi");
+    let h = topbar("Cviky", countTxt);
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(S.exlQ)}" autocomplete="off">`;
     h += `<div class="chips" data-ck="exlM" style="margin-top:8px">
@@ -10280,8 +10298,8 @@
     </div>`;
     if (id && cnt) {
       b += `<div class="small muted">
-        Fitko má ${cnt} tréninků, proto ho nelze smazat. Tréninky můžeš přesunout jinam v Historii →
-        Upravit.
+        Fitko má ${cnt} ${plural(cnt, "trénink", "tréninky", "tréninků")}, proto ho nelze smazat.
+        Tréninky můžeš přesunout jinam v Historii → Upravit.
       </div>`;
     }
     openSheet(
@@ -13358,9 +13376,10 @@
         }
         activeEnd();
         closeSheet();
-        toast("Trénink uložen");
-        // Dokončit a začít nový (F2-09): rovnou nový trénink, souhrn a oslava se přeskočí (trénink je v Historii)
+        // Dokončit a začít nový (F2-09): rovnou nový trénink, souhrn a oslava se přeskočí (trénink je
+        // v Historii); jinak potvrzením uložení je souhrn, hláška by zakryla jeho nadpis (F3-24)
         if (runNext) {
+          toast("Trénink uložen");
           const next = runNext;
           runNext = null;
           runStart(next);
@@ -14085,6 +14104,31 @@
     ev.preventDefault();
     t.blur();
   });
+  /* ---------- TEXTY A DROBNOSTI (F3-24) ----------
+     Drobnosti z UX auditu 27. 9. 2026 bez změny dat: počty přes plural (karta šablony, Historie, Statistiky),
+     záložka Cviky ukazuje počet podle hledání a filtrů (vExList), úvod bez fitka tlačítko Přidat fitko,
+     nadpis rozdělaného tréninku „Trénink“, Historie „N dní od tréninku“ / „Dnes trénink“. Souhrn po uložení
+     bez hlášky „Trénink uložen“ (zůstává jen u Dokončit a začít nový) a bez dlaždice Rekordy, když je 0
+     a předchozí běh rekord neměl (sumKpis, třída k3 = 3 dlaždice se stejným písmem jako 4). Štítek fitka
+     u tréninku přes gymPill: trénink bez fitka štítek nemá, trénink ze smazaného fitka „Smazané fitko“
+     (gymName) bez barevné tečky.
+     Klávesa Enter v políčkách série (setEnter): Gboard v číselné klávesnici sám do dalšího políčka nepřejde
+     (ověřeno v telefonu), proto políčka mají enterkeyhint (next / done) a Enter přesune kurzor do dalšího
+     políčka stejné série, v posledním (nebo před políčkem s krokovačem) schová klávesnici. */
+  function setEnter(ev) {
+    const t = ev.target;
+    if (ev.key !== "Enter" || t.tagName !== "INPUT" || !t.classList.contains("cell")) return;
+    ev.preventDefault();
+    const row = [...t.closest("tr").querySelectorAll("input.cell")];
+    const next = row[row.indexOf(t) + 1];
+    if (next && !next.readOnly) {
+      next.focus();
+      next.select();
+    } else {
+      t.blur();
+    }
+  }
+  document.addEventListener("keydown", setEnter);
   document.addEventListener("input", (ev) => {
     const t = ev.target;
     if (t.id === "warmPct") {
