@@ -5663,8 +5663,10 @@
         // krokovač (F1-03): políčko jen ke čtení, klepnutí otevře panel s +/−
         const stepper = useStepper && !kkTyping(id) ? ` readonly data-act="kk" data-v="${f}"` : "";
         const last = mode !== "active" && !eff && n === flds.length - 1;
-        // klávesa Enter: Další do dalšího políčka série, v posledním Hotovo (F3-24, setEnter)
-        const enter = n === flds.length - 1 ? "done" : "next";
+        // klávesa Enter: Další do dalšího políčka série nebo k nevyplněnému RIR/RPE, jinak Hotovo
+        // (F3-24, setEnter)
+        const effNext = eff && s.t !== "w" && s.t !== "f" && effOf(s) == null;
+        const enter = n < flds.length - 1 || effNext ? "next" : "done";
         h += `<td class="c-in${last ? " sw-cell" : ""}">
           <input class="cell${numCls(fld, fval(s, fld))}" id="${id}" enterkeyhint="${enter}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
@@ -14114,7 +14116,8 @@
      (gymName) bez barevné tečky.
      Klávesa Enter v políčkách série (setEnter): Gboard v číselné klávesnici sám do dalšího políčka nepřejde
      (ověřeno v telefonu), proto políčka mají enterkeyhint (next / done) a Enter přesune kurzor do dalšího
-     políčka stejné série, v posledním (nebo před políčkem s krokovačem) schová klávesnici. */
+     políčka stejné série, v posledním (nebo před políčkem s krokovačem) schová klávesnici. Se zapnutým
+     RIR/RPE (F4-04) a nevyplněnou hodnotou série pak otevře panel RIR/RPE (sheetEffort). */
   function setEnter(ev) {
     const t = ev.target;
     if (ev.key !== "Enter" || t.tagName !== "INPUT" || !t.classList.contains("cell")) return;
@@ -14124,8 +14127,12 @@
     if (next && !next.readOnly) {
       next.focus();
       next.select();
-    } else {
-      t.blur();
+      return;
+    }
+    t.blur();
+    // nevyplněné RIR/RPE série (tlačítko bez hodnoty): rovnou panel s výběrem
+    if (t.closest("tr").querySelector('.effb[data-act="eff"]:not(.on)')) {
+      sheetEffort(+t.dataset.i, +t.dataset.j);
     }
   }
   document.addEventListener("keydown", setEnter);
