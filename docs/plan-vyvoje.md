@@ -104,7 +104,7 @@ flowchart LR
 
 #### Etapa 6 – Zbytek plánu
 
-17. **F3-33** Výška v Nastavení a BMI z hmotnosti · *Tělo · B · nízká* – hned po sloučení F3-23 (stejný formulář).
+17. ~~**F3-33** Výška v Nastavení a BMI z hmotnosti~~ – hotovo 10. 10. 2026.
 18. **F1-07** Poznámky ke stroji podle fitka.
 19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
 20. **F3-16** Rozepsaný formulář přežije zavření appky.
@@ -221,17 +221,11 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-26** Progres po cvicích ve Statistikách
 - [x] **F3-27** Porovnání s předchozím obdobím
 - [x] **F3-28** Stránka cviku: záložka Historie
-- [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO.
+- [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO. Pozor: BMI se předvyplňuje z hmotnosti a výšky (F3-33), schované BMI se ukládá i bez vyplnění.
 - [x] **F3-30** Nový cvik kopií jiného cviku
 - [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
 - [x] **F3-32** Smazat vlastní cvik
-- [ ] **F3-33** Výška v Nastavení a BMI z hmotnosti (přání 10. 10. 2026 u F3-23, náhled schválen; B · nízká): Nastavení →
-  Trénink → sekce „Tělesná hmotnost“ se přejmenuje na „Tělo“ a dostane druhý řádek Výška (cm) (`S.cfg.height`, prázdná
-  jako výchozí, `cfgNorm`; nové pravidlo čísla 100–250 cm, celé). Že hmotnost z Nastavení platí jen do prvního měření
-  (`bodyWeightAt`), vysvětlí nápověda „?“. Formulář měření (`sheetBody`): po zadání hmotnosti a s vyplněnou výškou
-  ukáže políčko BMI šedé předvyplnění (kg / m², jedno desetinné místo, např. 82 kg a 180 cm = 25,3); prázdné políčko
-  se uloží s touto hodnotou, napsané číslo (z váhy) má přednost. Bez výšky beze změny. **Rozhodnuto:** předvyplnění,
-  ne povinný výpočet; stará měření se nepřepočítávají; výška v Nastavení → Trénink. Dělat až po sloučení F3-23.
+- [x] **F3-33** Výška v Nastavení a BMI z hmotnosti
 
 
 ### Fáze 4 – Chytré funkce
