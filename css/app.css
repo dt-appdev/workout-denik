@@ -825,7 +825,11 @@ label.f,
 .inp[data-num] {
   text-align: center;
 }
-/* údaj jedním řádkem (F3-23): název vlevo, úzké políčko vpravo (Tělesná hmotnost, formulář měření) */
+/* šedé předvyplnění čísla jako v sérii (BMI ve formuláři měření, F3-33) */
+.inp[data-num]::placeholder {
+  color: var(--ink-3);
+}
+/* údaj jedním řádkem (F3-23): název vlevo, úzké políčko vpravo (Tělo v Nastavení, formulář měření) */
 .frow {
   display: flex;
   align-items: center;

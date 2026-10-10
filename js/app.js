@@ -1305,6 +1305,7 @@
         progSets: "all",
         effort: "off",
         coach: false,
+        height: null, // výška v cm pro BMI (F3-33), prázdná = nezadaná
       },
       c && typeof c === "object" ? c : {},
     );
@@ -1315,6 +1316,7 @@
       c.progMax = PROG_REPS.defMax;
     }
     c.stagN = STAG_N.includes(+c.stagN) ? +c.stagN : STAG_DEF;
+    c.height = +c.height >= 100 && +c.height <= 250 ? Math.round(+c.height) : null;
     c.effort = c.effort === "rir" || c.effort === "rpe" ? c.effort : "off"; // RIR/RPE (F4-04)
     c.gyms = (Array.isArray(c.gyms) ? c.gyms : [])
       .filter((g) => g && g.id)
@@ -1441,12 +1443,13 @@
      Pravidla:  dec = počet desetinných míst (0 = jen celé číslo), min/max = rozsah,
                 unit = jednotka do nápovědy,
                 time = čas (45, 1:30, 1:02:30; čárka a tečka se při psaní mění na dvojtečku).
-     Pravidla NUM_RULES: kg, reps, sec, km, min, body, pct, kcal, bw. Při vykreslení dostane políčko třídu
-     numCls(pravidlo, hodnota). Znaky filtruje numInput (globální posluchač input; číslici navíc podle numFits
-     nepřijme, „,5“ → „0,5“), jednotnou podobu po opuštění políčka a při ✓ dá numNormalize (čas „85“ → „1:25“,
-     „1:5“ → „1:05“, „82.5“ → „82,5“). Před uložením setProblem / draftProblem (série) a inputProblem(id)
-     (políčka ve formulářích). Uložené číslo do políčka vždy přes numStr (nejvýš 2 desetinná místa). ✓ série =
-     toggleSetDone. Nové číselné pole (F1-03, F1-08…) vždy přes stejná pravidla. */
+     Pravidla NUM_RULES: kg, reps, sec, km, min, body, pct, kcal, bw, height (F3-33).
+     Při vykreslení dostane políčko třídu numCls(pravidlo, hodnota). Znaky filtruje numInput (globální
+     posluchač input; číslici navíc podle numFits nepřijme, „,5“ → „0,5“), jednotnou podobu po opuštění
+     políčka a při ✓ dá numNormalize (čas „85“ → „1:25“, „1:5“ → „1:05“, „82.5“ → „82,5“). Před uložením
+     setProblem / draftProblem (série) a inputProblem(id) (políčka ve formulářích). Uložené číslo do políčka
+     vždy přes numStr (nejvýš 2 desetinná místa). ✓ série = toggleSetDone. Nové číselné pole (F1-03, F1-08…)
+     vždy přes stejná pravidla. */
   const NUM_RULES = {
     kg: { lab: "Váha", dec: 2, max: 999, unit: "kg" },
     reps: { lab: "Opakování", dec: 0, max: 999 },
@@ -1457,6 +1460,7 @@
     pct: { lab: "Hodnota", dec: 2, max: 100, unit: "%" },
     kcal: { lab: "Hodnota", dec: 2, max: 9999 },
     bw: { lab: "Tělesná hmotnost", dec: 2, min: 20, max: 300, unit: "kg" },
+    height: { lab: "Výška", dec: 0, min: 100, max: 250, unit: "cm" },
   };
   // pravidlo pro pole série (kg, +kg a −kg se ukládají do s.kg)
   const setRule = (f) => (f === "plus" || f === "minus" ? "kg" : f);
@@ -5408,7 +5412,7 @@
      - Závislé volby (pod vypínačem) se neschovávají: zůstávají na místě, s vypnutým vypínačem šedé a inert
        (.dep.off; recSettings, stagSettings, restSettings, wakeSettings), stránka neposkakuje.
      - Číselné políčko .inp[data-num] má číslo na středu. Údaj jedním řádkem .frow (název vlevo, políčko
-       vpravo): Tělesná hmotnost v Nastavení a formulář měření (sheetBody). Výběr fitka v tréninku zůstává
+       vpravo): Tělo v Nastavení (F3-33) a formulář měření (sheetBody). Výběr fitka v tréninku zůstává
        velký jako ostatní rozbalovací výběry (Upravit cvik), menší uživatel zamítl. Formulář měření má sekce
        Hmotnost a složení / Obvody (.subh).
      - Mazání: .btn.danger je vždy červený obrys. Patička panelu: vedlejší vlevo, hlavní vpravo, stejně široká
@@ -9759,7 +9763,7 @@
   const bodyRule = (unit) => (unit === "%" ? "pct" : unit === "kcal" ? "kcal" : "body");
   function sheetBody(id, nav) {
     const v = id ? S.body[id] : { date: Date.now() };
-    // údaje po řádcích jako Tělesná hmotnost v Nastavení: název vlevo, políčko vpravo (F3-23)
+    // údaje po řádcích jako Tělo v Nastavení: název vlevo, políčko vpravo (F3-23)
     let b = `<label class="frow">
       <span class="grow">Datum</span>
       <input class="inp" type="date" id="b-date" value="${toDateInput(v.date)}">
@@ -9788,6 +9792,33 @@
       false,
       nav,
     );
+    // předvyplnění BMI jen u nového měření, u uloženého až po změně hmotnosti (F3-33)
+    if (!id) {
+      bmiHintRefresh();
+    }
+  }
+
+  /* ---------- VÝŠKA A BMI (F3-33) ----------
+     Nastavení → Trénink → Tělo má vedle hmotnosti řádek Výška (cm) (bodySettings, S.cfg.height, pravidlo
+     čísla height: celé 100–250 cm, prázdná = nezadaná, doplňuje cfgNorm). Výška slouží jen k BMI: ve
+     formuláři měření (sheetBody) s vyplněnou hmotností a výškou ukáže políčko BMI šedé předvyplnění
+     (placeholder, hmotnost / výška², jedno desetinné místo, 82 kg a 180 cm = 25,3; bmiHintRefresh). Prázdné
+     políčko BMI se uloží s touto hodnotou (saveBody, b-bmi.dataset.auto), napsané číslo z váhy má přednost.
+     Pravidla: u nového měření se BMI předvyplní hned, u uloženého až po změně hmotnosti ve formuláři (oprava
+     poznámky BMI nedoplní). Stará měření se nepřepočítávají. Hmotnost s červeným rámečkem ani bez výšky
+     předvyplnění nemá. Výška nemá historii, bere se vždy ta z Nastavení. */
+  // BMI z hmotnosti (kg) a výšky (cm), jedno desetinné místo
+  const bmiOf = (kg, cm) => Math.round((kg / Math.pow(cm / 100, 2)) * 10) / 10;
+  // šedé předvyplnění BMI podle hmotnosti ve formuláři měření
+  function bmiHintRefresh() {
+    const weightInp = document.getElementById("b-weight");
+    const bmiInp = document.getElementById("b-bmi");
+    if (!weightInp || !bmiInp) return;
+    const res = numCheck("body", weightInp.value);
+    const ok = S.cfg.height && res.ok && res.v > 0;
+    const bmi = ok ? bmiOf(res.v, S.cfg.height) : null;
+    bmiInp.placeholder = bmi ? numStr(bmi) : "";
+    bmiInp.dataset.auto = bmi ? String(bmi) : "";
   }
 
   /* ---------- NÁPOVĚDY V NADPISU SEKCE (F3-21) ----------
@@ -9900,10 +9931,10 @@
       ],
     },
     bw: {
-      title: "Tělesná hmotnost",
+      title: "Tělo",
       items: () => [
         [
-          "K čemu je",
+          "Hmotnost",
           "Používá se u cviků s vlastní vahou pro objem a odhad 1RM. Když máš měření v záložce Tělo, bere se " +
             "k datu tréninku nejbližší dřívější měření a tahle hodnota slouží jen pro tréninky před prvním " +
             "měřením.",
@@ -9913,6 +9944,13 @@
           Object.values(S.body || {}).some((b) => isFinite(+b.weight))
             ? "Máš uložená měření v záložce Tělo, takže se bere nejbližší dřívější měření."
             : "Zatím nemáš žádné měření v záložce Tělo, takže se bere tahle hodnota.",
+        ],
+        [
+          "Výška",
+          "Používá se jen pro BMI v záložce Tělo. Ve formuláři měření se po zadání hmotnosti BMI " +
+            "předvyplní šedě (hmotnost / výška², např. 82 kg a 180 cm = 25,3) a uloží se, když políčko " +
+            "necháš prázdné. " +
+            "Číslo z váhy má přednost. Uložená měření se nepřepočítávají. Prázdná výška = BMI se nepočítá.",
         ],
       ],
     },
@@ -10168,7 +10206,7 @@
         progSettings() +
         effortSettings() +
         restSettings() +
-        bodyWeightSettings() +
+        bodySettings() +
         coachSettings(),
     },
     { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
@@ -10280,11 +10318,12 @@
       </div>
     </section>`;
   }
-  /* Nastavení → Trénink → Tělesná hmotnost */
-  function bodyWeightSettings() {
+  /* Nastavení → Trénink → Tělo: hmotnost a výška (F3-33, výška jen pro BMI ve formuláři měření) */
+  function bodySettings() {
+    const height = S.cfg.height || "";
     return `<section class="sec">
       <div class="sec-h">
-        <h2>Tělesná hmotnost</h2>
+        <h2>Tělo</h2>
         ${helpBtn("bw")}
       </div>
       <div class="card stack">
@@ -10292,6 +10331,11 @@
           <span class="grow">Hmotnost (kg)</span>
           <input class="inp${numCls("bw", S.cfg.bodyWeight || 80)}" id="bwInp" data-f="bodyWeight"
               data-num="bw" inputmode="decimal" value="${esc(S.cfg.bodyWeight || 80)}">
+        </label>
+        <label class="frow">
+          <span class="grow">Výška (cm)</span>
+          <input class="inp${numCls("height", height)}" id="heightInp" data-f="height" data-num="height"
+              inputmode="numeric" value="${esc(height)}">
         </label>
       </div>
     </section>`;
@@ -13882,6 +13926,11 @@
             o[k] = n;
           }
         }
+        // prázdné BMI dostane předvyplněnou hodnotu z hmotnosti a výšky (F3-33)
+        const autoBmi = num(document.getElementById("b-bmi").dataset.auto);
+        if (!isFinite(o.bmi) && isFinite(autoBmi)) {
+          o.bmi = autoBmi;
+        }
         const note = document.getElementById("b-note").value.trim();
         if (note) {
           o.note = note;
@@ -14191,6 +14240,9 @@
     if (t.dataset && t.dataset.num) {
       numInput(t);
     } // F1-10: jen povolené znaky, červený rámeček
+    if (t.id === "b-weight") {
+      bmiHintRefresh();
+    } // F3-33: předvyplnění BMI podle hmotnosti
     if (t.id === "x-url" && t.classList.contains("bad") && !urlProblem(t.value)) {
       urlMark(t);
     } // F0-09: opravený odkaz už není červený
@@ -14260,6 +14312,16 @@
       if (isFinite(n) && numCheck("bw", t.value).ok) {
         clearTimeout(S._bwT);
         S._bwT = setTimeout(() => put("config/main", Object.assign({}, S.cfg, { bodyWeight: n })), 700);
+      }
+      return;
+    }
+    if (f === "height") {
+      // výška (F3-33): prázdné políčko výšku smaže
+      const res = numCheck("height", t.value);
+      if (res.ok) {
+        const height = isFinite(res.v) ? res.v : null;
+        clearTimeout(S._htT);
+        S._htT = setTimeout(() => put("config/main", Object.assign({}, S.cfg, { height })), 700);
       }
       return;
     }
