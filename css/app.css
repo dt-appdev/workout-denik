@@ -93,6 +93,8 @@ img {
   --accent-2: #b0302a;
   --accent-ink: #ffffff;
   --accent-soft: #fbe7e5;
+  --work: #3a4657; /* odznak pracovní série (F3-35) */
+  --work-bg: #dde3eb;
   --warm: #a86a00;
   --warm-bg: #fcefd4;
   --drop: #5646bd;
@@ -169,6 +171,8 @@ img {
     --accent-2: #ff7166;
     --accent-ink: #1a0806;
     --accent-soft: #3a1715;
+    --work: #c9d2de;
+    --work-bg: #2e3644;
     --warm: #f0b44a;
     --warm-bg: #352810;
     --drop: #a197f2;
@@ -215,6 +219,8 @@ img {
   --accent-2: #ff7166;
   --accent-ink: #1a0806;
   --accent-soft: #3a1715;
+  --work: #c9d2de;
+  --work-bg: #2e3644;
   --warm: #f0b44a;
   --warm-bg: #352810;
   --drop: #a197f2;
@@ -1237,17 +1243,19 @@ select.inp {
   font-weight: 700;
   font-size: var(--fs-md);
 }
+/* odznak druhu série (F3-35): každý druh má vlastní barvu (pracovní šedomodrá --work) a všechny tenký rámeček
+   jako tlačítka a ✓, aby se neztrácely na zeleném hotovém řádku a nevypadaly jako prázdné políčko */
 .stype {
   width: var(--row-h);
   height: var(--row-h);
   border-radius: 8px;
-  border: 0;
+  border: 1px solid var(--line-2);
   padding: 0;
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--fs-lg);
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--work-bg);
+  color: var(--work);
 }
 .stype-in {
   position: relative;
@@ -1387,7 +1395,7 @@ tr.done .okb {
   border-radius: 8px;
   background: var(--surface-2);
   padding: 0;
-  font-size: var(--fs-md);
+  font-size: var(--fs-lg); /* stejně velké jako kg a opakování (F3-35) */
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);

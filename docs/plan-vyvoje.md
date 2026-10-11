@@ -227,6 +227,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-32** Smazat vlastní cvik
 - [x] **F3-33** Výška v Nastavení a BMI z hmotnosti
 - [x] **F3-34** Statistiky cviku z tréninku: fitko tréninku a rozdělaný trénink
+- [x] **F3-35** Odznak druhu série a velikost RIR/RPE
 
 
 ### Fáze 4 – Chytré funkce
