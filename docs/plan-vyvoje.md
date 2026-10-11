@@ -230,6 +230,9 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-34** Statistiky cviku z tréninku: fitko tréninku a rozdělaný trénink
 - [x] **F3-35** Odznak druhu série a velikost RIR/RPE
 - [x] **F3-36** Zarovnání řádků sérií
+- [x] **F3-37** Stránka tréninku: Poprvé a porovnání pod sériemi, český název
+- [x] **F3-38** Série s jednotkou: 12×20kg
+- [x] **F3-39** Políčko Opak. před kg
 
 
 ### Fáze 4 – Chytré funkce

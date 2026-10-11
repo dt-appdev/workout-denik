@@ -1358,20 +1358,23 @@
 
   /* ---------- TYPY CVIKŮ ----------
      Určují, co se u série zapisuje a jak se počítá zátěž.
-     wr     váha × opakování          zátěž = váha
+     wr     opakování × váha          zátěž = váha
      bw     vlastní váha              zátěž = tělesná hmotnost
      bwplus vlastní váha + zátěž      zátěž = hmotnost + přidané kg
      assist s dopomocí                zátěž = hmotnost − dopomoc
      time   na čas                    bez objemu, rekord nejdelší výdrž
      timew  na čas se zátěží          bez objemu, rekord nejdelší výdrž
-     dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo         */
+     dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo
+     Pořadí políček f (F3-39): opakování / čas před váhou, stejně jako text série „12×40kg“ (setStr). Platí
+     pro tabulku sérií (trénink, úprava tréninku, šablona), krokovač i Enter na klávesnici. Data se ukládají
+     podle názvu políčka, pořadí na ně nemá vliv. */
   const KIND = {
-    wr: { l: "Váha a opakování", f: ["kg", "reps"], ex: "Bench press, bicepsový zdvih" },
+    wr: { l: "Opakování a váha", f: ["reps", "kg"], ex: "Bench press, bicepsový zdvih" },
     bw: { l: "Vlastní váha", f: ["reps"], ex: "Shyby, kliky, sedy-lehy" },
-    bwplus: { l: "Vlastní váha se zátěží", f: ["plus", "reps"], ex: "Shyby a kliky na bradlech se zátěží" },
-    assist: { l: "S dopomocí", f: ["minus", "reps"], ex: "Shyby a kliky s dopomocí stroje" },
+    bwplus: { l: "Vlastní váha se zátěží", f: ["reps", "plus"], ex: "Shyby a kliky na bradlech se zátěží" },
+    assist: { l: "S dopomocí", f: ["reps", "minus"], ex: "Shyby a kliky s dopomocí stroje" },
     time: { l: "Na čas", f: ["sec"], ex: "Plank, výdrž, vis" },
-    timew: { l: "Na čas se zátěží", f: ["kg", "sec"], ex: "Plank se zátěží, farmářská chůze" },
+    timew: { l: "Na čas se zátěží", f: ["sec", "kg"], ex: "Plank se zátěží, farmářská chůze" },
     dist: { l: "Vzdálenost a čas", f: ["km", "sec"], ex: "Běh, veslovací trenažér" },
   };
   const KIND_ORDER = ["wr", "bw", "bwplus", "assist", "time", "timew", "dist"];
@@ -1433,14 +1436,17 @@
   };
   const fmtPace = (sec, km) => (km > 0 ? fmtSec(sec / km) + " /km" : "–");
   /* zápis jedné série textem */
+  /* série jako text (F3-38): opakování × váha s jednotkou, bez mezer („12×20kg“, „8×+10kg“, „8×−20kg“,
+     „1:00×20kg“), aby se váha nepletla s opakováním. Stejný tvar mají rekordy (recFmt), návrh progrese
+     a text pro coache (coachVal). Obrázek ke sdílení má vlastní formát (shrSetStr). */
   function setStr(kind, s) {
     if (kind === "time") return fmtSec(s.sec || 0);
-    if (kind === "timew") return (s.kg ? fmtKg(s.kg) + " kg · " : "") + fmtSec(s.sec || 0);
+    if (kind === "timew") return fmtSec(s.sec || 0) + (s.kg ? "×" + fmtKg(s.kg) + "kg" : "");
     if (kind === "dist") return (s.km ? fmtKg(s.km) + " km · " : "") + fmtSec(s.sec || 0);
     if (kind === "bw") return (s.reps || 0) + "×";
-    if (kind === "bwplus") return (s.kg ? "+" + fmtKg(s.kg) + " × " : "") + (s.reps || 0);
-    if (kind === "assist") return (s.kg ? "−" + fmtKg(s.kg) + " × " : "") + (s.reps || 0);
-    return (s.kg ? fmtKg(s.kg) + "×" : "") + (s.reps || 0);
+    if (kind === "bwplus") return (s.reps || 0) + (s.kg ? "×+" + fmtKg(s.kg) + "kg" : "×");
+    if (kind === "assist") return (s.reps || 0) + (s.kg ? "×−" + fmtKg(s.kg) + "kg" : "×");
+    return (s.reps || 0) + (s.kg ? "×" + fmtKg(s.kg) + "kg" : "×");
   }
 
   /* ---------- KONTROLA ČÍSEL (F1-10) ----------
@@ -1977,9 +1983,9 @@
     const sign = prog.kind === "assist" ? "−" : prog.kind === "bwplus" ? "+" : "";
     const verb =
       prog.kind === "assist" ? "uber dopomoc" : prog.kind === "bwplus" ? "přidej zátěž" : "přidej váhu";
-    // různé váhy vedle sebe („42,5 kg × 7 · 45 kg × 7“), stejné jen jednou
+    // různé váhy vedle sebe („7×42,5kg · 7×45kg“, F3-38), stejné jen jednou
     const kgs = [...new Set(prog.sets.map((p) => p.kg))];
-    const vals = kgs.map((kg) => `<b>${sign}${esc(numStr(kg))} kg × ${prog.reps}</b>`).join(" · ");
+    const vals = kgs.map((kg) => `<b>${prog.reps}×${sign}${esc(numStr(kg))}kg</b>`).join(" · ");
     // které série: nic = všechny najednou (přidání ve volbě Všem sériím)
     const all = prog.up && S.cfg.progSets !== "first";
     const which = all ? "" : ` (${listAnd(prog.sets.map((p) => p.set + 1 + "."))} série)`;
@@ -2001,7 +2007,7 @@
     }
     return items;
   }
-  // série jako text „80×8 · 80×7“ (onlyWork = jen pracovní, bez zahřívacích)
+  // série jako text „8×80kg · 7×80kg“ (onlyWork = jen pracovní, bez zahřívacích)
   function setsStr(sets, onlyWork, kind) {
     kind = kind || "wr";
     return sets
@@ -2684,9 +2690,9 @@
      - Stránka tréninku má tlačítko Kopírovat pro coache (coachCopy): coachText(w) do schránky, když to
        prohlížeč nedovolí, panel s textem k ručnímu zkopírování.
      Pravidla textu (coachText): čas telefonu, cviky v pořadí provedení (první odškrtnutá série, s.at), název
-     „cz (name) [exId]“, čísla s tečkou, série „60 kg×10“ + RIR/RPE jako v appce (effTxt: „RIR 2“), zahřívací
-     za „W “ oddělené „ | “, F = „70 kg×8 F (odhad RIR 2)“, drop set „ + D …“ u předchozí série, BW×10 /
-     BW+5 kg×10 / A-10 kg×10, časové „60 s“, „20 kg×60 s“. Plán ze šablony u cviku se nevypisuje (přání uživatele
+     „cz (name) [exId]“, čísla s tečkou, série „10×60kg“ (F3-38, jako setStr) + RIR/RPE jako v appce (effTxt:
+     „RIR 2“), zahřívací za „W “ oddělené „ | “, F = „8×70kg F (odhad RIR 2)“, drop set „ + D …“ u předchozí
+     série, 10×BW / 10×BW+5kg / 10×A-10kg, časové „60 s“, „60 s×20kg“. Plán ze šablony u cviku se nevypisuje (přání uživatele
      7. 10. 2026), Vynecháno a Navíc jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se nevypisují.
      Text je vždy česky. */
   const coachOn = () => S.cfg.coach === true;
@@ -2931,12 +2937,12 @@
     const reps = +s.reps || 0;
     const sec = Math.round(+s.sec || 0);
     if (kind === "time") return sec + " s";
-    if (kind === "timew") return (kg ? coachN(kg) + " kg×" : "") + sec + " s";
+    if (kind === "timew") return sec + " s" + (kg ? "×" + coachN(kg) + "kg" : "");
     if (kind === "dist") return (+s.km ? coachN(s.km) + " km " : "") + sec + " s";
-    if (kind === "bw") return "BW×" + reps;
-    if (kind === "bwplus") return (kg ? "BW+" + coachN(kg) + " kg" : "BW") + "×" + reps;
-    if (kind === "assist") return (kg ? "A-" + coachN(kg) + " kg" : "BW") + "×" + reps;
-    return coachN(kg) + " kg×" + reps; // váha vždy s jednotkou, ať se nesplete s opakováním
+    if (kind === "bw") return reps + "×BW";
+    if (kind === "bwplus") return reps + "×" + (kg ? "BW+" + coachN(kg) + "kg" : "BW");
+    if (kind === "assist") return reps + "×" + (kg ? "A-" + coachN(kg) + "kg" : "BW");
+    return reps + "×" + coachN(kg) + "kg"; // jako setStr (F3-38): opakování × váha s jednotkou
   }
   function coachSetTxt(kind, s) {
     let x = coachVal(kind, s);
@@ -3094,7 +3100,7 @@
   }
 
   /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
-     V krokovači u zahřívací série cviku „Váha a opakování“ je tlačítko „60 % → 50 kg“. Nastaví váhu
+     V krokovači u zahřívací série cviku „Opakování a váha“ je tlačítko „60 % → 50 kg“. Nastaví váhu
      na S.cfg.warmPct procent (posuvník v Nastavení → Trénink) nejtěžší série z minula bez zahřívacích
      („minule“ jako F1-01: draftLast, cvik vázaný na fitko jen z tohoto fitka), zaokrouhleno na krok
      krokovače cviku. Hodnota se zapíše stejně jako napsaná, další úpravy zůstanou a tlačítko jde použít
@@ -3268,10 +3274,10 @@
     const e = S.exLib[exId];
     return exId + "|" + (e && e.gymDep ? gymId : "*");
   }
-  // hodnota rekordu jako text („82,5 kg“, „100 kg × 5“, „1:30“, „5 km“…)
+  // hodnota rekordu jako text („82,5 kg“, „5×100kg“ jako setStr, „1:30“, „5 km“…)
   function recFmt(type, v, set) {
     if (type === "reps") return fmtInt(v) + " opak.";
-    if (type === "bestSet" && set) return fmtKg(set.load != null ? set.load : set.kg) + " kg × " + set.reps;
+    if (type === "bestSet" && set) return set.reps + "×" + fmtKg(set.load != null ? set.load : set.kg) + "kg";
     if (type === "e1rm") return fmtKg(Math.round(v * 10) / 10) + " kg";
     if (type === "vol") return fmtInt(v) + " kg";
     if (type === "maxSec" || type === "totSec") return fmtSec(v);
@@ -3605,7 +3611,7 @@
   function stagInfo(exId, gymId) {
     return stagOfCtx(stags()[recCtx(exId, gymId)]);
   }
-  // nejlepší série tréninku, od kterého se cvik nezlepšil („80×8“, „1:30“…)
+  // nejlepší série tréninku, od kterého se cvik nezlepšil („8×80kg“, „1:30“…)
   function stagBest(info) {
     const m = info.ref.m;
     const t = ["e1rm", "bestSet", "maxKg", "reps", "maxSec", "maxKm"].find((t) => m[t] && m[t].set);
@@ -3613,7 +3619,7 @@
   }
   // text „4 tréninky bez zlepšení“
   const stagCount = (n) => n + " " + plural(n, "trénink", "tréninky", "tréninků") + " bez zlepšení";
-  // text „od 12. 8. (80×8)“ (cap = na začátku věty „Od“)
+  // text „od 12. 8. (8×80kg)“ (cap = na začátku věty „Od“)
   function stagSince(info, cap) {
     const best = stagBest(info);
     return (cap ? "Od " : "od ") + fmtDateS(info.ref.w.start) + (best ? " (" + best + ")" : "");
@@ -5577,7 +5583,7 @@
   }
   /* ---------- MINULE JAKO TEXT (F1-19) ----------
      Sloupec Minule v tabulce cviku je schovaný konstantou PREV_COL (false); kód sloupce zůstal a vrátí
-     se přepsáním na true. Místo něj je nad tabulkou řádek „Minule: Fitko · 24. 9. · 80×8 · 75×9 (RIR 1)“
+     se přepsáním na true. Místo něj je nad tabulkou řádek „Minule: Fitko · 24. 9. · 8×80kg · 9×75kg (RIR 1)“
      (prevLine, klepnutí ho rozbalí, jinak nejvýš 2 řádky). Zdroj je stejný jako dřív ve sloupci:
      draftLast (cvik vázaný na fitko jen v tomto fitku, při úpravě uloženého tréninku jen tréninky před ním).
      Jen pracovní série (drop set i do selhání), zahřívací jen když jiné nejsou. RIR/RPE za sérií jen při
@@ -6060,7 +6066,7 @@
     }
     return h;
   }
-  /* ---------- SOUHRN TRÉNINKU (F3-03) ----------
+  /* ---------- SOUHRN TRÉNINKU (F3-03, F3-37) ----------
      Stránka tréninku (F3-19, po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem
      proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
      (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
@@ -6069,7 +6075,11 @@
      Obsah wSummary. Minulý běh prevRun podle sameRun: šablona, jinak název bez automatických DEF_TITLES, nebo
      againOf. Procvičené partie wMuscles, postava přes musFigs (sdílí ji i Statistiky). Nic se neukládá.
      Partie, které byly jen vedlejší (wSecOnly), mají na postavě, v pruzích i na obrázku ke sdílení slabou
-     barvu MUS_WEAK. */
+     barvu MUS_WEAK.
+     Karta cviku (F3-37): název, pod ním šedě český název (ex.cz, jako karta cviku v tréninku), poznámka, série
+     a až pod nimi výsledek sumEx: rámeček porovnání s minule (.excmp), nebo u cviku poprvé zelený text
+     „Poprvé“ / „Poprvé v tomto fitku“ (.exnew) na vlastním řádku, zarovnaný s textem karty (ne štítek za názvem,
+     ten se podle délky názvu zalamoval). Za názvem jen medaile rekordů (recCount). */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
@@ -6304,9 +6314,9 @@
     const pw = prevEx(exId, w);
     if (!pw) {
       const ex = S.exLib[exId];
-      return ` <span class="pill new">
+      return `<div class="exnew">
         ${ex && ex.gymDep && prevEx(exId, w, true) ? "Poprvé v tomto fitku" : "Poprvé"}
-      </span>`;
+      </div>`;
     }
     const ps = exSetsIn(pw, exId);
     const b = bestOf(kind, sets),
@@ -6422,15 +6432,15 @@
       const er = R.filter((r) => r.exId === e.exId);
       const c = seen[e.exId] ? null : sumEx(w, e.exId);
       seen[e.exId] = true;
+      const cz = (S.exLib[e.exId] || {}).cz; // český název pod anglickým (F3-37)
       cards.push(
         `<div class="card${ssRun(w.ex, i) ? " ss-on" : ""}">
         <div style="font-weight:700;color:var(--accent-2)">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
-          `</button>${er.length ? " " + recCount(er) : ""}` +
-          `${typeof c === "string" ? c : ""}
+          `</button>${er.length ? " " + recCount(er) : ""}
         </div>
-        ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}` +
-          `${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
+        ${cz ? `<div class="cz">${esc(cz)}</div>` : ""}
+        ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}
         <div class="dset">
           ${(() => {
             const k = kindOf(e.exId);
@@ -6446,7 +6456,7 @@
                   `${coachEst(s) ? " (" + esc(coachEst(s)) + ")" : ""}</span>` +
                   `${
                     isWork(s.t) && r
-                      ? `<span class="muted">1RM ≈ ${fmtKg(Math.round(r * 10) / 10)}</span>`
+                      ? `<span class="muted">1RM ≈ ${fmtKg(Math.round(r * 10) / 10)} kg</span>`
                       : ""
                   }
                 </div>`
@@ -6455,6 +6465,7 @@
               .join("");
           })()}
         </div>
+        ${typeof c === "string" ? c : ""}${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
         </div>`,
       );
     });
@@ -8830,7 +8841,7 @@
             const r = c.b[t];
             const sub =
               t === "e1rm" || t === "maxKg"
-                ? fmtKg(r.set.kg) + " × " + r.set.reps + " · "
+                ? r.set.reps + "×" + fmtKg(r.set.kg) + "kg · "
                 : t === "bestSet"
                   ? fmtInt(r.v) + " kg · "
                   : "";
@@ -10210,7 +10221,7 @@
         ],
         [
           "Co se porovnává",
-          "Váha a opakování: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
+          "Opakování a váha: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
             "nepřesný). Vlastní váha: nejvíc opakování v sérii. Se zátěží a s dopomocí: odhad 1RM včetně " +
             "tělesné hmotnosti. Na čas: nejdelší výdrž. Vzdálenost: tempo v km/h.",
         ],
@@ -10315,7 +10326,7 @@
         ],
         [
           "Kde ho uvidíš",
-          "Za zápisem série na stránce tréninku a v historii cviku (např. 80×8 RIR 2, v RPE 80×8 RPE 8). " +
+          "Za zápisem série na stránce tréninku a v historii cviku (např. 8×80kg RIR 2, v RPE 8×80kg RPE 8). " +
             "Nepřebírá se z minula ani do šablon a nemá vliv na rekordy ani objem.",
         ],
       ],
