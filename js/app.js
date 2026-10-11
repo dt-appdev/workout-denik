@@ -5619,8 +5619,9 @@
      do tréninku, šablony ani Cvičit znovu se nekopíruje. Rozdíl proti poznámce (F2-10): poznámka patří
      k tréninku, nastavení stroje ke cviku a fitku.
      V probíhajícím tréninku s fitkem řádek „Stroj: …“ hned pod názvem cviku (machLine, jeden řádek, delší
-     text končí „…“), klepnutí otevře panel s úpravou (machEdit). V nabídce cviku (⋯) tlačítko Přidat /
-     Upravit nastavení stroje. Panel (machSheet): jeden text, v nadpisu fitko, Smazat (jen u uloženého)
+     text končí „…“), klepnutí otevře panel s celým textem bez klávesnice (machEdit, psaní až klepnutím do
+     políčka). V nabídce cviku (⋯) tlačítko Přidat / Upravit nastavení stroje, to otevře panel rovnou
+     s klávesnicí (data-focus). Panel (machSheet): jeden text, v nadpisu fitko, Smazat (jen u uloženého)
      a Uložit; prázdný text nastavení smaže. Stránka cviku (Popis): sekce Nastavení stroje s řádkem za každé
      existující fitko, které nastavení má (machInfo, klepnutí = úprava). Nastavení smazaného fitka zůstává
      v datech, jen se neukazuje. U cviku, který není vázaný na fitko, a v tréninku bez fitka se nic neukazuje.
@@ -13065,6 +13066,8 @@
       // nastavení stroje podle fitka (F1-07)
       case "machEdit":
         machSheet(v, t.dataset.g);
+        // klávesnice jen z nabídky cviku (chci psát); klepnutí na řádek nastavení jen ukáže
+        if (!t.dataset.focus) break;
         setTimeout(() => {
           const txt = document.getElementById("mach-txt");
           txt && txt.focus();
@@ -13112,7 +13115,7 @@
             ${
               machCan(d, e)
                 ? `<button class="btn block" data-act="machEdit" data-v="${esc(e.exId)}"
-                    data-g="${esc(d.gymId)}">
+                    data-g="${esc(d.gymId)}" data-focus="1">
                   ${machOf(e.exId, d.gymId) ? "Upravit" : "Přidat"} nastavení stroje
                 </button>`
                 : ""
