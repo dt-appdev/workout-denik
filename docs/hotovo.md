@@ -151,6 +151,15 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   drop set fialová, do selhání červená. Všechny odznaky mají tenký rámeček jako tlačítka a ✓ (1 px `--line-2`),
   aby se barva W, D a F neztrácela na zeleném. Platí v tréninku, úpravě tréninku i šabloně (stejná tabulka sérií).
   Jen CSS, data ani záloha beze změny. Popis v sekci „ODZNAK DRUHU SÉRIE A HOTOVÝ ŘÁDEK (F3-35)“ v `js/app.js`.
+- [x] **F3-36** Zarovnání řádků sérií (přání uživatele 11. 10. 2026, náhled schválen týž den): v úpravě šablony
+  (bez ✓) byl odznak druhu série 33 px od kraje karty a poslední políčko 9 px, zatímco nadpis a poznámka 15 px.
+  Nesedělo to ani v tréninku (odznak 22 px, ✓ 23 px) a u cviku s jedním políčkem (Plank) vůbec (37 / 41 px).
+  Příčina: všechny sloupce tabulky sérií měly pevnou šířku a volné místo se dělilo i do sloupce odznaku, kde byl
+  odznak na středu. Teď má tabulka `table-layout: fixed`, odznak, RIR/RPE a ✓ šířku tlačítka, políčka si dělí
+  zbytek. Odznak začíná a poslední prvek řádku končí 15 px od kraje karty v tréninku, úpravě tréninku i šabloně,
+  tlačítka + Série / + Zahřívací také (dřív 11 px). Kg a opak. jsou stejně široká i v šabloně (třída `.end-in`).
+  Mezera mezi odznakem a políčkem 4 px jako mezi políčky. Data ani záloha beze změny. Popis v sekci
+  „ZAROVNÁNÍ ŘÁDKŮ SÉRIÍ (F3-36)“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -180,6 +189,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 | F2-12 | Kde je ovládání skrytí a návratu? Blokuje skrytá šablona stejný název? | Vyřešeno 8. 10.: ovládání jako u cviku (textové tlačítko dole v úpravě šablony, bez ikon); skrytá šablona blokuje stejný název dál (hláška uvádí, že je skrytá); skrytí platí pro všechna fitka. |
 | F3-28 | Historie výš na Statistikách, nebo zvlášť? Výchozí metrika grafu u vysokých opakování? Filtr fitek v Historii? | Rozhodnuto 10. 10. 2026 po náhledech: třetí záložka Historie, cvik ze Cviků se otevírá na Statistikách. Výchozí metrika zůstává Odh. 1RM (Max zátěž u vysokých opakování nevidí růst opakování), znovu nenavrhovat. Filtr fitek stejně jako na Statistikách, společný výběr, štítek fitka na každé kartě. |
 | F3-35 | Jak odlišit odznak pracovní série na zeleném hotovém řádku? Rámeček? | Rozhodnuto 11. 10. 2026 po náhledech: vlastní šedomodrá výplň (varianta E) na všech řádcích, tenký šedý rámeček jako u tlačítek a ✓ u všech odznaků (T1). Zamítnuto: průhledný odznak (převezme zelenou řádku, uživatel zelené nechtěl), rámeček bez výplně, výplň v barvě karty, modrá (plete se s fialovým D), rámeček v barvě písmene (moc výrazný v tmavém motivu). |
+| F3-36 | Změnit i trénink s ✓? Posunout i tlačítka + Série? Mezera mezi odznakem a políčkem? | Rozhodnuto 11. 10. 2026 (výchozí volby): i trénink s ✓ (jednotné okraje 15 px všude), tlačítka + Série / + Zahřívací také na 15 px, mezera 4 px jako mezi políčky. |
 | F3-34 | Které série rozdělaného tréninku? Rekordy? Odkud předvybírat fitko? Hlavní Statistiky? | Rozhodnuto 10. 10. 2026 (výchozí volby): jen odškrtnuté série; Osobní rekordy a dlaždice Rekordy ano (jako živé medaile, „probíhá“); fitko z rozdělaného i upravovaného tréninku a ze stránky uloženého tréninku, odjinud „Všechna“; hlavní záložka Statistiky ne (případně samostatná úloha). Záložka dole podle toho, odkud se přišlo (i úprava tréninku), stránka uloženého tréninku po uložení dál Historie; pořadí záložek na stránce cviku beze změny (nahoře Historie cviku, dole historie tréninků, jiný seznam). |
 | F3-32 | Co když je cvik v historii? Smazat i výchozí cvik? | Rozhodnuto 7. a 8. 10. 2026: Použitý cvik smazat nejde (historie by ztratila název a partie), nabídne se Skrýt. Výchozí cvik se nemaže, jen skrývá. Smazání použitého cviku s převodem historie na jiný cvik by byla samostatná větší úloha. Tlačítko ve formuláři Upravit cvik (ne na stránce cviku), cvik jen v šabloně se taky nemaže, u výchozího cviku se nic nepřidává. |
 | F3-31 | Jak vypadá informace o vázání na fitko na stránce cviku? | Vyřešeno 8. 10. 2026: jen ikona s textem „vázáno na fitko“ v řádku s vybavením (jako v kartě cviku v seznamu), klepnutí na ikonu ukáže krátké vysvětlení; u nevázaného cviku nic; v horní liště ikona není (v plánu mylně „už tam je“). Samostatná řádka s vysvětlením zamítnuta (F3-21). Ve Statistikách „Změníš přes Upravit.“ |
