@@ -1358,20 +1358,23 @@
 
   /* ---------- TYPY CVIKŮ ----------
      Určují, co se u série zapisuje a jak se počítá zátěž.
-     wr     váha × opakování          zátěž = váha
+     wr     opakování × váha          zátěž = váha
      bw     vlastní váha              zátěž = tělesná hmotnost
      bwplus vlastní váha + zátěž      zátěž = hmotnost + přidané kg
      assist s dopomocí                zátěž = hmotnost − dopomoc
      time   na čas                    bez objemu, rekord nejdelší výdrž
      timew  na čas se zátěží          bez objemu, rekord nejdelší výdrž
-     dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo         */
+     dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo
+     Pořadí políček f (F3-39): opakování / čas před váhou, stejně jako text série „12×40kg“ (setStr). Platí
+     pro tabulku sérií (trénink, úprava tréninku, šablona), krokovač i Enter na klávesnici. Data se ukládají
+     podle názvu políčka, pořadí na ně nemá vliv. */
   const KIND = {
-    wr: { l: "Váha a opakování", f: ["kg", "reps"], ex: "Bench press, bicepsový zdvih" },
+    wr: { l: "Opakování a váha", f: ["reps", "kg"], ex: "Bench press, bicepsový zdvih" },
     bw: { l: "Vlastní váha", f: ["reps"], ex: "Shyby, kliky, sedy-lehy" },
-    bwplus: { l: "Vlastní váha se zátěží", f: ["plus", "reps"], ex: "Shyby a kliky na bradlech se zátěží" },
-    assist: { l: "S dopomocí", f: ["minus", "reps"], ex: "Shyby a kliky s dopomocí stroje" },
+    bwplus: { l: "Vlastní váha se zátěží", f: ["reps", "plus"], ex: "Shyby a kliky na bradlech se zátěží" },
+    assist: { l: "S dopomocí", f: ["reps", "minus"], ex: "Shyby a kliky s dopomocí stroje" },
     time: { l: "Na čas", f: ["sec"], ex: "Plank, výdrž, vis" },
-    timew: { l: "Na čas se zátěží", f: ["kg", "sec"], ex: "Plank se zátěží, farmářská chůze" },
+    timew: { l: "Na čas se zátěží", f: ["sec", "kg"], ex: "Plank se zátěží, farmářská chůze" },
     dist: { l: "Vzdálenost a čas", f: ["km", "sec"], ex: "Běh, veslovací trenažér" },
   };
   const KIND_ORDER = ["wr", "bw", "bwplus", "assist", "time", "timew", "dist"];
@@ -3097,7 +3100,7 @@
   }
 
   /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
-     V krokovači u zahřívací série cviku „Váha a opakování“ je tlačítko „60 % → 50 kg“. Nastaví váhu
+     V krokovači u zahřívací série cviku „Opakování a váha“ je tlačítko „60 % → 50 kg“. Nastaví váhu
      na S.cfg.warmPct procent (posuvník v Nastavení → Trénink) nejtěžší série z minula bez zahřívacích
      („minule“ jako F1-01: draftLast, cvik vázaný na fitko jen z tohoto fitka), zaokrouhleno na krok
      krokovače cviku. Hodnota se zapíše stejně jako napsaná, další úpravy zůstanou a tlačítko jde použít
@@ -10218,7 +10221,7 @@
         ],
         [
           "Co se porovnává",
-          "Váha a opakování: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
+          "Opakování a váha: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
             "nepřesný). Vlastní váha: nejvíc opakování v sérii. Se zátěží a s dopomocí: odhad 1RM včetně " +
             "tělesné hmotnosti. Na čas: nejdelší výdrž. Vzdálenost: tempo v km/h.",
         ],

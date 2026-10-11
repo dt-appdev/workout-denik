@@ -203,7 +203,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Kopírování pro coache (F4-12) je skryté (`coachOn()`), bez zapnutí se nic z něj neukazuje. Nový údaj tréninku nebo
   série, který má coach vidět, doplnit do `coachText`. Odhad před selháním `s.rpeEst` se do nových sérií nepřenáší.
 - Série jako text vždy přes `setStr` („12×20kg“: opakování × váha s jednotkou, bez mezer, F3-38), stejný tvar rekordy,
-  návrh progrese a text pro coache. Nový výpis série nikdy „kg × opak.“ ani bez jednotky.
+  návrh progrese a text pro coache. Nový výpis série nikdy „kg × opak.“ ani bez jednotky. Políčka série ve stejném
+  pořadí (opakování / čas před váhou, `KIND` f, F3-39).
 - Akce, které mění pracovní série bez hodnot (+ Série, smazání, změna druhu), volají `progTouch`.
 - Štítek fitka u tréninku jen přes `gymPill` (trénink bez fitka štítek nemá, smazané fitko „Smazané fitko“, F3-24).
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.

@@ -4,6 +4,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek na začáte
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 11. 10. 2026 | F3-39 | Tabulka sérií a krokovač: Opak. před kg (i +kg, −kg, Čas před kg), stejně jako text „12×40kg“. Typ cviku „Opakování a váha“. Data beze změny. Ověřeno v Chromiu (Playwright, trénink, krokovač, šablona, Enter). |
 | 11. 10. 2026 | F3-38 | Série s jednotkou „12×20kg“ (opakování × váha) všude, kde se série píše textem: stránka tréninku, Minule, historie cviku, krokovač, stagnace, rekordy, návrh progrese, text pro coache; 1RM na stránce tréninku s „kg“. Obrázek ke sdílení beze změny. Ověřeno v Chromiu (Playwright, oba motivy). |
 | 11. 10. 2026 | F3-37 | Stránka tréninku: štítek Poprvé / Poprvé v tomto fitku už není bublina za názvem (zalamovala se podle délky názvu), ale zelený text pod sériemi; rámeček porovnání s minule také pod sériemi. Pod názvem cviku šedě český název. Data beze změny. Ověřeno v Chromiu (Playwright, oba motivy). |
 | 11. 10. 2026 | F1-07 | Nastavení stroje podle fitka: u cviku vázaného na fitko volný text (sedačka, opěrka…) zvlášť pro každé fitko. V tréninku řádek „Stroj: …“ pod názvem cviku (jeden řádek, klepnutí = úprava), v nabídce cviku Přidat / Upravit nastavení stroje, na stránce cviku sekce po fitkách. Uloženo u cviku (`machine`), záloha beze změny verze. Odložený nápad F1-20 (zmenšení karty po první sérii). Ověřeno v Chromiu (Playwright). |
