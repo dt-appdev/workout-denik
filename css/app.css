@@ -1163,6 +1163,12 @@ select.inp {
 .sets {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* F3-36: šířky sloupců z nadpisů, volné místo dostanou jen políčka (.c-in bez šířky) */
+}
+/* F3-36: poslední sloupec je políčko (šablona, úprava tréninku bez RIR/RPE): okraj vpravo místo paddingu buňky,
+   aby kg a opak. byla stejně široká; Smazat se posune o stejný kus za okraj */
+.sets.end-in {
+  width: calc(100% - 12px);
 }
 .sets th {
   font-size: var(--fs-2xs);
@@ -1187,8 +1193,8 @@ select.inp {
   background: var(--good-bg);
 }
 .sets .c-type {
-  width: 48px;
-  padding-left: 10px;
+  width: calc(var(--row-h) + 16px); /* odznak + padding (ve fixed layoutu šířka včetně paddingu) */
+  padding-left: 14px; /* odznak na okraji nadpisu a poznámky (F3-36) */
 }
 /* hodnoty sloupce Minule; nadpis sloupce (th) má stejné písmo jako ostatní nadpisy */
 .sets .c-prev {
@@ -1198,11 +1204,8 @@ select.inp {
 .sets td.c-prev {
   font-size: var(--fs-sm);
 }
-.sets .c-in {
-  width: 74px;
-}
 .sets .c-ok {
-  width: 54px;
+  width: calc(50px + 16px); /* ✓ 50 px + padding */
 }
 /* F1-18: neviditelný okraj ✓ a odznaku druhu série vyplní celou buňku, klepnout jde i vedle rámečku */
 .sets td.c-ok,
@@ -1216,10 +1219,14 @@ select.inp {
   position: absolute;
   inset: 0;
 }
-/* poslední sloupec (✓, v šabloně a úpravě tréninku poslední políčko) s okrajem karty */
+/* poslední sloupec (✓ nebo RIR/RPE) končí na okraji poznámky (F3-36); políčko jako poslední viz .end-in */
 .sets th:last-child,
 .sets td:last-child {
-  padding-right: 8px;
+  padding-right: 14px;
+}
+.sets.end-in th:last-child,
+.sets.end-in td:last-child {
+  padding-right: 2px;
 }
 /* F2-03: tah doleva po řádku série odkryje tlačítko Smazat (leží za posledním sloupcem, karta ho ořízne) */
 .sets tr.sw td {
@@ -1242,6 +1249,10 @@ select.inp {
   color: var(--surface);
   font-weight: 700;
   font-size: var(--fs-md);
+}
+/* F3-36: v .end-in je za posledním políčkem okraj 12 px, Smazat začíná až za ním */
+.end-in .sw-del {
+  left: calc(100% + 12px);
 }
 /* odznak druhu série (F3-35): každý druh má vlastní barvu (pracovní šedomodrá --work) a všechny tenký rámeček
    jako tlačítka a ✓, aby se neztrácely na zeleném hotovém řádku a nevypadaly jako prázdné políčko */
@@ -1382,7 +1393,10 @@ tr.done .okb {
 }
 /* náročnost série RIR/RPE (F4-04): úzký sloupec před ✓, hodnota jako tlačítko ve tvaru políčka série */
 .sets .c-eff {
-  width: 2.8em;
+  width: calc(2.8em + 4px);
+}
+.sets .c-eff:last-child {
+  width: calc(2.8em + 16px); /* bez ✓ (úprava tréninku) s okrajem 14 px */
 }
 .sets td.c-eff {
   height: var(--tap);
@@ -1612,7 +1626,7 @@ tr.done .okb {
   font-weight: 600;
 }
 .exc-f {
-  padding: 6px 10px 12px;
+  padding: 6px 14px 12px;
   display: flex;
   gap: 8px;
 }

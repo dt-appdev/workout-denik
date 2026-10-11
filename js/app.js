@@ -5429,6 +5429,17 @@
      - Všechny odznaky mají tenký rámeček jako tlačítka a ✓ (1px --line-2), barva se neztrácí na zeleném.
      - Hodnota RIR/RPE (.effb) má stejnou velikost písma jako kg a opakování (--fs-lg).
      Zamítnuto: průhledný odznak (na hotovém řádku by převzal zelenou), rámeček v barvě písmene (výrazný). */
+  /* ---------- ZAROVNÁNÍ ŘÁDKŮ SÉRIÍ (F3-36) ----------
+     Jen v css/app.css a třída .end-in ve vExCard (přání uživatele 11. 10. 2026, náhled schválen týž den).
+     Řádek série lícuje s nadpisem a poznámkou karty cviku: odznak druhu série začíná a poslední prvek řádku
+     (✓, RIR/RPE nebo políčko) končí 15 px od kraje karty, stejně tlačítka + Série / + Zahřívací (.exc-f).
+     - Tabulka .sets má table-layout: fixed. Odznak (.c-type), RIR/RPE (.c-eff) a ✓ (.c-ok) mají pevnou šířku
+       tlačítka + padding, políčka (.c-in) šířku nemají a dělí si zbytek rovným dílem. Dřív se volné místo
+       dělilo i do sloupce odznaku a odznak bez ✓ nebo u cviku s jedním políčkem „ujel“ doprava.
+     - Okraj 14 px je padding první a poslední buňky, takže zelený pruh hotové série vede přes celou kartu.
+     - Je-li posledním sloupcem políčko (.end-in: šablona, úprava tréninku bez RIR/RPE), je tabulka o 12 px
+       užší (jinak by poslední políčko bylo užší o padding) a tlačítko Smazat (.sw-del) začíná až za tímto okrajem.
+     Nový sloupec v řádku série: pevná šířka v CSS, nebo bez šířky jako políčko. */
   // má trénink aspoň jednu hotovou sérii? (hlavní tlačítko dole, F3-23)
   const anyDone = (d) => d.ex.some((e) => e.sets.some((s) => s.done));
 
@@ -5658,7 +5669,9 @@
       ? `<span class="rng" title="Rozsah opakování pro návrh progrese">${progSpan(range)}</span>`
       : "";
     const thLabel = (f) => FLD[f].lab + (f === "reps" && repsRange ? " " + repsRange : "");
-    h += `<table class="sets">
+    // poslední sloupec je políčko (šablona, úprava tréninku bez RIR/RPE): okraj vpravo řeší .end-in (F3-36)
+    const endIn = mode !== "active" && !eff;
+    h += `<table class="sets${endIn ? " end-in" : ""}">
       <thead>
         <tr>
           <th class="c-type">Série</th>
