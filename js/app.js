@@ -441,7 +441,15 @@
   function putEx(items) {
     put("config/exercises", { v: EX_V, items: exPack(items, false) });
   }
-  const exChanged = (id) => !!(EX_DB[id] && exPack({ [id]: S.exLib[id] }, false)[id]);
+  // výchozí cvik s úpravami (nastavení stroje F1-07 se nepočítá, Vrátit na výchozí ho nechává)
+  function exChanged(id) {
+    if (!EX_DB[id]) return false;
+    const diff = exPack({ [id]: S.exLib[id] }, false)[id];
+    if (diff) {
+      delete diff.machine;
+    }
+    return !!(diff && Object.keys(diff).length);
+  }
   const exOf = (id) => S.exLib[id] || { name: id };
   const exGroup = (e) => (e.pri && e.pri.length ? GROUP_OF[e.pri[0]] : e.muscle) || "other";
   const exPri = (e) =>
@@ -5604,6 +5612,112 @@
       Minule: ${parts.join(" · ")}
     </button>`;
   }
+  /* ---------- NASTAVENÍ STROJE PODLE FITKA (F1-07) ----------
+     Volný text (sedačka, opěrka, úchop…) u cviku vázaného na fitko, zvlášť pro každé fitko. Uložený u cviku
+     v config/exercises jako machine: {idFitka: "text"} (bez nastavení pole chybí, staré zálohy fungují,
+     machClean při obnově zálohy zahodí jiné než textové hodnoty). Platí natrvalo, dokud ho nezměníš;
+     do tréninku, šablony ani Cvičit znovu se nekopíruje. Rozdíl proti poznámce (F2-10): poznámka patří
+     k tréninku, nastavení stroje ke cviku a fitku.
+     V probíhajícím tréninku s fitkem řádek „Stroj: …“ hned pod názvem cviku (machLine, jeden řádek, delší
+     text končí „…“), klepnutí otevře panel s úpravou (machEdit). V nabídce cviku (⋯) tlačítko Přidat /
+     Upravit nastavení stroje. Panel (machSheet): jeden text, v nadpisu fitko, Smazat (jen u uloženého)
+     a Uložit; prázdný text nastavení smaže. Stránka cviku (Popis): sekce Nastavení stroje s řádkem za každé
+     existující fitko, které nastavení má (machInfo, klepnutí = úprava). Nastavení smazaného fitka zůstává
+     v datech, jen se neukazuje. U cviku, který není vázaný na fitko, a v tréninku bez fitka se nic neukazuje.
+     Upravit cvik nastavení nemění (Object.assign), Vrátit na výchozí ho zachová. Rozhodnuto 11. 10. 2026:
+     zmenšení řádků pod názvem po první hotové sérii zatím ne (odložený nápad F1-20 v plánu). */
+  let machEd = null; // {exId, gymId} otevřeného panelu
+  // nastavení stroje cviku v daném fitku, nebo ""
+  function machOf(exId, gymId) {
+    const ex = S.exLib[exId];
+    if (!ex || !ex.gymDep || !gymId || !ex.machine) return "";
+    return typeof ex.machine[gymId] === "string" ? ex.machine[gymId] : "";
+  }
+  // nastavení stroje jde v tréninku zapsat (probíhající trénink s fitkem, cvik vázaný na fitko)
+  const machCan = (d, e) => d.mode === "active" && !!d.gymId && !!exOf(e.exId).gymDep;
+  // řádek pod názvem cviku v kartě tréninku
+  function machLine(d, e, i) {
+    if (!machCan(d, e)) return "";
+    const txt = machOf(e.exId, d.gymId);
+    if (!txt) return "";
+    return `<button class="exc-mach" data-act="machEdit" data-i="${i}" data-v="${esc(e.exId)}"
+        data-g="${esc(d.gymId)}">
+      <span class="gd-ic" aria-hidden="true">${icon("gymDep")}</span>
+      <span class="t">Stroj: ${esc(txt)}</span>
+    </button>`;
+  }
+  // panel s úpravou nastavení stroje
+  function machSheet(exId, gymId) {
+    machEd = { exId, gymId };
+    const txt = machOf(exId, gymId);
+    openSheet(
+      "Nastavení stroje – " + gymName(gymId),
+      `<textarea class="inp" id="mach-txt" rows="3" maxlength="300"
+          placeholder="Např. sedačka 4, opěrka 2">${esc(txt)}</textarea>`,
+      (txt ? '<button class="btn danger grow" data-act="machDel">Smazat</button>' : "") +
+        '<button class="btn primary grow" data-act="machSave">Uložit</button>',
+    );
+  }
+  // zápis nastavení stroje (prázdný text = smazat)
+  function machPut(exId, gymId, text) {
+    const items = Object.assign({}, S.exLib);
+    const ex = Object.assign({}, items[exId]);
+    const machine = Object.assign({}, ex.machine);
+    const clean = String(text || "").trim();
+    if (clean) {
+      machine[gymId] = clean;
+    } else {
+      delete machine[gymId];
+    }
+    if (Object.keys(machine).length) {
+      ex.machine = machine;
+    } else {
+      delete ex.machine;
+    }
+    items[exId] = ex;
+    putEx(items);
+  }
+  // stránka cviku (Popis): nastavení ve všech existujících fitkách
+  function machInfo(ex, id) {
+    if (!ex.gymDep || !ex.machine) return "";
+    const rows = S.cfg.gyms.filter((g) => typeof ex.machine[g.id] === "string" && ex.machine[g.id]);
+    if (!rows.length) return "";
+    return `<section class="sec">
+      <div class="sec-h"><h2>Nastavení stroje</h2></div>
+      <div class="card stack mach-list">
+        ${rows
+          .map(
+            (g) => `<button class="mach-row" data-act="machEdit" data-v="${esc(id)}" data-g="${esc(g.id)}">
+              ${gymPill(g.id)}
+              <span>${esc(ex.machine[g.id])}</span>
+            </button>`,
+          )
+          .join("")}
+      </div>
+    </section>`;
+  }
+  // obnova zálohy: nastavení stroje jen jako objekt s texty
+  function machClean(items) {
+    for (const id in items) {
+      const item = items[id];
+      if (!item || typeof item !== "object" || !("machine" in item)) continue;
+      const machine = {};
+      if (item.machine && typeof item.machine === "object") {
+        for (const gymId in item.machine) {
+          const text = item.machine[gymId];
+          if (typeof text === "string" && text.trim()) {
+            machine[gymId] = text.trim();
+          }
+        }
+      }
+      if (Object.keys(machine).length) {
+        item.machine = machine;
+      } else {
+        delete item.machine;
+      }
+    }
+    return items;
+  }
   /* ---------- karta cviku (F3-22) ----------
      V hlavičce žádné textové štítky. Stav cviku = ikona za názvem v barvě názvu
      (nameWithIcons): vázáno na fitko gdIcon(tip) (klepnutí gdTip = hláška GD_TIP), nový rekord medaile
@@ -5647,7 +5761,8 @@
         ${IC.more}
       </button>
       </div>`;
-    // pod názvem: poznámka, Minule (F1-19), návrh progrese (F4-01), stagnace (F4-06)
+    // pod názvem: nastavení stroje (F1-07), poznámka, Minule (F1-19), návrh progrese (F4-01), stagnace (F4-06)
+    h += machLine(d, e, i);
     if (e.note || e.showNote) {
       h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
           placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
@@ -8501,6 +8616,7 @@
         `${esc(EQUIP[ex.equip] || "")}${ex.gymDep ? " · vázáno na fitko" + gdIcon(true) : ""}</span>
         </div>
       </div>`;
+      h += machInfo(ex, id); // nastavení stroje po fitkách (F1-07)
       if (ex.archived) {
         h += `<div class="card small" style="margin-top:10px">
           <b>Skrytý cvik.</b> <span class="muted">Nenabízí se při přidávání do tréninku. Vrátíš ho
@@ -12946,6 +13062,30 @@
       case "gdTip":
         toast(GD_TIP);
         break;
+      // nastavení stroje podle fitka (F1-07)
+      case "machEdit":
+        machSheet(v, t.dataset.g);
+        setTimeout(() => {
+          const txt = document.getElementById("mach-txt");
+          txt && txt.focus();
+        }, 60);
+        break;
+      case "machSave":
+      case "machDel": {
+        const txt = document.getElementById("mach-txt");
+        const text = act === "machSave" && txt ? txt.value : "";
+        closeSheet();
+        if (!machEd) break;
+        const had = !!machOf(machEd.exId, machEd.gymId);
+        machPut(machEd.exId, machEd.gymId, text);
+        machEd = null;
+        if (text.trim()) {
+          toast("Nastavení stroje uloženo");
+        } else if (had) {
+          toast("Nastavení stroje smazáno");
+        }
+        break;
+      }
       case "recTip":
         toast("Nový rekord: " + v);
         break;
@@ -12969,6 +13109,14 @@
             <button class="btn block" data-act="exNote" data-i="${i}">
               ${e.note || e.showNote ? "Upravit poznámku" : "Přidat poznámku"}
             </button>
+            ${
+              machCan(d, e)
+                ? `<button class="btn block" data-act="machEdit" data-v="${esc(e.exId)}"
+                    data-g="${esc(d.gymId)}">
+                  ${machOf(e.exId, d.gymId) ? "Upravit" : "Přidat"} nastavení stroje
+                </button>`
+                : ""
+            }
             <button class="btn block" data-act="exReplace" data-i="${i}">Nahradit jiným cvikem</button>
             ${ssBtns}
             ${
@@ -13328,10 +13476,14 @@
       case "resetExOk": {
         closeSheet();
         const items = Object.assign({}, S.exLib),
-          a = items[v].archived;
+          a = items[v].archived,
+          machine = items[v].machine;
         items[v] = Object.assign({}, EX_DB[v]);
         if (a) {
           items[v].archived = true;
+        }
+        if (machine) {
+          items[v].machine = machine; // nastavení stroje (F1-07) není údaj cviku z databáze
         }
         putEx(items);
         exEdLeave();
@@ -15225,7 +15377,7 @@
     return {
       exported: o.exported,
       cfg,
-      exercises: exLoad(exProgClean(exUrlsClean(obj(o.exercises))), o.exDb !== EX_V),
+      exercises: exLoad(machClean(exProgClean(exUrlsClean(obj(o.exercises)))), o.exDb !== EX_V),
       templates: tplNorm(obj(o.templates)),
       months,
       body: obj(o.body),

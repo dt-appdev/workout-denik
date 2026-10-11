@@ -1132,6 +1132,50 @@ select.inp {
   width: 3.6em;
   text-align: center;
 }
+/* nastavení stroje (F1-07): jeden řádek pod názvem cviku, delší text končí „…“, klepnutí = úprava */
+.exc-mach {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  margin: 0 14px 8px;
+  width: calc(100% - 28px);
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+/* dotyková plocha: neviditelný okraj do poloviny mezery k sousedům (F3-23) */
+.exc-mach::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+.exc-mach .gd-ic {
+  display: inline-flex;
+  flex: none;
+  margin-left: 0;
+}
+.exc-mach .t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* stránka cviku (Popis): nastavení stroje po fitkách (F1-07) */
+.mach-row {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: var(--tap);
+  width: 100%;
+  cursor: pointer;
+}
 /* stagnace (F4-06): řádek pod „Minule“ */
 .exc-stag {
   all: unset;

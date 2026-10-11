@@ -105,7 +105,7 @@ flowchart LR
 #### Etapa 6 – Zbytek plánu
 
 17. ~~**F3-33** Výška v Nastavení a BMI z hmotnosti~~ – hotovo 10. 10. 2026.
-18. **F1-07** Poznámky ke stroji podle fitka.
+18. ~~**F1-07** Nastavení stroje podle fitka~~ – hotovo 11. 10. 2026.
 19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
 20. **F3-16** Rozepsaný formulář přežije zavření appky.
 21. Dál podle fází: F1-09, F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-07, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
@@ -158,7 +158,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-04** Časovač pauzy z času konce, vibrace, oznámení
 - [x] **F1-05** Pokračování rozdělaného tréninku po zavření prohlížeče
 - [x] **F1-06** Přidávání cviku a hledání po slovech
-- [ ] **F1-07** Poznámky ke stroji podle fitka (nastavení sedačky, opěrky).
+- [x] **F1-07** Nastavení stroje podle fitka
 - [x] **F1-08** Zahřívací série „60 %“ z minula
 - [ ] **F1-09** Délka pauzy podle cviku (jako v Hevy, např. dřep 3 min, biceps 1 min), jinak výchozí časovač z Nastavení. Zatím odloženo, rozhodnout později (vzniklo u F1-04). Po kole pracovních sérií supersérie má přednost Časovač po pracovní supersérii (rozhodnuto u F4-05), délka pauzy se vybírá v `toggleSetDone` přes `ssRest`.
 - [x] **F1-10** Kontrola čísel, upozornění na velký skok
@@ -170,6 +170,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-16** Pruh pauzy nezakrývá obsah
 - [x] **F1-18** Větší dotykové plochy v tréninku
 - [x] **F1-19** Minule jako text u cviku místo sloupce
+- [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
 
 ### Fáze 2 – Šablony a historie
 
