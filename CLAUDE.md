@@ -164,7 +164,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
 - Barvy (F3-01): šedý text `--ink-2`/`--ink-3` je zesílený kvůli čitelnosti, drobný text nedělat světlejší.
   Skupiny partií `MGRP` / `MGRP_OF` (6 skupin), barva `mgCol(k)` = `--g-<skupina>`. `musFigs(m, small, grp)`: `grp` =
   postava v barvách skupin (Statistiky, souhrn), jinak červená (stránka cviku). Barva fitka jen z `g.col` (`--sN`),
-  nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`. Hlavní barva `--accent` (F3-23) jen pro hlavní akci
+  nikdy z pořadí; grafy, které nepatří fitku, `var(--chart)`. Odznak druhu série (F3-35): každý druh vlastní barvu (pracovní `--work`),
+  všechny rámeček `--line-2`; nový druh série = nová dvojice barev. Hlavní barva `--accent` (F3-23) jen pro hlavní akci
   a vybrané / aktivní (záložka, čip, přepínač, rámeček políčka), ne pro názvy, stavy a informace.
 - Písmo voleb (F3-23): název volby (zaškrtávátko, popisek nad přepínačem, vedle políčka) a hodnota v řádku obyčejně,
   `--fs-base`; tučně jen název věci v seznamu (fitko, cvik, trénink) a čísla, kvůli kterým se na obrazovku chodí.

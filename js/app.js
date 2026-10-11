@@ -5420,6 +5420,15 @@
      - Mazání: .btn.danger je vždy červený obrys. Patička panelu: vedlejší vlevo, hlavní vpravo, stejně široká
        (Smazat | Uložit u měření a fitka); potvrzovací okno má plné potvrzení (Smazat fotku?), menu cviku
        Odebrat cvik za čárou .bzone. */
+  /* ---------- ODZNAK DRUHU SÉRIE A HOTOVÝ ŘÁDEK (F3-35) ----------
+     Jen v css/app.css (přání uživatele 10. 10. 2026, náhled schválen 11. 10.). Po ✓ ztratí políčka
+     kg / opak. a RIR/RPE šedý podklad (tr.done .cell, tr.done .effb), odznak pracovní série si ho ale
+     nechával a na zeleném řádku vypadal jako zapomenuté prázdné políčko.
+     - Každý druh série má vlastní barvu odznaku (.stype): pracovní šedomodrá --work / --work-bg (nová,
+       v :root pro oba motivy), zahřívací --warm, drop set --drop, do selhání --fail. Na všech řádcích.
+     - Všechny odznaky mají tenký rámeček jako tlačítka a ✓ (1px --line-2), barva se neztrácí na zeleném.
+     - Hodnota RIR/RPE (.effb) má stejnou velikost písma jako kg a opakování (--fs-lg).
+     Zamítnuto: průhledný odznak (na hotovém řádku by převzal zelenou), rámeček v barvě písmene (výrazný). */
   // má trénink aspoň jednu hotovou sérii? (hlavní tlačítko dole, F3-23)
   const anyDone = (d) => d.ex.some((e) => e.sets.some((s) => s.done));
 
