@@ -169,6 +169,14 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   názvu řádek nemá), poznámka, série a až pod nimi rámeček porovnání s minule, nebo u cviku poprvé zelený text bez
   bubliny na vlastním řádku (`.exnew`), zarovnaný s textem karty. Rámeček porovnání se přesunul pod série u všech
   cviků. Data, záloha ani obrázek ke sdílení beze změny. Popis v sekci „SOUHRN TRÉNINKU (F3-03, F3-37)“ v `js/app.js`.
+- [x] **F3-38** Série s jednotkou: 12×20kg (přání uživatele 11. 10. 2026 u F3-37, tvar podle komentáře k náhledu):
+  série se jako text vypisovala „40×12“ bez jednotky, takže nebylo poznat, jestli je první číslo váha, nebo opakování
+  (rekordy a návrh progrese přitom psaly „40 kg × 12“). Teď všude opakování × váha s jednotkou, bez mezer:
+  „12×40kg“, s vlastní vahou „8×+10kg“, s dopomocí „8×−20kg“, s časem „1:00×20kg“; jen opakování „15×“, km beze
+  změny. Platí na stránce tréninku, v rámečku Nejlepší, v řádku Minule v tréninku, v historii cviku, v krokovači,
+  u stagnace, v rekordech, v návrhu progrese a v textu pro coache („10×60kg“, „10×BW+5kg“, „60 s×20kg“). Odhad 1RM
+  na stránce tréninku má jednotku („1RM ≈ 56 kg“). Obrázek ke sdílení má vlastní formát a zůstal beze změny. Data ani
+  záloha beze změny. Popis u funkce `setStr` v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -199,6 +207,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 | F2-12 | Kde je ovládání skrytí a návratu? Blokuje skrytá šablona stejný název? | Vyřešeno 8. 10.: ovládání jako u cviku (textové tlačítko dole v úpravě šablony, bez ikon); skrytá šablona blokuje stejný název dál (hláška uvádí, že je skrytá); skrytí platí pro všechna fitka. |
 | F3-28 | Historie výš na Statistikách, nebo zvlášť? Výchozí metrika grafu u vysokých opakování? Filtr fitek v Historii? | Rozhodnuto 10. 10. 2026 po náhledech: třetí záložka Historie, cvik ze Cviků se otevírá na Statistikách. Výchozí metrika zůstává Odh. 1RM (Max zátěž u vysokých opakování nevidí růst opakování), znovu nenavrhovat. Filtr fitek stejně jako na Statistikách, společný výběr, štítek fitka na každé kartě. |
 | F3-35 | Jak odlišit odznak pracovní série na zeleném hotovém řádku? Rámeček? | Rozhodnuto 11. 10. 2026 po náhledech: vlastní šedomodrá výplň (varianta E) na všech řádcích, tenký šedý rámeček jako u tlačítek a ✓ u všech odznaků (T1). Zamítnuto: průhledný odznak (převezme zelenou řádku, uživatel zelené nechtěl), rámeček bez výplně, výplň v barvě karty, modrá (plete se s fialovým D), rámeček v barvě písmene (moc výrazný v tmavém motivu). |
+| F3-38 | Jednotky všude, nebo jen na stránce tréninku? Tvar? Obrázek ke sdílení? | Rozhodnuto 11. 10. 2026: všude (přes `setStr`), tvar „12×20kg“ (opakování první, kompaktně, symbol ×; zamítnuto „40 kg × 12“), i text pro coache, obrázek ke sdílení zatím beze změny. Ve stejném PR jako F3-37 (#93). |
 | F3-37 | Bublina, nebo text? Kde Poprvé a porovnání? Český název i v „Minule navíc“? | Rozhodnuto 11. 10. 2026 po náhledech: zelený text bez bubliny, Poprvé i rámeček porovnání pod sériemi (varianta 2, varianta 1 pod názvem zamítnuta), medaile rekordů zůstává za názvem, „Minule navíc“ dál anglicky. |
 | F3-36 | Změnit i trénink s ✓? Posunout i tlačítka + Série? Mezera mezi odznakem a políčkem? | Rozhodnuto 11. 10. 2026 (výchozí volby): i trénink s ✓ (jednotné okraje 15 px všude), tlačítka + Série / + Zahřívací také na 15 px, mezera 4 px jako mezi políčky. |
 | F3-34 | Které série rozdělaného tréninku? Rekordy? Odkud předvybírat fitko? Hlavní Statistiky? | Rozhodnuto 10. 10. 2026 (výchozí volby): jen odškrtnuté série; Osobní rekordy a dlaždice Rekordy ano (jako živé medaile, „probíhá“); fitko z rozdělaného i upravovaného tréninku a ze stránky uloženého tréninku, odjinud „Všechna“; hlavní záložka Statistiky ne (případně samostatná úloha). Záložka dole podle toho, odkud se přišlo (i úprava tréninku), stránka uloženého tréninku po uložení dál Historie; pořadí záložek na stránce cviku beze změny (nahoře Historie cviku, dole historie tréninků, jiný seznam). |
