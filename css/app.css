@@ -3208,12 +3208,13 @@ textarea.inp {
   color: var(--ink-3);
   margin-top: 2px;
 }
-.pill.new {
-  background: var(--good-bg);
+/* stránka tréninku: cvik poprvé, pod sériemi místo porovnání s minule (F3-37) */
+.exnew {
+  margin-top: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.25;
   color: var(--good);
-  font-size: var(--fs-2xs);
-  padding: 1px 7px;
-  vertical-align: 1px;
 }
 
 /* kalendář v Historii (F3-06) */

@@ -6060,7 +6060,7 @@
     }
     return h;
   }
-  /* ---------- SOUHRN TRÉNINKU (F3-03) ----------
+  /* ---------- SOUHRN TRÉNINKU (F3-03, F3-37) ----------
      Stránka tréninku (F3-19, po uložení „Hotovo · …“ i z Historie): karty Čas, Objem, Série, Rekordy s rozdílem
      proti minulému běhu stejné šablony (prevRun: přednostně ve stejném fitku), procvičené partie
      (hlavní partie = série, pomocná = půl) a u každého cviku porovnání s posledním výskytem cviku
@@ -6069,7 +6069,11 @@
      Obsah wSummary. Minulý běh prevRun podle sameRun: šablona, jinak název bez automatických DEF_TITLES, nebo
      againOf. Procvičené partie wMuscles, postava přes musFigs (sdílí ji i Statistiky). Nic se neukládá.
      Partie, které byly jen vedlejší (wSecOnly), mají na postavě, v pruzích i na obrázku ke sdílení slabou
-     barvu MUS_WEAK. */
+     barvu MUS_WEAK.
+     Karta cviku (F3-37): název, pod ním šedě český název (ex.cz, jako karta cviku v tréninku), poznámka, série
+     a až pod nimi výsledek sumEx: rámeček porovnání s minule (.excmp), nebo u cviku poprvé zelený text
+     „Poprvé“ / „Poprvé v tomto fitku“ (.exnew) na vlastním řádku, zarovnaný s textem karty (ne štítek za názvem,
+     ten se podle délky názvu zalamoval). Za názvem jen medaile rekordů (recCount). */
   const DEF_TITLES = ["Ranní trénink", "Odpolední trénink", "Večerní trénink", "Trénink"];
   const runKey = (t) => {
     t = String(t || "").trim();
@@ -6304,9 +6308,9 @@
     const pw = prevEx(exId, w);
     if (!pw) {
       const ex = S.exLib[exId];
-      return ` <span class="pill new">
+      return `<div class="exnew">
         ${ex && ex.gymDep && prevEx(exId, w, true) ? "Poprvé v tomto fitku" : "Poprvé"}
-      </span>`;
+      </div>`;
     }
     const ps = exSetsIn(pw, exId);
     const b = bestOf(kind, sets),
@@ -6422,15 +6426,15 @@
       const er = R.filter((r) => r.exId === e.exId);
       const c = seen[e.exId] ? null : sumEx(w, e.exId);
       seen[e.exId] = true;
+      const cz = (S.exLib[e.exId] || {}).cz; // český název pod anglickým (F3-37)
       cards.push(
         `<div class="card${ssRun(w.ex, i) ? " ss-on" : ""}">
         <div style="font-weight:700;color:var(--accent-2)">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
-          `</button>${er.length ? " " + recCount(er) : ""}` +
-          `${typeof c === "string" ? c : ""}
+          `</button>${er.length ? " " + recCount(er) : ""}
         </div>
-        ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}` +
-          `${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
+        ${cz ? `<div class="cz">${esc(cz)}</div>` : ""}
+        ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}
         <div class="dset">
           ${(() => {
             const k = kindOf(e.exId);
@@ -6455,6 +6459,7 @@
               .join("");
           })()}
         </div>
+        ${typeof c === "string" ? c : ""}${c && c.h ? `<div class="excmp">${c.h}</div>` : ""}
         </div>`,
       );
     });

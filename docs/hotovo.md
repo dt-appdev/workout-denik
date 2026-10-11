@@ -161,6 +161,14 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   tlačítka + Série / + Zahřívací také (dřív 11 px). Kg a opak. jsou stejně široká i v šabloně (třída `.end-in`).
   Mezera mezi odznakem a políčkem 4 px jako mezi políčky. Data ani záloha beze změny. Popis v sekci
   „ZAROVNÁNÍ ŘÁDKŮ SÉRIÍ (F3-36)“ v `js/app.js`.
+- [x] **F3-37** Stránka tréninku: Poprvé a porovnání pod sériemi, český název (přání uživatele 11. 10. 2026,
+  varianta 2 z náhledu schválena týž den): štítek „Poprvé“ / „Poprvé v tomto fitku“ byl zelená bublina hned za
+  názvem cviku, takže se podle délky názvu jednou vešel za název a jindy zalomil na nový řádek, a text v bublině
+  byl odsazený od ostatního textu karty. Ve shrnutí navíc chyběl český název cviku. Teď je v kartě cviku pořadí:
+  název (za ním jen medaile rekordů), šedě český název (`ex.cz`, jako karta cviku v tréninku, cvik bez českého
+  názvu řádek nemá), poznámka, série a až pod nimi rámeček porovnání s minule, nebo u cviku poprvé zelený text bez
+  bubliny na vlastním řádku (`.exnew`), zarovnaný s textem karty. Rámeček porovnání se přesunul pod série u všech
+  cviků. Data, záloha ani obrázek ke sdílení beze změny. Popis v sekci „SOUHRN TRÉNINKU (F3-03, F3-37)“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -191,6 +199,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 | F2-12 | Kde je ovládání skrytí a návratu? Blokuje skrytá šablona stejný název? | Vyřešeno 8. 10.: ovládání jako u cviku (textové tlačítko dole v úpravě šablony, bez ikon); skrytá šablona blokuje stejný název dál (hláška uvádí, že je skrytá); skrytí platí pro všechna fitka. |
 | F3-28 | Historie výš na Statistikách, nebo zvlášť? Výchozí metrika grafu u vysokých opakování? Filtr fitek v Historii? | Rozhodnuto 10. 10. 2026 po náhledech: třetí záložka Historie, cvik ze Cviků se otevírá na Statistikách. Výchozí metrika zůstává Odh. 1RM (Max zátěž u vysokých opakování nevidí růst opakování), znovu nenavrhovat. Filtr fitek stejně jako na Statistikách, společný výběr, štítek fitka na každé kartě. |
 | F3-35 | Jak odlišit odznak pracovní série na zeleném hotovém řádku? Rámeček? | Rozhodnuto 11. 10. 2026 po náhledech: vlastní šedomodrá výplň (varianta E) na všech řádcích, tenký šedý rámeček jako u tlačítek a ✓ u všech odznaků (T1). Zamítnuto: průhledný odznak (převezme zelenou řádku, uživatel zelené nechtěl), rámeček bez výplně, výplň v barvě karty, modrá (plete se s fialovým D), rámeček v barvě písmene (moc výrazný v tmavém motivu). |
+| F3-37 | Bublina, nebo text? Kde Poprvé a porovnání? Český název i v „Minule navíc“? | Rozhodnuto 11. 10. 2026 po náhledech: zelený text bez bubliny, Poprvé i rámeček porovnání pod sériemi (varianta 2, varianta 1 pod názvem zamítnuta), medaile rekordů zůstává za názvem, „Minule navíc“ dál anglicky. |
 | F3-36 | Změnit i trénink s ✓? Posunout i tlačítka + Série? Mezera mezi odznakem a políčkem? | Rozhodnuto 11. 10. 2026 (výchozí volby): i trénink s ✓ (jednotné okraje 15 px všude), tlačítka + Série / + Zahřívací také na 15 px, mezera 4 px jako mezi políčky. |
 | F3-34 | Které série rozdělaného tréninku? Rekordy? Odkud předvybírat fitko? Hlavní Statistiky? | Rozhodnuto 10. 10. 2026 (výchozí volby): jen odškrtnuté série; Osobní rekordy a dlaždice Rekordy ano (jako živé medaile, „probíhá“); fitko z rozdělaného i upravovaného tréninku a ze stránky uloženého tréninku, odjinud „Všechna“; hlavní záložka Statistiky ne (případně samostatná úloha). Záložka dole podle toho, odkud se přišlo (i úprava tréninku), stránka uloženého tréninku po uložení dál Historie; pořadí záložek na stránce cviku beze změny (nahoře Historie cviku, dole historie tréninků, jiný seznam). |
 | F3-32 | Co když je cvik v historii? Smazat i výchozí cvik? | Rozhodnuto 7. a 8. 10. 2026: Použitý cvik smazat nejde (historie by ztratila název a partie), nabídne se Skrýt. Výchozí cvik se nemaže, jen skrývá. Smazání použitého cviku s převodem historie na jiný cvik by byla samostatná větší úloha. Tlačítko ve formuláři Upravit cvik (ne na stránce cviku), cvik jen v šabloně se taky nemaže, u výchozího cviku se nic nepřidává. |
