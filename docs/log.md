@@ -4,6 +4,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek na začáte
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 12. 10. 2026 | F1-09 | Pauza podle cviku: ve formuláři Upravit cvik vypínač Vlastní pauza a posuvník 0:30–5:00, po ✓ série běží pauza cviku (po kole supersérie dál Časovač po pracovní supersérii). V Nastavení → Odpočinek posuvníky místo tlačítek. Nové pole cviku `rest`, starší data a zálohy beze změny. Odložená úloha F1-21 (pauza v šabloně). Ověřeno v Chromiu (Playwright: Nastavení, formulář, pauza po ✓). |
 | 11. 10. 2026 | F3-39 | Tabulka sérií a krokovač: Opak. před kg (i +kg, −kg, Čas před kg), stejně jako text „12×40kg“. Typ cviku „Opakování a váha“. Data beze změny. Ověřeno v Chromiu (Playwright, trénink, krokovač, šablona, Enter). |
 | 11. 10. 2026 | F3-38 | Série s jednotkou „12×20kg“ (opakování × váha) všude, kde se série píše textem: stránka tréninku, Minule, historie cviku, krokovač, stagnace, rekordy, návrh progrese, text pro coache; 1RM na stránce tréninku s „kg“. Obrázek ke sdílení beze změny. Ověřeno v Chromiu (Playwright, oba motivy). |
 | 11. 10. 2026 | F3-37 | Stránka tréninku: štítek Poprvé / Poprvé v tomto fitku už není bublina za názvem (zalamovala se podle délky názvu), ale zelený text pod sériemi; rámeček porovnání s minule také pod sériemi. Pod názvem cviku šedě český název. Data beze změny. Ověřeno v Chromiu (Playwright, oba motivy). |

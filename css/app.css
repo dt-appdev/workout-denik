@@ -1539,7 +1539,8 @@ tr.done .okb {
   font-weight: 500;
 }
 /* nastavení zahřívací série (F1-08): posuvník, bez tlačítek +/− šedě */
-.warm-set {
+.warm-set,
+.rest-sl {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1557,7 +1558,8 @@ tr.done .okb {
   accent-color: var(--accent);
 }
 /* posuvník zahřívací série (F3-23): blíž k popisku a vyšší plocha pro prst, rozložení o 8 px nižší */
-.warm-set .range {
+.warm-set .range,
+.rest-sl .range {
   height: 24px;
   margin: -6px 0 -2px;
 }
