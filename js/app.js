@@ -4406,7 +4406,8 @@
      (pole je nepovinné, starší šablony a zálohy ho nemají = viditelná; zachová ho Object.assign i tplNorm).
      Skrytá se neukazuje mezi šablonami na úvodu (ani v „Ostatní šablony“) ani v panelu Změnit pořadí šablon.
      Pod seznamy je tlačítko „Skryté šablony (N)“ (jen když nějaké jsou, tplHid = ukázané skryté, po otevření
-     appky sbalené). Skrytá karta má Zobrazit a Upravit, Začít ne. Skrytí platí pro všechna fitka šablony.
+     appky sbalené). Skrytá karta Začít nemá, klepnutí na ni otevře panel ⋯ se Zobrazit šablonu (F2-13).
+     Skrytí platí pro všechna fitka šablony.
      Skrytá šablona zůstává v záloze, tréninky z ní (tplId) se nemění a pořád blokuje stejný název ve stejném
      fitku (tplClash, F2-08; hláška řekne, že je skrytá). Funkce tplVisible (neskryté šablony), tplHidden.
      Až vznikne F2-04 (šablona na řadě), musí vybírat jen z tplVisible(). Později sloučit s archivací (F2-06). */
@@ -4637,22 +4638,23 @@
       </div>`;
   }
   /* ---------- KARTA ŠABLONY (F2-13) ----------
-     Karta šablony na úvodu vypadá jako karta tréninku v Historii: nahoře název (Barlow tučně, jako karta cviku
-     v tréninku) a vpravo štítek fitka (gymPill), pod ním „6 cviků · naposledy 10. 10.“, pod tím cviky. Klepnutí
-     kamkoli na kartu = Začít (startTpl; u naplánovaného tréninku planStart ve fitku plánu), skrytá šablona začít
-     nejde, klepnutí otevře panel. Vpravo nahoře ⋯ (jako u karty cviku v tréninku) = panel sheetTplMenu: Upravit,
-     Naplánovat, Skrýt / Zobrazit šablonu, za čárou Smazat šablonu (potvrzení, tplDelete). U naplánovaného tréninku
-     ⋯ = panel plánu (sheetPlanDay s home: Upravit šablonu, Změnit šablonu nebo fitko, Přeplánovat, Zrušit plán).
-     Naplánovat = stránka s kalendářem jako Přeplánovat (route replan, S.planNew = {tplId, gymId}, tplPlanNew);
-     klepnutí na volný den plán uloží (planMove) a vrátí tam, odkud se přišlo. Fitko plánu: vybrané fitko, když do
-     něj šablona patří, jinak první fitko šablony.
-     Hlavička karty tplHead (i karta v panelu dne v kalendáři, bez ⋯). Fitko v závorce za „naposledy“ jen tam, kde ho
-     neříká štítek. Karta je div role="button" (tlačítko ⋯ uvnitř), Enter a mezerník řeší posluchač keydown. */
+     Karta šablony na úvodu vypadá jako karta tréninku v Historii: nahoře název (Barlow tučně, jako karta
+     cviku v tréninku) a vpravo štítek fitka (gymPill), pod ním „6 cviků · naposledy 10. 10.“, pod tím cviky.
+     Klepnutí kamkoli na kartu = Začít (startTpl; u naplánovaného tréninku planStart ve fitku plánu), skrytá
+     šablona začít nejde, klepnutí otevře panel. Vpravo nahoře ⋯ (jako u karty cviku v tréninku) = panel
+     sheetTplMenu: Upravit, Naplánovat, Skrýt / Zobrazit šablonu, za čárou Smazat šablonu (potvrzení,
+     tplDelete). U naplánovaného tréninku ⋯ = panel plánu (sheetPlanDay s home: Upravit šablonu, Změnit
+     šablonu nebo fitko, Přeplánovat, Zrušit plán). Naplánovat = stránka s kalendářem jako Přeplánovat (route
+     replan, S.planNew = {tplId, gymId}, tplPlanNew); klepnutí na volný den plán uloží (planMove) a vrátí tam,
+     odkud se přišlo. Fitko plánu: vybrané fitko, když do něj šablona patří, jinak první fitko šablony.
+     Hlavička karty tplHead (i karta v panelu dne v kalendáři, bez ⋯). Fitko v závorce za „naposledy“ jen tam,
+     kde ho neříká štítek. Karta je div role="button" (tlačítko ⋯ uvnitř), Enter a mezerník řeší posluchač
+     keydown. */
   // hlavička karty šablony: název, štítky fitek, vpravo případně tlačítko ⋯ (after)
   function tplHead(name, gyms, after) {
     return `<div class="tpl-h${after ? " m" : ""}">
         <h3>${esc(name)}</h3>
-        ${gyms.map(gymPill).join("")}${after || ""}
+        <div class="tpl-r">${gyms.map(gymPill).join("")}${after || ""}</div>
       </div>`;
   }
   /* karta šablony; gymId = šablona vybraného fitka: „naposledy“ přednostně z tohoto fitka (bez názvu fitka),
@@ -7908,8 +7910,8 @@
      dny a dny s plánem zešedlé, klepnutí na volný den plán přesune a vrátí do Historie (planMove), ← nic nemění.
      Záložka Trénink: v naplánovaný den pod Začít prázdný trénink sekce „Naplánovaný trénink“ s kartou šablony
      (tplCard se štítkem fitka plánu, když je vybrané jiné fitko); šablona zůstává i v seznamu Šablony. Fitko z plánu
-     je předvybrané (curGym), dokud ho nezměníš. Začít z plánu (klepnutí na kartu) začne ve fitku plánu, ⋯ na kartě
-     = panel plánu (sheetPlanDay s home, F2-13).
+     je předvybrané (curGym), dokud ho nezměníš. Začít z plánu (klepnutí na kartu) začne ve fitku plánu,
+     ⋯ na kartě = panel plánu (sheetPlanDay s home, F2-13).
      Plán platí jen se šablonou, která existuje a není skrytá (planOf). Splněný plán (ten den trénink z té šablony,
      planDone) se na úvodu ani v kalendáři neukazuje. Zmeškané plány a plány smazaných nebo skrytých šablon maže
      planClean (při startu a při každém zápisu plánu); smazané fitko = plán bez fitka. Opakování plánů ne. */

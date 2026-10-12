@@ -935,11 +935,22 @@ select.inp {
 .tpl-h {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
+}
+/* štítek fitka a ⋯ vpravo, u dlouhého názvu zarovnané s jeho prvním řádkem */
+.tpl-r {
+  flex: none;
+  display: flex;
+  gap: 8px;
   align-items: center;
 }
-/* s tlačítkem ⋯ (44 px) hlavička nezvětší kartu: záporné okraje, tečky zarovnané k okraji karty */
+/* s tlačítkem ⋯ (44 px) hlavička nezvětší kartu: záporné okraje, název na střed výšky tlačítka, tečky
+   zarovnané k okraji karty */
 .tpl-h.m {
-  margin: -10px -10px -8px 0;
+  margin: -10px -10px -10px 0;
+}
+.tpl-h.m .tpl-r {
+  min-height: var(--tap);
 }
 .tpl h3 {
   flex: 1;
@@ -949,11 +960,10 @@ select.inp {
   font-weight: 700;
   line-height: 1.2;
 }
-.tpl-h .pill {
-  flex: none;
+.tpl-h.m h3 {
+  padding-block: calc((var(--tap) - 1.2em) / 2);
 }
 .tpl-h .iconbtn {
-  flex: none;
   color: var(--ink-2);
 }
 .tpl p {
