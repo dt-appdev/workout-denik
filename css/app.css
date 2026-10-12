@@ -2165,8 +2165,10 @@ tr.done .okb {
   flex: 1 0 100%;
 }
 
-/* výběr cviků (F1-06): pevná výška, aby vyhledávací pole při psaní neposkakovalo; nadpisy sekcí seznamu */
-.scrim.picker .sheet {
+/* výběr cviků (F1-06): pevná výška, aby vyhledávací pole při psaní neposkakovalo; nadpisy sekcí seznamu;
+   panel Naplánovat (F4-07): pevná výška, aby čipy fitek při přepnutí fitka neposkakovaly */
+.scrim.picker .sheet,
+.scrim.plan .sheet {
   height: 92%;
 }
 .pick-sec {
@@ -3304,6 +3306,26 @@ textarea.inp {
 }
 .cal-c.act {
   border: 2px dashed var(--ink-3);
+  color: var(--ink);
+}
+/* F4-07: naplánovaný den = kolečko obrysem v barvě fitka (barva v style), název šablony šedě */
+.cal-c.plan {
+  border: 2px solid var(--ink-3);
+  color: var(--ink);
+}
+.cal-d.fut.pl .cal-c {
+  opacity: 1;
+  color: var(--ink);
+}
+.cal-l.pl {
+  color: var(--ink-3);
+}
+/* F4-07: Přeplánovat – minulé dny a dny s plánem nejdou vybrat, volné budoucí dny naplno */
+.cal-d.off {
+  opacity: 0.4;
+}
+.cal.mv .cal-d.fut:not(.off) .cal-c {
+  opacity: 1;
   color: var(--ink);
 }
 .cal-d.today .cal-c {

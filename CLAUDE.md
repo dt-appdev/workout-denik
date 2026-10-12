@@ -227,7 +227,7 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Backend: `IndexedDbBackend`, databáze IndexedDB `workout-denik`:
   - úložiště `docs` – dokumenty podle cesty: `config/main` (fitka, nastavení),
     `config/exercises` (`{v:2, items}`: jen odchylky od `EX_DB` a vlastní cviky),
-    `config/templates`, `config/backup` (datum zálohy,
+    `config/templates`, `config/plan` (plánované tréninky, F4-07), `config/backup` (datum zálohy,
     seznam bodů obnovy), `workouts/RRRR-MM` (tréninky po měsících),
     `body/all` (měření), `state/active` (rozdělaný trénink),
   - úložiště `points` – body obnovy (celá záloha jako JSON text),
