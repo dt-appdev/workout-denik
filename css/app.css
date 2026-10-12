@@ -2165,8 +2165,10 @@ tr.done .okb {
   flex: 1 0 100%;
 }
 
-/* výběr cviků (F1-06): pevná výška, aby vyhledávací pole při psaní neposkakovalo; nadpisy sekcí seznamu */
-.scrim.picker .sheet {
+/* výběr cviků (F1-06): pevná výška, aby vyhledávací pole při psaní neposkakovalo; nadpisy sekcí seznamu;
+   panel Naplánovat (F4-07): pevná výška, aby čipy fitek při přepnutí fitka neposkakovaly */
+.scrim.picker .sheet,
+.scrim.plan .sheet {
   height: 92%;
 }
 .pick-sec {

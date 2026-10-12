@@ -7854,7 +7854,8 @@
      Na den (dnes a dál) jde naplánovat jednu šablonu i s fitkem. Plán je v dokumentu config/plan
      ({items: {dayKey: {tplId, gymId}}}, S.plan), v záloze nepovinné pole "plan" (starší zálohy ho nemají).
      Historie → Kalendář: klepnutí na dnešek nebo budoucí den bez plánu otevře panel Naplánovat (sheetPlan: čipy
-     fitek, šablony fitka, ostatní po tlačítku, klepnutí na šablonu plán uloží). Naplánovaný den má kolečko jen obrysem
+     fitek, šablony fitka, ostatní po tlačítku, klepnutí na šablonu plán uloží; pevná výška jako výběr cviků, aby
+     čipy při přepnutí fitka neposkakovaly). Naplánovaný den má kolečko jen obrysem
      v barvě fitka a pod ním název šablony (plné kolečko = odcvičeno, čárkované = rozdělaný trénink); plány se ukazují
      i s filtrem fitek. Klepnutí na naplánovaný den = panel plánu (sheetPlanDay): Začít trénink (jen dnes), Změnit
      šablonu nebo fitko, Přeplánovat, Zrušit plán (neutrální, plán jde vytvořit znovu, bez potvrzení).
@@ -7939,6 +7940,7 @@
       planGym = p && p.gymId ? p.gymId : curGym();
       planOther = false;
       planBack = !!back;
+      delete CK.planGym; // čipy fitek od začátku, vybrané fitko se posune do zorného pole
     }
     const tpls = tplVisible();
     const here = tpls.filter(([, t]) => tplHere(t, planGym));
@@ -7950,7 +7952,7 @@
       </button>`;
     let b = '<div class="stack" style="gap:12px">';
     if (S.cfg.gyms.length > 1) {
-      b += `<div class="chips">
+      b += `<div class="chips" data-ck="planGym">
         ${S.cfg.gyms
           .map(
             (g) =>
@@ -7968,7 +7970,9 @@
     } else if (!here.length && !planOther) {
       planOther = true; // bez šablon pro fitko rovnou ostatní (jako na úvodu)
     }
-    b += `<div class="stack" style="gap:8px">${here.map(row).join("")}</div>`;
+    if (here.length) {
+      b += `<div class="stack" style="gap:8px">${here.map(row).join("")}</div>`;
+    }
     if (other.length && !planOther) {
       b += `<button class="btn block" data-act="planOther" data-k="${k}">Ostatní šablony</button>`;
     } else if (other.length) {
@@ -7976,13 +7980,14 @@
         <div class="stack" style="gap:8px">${other.map(row).join("")}</div>`;
     }
     b += "</div>";
-    openSheet(
-      "Naplánovat · " + planTitle(k),
-      b,
-      null,
-      noanim,
-      planBack ? { lv: planFromList ? 3 : 2, back: () => sheetPlanDay(k, true, planFromList) } : null,
-    );
+    const root = document.getElementById("sheetRoot");
+    saveChipScroll(root); // překreslení po výběru fitka: čipy zůstanou posunuté jako předtím
+    // pevná výška panelu (třída plan): čipy fitek při přepnutí fitka neposkakují
+    const nav = planBack
+      ? { lv: planFromList ? 3 : 2, back: () => sheetPlanDay(k, true, planFromList), cls: "plan" }
+      : { cls: "plan" };
+    openSheet("Naplánovat · " + planTitle(k), b, null, noanim, nav);
+    restoreChipScroll(root);
   }
   // panel naplánovaného dne: karta šablony, Začít (jen dnes), Změnit, Přeplánovat, Zrušit plán;
   // fromList = otevřený z výběru dne (den s tréninkem nebo měřením), Zpět se do výběru vrátí
