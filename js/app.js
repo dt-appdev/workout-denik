@@ -1130,6 +1130,7 @@
     selGym: null,
     plan: {}, // config/plan: plánované tréninky {dayKey: {tplId, gymId}} (F4-07)
     replan: null, // stránka Přeplánovat: den plánu (F4-07)
+    planNew: null, // stránka Naplánovat z panelu šablony: {tplId, gymId} (F2-13)
   };
   let downloads = null,
     pointsApi = null;
@@ -4127,12 +4128,13 @@
      ze stránky uloženého tréninku Historie, ze Statistik Statistiky, ze Cviků Cviky. Stránka uloženého
      tréninku vždy Historie (F3-19), i hned po uložení. n = kolik kroků S.nav patří pod stránku route. */
   function tabOf(route, n) {
-    if (route === "wd" || route === "replan") return "hist";
+    if (route === "wd") return "hist";
     if (route === "home") return "train";
-    if (route !== "exd" && route !== "exed" && route !== "edit") return route;
+    if (route !== "exd" && route !== "exed" && route !== "edit" && route !== "replan") return route;
     const f = S.nav[n - 1];
     if (f) return tabOf(f.route, n - 1);
-    return route === "edit" ? "train" : "ex";
+    // Přeplánovat a Naplánovat (F2-13) pod záložkou, odkud se přišlo, bez ní Historie
+    return route === "edit" ? "train" : route === "replan" ? "hist" : "ex";
   }
   function renderTabs() {
     const t = [
@@ -4404,7 +4406,8 @@
      (pole je nepovinné, starší šablony a zálohy ho nemají = viditelná; zachová ho Object.assign i tplNorm).
      Skrytá se neukazuje mezi šablonami na úvodu (ani v „Ostatní šablony“) ani v panelu Změnit pořadí šablon.
      Pod seznamy je tlačítko „Skryté šablony (N)“ (jen když nějaké jsou, tplHid = ukázané skryté, po otevření
-     appky sbalené). Skrytá karta má Zobrazit a Upravit, Začít ne. Skrytí platí pro všechna fitka šablony.
+     appky sbalené). Skrytá karta Začít nemá, klepnutí na ni otevře panel ⋯ se Zobrazit šablonu (F2-13).
+     Skrytí platí pro všechna fitka šablony.
      Skrytá šablona zůstává v záloze, tréninky z ní (tplId) se nemění a pořád blokuje stejný název ve stejném
      fitku (tplClash, F2-08; hláška řekne, že je skrytá). Funkce tplVisible (neskryté šablony), tplHidden.
      Až vznikne F2-04 (šablona na řadě), musí vybírat jen z tplVisible(). Později sloučit s archivací (F2-06). */
@@ -4634,6 +4637,26 @@
         </p>
       </div>`;
   }
+  /* ---------- KARTA ŠABLONY (F2-13) ----------
+     Karta šablony na úvodu vypadá jako karta tréninku v Historii: nahoře název (Barlow tučně, jako karta
+     cviku v tréninku) a vpravo štítek fitka (gymPill), pod ním „6 cviků · naposledy 10. 10.“, pod tím cviky.
+     Klepnutí kamkoli na kartu = Začít (startTpl; u naplánovaného tréninku planStart ve fitku plánu), skrytá
+     šablona začít nejde, klepnutí otevře panel. Vpravo nahoře ⋯ (jako u karty cviku v tréninku) = panel
+     sheetTplMenu: Upravit, Naplánovat, Skrýt / Zobrazit šablonu, za čárou Smazat šablonu (potvrzení,
+     tplDelete). U naplánovaného tréninku ⋯ = panel plánu (sheetPlanDay s home: Upravit šablonu, Změnit
+     šablonu nebo fitko, Přeplánovat, Zrušit plán). Naplánovat = stránka s kalendářem jako Přeplánovat (route
+     replan, S.planNew = {tplId, gymId}, tplPlanNew); klepnutí na volný den plán uloží (planMove) a vrátí tam,
+     odkud se přišlo. Fitko plánu: vybrané fitko, když do něj šablona patří, jinak první fitko šablony.
+     Hlavička karty tplHead (i karta v panelu dne v kalendáři, bez ⋯). Fitko v závorce za „naposledy“ jen tam,
+     kde ho neříká štítek. Karta je div role="button" (tlačítko ⋯ uvnitř), Enter a mezerník řeší posluchač
+     keydown. */
+  // hlavička karty šablony: název, štítky fitek, vpravo případně tlačítko ⋯ (after)
+  function tplHead(name, gyms, after) {
+    return `<div class="tpl-h${after ? " m" : ""}">
+        <h3>${esc(name)}</h3>
+        <div class="tpl-r">${gyms.map(gymPill).join("")}${after || ""}</div>
+      </div>`;
+  }
   /* karta šablony; gymId = šablona vybraného fitka: „naposledy“ přednostně z tohoto fitka (bez názvu fitka),
      jinak (i u ostatních šablon) poslední běh kdekoli s názvem fitka; plan = dnešní plán (F4-07): štítek fitka
      plánu, když je vybrané jiné fitko, a Začít ve fitku plánu */
@@ -4641,44 +4664,68 @@
     const runs = all.filter((w) => sameRun({ tplId: id, title: t.name }, w));
     const lastHere = gymId ? runs.find((w) => w.gymId === gymId) : null;
     const last = lastHere || runs[0];
-    const lastTxt = !last
-      ? ""
-      : " · naposledy " +
-        fmtDateS(last.start) +
-        (lastHere || !last.gymId ? "" : " (" + esc(gymName(last.gymId)) + ")");
-    const nEx = (t.items || []).length;
     // u ostatních šablon, kam patří; u plánu fitko plánu, když není vybrané
     const gyms = plan ? (plan.gymId && plan.gymId !== curGym() ? [plan.gymId] : []) : gymId ? [] : tplGyms(t);
-    return `<div class="card tpl">
-        <div class="grow">
-          <h3>${esc(t.name)}</h3>
-          <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
-          ${
-            gyms.length
-              ? `<p class="xs tpl-gyms">
-                ${gyms
-                  .map(
-                    (g) =>
-                      `<span class="pill"><span class="sw" style="background:${gymColor(g)}"></span>` +
-                      `${esc(gymName(g))}</span>`,
-                  )
-                  .join(" ")}
-              </p>`
-              : ""
-          }
-          <p class="xs">${nEx} ${plural(nEx, "cvik", "cviky", "cviků")}${lastTxt}</p>
-        </div>
-        <div class="stack" style="gap:6px">
-          ${
-            hidden
-              ? `<button class="btn sm primary" data-act="tplHide" data-v="${id}">Zobrazit</button>`
-              : plan
-                ? `<button class="btn sm primary" data-act="planStart" data-v="${dayKey(Date.now())}">Začít</button>`
-                : `<button class="btn sm primary" data-act="startTpl" data-v="${id}">Začít</button>`
-          }
-          <button class="btn sm" data-act="editTpl" data-v="${id}">Upravit</button>
-        </div>
+    // fitko posledního běhu v závorce, jen když ho neříká štítek
+    const lastGym = last && !lastHere && last.gymId && !(gyms.length === 1 && gyms[0] === last.gymId);
+    const lastTxt = !last
+      ? ""
+      : " · naposledy " + fmtDateS(last.start) + (lastGym ? " (" + esc(gymName(last.gymId)) + ")" : "");
+    const nEx = (t.items || []).length;
+    const today = dayKey(Date.now());
+    const tap = hidden
+      ? `data-act="tplMenu" data-v="${id}" aria-label="Možnosti šablony ${esc(t.name)}"`
+      : plan
+        ? `data-act="planStart" data-v="${today}" aria-label="Začít trénink ${esc(t.name)}"`
+        : `data-act="startTpl" data-v="${id}" aria-label="Začít trénink ${esc(t.name)}"`;
+    const menu = plan
+      ? `<button class="iconbtn" data-act="planMenu" data-v="${today}" aria-label="Možnosti plánu">
+          ${IC.more}
+        </button>`
+      : `<button class="iconbtn" data-act="tplMenu" data-v="${id}" aria-label="Možnosti šablony">
+          ${IC.more}
+        </button>`;
+    return `<div class="card tpl tap" role="button" tabindex="0" ${tap}>
+        ${tplHead(t.name, gyms, menu)}
+        <p class="tpl-meta">${nEx} ${plural(nEx, "cvik", "cviky", "cviků")}${lastTxt}</p>
+        <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
       </div>`;
+  }
+  // panel ⋯ u šablony: Upravit, Naplánovat (ne u skryté), Skrýt / Zobrazit, Smazat
+  function sheetTplMenu(id) {
+    const t = S.templates[id];
+    if (!t) return;
+    openSheet(
+      t.name,
+      `<div class="stack">
+        <button class="btn block" data-act="editTpl" data-v="${id}">Upravit</button>
+        ${t.hidden ? "" : `<button class="btn block" data-act="tplPlan" data-v="${id}">Naplánovat</button>`}
+        <button class="btn block" data-act="tplHide" data-v="${id}">
+          ${t.hidden ? "Zobrazit šablonu" : "Skrýt šablonu"}
+        </button>
+        <div class="bzone"></div>
+        <button class="btn block danger" data-act="tplDel" data-v="${id}">Smazat šablonu</button>
+      </div>`,
+    );
+  }
+  // smaže šablonu (plány s ní zmizí, planOf je nebere a planClean je smaže)
+  function tplDelete(id) {
+    const items = Object.assign({}, S.templates);
+    delete items[id];
+    put("config/templates", { items });
+    planClean();
+  }
+  // Naplánovat z panelu šablony: stránka s kalendářem (vReplan s S.planNew)
+  function tplPlanNew(id) {
+    const t = S.templates[id];
+    if (!t) return;
+    const gyms = tplGyms(t);
+    const f = navFrame();
+    closeSheet();
+    S.nav.push(f); // Zpět (←) vrátí na úvod s otevřeným panelem šablony
+    S.replan = null;
+    S.planNew = { tplId: id, gymId: tplHere(t, curGym()) ? curGym() : gyms[0] || null };
+    go("replan");
   }
   function startOfWeek(t) {
     const d = new Date(t);
@@ -7863,7 +7910,8 @@
      dny a dny s plánem zešedlé, klepnutí na volný den plán přesune a vrátí do Historie (planMove), ← nic nemění.
      Záložka Trénink: v naplánovaný den pod Začít prázdný trénink sekce „Naplánovaný trénink“ s kartou šablony
      (tplCard se štítkem fitka plánu, když je vybrané jiné fitko); šablona zůstává i v seznamu Šablony. Fitko z plánu
-     je předvybrané (curGym), dokud ho nezměníš. Začít z plánu začne ve fitku plánu.
+     je předvybrané (curGym), dokud ho nezměníš. Začít z plánu (klepnutí na kartu) začne ve fitku plánu,
+     ⋯ na kartě = panel plánu (sheetPlanDay s home, F2-13).
      Plán platí jen se šablonou, která existuje a není skrytá (planOf). Splněný plán (ten den trénink z té šablony,
      planDone) se na úvodu ani v kalendáři neukazuje. Zmeškané plány a plány smazaných nebo skrytých šablon maže
      planClean (při startu a při každém zápisu plánu); smazané fitko = plán bez fitka. Opakování plánů ne. */
@@ -7929,7 +7977,8 @@
   let planGym = null, // fitko vybrané v panelu Naplánovat
     planOther = false, // ukázané ostatní šablony v panelu Naplánovat
     planBack = false, // panel Naplánovat otevřený z panelu plánu (Zpět se do něj vrátí)
-    planFromList = false; // panel plánu otevřený z výběru dne v kalendáři (Zpět se do něj vrátí)
+    planFromList = false, // panel plánu otevřený z výběru dne v kalendáři (Zpět se do něj vrátí)
+    planHome = false; // panel plánu otevřený přes ⋯ na úvodu (F2-13)
   // nadpis panelu dne: „Dnes · po 12. 10.“ nebo „st 14. 10.“
   const planTitle = (k) => (k === dayKey(Date.now()) ? "Dnes · " : "") + fmtDay(planDay(k));
   /* panel Naplánovat: čipy fitek, šablony vybraného fitka, ostatní po tlačítku; klepnutí na šablonu plán uloží.
@@ -7984,28 +8033,41 @@
     saveChipScroll(root); // překreslení po výběru fitka: čipy zůstanou posunuté jako předtím
     // pevná výška panelu (třída plan): čipy fitek při přepnutí fitka neposkakují
     const nav = planBack
-      ? { lv: planFromList ? 3 : 2, back: () => sheetPlanDay(k, true, planFromList), cls: "plan" }
+      ? { lv: planFromList ? 3 : 2, back: () => sheetPlanDay(k, true, planFromList, planHome), cls: "plan" }
       : { cls: "plan" };
     openSheet("Naplánovat · " + planTitle(k), b, null, noanim, nav);
     restoreChipScroll(root);
   }
   // panel naplánovaného dne: karta šablony, Začít (jen dnes), Změnit, Přeplánovat, Zrušit plán;
-  // fromList = otevřený z výběru dne (den s tréninkem nebo měřením), Zpět se do výběru vrátí
-  function sheetPlanDay(k, noanim, fromList) {
+  // fromList = otevřený z výběru dne (den s tréninkem nebo měřením), Zpět se do výběru vrátí;
+  // home = ⋯ u naplánovaného tréninku na úvodu (F2-13): bez karty a Začít, navíc Upravit šablonu
+  function sheetPlanDay(k, noanim, fromList, home) {
     planFromList = !!fromList;
+    planHome = !!home;
     const p = planOf(k);
     if (!p) {
       closeSheet();
       return;
     }
     const t = p.t;
+    if (home) {
+      openSheet(
+        "Naplánovaný trénink · " + t.name,
+        `<div class="stack">
+          <button class="btn block" data-act="editTpl" data-v="${p.tplId}">Upravit šablonu</button>
+          <button class="btn block" data-act="planChange" data-v="${k}">Změnit šablonu nebo fitko</button>
+          <button class="btn block" data-act="planReplan" data-v="${k}">Přeplánovat</button>
+          <button class="btn block" data-act="planDel" data-v="${k}">Zrušit plán</button>
+        </div>`,
+        null,
+        noanim,
+      );
+      return;
+    }
     const today = k === dayKey(Date.now());
     const body = `<div class="card tpl">
-        <div class="grow">
-          <h3>${esc(t.name)}</h3>
-          ${p.gymId ? `<p class="xs tpl-gyms">${gymPill(p.gymId)}</p>` : ""}
-          <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
-        </div>
+        ${tplHead(t.name, p.gymId ? [p.gymId] : [])}
+        <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
       </div>`;
     const foot = `<div class="stack" style="width:100%;gap:8px">
         ${today ? `<button class="btn primary full" data-act="planStart" data-v="${k}">Začít trénink</button>` : ""}
@@ -8042,40 +8104,57 @@
     S.nav.push(f); // Zpět (←) vrátí do Historie s otevřeným panelem plánu
 
     S.replan = k;
+    S.planNew = null;
     go("replan");
   }
+  // S.planNew = Naplánovat šablonu z panelu šablony (F2-13): stejný kalendář, klepnutí na den plán vytvoří
   function vReplan() {
-    const p = S.replan && planOf(S.replan);
+    const nw = S.planNew,
+      nt = nw && S.templates[nw.tplId];
+    const p = nw ? nt && !nt.hidden && { t: nt, gymId: nw.gymId } : S.replan && planOf(S.replan);
     if (!p) {
-      // plán mezitím zmizel: zpět do Historie
+      // plán nebo šablona mezitím zmizely: zpět do Historie
       S.route = "hist";
       S.nav = [];
+      S.planNew = null;
       return vHist();
     }
     const sub = p.t.name + (p.gymId ? " · " + gymName(p.gymId) : "");
     let h = topbar(
-      "Přeplánovat",
+      nw ? "Naplánovat" : "Přeplánovat",
       sub,
       `<button class="iconbtn" data-act="wBack" aria-label="Zpět">${IC.back}</button>`,
     );
     const { all } = derive();
-    return h + vCal(all, all, S.replan);
+    return h + vCal(all, all, true);
   }
-  // přesune plán ze dne S.replan na den k a vrátí se do Historie
+  // přesune plán ze dne S.replan na den k (Naplánovat: vytvoří plán S.planNew) a vrátí se, odkud se přišlo
   function planMove(k) {
+    if (S.plan[k] || planDay(k) < dayStart(Date.now())) return;
+    if (S.planNew) {
+      planSet(k, S.planNew);
+      S.planNew = null;
+      planBackFrom();
+      toast("Naplánováno na " + fmtDay(planDay(k)));
+      return;
+    }
     const from = S.replan,
       p = S.plan[from];
-    if (!p || S.plan[k] || planDay(k) < dayStart(Date.now())) return;
+    if (!p) return;
     const items = Object.assign({}, S.plan);
     delete items[from];
     items[k] = p;
     put("config/plan", { items });
+    planBackFrom();
+    toast("Přeplánováno na " + fmtDay(planDay(k)));
+  }
+  // ze stránky Přeplánovat / Naplánovat zpět, odkud se přišlo, bez znovu otevřeného panelu
+  function planBackFrom() {
     const f = S.nav[S.nav.length - 1];
     if (f) {
-      f.re = null; // panel původního dne se po přesunu znovu neotevře
+      f.re = null;
     }
     navBack();
-    toast("Přeplánováno na " + fmtDay(planDay(k)));
   }
 
   /* ---------- STATISTIKY (F3-13) ----------
@@ -13273,6 +13352,31 @@
         }
         startWorkout(v);
         break;
+      // karta šablony (F2-13): panel ⋯, Naplánovat, Smazat
+      case "tplMenu":
+        sheetTplMenu(v);
+        break;
+      case "tplPlan":
+        tplPlanNew(v);
+        break;
+      case "tplDel":
+        if (!S.templates[v]) break;
+        confirmSheet(
+          "Smazat šablonu?",
+          "Šablona „" + esc(S.templates[v].name) + "“ se smaže. Tréninky podle ní zůstanou.",
+          "Smazat",
+          "tplDelOk",
+          v,
+        );
+        break;
+      case "tplDelOk":
+        tplDelete(v);
+        closeSheet();
+        toast("Šablona smazaná");
+        break;
+      case "planMenu":
+        sheetPlanDay(v, false, false, true);
+        break;
       case "newTpl": {
         // předvybrané fitko, kde teď cvičíš (s jedním fitkem bez přiřazení)
         const gyms = curGym() && S.cfg.gyms.length > 1 ? [curGym()] : [];
@@ -14292,6 +14396,7 @@
           items[v].hidden = true;
         }
         put("config/templates", { items });
+        closeSheet(); // z panelu ⋯ na úvodu (F2-13)
         if (S.route === "edit") {
           tplLeave();
         }
@@ -14307,9 +14412,7 @@
         );
         break;
       case "delTplOk": {
-        const items = Object.assign({}, S.templates);
-        delete items[S.editDraft.id];
-        put("config/templates", { items });
+        tplDelete(S.editDraft.id);
         closeSheet();
         tplLeave();
         break;
@@ -14888,6 +14991,14 @@
      klávesnici, napsaný text zůstane. Od F3-33 i v číselných políčkách mimo sérii (hmotnost a výška
      v Nastavení, formulář měření, délka tréninku, rozsah opakování). Políčka série (.cell) řeší setEnter,
      datum a čas beze změny. */
+  // karta jako tlačítko (div role="button" kvůli ⋯ uvnitř, F2-13): Enter a mezerník = klepnutí
+  document.addEventListener("keydown", (ev) => {
+    const t = ev.target;
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    if (!t.dataset || !t.dataset.act || t.getAttribute("role") !== "button") return;
+    ev.preventDefault();
+    t.click();
+  });
   document.addEventListener("keydown", (ev) => {
     const t = ev.target;
     if (ev.key !== "Enter" || t.tagName !== "INPUT" || t.classList.contains("cell")) return;
@@ -15246,6 +15357,7 @@
     S.editDraft = null;
     S.wDetail = null;
     S.replan = null;
+    S.planNew = null;
     exEd = null;
     if (v === "hist" && S.route !== "hist") {
       S.calM = 0;

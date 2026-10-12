@@ -148,6 +148,9 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   význam = stejná ikona všude, jedna kresba = jeden význam. Novou nebo překreslenou ikonu nejdřív ukázat v náhledu
   (dnes / návrh, světlý i tmavý motiv) a nechat odsouhlasit. Šipka → ve větě („Nastavení → Fitka“) a znaky × · –
   jsou typografie, zůstávají.
+- Karta v seznamu, která něco spouští (F2-13, šablona `tplCard`): klepnutí na kartu = hlavní akce, ostatní akce v panelu
+  přes ⋯ vpravo nahoře (jako karta cviku), žádná tlačítka v kartě. Štítek fitka vpravo vedle názvu jako v Historii.
+  Název karty Barlow tučně `--fs-lg`; úzké písmo (`--display`) jen nadpisy stránek, sekcí a velká čísla.
 - Karta cviku (F3-22, `vExCard`): v hlavičce žádné textové štítky, stav cviku jen ikona za názvem
   (`nameWithIcons`, `gdIcon`). Nový údaj o cviku do karty jako ikonu nebo do tabulky.
 - Nápovědy (F3-21, sekce „NÁPOVĚDY V NADPISU SEKCE“): pod volbou žádný vysvětlující text, jen stav nebo varování.

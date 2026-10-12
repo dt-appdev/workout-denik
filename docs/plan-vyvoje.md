@@ -178,7 +178,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F2-01** Cvičit znovu z historie
 - [x] **F2-02** Šablony podle fitka
 - [x] **F2-03** Smazání série tahem, Vrátit cvik
-- [ ] **F2-04** Šablona na řadě jako hlavní akce úvodu (rotace programu; doplněno podle UX auditu 27. 9. 2026, §2 B, §4 Úvod a §11; P2 · B · střední): appka ukáže, která šablona je na řadě. Dnes je na úvodní obrazovce nejvýraznější „Začít prázdný trénink“ a všechna „Začít“ u šablon jsou stejně korálová, i když běžný den začíná šablonou. Návrh: nahoře karta „Dnes na řadě: Pull“ s jediným hlavním tlačítkem Začít, pod ní ostatní šablony s vedlejším Začít, prázdný trénink jako vedlejší tlačítko. Nejjednodušší pravidlo bez nových dat: na řadě je nejdéle necvičená šablona ve vybraném fitku (Otevřené otázky). Rozhodnuto u F4-07: v naplánovaný den má přednost plán (sekce „Naplánovaný trénink“ pod Začít prázdný trénink), šablona na řadě platí jen ve dnech bez plánu. Dlaždici Objem 30 dní nahradit údajem „Poslední trénink: před 2 dny (Legs)“. Během tréninku zůstává „Probíhá trénink“ (F2-09).
+- [ ] **F2-04** Šablona na řadě jako hlavní akce úvodu (rotace programu; doplněno podle UX auditu 27. 9. 2026, §2 B, §4 Úvod a §11; P2 · B · střední): appka ukáže, která šablona je na řadě. Dnes je na úvodní obrazovce nejvýraznější „Začít prázdný trénink“ a všechna „Začít“ u šablon jsou stejně korálová, i když běžný den začíná šablonou. Návrh: nahoře karta „Dnes na řadě: Pull“ s jediným hlavním tlačítkem Začít, pod ní ostatní šablony s vedlejším Začít, prázdný trénink jako vedlejší tlačítko. Nejjednodušší pravidlo bez nových dat: na řadě je nejdéle necvičená šablona ve vybraném fitku (Otevřené otázky). Rozhodnuto u F4-07: v naplánovaný den má přednost plán (sekce „Naplánovaný trénink“ pod Začít prázdný trénink), šablona na řadě platí jen ve dnech bez plánu. Dlaždici Objem 30 dní nahradit údajem „Poslední trénink: před 2 dny (Legs)“. Během tréninku zůstává „Probíhá trénink“ (F2-09). Od F2-13 karty šablon tlačítko Začít nemají (klepnutí na kartu = Začít, ostatní v panelu ⋯), karta „Dnes na řadě“ to musí respektovat (hlavní akce = výrazná karta nebo jedno tlačítko jen u ní).
 - [x] **F2-05** Vlastní fotky u cviku
 - [x] **F2-08** Jedinečné názvy šablon
 - [ ] **F2-06** Archivace a smazání fitka (vzniklo u F3-01; zadání upřesněno 10. 10. 2026 u F3-24; D · střední):
@@ -190,6 +190,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F2-10** Poznámka ke cviku v šabloně a z historie
 - [x] **F2-11** Předvyplnění ze šablony a z historie místo z minula
 - [x] **F2-12** Skrýt nepoužívanou šablonu
+- [x] **F2-13** Karta šablony: klepnutí = Začít, ⋯ = možnosti
 
 ### Fáze 3 – Statistiky a vzhled
 

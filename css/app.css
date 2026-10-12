@@ -925,31 +925,56 @@ select.inp {
   grid-template-columns: 1fr;
   gap: 10px;
 }
-.tpl {
+/* F2-13: karta šablony jako karta v Historii – název a štítek fitka nahoře, pod ním údaje a cviky */
+.tpl.tap {
+  cursor: pointer;
+}
+.tpl.tap:active {
+  background: var(--surface-2);
+}
+.tpl-h {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: flex-start;
 }
+/* štítek fitka a ⋯ vpravo, u dlouhého názvu zarovnané s jeho prvním řádkem */
+.tpl-r {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+/* s tlačítkem ⋯ (44 px) hlavička nezvětší kartu: záporné okraje, název na střed výšky tlačítka, tečky
+   zarovnané k okraji karty */
+.tpl-h.m {
+  margin: -10px -10px -10px 0;
+}
+.tpl-h.m .tpl-r {
+  min-height: var(--tap);
+}
 .tpl h3 {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: var(--fs-xl);
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  line-height: 1.1;
-  letter-spacing: 0.01em;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.tpl-h.m h3 {
+  padding-block: calc((var(--tap) - 1.2em) / 2);
+}
+.tpl-h .iconbtn {
+  color: var(--ink-2);
 }
 .tpl p {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   color: var(--ink-3);
   font-size: var(--fs-sm);
   line-height: 1.35;
 }
-/* F2-02: fitka u ostatních šablon */
-.tpl p.tpl-gyms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
+.tpl p.tpl-meta {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
 }
 .kpis {
   display: grid;
