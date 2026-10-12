@@ -3306,6 +3306,26 @@ textarea.inp {
   border: 2px dashed var(--ink-3);
   color: var(--ink);
 }
+/* F4-07: naplánovaný den = kolečko obrysem v barvě fitka (barva v style), název šablony šedě */
+.cal-c.plan {
+  border: 2px solid var(--ink-3);
+  color: var(--ink);
+}
+.cal-d.fut.pl .cal-c {
+  opacity: 1;
+  color: var(--ink);
+}
+.cal-l.pl {
+  color: var(--ink-3);
+}
+/* F4-07: Přeplánovat – minulé dny a dny s plánem nejdou vybrat, volné budoucí dny naplno */
+.cal-d.off {
+  opacity: 0.4;
+}
+.cal.mv .cal-d.fut:not(.off) .cal-c {
+  opacity: 1;
+  color: var(--ink);
+}
 .cal-d.today .cal-c {
   box-shadow:
     0 0 0 2px var(--surface),
