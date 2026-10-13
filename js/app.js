@@ -4217,6 +4217,7 @@
       <span class="sync" id="sync"></span>
     </header>`;
   }
+  let cellKeep = false; // render vrací kurzor do políčka série: nezprázdňovat (F1-23)
   function render() {
     const app = document.getElementById("app");
     const y = window.scrollY;
@@ -4260,6 +4261,7 @@
     const focusId = act && act.id;
     // popis cviku (F3-14): po překreslení kurzor na stejném místě
     const areaSel = act && act.tagName === "TEXTAREA" ? [act.selectionStart, act.selectionEnd] : null;
+    const cellWasClear = !!act && act.cellOld != null; // F1-23: políčko série zprázdněné klepnutím
     app.innerHTML = h;
     unsavedSync(); // F3-16: rozepsaná úprava nebo formulář cviku do zařízení
     renderTabs();
@@ -4271,7 +4273,12 @@
     if (focusId) {
       const f = document.getElementById(focusId);
       if (f && f.tagName === "INPUT" && f.type !== "checkbox") {
+        cellKeep = true; // F1-23: napsané číslo po překreslení nemazat
         f.focus();
+        cellKeep = false;
+        if (cellWasClear) {
+          cellClear(f);
+        }
         try {
           const l = f.value.length;
           f.setSelectionRange(l, l);
@@ -5993,9 +6000,10 @@
         const stepper = useStepper && !kkTyping(id) ? ` readonly data-act="kk" data-v="${f}"` : "";
         const last = mode !== "active" && !eff && n === flds.length - 1;
         // klávesa Enter: Další do dalšího políčka série nebo k nevyplněnému RIR/RPE, jinak Hotovo
-        // (F3-24, setEnter)
+        // (F3-24, setEnter); mimo rozdělaný trénink z poslední série do další série (F1-23)
         const effNext = eff && s.t !== "w" && s.t !== "f" && effOf(s) == null;
-        const enter = n < flds.length - 1 || effNext ? "next" : "done";
+        const rowNext = mode !== "active" && j < e.sets.length - 1;
+        const enter = n < flds.length - 1 || effNext || rowNext ? "next" : "done";
         h += `<td class="c-in${last ? " sw-cell" : ""}">
           <input class="cell${numCls(fld, fval(s, fld))}" id="${id}" enterkeyhint="${enter}"
               inputmode="${FLD[f].mode}" data-num="${fld}" data-f="${fld}" data-i="${i}" data-j="${j}"
@@ -15613,25 +15621,91 @@
      Klávesa Enter v políčkách série (setEnter): Gboard v číselné klávesnici sám do dalšího políčka nepřejde
      (ověřeno v telefonu), proto políčka mají enterkeyhint (next / done) a Enter přesune kurzor do dalšího
      políčka stejné série, v posledním (nebo před políčkem s krokovačem) schová klávesnici. Se zapnutým
-     RIR/RPE (F4-04) a nevyplněnou hodnotou série pak otevře panel RIR/RPE (sheetEffort). */
+     RIR/RPE (F4-04) a nevyplněnou hodnotou série pak otevře panel RIR/RPE (sheetEffort). Od F1-23 Enter
+     mimo rozdělaný trénink přechází i do další série (sekce RYCHLÉ PŘEPISOVÁNÍ ČÍSEL V SÉRIÍCH). */
+  /* ---------- RYCHLÉ PŘEPISOVÁNÍ ČÍSEL V SÉRIÍCH (F1-23) ----------
+     Úprava šablony byla nepohodlná: klepnutí do políčka dalo kurzor před nebo za číslo, staré číslo se muselo
+     mazat a Enter na posledním políčku série klávesnici zavřel.
+     Klepnutí (focus) do políčka série (.cell, ne jen ke čtení s krokovačem) políčko zprázdní a starou hodnotu
+     ukáže šedě místo předvyplnění (cellClear), napsané číslo ji nahradí. Odchod bez psaní starou hodnotu vrátí
+     (cellRestore), data se mění jen psaním (input), jako dřív. Po prvním psaní (cellTyped) se značky zruší, takže
+     smazání napsaného čísla políčko opravdu vyprázdní. Políčko s chybou (červený rámeček .bad, sem vede
+     focusInput při kontrole čísel) se nezprázdní, aby byla chyba vidět. Platí všude (šablona, úprava uloženého
+     tréninku, rozdělaný trénink při psaní klávesnicí).
+     Enter (setEnter): v posledním políčku série mimo rozdělaný trénink (šablona, úprava uloženého tréninku)
+     přejde na první políčko další série stejného cviku (enterkeyhint next), na poslední sérii cviku klávesnici
+     schová. Nevyplněné RIR/RPE má přednost (panel sheetEffort). V rozdělaném tréninku beze změny: série má
+     dostat ✓, skok dál by ho přeskočil. Stará hodnota je během psaní v input.cellOld, původní předvyplnění
+     v input.cellPh. Překreslení stránky (render) vrací kurzor do políčka s cellKeep a zprázdnění zopakuje,
+     jen když bylo políčko před překreslením zprázdněné (napsané číslo zůstane). */
   function setEnter(ev) {
     const t = ev.target;
     if (ev.key !== "Enter" || t.tagName !== "INPUT" || !t.classList.contains("cell")) return;
     ev.preventDefault();
-    const row = [...t.closest("tr").querySelectorAll("input.cell")];
+    const tr = t.closest("tr");
+    const row = [...tr.querySelectorAll("input.cell")];
     const next = row[row.indexOf(t) + 1];
     if (next && !next.readOnly) {
       next.focus();
       next.select();
       return;
     }
-    t.blur();
     // nevyplněné RIR/RPE série (tlačítko bez hodnoty): rovnou panel s výběrem
-    if (t.closest("tr").querySelector('.effb[data-act="eff"]:not(.on)')) {
+    if (tr.querySelector('.effb[data-act="eff"]:not(.on)')) {
+      t.blur();
       sheetEffort(+t.dataset.i, +t.dataset.j);
+      return;
     }
+    const d = curDraft();
+    const below = d && d.mode !== "active" ? cellBelow(tr) : null;
+    if (below) {
+      below.focus();
+      return;
+    }
+    t.blur();
   }
   document.addEventListener("keydown", setEnter);
+  // první políčko série pod řádkem tr ve stejném cviku, jinak null
+  function cellBelow(tr) {
+    for (let row = tr.nextElementSibling; row; row = row.nextElementSibling) {
+      const input = row.querySelector("input.cell");
+      if (input) return input.readOnly ? null : input;
+    }
+    return null;
+  }
+  const isSetCell = (t) => t && t.tagName === "INPUT" && t.classList.contains("cell") && !!t.dataset.num;
+  // klepnutí do políčka: stará hodnota šedě, políčko prázdné (data beze změny)
+  function cellClear(input) {
+    if (input.readOnly || input.value === "" || input.classList.contains("bad")) return;
+    input.cellOld = input.value;
+    input.cellPh = input.placeholder;
+    input.placeholder = input.value;
+    input.value = "";
+    input.numLast = "";
+  }
+  // první psaní: stará hodnota se už nevrací, předvyplnění zpět (hintsRefresh ho pak může obnovit)
+  function cellTyped(input) {
+    if (input.cellOld == null) return;
+    input.placeholder = input.cellPh;
+    input.cellOld = null;
+  }
+  // odchod bez psaní: vrátit starou hodnotu
+  function cellRestore(input) {
+    if (input.cellOld == null) return;
+    input.value = input.cellOld;
+    input.numLast = input.cellOld;
+    cellTyped(input);
+  }
+  document.addEventListener("focusin", (ev) => {
+    if (isSetCell(ev.target) && !cellKeep) {
+      cellClear(ev.target);
+    }
+  });
+  document.addEventListener("focusout", (ev) => {
+    if (isSetCell(ev.target)) {
+      cellRestore(ev.target);
+    }
+  });
   document.addEventListener("input", (ev) => {
     const t = ev.target;
     if (t.id === "warmPct") {
@@ -15639,6 +15713,9 @@
       return;
     } // F1-08: posuvník ukazuje procenta hned, uloží se po puštění (change)
     if (restSliderShow(t) && t.id !== "x-rest") return; // F1-09: délka pauzy hned při tažení
+    if (isSetCell(t)) {
+      cellTyped(t);
+    } // F1-23: napsané číslo nahradilo starou hodnotu
     if (t.dataset && t.dataset.num) {
       numInput(t);
     } // F1-10: jen povolené znaky, červený rámeček
