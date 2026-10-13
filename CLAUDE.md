@@ -174,6 +174,10 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
 - Písmo voleb (F3-23): název volby (zaškrtávátko, popisek nad přepínačem, vedle políčka) a hodnota v řádku obyčejně,
   `--fs-base`; tučně jen název věci v seznamu (fitko, cvik, trénink) a čísla, kvůli kterým se na obrazovku chodí.
   Číslo v políčku vždy na střed (`.inp[data-num]`), krátký údaj jedním řádkem `.frow` (název vlevo, políčko vpravo).
+- Typografie (F3-45, sekce „TYPOGRAFIE“): název v kartě Barlow 700 `--fs-lg` výška řádku 1,2 v barvě textu, název
+  v řádku seznamu 600 (`.row-n`), popisek nad políčkem nebo čipy `label.f` / `.lbl-f`, nadpis velkými v úzkém písmu
+  600 `--fs-base` 0,09 em, drobný popisek velkými `--fs-2xs` 600 0,06 em, velké číslo v úzkém písmu 600. Nové písmo
+  přes třídy, ne `style="font-weight…"` v JS.
 - Závislé volby (F3-23): volba pod vypínačem se neschovává, s vypnutým vypínačem zešedne a je `inert` (`.dep.off`),
   aby stránka neposkakovala. Žádné vysvětlující věty, které se objeví jen při vypnutí.
 - Dotyková plocha (F3-23, sekce „JEDNOTNÝ VZHLED“): každý ovládací prvek aspoň `--tap` (44 px) na výšku, menší

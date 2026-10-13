@@ -266,6 +266,12 @@ Předpoklad: F0-02 (svalové partie).
   v panelu jako nadpis sekce na stránce, tlačítka dole na stránce jako samostatná skupina (22 px), karty cviků v tréninku
   8 px jako ostatní karty seznamu, `p { margin: 0 }` místo 25× `style="margin:0"`. Kontrolu v úloze „kontrola“
   rozšířit na `gap`, `tools/mezery.js` o panely. Nejdřív náhled Dnes / Po změně (panely, formuláře, karty, oba motivy).
+- [x] **F3-45** Jednotná typografie karet, seznamů a popisků
+- [ ] **F3-46** Tlačítko „i“ ve výběru cviků jako ikona (přání uživatele 13. 10. 2026 u F3-45, uživatel ho chce
+  přepracovat): tlačítko vedle cviku ve výběru cviků (`.infob`, akce `exInfo`, sekce výběru cviků) je písmeno „i“
+  v úzkém písmu, ne SVG ikona, což porušuje pravidlo F3-20 (žádné znaky písma jako ikona). Návrh: ikona ze sady `IC`
+  ve stylu ostatních (nová kresba nebo existující „info“, jedna kresba = jeden význam), případně přepracovat celé
+  tlačítko (velikost, umístění, co otevírá). Nejdřív náhled ikon (dnes / návrh, světlý i tmavý motiv).
 
 
 ### Fáze 4 – Chytré funkce

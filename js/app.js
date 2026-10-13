@@ -4667,7 +4667,7 @@
   function tplGymPick(d) {
     const gyms = d.gyms || [];
     return `<div class="stack" style="gap:6px">
-        <div class="small" style="font-weight:600">Fitka</div>
+        <div class="lbl-f">Fitka</div>
         <div class="chips" data-ck="tplGym">
           ${S.cfg.gyms
             .filter((g) => !g.archived || gyms.includes(g.id)) // archivované jen k odebrání (F2-06)
@@ -5058,7 +5058,7 @@
       ${ex.length} ${plural(ex.length, "cvik", "cviky", "cviků")}: ` +
       `${esc(ex.map((e) => exName(e.exId)).join(", "))}
     </p>
-    <div class="small" style="font-weight:600">Kde dnes cvičíš</div>
+    <div class="lbl-f">Kde dnes cvičíš</div>
     ${gymChips("againGym", again.gym, false)}
     <div class="stack" id="againInfo" style="gap:6px">${againInfo()}</div>`;
     openSheet(
@@ -5578,6 +5578,19 @@
      Mezery uvnitř karet a panelů (formuláře, nápovědy, rekordy, galerie) a stránky trénink, uložený trénink,
      Upravit cvik a Popis cviku řeší F3-44. Kontrola: tools/mezery.js (Playwright, lokálně) vypíše mezery
      mezi bloky hlavních obrazovek se zkušebními daty. */
+  /* ---------- TYPOGRAFIE (F3-45) ----------
+     Jen v css/app.css a třídy v šablonách (přání uživatele 13. 10. 2026, náhled schválen týž den).
+     Jedno písmo pro jednu roli, aby stejné věci vypadaly všude stejně:
+     - Název v kartě (šablona .tpl h3, cvik v tréninku .exc-h h3, trénink v Historii .hw h3, cvik v uloženém
+       tréninku .wex-n): Barlow 700, --fs-lg, výška řádku 1,2, barva textu. 600 uživatel zamítl: v kartě cviku
+       by se název nelišil od čísel sérií (.cell je také --fs-lg a 600).
+     - Název v řádku seznamu (Cviky .exrow .n, výběr cviků, fitka, řazení cviků a šablon): 600 (.row-n).
+     - Popisek nad políčkem nebo čipy (Název, Barva, Fitko, Kde dnes cvičíš): label.f / .lbl-f, drobné velké písmo.
+     - Nadpis VELKÝMI písmeny v úzkém písmu (.sec-h h2, měsíc .mhead, skupina ve výběru cviků .pick-sec):
+       600, --fs-base, proložení 0,09 em. Drobný popisek VELKÝMI (.subh, hlavička sérií, popisky dlaždic a čísel):
+       --fs-2xs, 600, proložení 0,06 em (popisek pauzy .rest-l zůstává obyčejný).
+     - Velké číslo v úzkém písmu (dlaždice, pauza, krokovač, rekordy, Statistiky → Cviky): 600.
+     Písmo Barlow je jen v řezech 400–700 (fonts/), jiný řez se nekreslí. */
   /* ---------- ODZNAK DRUHU SÉRIE A HOTOVÝ ŘÁDEK (F3-35) ----------
      Jen v css/app.css (přání uživatele 10. 10. 2026, náhled schválen 11. 10.). Po ✓ ztratí políčka
      kg / opak. a RIR/RPE šedý podklad (tr.done .cell, tr.done .effb), odznak pracovní série si ho ale
@@ -6580,7 +6593,7 @@
       const cz = (S.exLib[e.exId] || {}).cz; // český název pod anglickým (F3-37)
       cards.push(
         `<div class="card${ssRun(w.ex, i) ? " ss-on" : ""}">
-        <div style="font-weight:700;color:var(--accent-2)">
+        <div class="wex-n">
           <button class="linkbtn" data-act="openEx" data-v="${esc(e.exId)}">${esc(exName(e.exId))}` +
           `</button>${er.length ? " " + recCount(er) : ""}
         </div>
@@ -9890,7 +9903,7 @@
     const b = `<div class="thumbs">
         ${a.items.map((it) => `<div class="th"><img src="${it.url}" alt=""></div>`).join("")}
       </div>
-      <div class="small" style="font-weight:600">Fitko</div>
+      <div class="lbl-f">Fitko</div>
       ${phGymChips("phAddGym", a.gym)}
       <div class="xs muted">„Bez fitka“ = fotka se ukáže ve všech fitkách.</div>
       <label class="switch">
@@ -10214,7 +10227,7 @@
           })
           .join("")}
       </div>
-      <div class="small" style="font-weight:600">Fitko</div>
+      <div class="lbl-f">Fitko</div>
       ${phGymChips("fpGym", fp.gym)}
       <label class="switch">
         <input type="checkbox" data-act="fpFirst" ${fp.first ? "checked" : ""}>
@@ -10266,7 +10279,7 @@
             <button class="pick" data-act="fpPick" data-v="${esc(x.id)}">
               <img class="fsimg" crossorigin="anonymous" src="${esc(fedbSrc(x, 0))}" alt="" loading="lazy">
               <div class="grow">
-                <div style="font-weight:600">${esc(x.n)}</div>
+                <div class="row-n">${esc(x.n)}</div>
                 <div class="cz">${esc(x.cz)}</div>
               </div>
             </button>
@@ -11223,7 +11236,7 @@
         data-v="${g.id}" style="padding:10px 12px">
         <span class="sw" style="width:12px;height:12px;border-radius:50%;background:${gymColor(g.id)}"></span>
         <div class="grow">
-          <b>${esc(g.name)}</b>
+          <div class="row-n">${esc(g.name)}</div>
           <div class="xs muted">
             ${n} ${plural(n, "trénink", "tréninky", "tréninků")}${def}
           </div>
@@ -11656,7 +11669,7 @@
         <button class="pick" data-act="pickToggle" data-v="${esc(id)}" aria-pressed="${on}">
           <span class="chk">${on ? IC.check : ""}</span>
           <div class="grow">
-            <div style="font-weight:600">${nameWithIcons(e.name, e.gymDep ? gdIcon() : "")}</div>
+            <div class="row-n">${nameWithIcons(e.name, e.gymDep ? gdIcon() : "")}</div>
             ${e.cz ? `<div class="cz">${esc(e.cz)}</div>` : ""}
             <div class="xs muted">
               ${esc(
@@ -12503,7 +12516,7 @@
                 : `<img class="fsimg" src="${esc(FEDB_IMG + x.id + "/0.jpg")}" alt="" loading="lazy">`
             }
             <div class="grow">
-              <div style="font-weight:600">${esc(x.n)}</div>
+              <div class="row-n">${esc(x.n)}</div>
               <div class="cz">${esc(x.cz)}</div>
               <div class="xs muted">
                 ${esc(x.p.map((k) => MUSCLE_MAP.NAMES[k]).join(", "))} · ${esc(EQUIP[x.e] || "")}` +
@@ -12762,7 +12775,7 @@
         const ss = ssRun(d.ex, i); // cvik v supersérii (F4-05): proužek vlevo
         return `<div class="card dnd-it dnd-row${ss ? " ss-on" : ""}">
             <div class="grow">
-              <b>${esc(name)}</b>
+              <div class="row-n">${esc(name)}</div>
               <div class="xs muted">
                 ${n} ${plural(n, "série", "série", "sérií")}
               </div>
@@ -12794,7 +12807,7 @@
         const gyms = tplGyms(t);
         return `<div class="card dnd-it dnd-row">
             <div class="grow">
-              <b>${esc(t.name)}</b>
+              <div class="row-n">${esc(t.name)}</div>
               <div class="xs muted">
                 ${gyms.length ? esc(gyms.map(gymName).join(", ")) : "Všechna fitka"}
               </div>

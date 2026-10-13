@@ -255,6 +255,16 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   Nadpis sekce pod filtry zůstává 22 px. Kontrola v úloze „kontrola“ (`git diff` PR, `style="…margin…Npx"`)
   a `tools/mezery.js`. Mezery uvnitř karet a panelů a stránky mimo náhled → F3-44. Popis v úvodním komentáři sekce
   „SVISLÉ MEZERY“ v `js/app.js`.
+- [x] **F3-45** Jednotná typografie karet, seznamů a popisků (dotaz uživatele 13. 10. 2026, jestli mají názvy šablon,
+  cviků a tréninků stejné písmo; náhled Dnes / Po změně schválen týž den). Zjištěno: názvy v kartách jsou všude Barlow
+  700 `--fs-lg`, jen Historie měla výšku řádku 1,4 místo 1,2. **Zamítnuto:** názvy v kartách polotučně (600), v kartě
+  cviku by splynuly s čísly sérií. **Provedeno:** Historie výška řádku 1,2; název cviku v uloženém tréninku 17 px
+  v barvě textu (byl 15 px červený, proti pravidlu hlavní barvy F3-23); fitko v Nastavení → Fitka a řádky při řazení
+  600 jako cviky v seznamu (třída `.row-n` místo `<b>` a `style="font-weight:600"`); popisky nad čipy fitek
+  („Kde dnes cvičíš“, „Fitko“, „Fitka“) jako popisky ve formulářích (`.lbl-f`, drobné velké písmo); nadpis skupiny ve
+  výběru cviků a měsíc v Historii 15 px jako nadpis sekce, drobné popisky velkými proložení 0,06 em a 600; velká čísla
+  v krokovači a Statistikách → Cviky 600 jako ostatní; zbytečný řez 800 u zatržítka fotek pryč. Tlačítko „i“ jako
+  písmeno → F3-46. Popis v úvodním komentáři sekce „TYPOGRAFIE“ v `js/app.js`, pravidlo v `CLAUDE.md`.
 
 ## Fáze 4 – Chytré funkce
 
