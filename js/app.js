@@ -1713,7 +1713,8 @@
     D = { all, byEx };
     return D;
   }
-  // souhrn jednoho cviku v tréninku w: hodnoty pracovních sérií (objem, max, odh. 1RM, čas, vzdálenost…)
+  /* souhrn jednoho cviku v tréninku w: hodnoty pracovních sérií (objem, max, odh. 1RM, čas, vzdálenost…);
+     setVol = největší objem jedné série, totReps = opakování celkem (F3-42), maxKg i u cviku na čas se zátěží */
   function exSum(w, e) {
     const kind = kindOf(e.exId);
     let vol = 0,
@@ -1721,6 +1722,8 @@
       best = 0,
       bestSet = null,
       maxReps = 0,
+      setVol = 0,
+      totReps = 0,
       nWork = 0,
       maxSec = 0,
       totSec = 0,
@@ -1734,6 +1737,10 @@
         const L = setLoad(kind, s, w.start),
           reps = +s.reps || 0;
         vol += L * reps;
+        totReps += reps;
+        if (L * reps > setVol) {
+          setVol = L * reps;
+        }
         if (L > maxKg) {
           maxKg = L;
         }
@@ -1751,6 +1758,9 @@
         totSec += sec;
         if (sec > maxSec) {
           maxSec = sec;
+        }
+        if (kind === "timew" && sec > 0) {
+          maxKg = Math.max(maxKg, setLoad(kind, s, w.start));
         }
       }
       if (kind === "dist") {
@@ -1775,6 +1785,8 @@
       best,
       bestSet,
       maxReps,
+      setVol,
+      totReps,
       nWork,
       maxSec,
       totSec,
@@ -9064,6 +9076,51 @@
     return h;
   }
 
+  /* ---------- GRAFY CVIKU (F3-42) ----------
+     Stránka cviku → Statistiky: grafy se vybírají čipy v řadě za sebou (posouvá se do strany, jako výběr údaje
+     v Těle), vybraný graf v S.detailMetric. Které grafy cvik má, určuje exCharts(kind) podle typu cviku:
+     - s opakováním: Odh. 1RM, Max zátěž, Objem série (největší opakování × zátěž jedné série), Objem tréninku,
+       Opakování celkem (součet opakování pracovních sérií), Max opak.,
+     - na čas: Nejdelší výdrž, Čas celkem, u cviku na čas se zátěží navíc Max zátěž,
+     - vzdálenost: Nejdelší, Vzdálenost, Tempo.
+     Hodnoty počítá exSum (setVol, totReps, maxKg i pro timew), nic se neukládá, stará data fungují hned.
+     Max zátěž u cviku na čas je jen graf, ne osobní rekord. Dlaždice nahoře: u cviku na čas nebo vzdálenost
+     je místo Objemu (vždy 0 kg) Čas celkem za období (exTile3). Nový graf = nová položka v exCharts. */
+  // grafy cviku: klíč → [název čipu, hodnota z exSum, jednotka]
+  function exCharts(kind) {
+    if (kind === "dist") {
+      return {
+        km: ["Nejdelší", "maxKm", " km"],
+        tkm: ["Vzdálenost", "totKm", " km"],
+        speed: ["Tempo", "speed", " km/h"],
+      };
+    }
+    if (isTimed(kind)) {
+      const m = { sec: ["Nejdelší výdrž", "maxSec", " s"], tsec: ["Čas celkem", "totSec", " s"] };
+      if (kind === "timew") {
+        m.max = ["Max zátěž", "maxKg", " kg"];
+      }
+      return m;
+    }
+    return {
+      e1rm: ["Odh. 1RM", "best", " kg"],
+      max: ["Max zátěž", "maxKg", " kg"],
+      svol: ["Objem série", "setVol", " kg"],
+      vol: ["Objem tréninku", "vol", " kg"],
+      treps: ["Opakování celkem", "totReps", "×"],
+      reps: ["Max opak.", "maxReps", "×"],
+    };
+  }
+  // třetí dlaždice souhrnu za období: Objem, u cviku na čas nebo vzdálenost Čas celkem (sel = výskyty cviku)
+  function exTile3(kind, sel) {
+    if (isTimed(kind)) {
+      const sec = sel.reduce((a, s) => a + s.totSec, 0);
+      return `<div class="kpi"><b>${fmtSec(sec)}</b><span>Čas</span></div>`;
+    }
+    const vol = sel.reduce((a, s) => a + s.vol, 0);
+    return `<div class="kpi"><b>${fmtVol(vol)}</b><span>Objem</span></div>`;
+  }
+
   /* ---------- STRÁNKA CVIKU (F0-05, F3-31, F3-28) ----------
      Route exd (vExDetail), záložky Popis | Statistiky | Historie (S.exPart "info" | "stats" | "hist"),
      bez počtu záznamů v názvu. openEx volí záložku podle toho, odkud se přišlo (data-p ji vynutí): ze záložky
@@ -9162,21 +9219,7 @@
     } Změníš přes Upravit.</p>`;
     h += exGymChips(ex, gymsWith, "Všechna (zvlášť)");
     const kind = kindOf(id);
-    const M =
-      isTimed(kind) && kind !== "dist"
-        ? { sec: ["Nejdelší výdrž", "maxSec", " s"], tsec: ["Čas celkem", "totSec", " s"] }
-        : kind === "dist"
-          ? {
-              km: ["Nejdelší", "maxKm", " km"],
-              tkm: ["Vzdálenost", "totKm", " km"],
-              speed: ["Tempo", "speed", " km/h"],
-            }
-          : {
-              e1rm: ["Odh. 1RM", "best", " kg"],
-              max: ["Max zátěž", "maxKg", " kg"],
-              vol: ["Objem", "vol", " kg"],
-              reps: ["Max opak.", "maxReps", "×"],
-            };
+    const M = exCharts(kind); // grafy podle typu cviku (F3-42)
     // vybraný graf cvik nemá (např. „Odh. 1RM“ u planku) → první graf, který má
     if (!M[S.detailMetric]) {
       S.detailMetric = Object.keys(M)[0];
@@ -9187,10 +9230,8 @@
       sel = sel.filter((s) => s.w.gymId === S.detailGym);
     }
     // souhrn za období
-    let pv = 0,
-      ps = 0;
+    let ps = 0;
     for (const s of sel) {
-      pv += s.vol;
       ps += s.nWork;
     }
     const prIn = (start, gymId) =>
@@ -9205,7 +9246,7 @@
       <div class="kpis k4" style="margin-top:10px">
         <div class="kpi"><b>${sel.length}</b><span>Tréninky</span></div>
         <div class="kpi"><b>${ps}</b><span>Série</span></div>
-        <div class="kpi"><b>${fmtVol(pv)}</b><span>Objem</span></div>
+        ${exTile3(kind, sel)}
         <div class="kpi"><b>${pr}</b><span>Rekordy</span></div>
       </div>
     </section>`;
@@ -9239,11 +9280,11 @@
       ];
     }
     h += `<section class="sec">
-      <div class="seg" style="margin-bottom:10px">
+      <div class="chips" data-ck="detailMetric" style="margin-bottom:calc(10px + (34px - var(--tap)) / 2)">
         ${Object.keys(M)
           .map(
             (k) =>
-              `<button data-act="detailMetric" data-v="${k}"
+              `<button class="chip" data-act="detailMetric" data-v="${k}"
                   aria-pressed="${S.detailMetric === k}">${M[k][0]}</button>`,
           )
           .join("")}
@@ -9256,8 +9297,13 @@
             label: M[S.detailMetric][0],
             unit: M[S.detailMetric][2],
             yUnit: M[S.detailMetric][2].trim(),
-            fmt: M[S.detailMetric][2] === " s" ? "sec" : S.detailMetric === "vol" ? "vol" : "",
-            whole: S.detailMetric === "reps",
+            fmt:
+              M[S.detailMetric][2] === " s"
+                ? "sec"
+                : S.detailMetric === "vol" || S.detailMetric === "svol"
+                  ? "vol"
+                  : "",
+            whole: S.detailMetric === "reps" || S.detailMetric === "treps",
             series,
           },
           200,
@@ -17335,6 +17381,38 @@
         fakeSets(110, 10, 3),
         fakeSets(110, 9, 3),
         fakeSets(110, 10, 3),
+      ],
+    },
+    {
+      exId: "farmers-walk",
+      note:
+        "na čas se zátěží (F3-42): stránka cviku → Statistiky čipy Nejdelší výdrž, Čas celkem, Max zátěž " +
+        "(24 → 30 kg), dlaždice Čas místo Objemu",
+      sets: [
+        [
+          { t: "n", kg: 24, sec: 40 },
+          { t: "n", kg: 24, sec: 35 },
+        ],
+        [
+          { t: "n", kg: 24, sec: 45 },
+          { t: "n", kg: 24, sec: 40 },
+        ],
+        [
+          { t: "n", kg: 26, sec: 40 },
+          { t: "n", kg: 26, sec: 40 },
+        ],
+        [
+          { t: "n", kg: 28, sec: 35 },
+          { t: "n", kg: 28, sec: 30 },
+        ],
+        [
+          { t: "n", kg: 28, sec: 45 },
+          { t: "n", kg: 28, sec: 40 },
+        ],
+        [
+          { t: "n", kg: 30, sec: 40 },
+          { t: "n", kg: 30, sec: 35 },
+        ],
       ],
     },
     {
