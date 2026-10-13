@@ -10817,13 +10817,12 @@
         ],
         [
           "Jak získat soubor",
-          "V Samsung Health: Nastavení → Stáhnout osobní data. Telefon uloží složku se soubory (CSV) do " +
-            "Stažených souborů. Měření jsou v souboru, který začíná com.samsung.health.weight.",
+          "V Samsung Health: Nastavení → Stáhnout osobní data. Telefon uloží do Stažených souborů složku " +
+            "samsunghealth_… (název podle účtu a data stažení).",
         ],
         [
-          "Vybrat soubor / složku",
-          "Soubor: klepni přímo na soubor com.samsung.health.weight…csv. Složka: vyber složku se staženými " +
-            "daty a appka si soubor najde sama (z víc stažení vezme nejnovější).",
+          "Vybrat soubor",
+          "Ve složce samsunghealth_… klepni na soubor, který začíná com.samsung.health.weight a končí .csv.",
         ],
         [
           "Zdroje",
@@ -15678,7 +15677,7 @@
       readImport(t);
       return;
     }
-    if (t.id === "shFileIn" || t.id === "shDirIn") {
+    if (t.id === "shFileIn") {
       shRead(t); // F4-13
       return;
     }
@@ -16161,9 +16160,10 @@
   }
 
   /* ---------- IMPORT MĚŘENÍ ZE SAMSUNG HEALTH (F4-13) ----------
-     Nastavení → Data a záloha → Samsung Health (shSettings): Vybrat soubor (shFileIn) nebo Vybrat složku
-     (shDirIn, webkitdirectory; ve složce se najdou soubory com.samsung.health.weight.<čas>.csv a vezme se
-     nejnovější podle čísla v názvu). Soubor vzniká v Samsung Health → Nastavení → Stáhnout osobní data.
+     Nastavení → Data a záloha → Samsung Health (shSettings): Vybrat soubor (shFileIn). Soubor vzniká
+     v Samsung Health → Nastavení → Stáhnout osobní data (složka samsunghealth_<účet>_<čas> se všemi daty).
+     Výběr složky (webkitdirectory) zamítnut 13. 10. 2026: Chrome se ptá „Nahrát 44 571 souborů na tento web?“
+     (celý export), hláška děsí a načtení trvá; úspora je jen jedno klepnutí.
      shRead přečte CSV (shParse: 1. řádek „com.samsung.health.weight,…“, 2. řádek názvy sloupců, sloupce
      se hledají podle názvu, ne pořadí). Čas start_time je v UTC (ověřeno s uživatelem 13. 10. 2026),
      ukládá se skutečný čas měření. Převod sloupců SH_COLS (fat_free_mass / fat_free appka nemá).
@@ -16195,7 +16195,7 @@
     "com.hevy": "Hevy",
   };
   const SH_SRC_OFF = ["com.hevy"]; // zdroje ve výchozím stavu vypnuté
-  const SH_FILE = /(^|\/)com\.samsung\.health\.weight\.(\d+)\.csv$/;
+  const SH_FILE = /^com\.samsung\.health\.weight\.(\d+)\.csv$/;
   let shData = null; // načtený soubor: { rows, fileAt }
 
   // je zdroj zaškrtnutý (zapamatovaná volba, jinak výchozí)
@@ -16212,12 +16212,8 @@
         ${helpBtn("samsung")}
       </div>
       <div class="card stack">
-        <div class="row wrap-r">
-          <label class="btn grow" for="shFileIn">Vybrat soubor</label>
-          <label class="btn grow" for="shDirIn">Vybrat složku</label>
-        </div>
+        <label class="btn" for="shFileIn">Vybrat soubor</label>
         <input type="file" id="shFileIn" hidden>
-        <input type="file" id="shDirIn" webkitdirectory multiple hidden>
       </div>
     </section>`;
   }
@@ -16301,24 +16297,11 @@
     return out;
   }
 
-  // vybraný soubor nebo složka: najde soubor s měřením, přečte ho a otevře panel importu
+  // vybraný soubor: přečte měření a otevře panel importu
   async function shRead(inp) {
-    const files = Array.from(inp.files || []);
+    const file = inp.files && inp.files[0];
     inp.value = "";
-    if (!files.length) return;
-    let file = files[0];
-    if (files.length > 1 || inp.id === "shDirIn") {
-      // složka: nejnovější com.samsung.health.weight.<čas>.csv (i z podsložek, víc exportů)
-      const found = files
-        .map((f) => ({ f, m: SH_FILE.exec(f.webkitRelativePath || f.name) }))
-        .filter((x) => x.m)
-        .sort((a, b) => (a.m[2] < b.m[2] ? 1 : -1));
-      if (!found.length) {
-        toast("Ve složce není soubor com.samsung.health.weight….csv.");
-        return;
-      }
-      file = found[0].f;
-    }
+    if (!file) return;
     let rows = null;
     try {
       rows = shParse(await file.text());
@@ -16334,7 +16317,7 @@
       return;
     }
     const m = SH_FILE.exec(file.name);
-    shData = { rows, fileAt: m ? m[2] : "" };
+    shData = { rows, fileAt: m ? m[1] : "" };
     shSheet();
   }
 
