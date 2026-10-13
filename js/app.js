@@ -11072,7 +11072,8 @@
      sheetGymDel (stav gymDel) s volbou Přesunout (výchozí, do jiného aktivního fitka: tréninky, šablony,
      plán, nastavení strojů s předností cílového fitka, fotky) nebo Smazat (tréninky se smažou). Před
      provedením bod obnovy (makePoint "gym"), tlačítko Zálohovat do souboru. Řádek pod výběrem má v obou
-     stavech stejnou délku, aby se okno při přepínání neměnilo.
+     stavech stejnou délku, aby se okno při přepínání neměnilo. Potvrzovací tlačítko podle volby: Přesunout /
+     Smazat (že se fitko smaže v obou případech, říká nadpis Smazat fitko?).
      Nejde (gymBlock, tlačítko je šedé .off a klepnutí ukáže důvod): archivovat ani smazat poslední aktivní
      fitko a fitko rozdělaného tréninku. Smazání úplně posledního fitka tlačítko nemá. */
   let gymDel = null; // okno Smazat fitko s tréninky: {id, mode: "move" | "del", to}
@@ -11181,7 +11182,7 @@
       "Smazat fitko?",
       b,
       `<button class="btn grow" data-act="closeSheet">Zrušit</button>
-      <button class="btn primary grow" data-act="gymDelGo">Smazat fitko</button>`,
+      <button class="btn primary grow" data-act="gymDelGo">${move ? "Přesunout" : "Smazat"}</button>`,
       noanim,
       { lv: 2, back: () => sheetGym(del.id) },
     );
