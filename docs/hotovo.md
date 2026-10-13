@@ -207,8 +207,9 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 - [x] **F3-41** Filtr partií v panelu (přání uživatele 13. 10. 2026 spolu s F3-40: 15 čipů partií a 10 čipů vybavení
   v řádcích posouvaných do strany, špatná orientace): v záložce Cviky, v panelu Přidat cviky / Nahradit cvik
   a ve Statistikách → Cviky je místo řádků čipů jeden řádek filtrů: Partie ▾ a Vybavení ▾ (ve výběru i Jen
-  cviky z historie, v Cvikách Skryté). Klepnutí otevře panel: Partie po skupinách (Všechny partie, Hrudník, Ramena,
-  pak Záda, Paže, Břicho a Nohy s volbou „Celá …“ a jednotlivými partiemi), Vybavení. Vybraný filtr je v čipu
+  cviky z historie, v Cvikách Skryté). Klepnutí otevře panel: Partie (Všechny partie, pak každá skupina s nadpisem
+  ve stejném pořadí jako formulář cviku, u skupiny s víc partiemi i „Celá …“), Vybavení jako seznam pod sebou
+  abecedně (po testu v telefonu: Hrudník a Ramena vedle Všechny partie působily nelogicky). Vybraný filtr je v čipu
   s křížkem („Paže ×“), klepnutí ho zruší. Filtr hledá ve všech hlavních partiích cviku (dřív jen v první). Místo
   nadpisu Seznam je počet cviků („18 cviků“, mění se s filtrem), vpravo v Cvikách Naposledy / A–Z, zeměkoule a plus,
   ve výběru zeměkoule a plus; ve Statistikách počet nad hledáním a Naposledy / Zlepšení vpravo vedle Partie.

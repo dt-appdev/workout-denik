@@ -8829,8 +8829,8 @@
      Záložka Cviky, panel Přidat cviky / Nahradit cvik a Statistiky → Cviky mají místo řádků čipů jeden řádek
      filtrů: čip Partie ▾ (a Vybavení ▾, ve výběru i Jen cviky z historie). Bez výběru čip otevře panel
      (sheetMf, sheetEq), s výběrem ukazuje hodnotu s křížkem („Paže ×“) a klepnutí výběr zruší (akce mfOpen,
-     eqOpen). Panel Partie: Všechny partie, skupiny s jedinou partií (Hrudník, Ramena) a pro ostatní skupiny
-     MPICK „Celá záda“ + jednotlivé partie. Hodnota filtru: "all", "g:<skupina z MGRP>" nebo partie z MKEYS;
+     eqOpen). Panel Partie: Všechny partie, pak každá skupina MPICK s nadpisem a čipy (u skupiny s víc partiemi
+     „Celá záda“ + jednotlivé partie). Panel Vybavení: seznam pod sebou, Všechno vybavení a pak abecedně. Hodnota filtru: "all", "g:<skupina z MGRP>" nebo partie z MKEYS;
      cvik do filtru patří, když ji má mezi hlavními partiemi (mfMatch, libovolná hlavní, ne jen první).
      Uložená hodnota z doby před F3-41 (skupiny MUSCLES) se při startu převede přes mfNorm (u MPICK), neznámá
      = "all".
@@ -8915,18 +8915,16 @@
   }
   function sheetMf(from) {
     const cur = MF[from].get();
-    const chip = (v, label, dot) =>
+    const chip = (v, label) =>
       `<button class="chip" data-act="mfSet" data-v="${from}|${v}" aria-pressed="${cur === v}">` +
-      `${dot ? `<span class="sw" style="background:var(--g-${dot})"></span>` : ""}${esc(label)}</button>`;
-    const single = MPICK.filter(([, keys]) => keys.length === 1);
-    let b =
-      `<div class="chips fwrap">${chip("all", "Všechny partie")}` +
-      single.map(([g, keys]) => chip(keys[0], MGRP[g], g)).join("") +
-      `</div>`;
-    for (const [g, keys] of MPICK.filter(([, ks]) => ks.length > 1)) {
+      `${esc(label)}</button>`;
+    // každá skupina má nadpis, ve stejném pořadí jako formulář cviku; skupina s víc partiemi i „Celá …“
+    let b = `<div class="chips fwrap">${chip("all", "Všechny partie")}</div>`;
+    for (const [g, keys] of MPICK) {
       b += `<div class="mf-h"><i style="background:var(--g-${g})"></i>${esc(MGRP[g])}</div>
         <div class="chips fwrap">
-          ${chip("g:" + g, MF_ALL[g])}${keys.map((k) => chip(k, MUSCLE_MAP.NAMES[k])).join("")}
+          ${keys.length > 1 ? chip("g:" + g, MF_ALL[g]) : ""}
+          ${keys.map((k) => chip(k, MUSCLE_MAP.NAMES[k])).join("")}
         </div>`;
     }
     mfSheet(from, "Partie", b, () => sheetMf(from));
@@ -8934,13 +8932,15 @@
   const MF_ALL = { back: "Celá záda", arms: "Celé paže", core: "Celé břicho", legs: "Celé nohy" };
   function sheetEq(from) {
     const cur = MF[from].eq();
-    const b = `<div class="chips fwrap">
+    // seznam pod sebou: Všechno vybavení, pak abecedně; vybrané má fajfku
+    const opts = Object.entries(EQUIP).sort((a, b) => a[1].localeCompare(b[1], "cs"));
+    const b = `<div class="card setlist">
       ${[["all", "Všechno vybavení"]]
-        .concat(Object.entries(EQUIP))
+        .concat(opts)
         .map(
           ([k, l]) =>
-            `<button class="chip" data-act="eqSet" data-v="${from}|${k}" aria-pressed="${cur === k}">
-              ${esc(l)}
+            `<button class="setrow optrow" data-act="eqSet" data-v="${from}|${k}" aria-pressed="${cur === k}">
+              <span class="grow">${esc(l)}</span>${cur === k ? icon("check") : ""}
             </button>`,
         )
         .join("")}
