@@ -283,6 +283,15 @@
     calves: "legs",
   };
   const mgCol = (k) => "var(--g-" + (MGRP_OF[k] || "back") + ")";
+  // skupiny partií shora dolů a partie v nich, pro výběr partií po skupinách (F3-40, F3-41)
+  const MPICK = [
+    ["chest", ["chest"]],
+    ["sh", ["delts"]],
+    ["back", ["traps", "upperback", "lats", "lowback", "neck"]],
+    ["arms", ["biceps", "triceps", "forearm"]],
+    ["core", ["abs", "oblique"]],
+    ["legs", ["glutes", "quads", "hams", "adductor", "calves"]],
+  ];
   const GROUP_OF = {
     neck: "neck",
     chest: "chest",
@@ -10830,6 +10839,55 @@
         return [["Jak se počítají", text]];
       },
     },
+    // formulář Nový / Upravit cvik (F3-40)
+    exParts: {
+      title: "Partie",
+      items: () => [
+        [
+          "Výběr partií",
+          "Klepnutím na partii ji označíš jako hlavní, dalším klepnutím jako pomocnou, třetím výběr zrušíš. " +
+            "Postava nad partiemi ukazuje, co je vybrané.",
+        ],
+        [
+          "Hlavní a pomocná",
+          "Hlavní partie cvik procvičuje nejvíc, podle první hlavní partie se cvik řadí do filtru partií. " +
+            "Ve Statistikách se počítají jen hlavní partie, v souhrnu tréninku pomocná partie jako půl série.",
+        ],
+      ],
+    },
+    exLog: {
+      title: "Zápis",
+      items: () => [
+        [
+          "Typ zápisu",
+          "Určuje, co se u série zapisuje. " +
+            KIND_ORDER.map((k) => `<b style="display:inline">${esc(KIND[k].l)}</b>: ${esc(KIND[k].ex)}`).join(
+              ". ",
+            ) +
+            ".",
+        ],
+        [
+          "Vázáno na fitko",
+          "Zapni u strojů a kladek, v každém fitku mají jiný odpor. Předvyplnění, rekordy a progres se pak " +
+            "počítají zvlášť pro každé fitko.",
+        ],
+      ],
+    },
+    exTrain: {
+      title: "Během tréninku",
+      items: () => [
+        [
+          "Vlastní pauza",
+          "Zapnuto = po odškrtnutí série tohoto cviku běží pauza nastavená posuvníkem. Vypnuto = platí " +
+            "Výchozí časovač z Nastavení → Trénink → Odpočinek mezi sériemi.",
+        ],
+        [
+          "Návrh progrese",
+          "Podle nastavení = jak je v Nastavení → Trénink → Návrh progrese. Zapnuto, vlastní rozsah = návrh " +
+            "u tohoto cviku vždy, s vlastním rozsahem opakování. Vypnuto = u tohoto cviku nikdy.",
+        ],
+      ],
+    },
   };
   // tlačítko s otazníkem do nadpisu sekce; key = klíč v HELP (u "exRec:<id>" i s parametrem)
   function helpBtn(key) {
@@ -11572,7 +11630,7 @@
     );
     galRestore(document.getElementById("sheetRoot"));
   }
-  /* ---------- NOVÝ A UPRAVIT CVIK (F3-14, F3-30) ----------
+  /* ---------- NOVÝ A UPRAVIT CVIK (F3-14, F3-30, F3-40) ----------
      Formulář je samostatná stránka (route "exed") se šipkou ←, ne panel. Otevírá se jen přes exEdOpen,
      který si uloží místo návratu (navFrame, i s otevřeným panelem: výběr cviků, info o cviku, výsledky
      online hledání). Zpět i Uložit vrací přes exEdLeave. Hodnoty políček se průběžně ukládají do exEd.f
@@ -11587,7 +11645,12 @@
      jen to, co je ve formuláři; historie, rekordy, fotky a poznámky zůstávají u originálu, skrytí se
      nepřenáší (kopie je vždy viditelná). Uloží se až po Uložit jako nový vlastní cvik, pak se otevře stránka
      kopie a Zpět z ní vede tam, odkud se přišlo k originálu. Rozepsaná kopie se počítá jako změna
-     (exEdChanged). */
+     (exEdChanged).
+     Sekce formuláře (F3-40): Název, Partie, Zápis, Během tréninku, Popis, každá s nadpisem a kartou (exEdSec).
+     Předvyplnit z online databáze je zeměkoule v nadpisu Název (jen nový cvik bez kopie a bez vybraného
+     záznamu). Partie (exEdMuscles): postava, legenda Hlavní / Pomocná a čipy po skupinách MPICK s barvou
+     skupiny; klepnutí na čip (xMus) cyklí hlavní → pomocná → nic. Vysvětlení nejsou pod políčky, ale
+     v nápovědách exParts, exLog, exTrain (F3-21). Nové pole formuláře patří do své sekce. */
   // exEd = {id, from, fx, fxPh, f: hodnoty formuláře, orig: f a fxPh při otevření}
   let exEd = null;
   // from: odkud se přišlo – list (záložka Cviky), detail (stránka cviku), info (info o cviku ve výběru),
@@ -11758,6 +11821,36 @@
     </div>`
     );
   }
+  // sekce formuláře cviku (F3-40): nadpis s tlačítkem vpravo a karta s políčky
+  function exEdSec(title, btn, body) {
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>${esc(title)}</h2>
+        ${btn ? `<div class="sec-btns">${btn}</div>` : ""}
+      </div>
+      <div class="card stack ex-form">${body}</div>
+    </section>`;
+  }
+  // partie (F3-40): postava, legenda Hlavní / Pomocná a čipy po skupinách (MPICK, barva skupiny --g-*);
+  // klepnutí na čip jako dřív: hlavní → pomocná → nic (akce xMus)
+  function exEdMuscles(f) {
+    const chip = (k) =>
+      `<button type="button" class="${f.pri.includes(k) ? "p" : f.sec.includes(k) ? "s" : ""}"
+          data-act="xMus" data-v="${k}"
+          aria-pressed="${f.pri.includes(k) || f.sec.includes(k)}">${esc(MUSCLE_MAP.NAMES[k])}</button>`;
+    return `${exFigures({ pri: f.pri, sec: f.sec }, true)}
+      <div class="mlegend">
+        <span><i style="background:var(--m-pri)"></i>Hlavní</span>
+        <span><i style="background:var(--m-sec)"></i>Pomocná</span>
+      </div>
+      <div class="mgroups">
+        ${MPICK.map(
+          ([g, keys]) =>
+            `<div class="mg-l"><i style="background:var(--g-${g})"></i>${MGRP[g]}</div>
+            <div class="mpick">${keys.map(chip).join("")}</div>`,
+        ).join("")}
+      </div>`;
+  }
   // výběr fotek z online databáze ve formuláři Nový cvik (F2-05); nic není předvybrané
   function exEdPhotos(fx) {
     return `<div class="stack" style="gap:6px">
@@ -11870,22 +11963,23 @@
       id ? e.name || "" : exEd.copyOf ? "podle: " + exOf(exEd.copyOf).name : "",
       `<button class="iconbtn" data-act="exEdBack" aria-label="Zpět">${IC.back}</button>`,
     );
-    h += `<div class="card stack ex-form">
-      ${
-        id || exEd.copyOf
-          ? ""
-          : fx
-            ? `<div class="banner" style="margin-top:0">
-                Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
-                název je jen návrh.` +
-              `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
-              </div>`
-            : `<button class="btn sm" data-act="fedbOpen" data-v="form">
-                Předvyplnit z online databáze
-              </button>`
+    // F3-40: sekce s nadpisem a kartou; Předvyplnit z online databáze = zeměkoule v nadpisu Název
+    const fedbBtn =
+      id || exEd.copyOf || fx ? "" : icoBtn("fedbOpen", "globe", "Předvyplnit z online databáze", "form");
+    h += exEdSec(
+      "Název",
+      fedbBtn,
+      `${
+        fx && !id
+          ? `<div class="banner" style="margin-top:0">
+              Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
+              název je jen návrh.` +
+            `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
+            </div>`
+          : ""
       }${fx && !id && !fx.ni ? exEdPhotos(fx) : ""}
       <label class="f">
-        Název (anglicky, jako v Hevy)
+        Anglický název
         <input class="inp${names.block ? " bad" : ""}" id="x-name" value="${esc(f.name)}">
         <span class="fmsg${names.block ? "" : " warn"}" id="x-name-msg">${names.name}</span>
       </label>
@@ -11893,29 +11987,19 @@
         Český název
         <input class="inp" id="x-cz" value="${esc(f.cz)}">
         <span class="fmsg warn" id="x-cz-msg">${names.cz}</span>
-      </label>
-      <div>
-        <div class="f lbl-f" style="margin-bottom:6px">Partie · klepnutím: hlavní → pomocná → nic</div>
-        <div class="mpick">
-          ${MKEYS.map(
-            (k) =>
-              `<button type="button"
-                  class="${f.pri.includes(k) ? "p" : f.sec.includes(k) ? "s" : ""}"
-                  data-act="xMus" data-v="${k}">${esc(MUSCLE_MAP.NAMES[k])}</button>`,
-          ).join("")}
-        </div>
-      </div>
-      ${exFigures({ pri: f.pri, sec: f.sec }, true)}
-      <label class="f">
+      </label>`,
+    );
+    h += exEdSec("Partie", helpBtn("exParts"), exEdMuscles(f));
+    h += exEdSec(
+      "Zápis",
+      helpBtn("exLog"),
+      `<label class="f">
         Typ zápisu
         <select class="inp" id="x-kind">
           ${KIND_ORDER.map(
             (k) => `<option value="${k}"${f.kind === k ? " selected" : ""}>${esc(KIND[k].l)}</option>`,
           ).join("")}
         </select>
-        <span class="xs muted" style="text-transform:none;letter-spacing:0;font-weight:500">
-          ${esc(KIND[f.kind].ex)}
-        </span>
       </label>
       <label class="f">
         Vybavení
@@ -11927,13 +12011,14 @@
       </label>
       <label class="switch">
         <input type="checkbox" id="x-gd" ${f.gd ? "checked" : ""}>
-        <span>Vázáno na fitko${gdIcon()}<br>
-          <span class="xs muted">Zapni u strojů a kladek — v každém fitku
-            mají jiný odpor.</span></span>
-      </label>
-      ${exEdRest(f)}
-      ${PROG_KINDS[f.kind] ? exEdProg(f) : ""}
-      <label class="f">
+        <span>Vázáno na fitko${gdIcon()}</span>
+      </label>`,
+    );
+    h += exEdSec("Během tréninku", helpBtn("exTrain"), exEdRest(f) + (PROG_KINDS[f.kind] ? exEdProg(f) : ""));
+    h += exEdSec(
+      "Popis",
+      "",
+      `<label class="f">
         Popis provedení
         <textarea class="inp" id="x-desc" rows="4">${esc(f.desc)}</textarea>
       </label>
@@ -11942,9 +12027,9 @@
         <input class="inp${urlProblem(f.url) ? " bad" : ""}" id="x-url" inputmode="url" value="${esc(f.url)}"
             placeholder="prázdné = vyhledat video podle názvu">
         <span class="fmsg" id="x-url-msg">${esc(urlProblem(f.url))}</span>
-      </label>
-    </div>`;
-    h += `<div class="stack" style="margin-top:12px">
+      </label>`,
+    );
+    h += `<div class="stack" style="margin-top:22px">
       <button class="btn primary block${names.block ? " off" : ""}" id="ex-save" data-act="saveEx"
           data-v="${esc(id || "")}" aria-disabled="${!!names.block}">Uložit cvik</button>`;
     if (id && exChanged(id)) {

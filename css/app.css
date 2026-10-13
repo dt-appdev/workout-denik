@@ -3079,6 +3079,45 @@ tr.done .okb {
   border-color: var(--m-sec);
   color: var(--ink);
 }
+/* partie ve formuláři cviku po skupinách (F3-40): vlevo skupina s barevnou tečkou, vpravo její partie */
+.mlegend {
+  display: flex;
+  gap: 14px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.mlegend i,
+.mg-l i {
+  display: inline-block;
+  border-radius: 50%;
+  flex: none;
+}
+.mlegend i {
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: -0.05em;
+}
+.mgroups {
+  display: grid;
+  grid-template-columns: 4.6em 1fr;
+  gap: 6px 8px;
+  align-items: start;
+}
+.mg-l {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.mg-l i {
+  width: 8px;
+  height: 8px;
+}
 textarea.inp {
   min-height: 84px;
   resize: vertical;
