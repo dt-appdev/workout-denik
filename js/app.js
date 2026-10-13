@@ -10808,6 +10808,35 @@
         ],
       ],
     },
+    samsung: {
+      title: "Samsung Health",
+      items: () => [
+        [
+          "K čemu to je",
+          "Import měření těla (hmotnost, tuk, svaly…) ze souboru staženého ze Samsung Health.",
+        ],
+        [
+          "Jak získat soubor",
+          "V Samsung Health: Nastavení → Stáhnout osobní data. Telefon uloží do Stažených souborů složku " +
+            "samsunghealth_… (název podle účtu a data stažení).",
+        ],
+        [
+          "Vybrat soubor",
+          "Ve složce samsunghealth_… klepni na soubor, který začíná com.samsung.health.weight a končí .csv.",
+        ],
+        [
+          "Zdroje",
+          "Do Samsung Health zapisují i jiné aplikace a zařízení (Hevy, chytrá váha). Odškrtni ty, jejichž " +
+            "měření už v appce máš. Volba se pamatuje pro příští import.",
+        ],
+        [
+          "Co se importuje",
+          "Hmotnost, tělesný tuk, kosterní sval, voda, bazální metabolismus, viscerální tuk a BMI (chybí-li, " +
+            "dopočítá se z výšky). Opakovaný import přidá jen nová měření. Ruční měření ze stejného dne se " +
+            "stejnou hmotností (±0,1 kg) se přepíše údaji ze Samsungu, obvody a poznámka zůstanou.",
+        ],
+      ],
+    },
     gyms: {
       title: "Fitka",
       items: () => [
@@ -11029,7 +11058,7 @@
     },
     { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
-    { id: "data", name: "Data a záloha", icon: "backup", body: () => backupSettings() },
+    { id: "data", name: "Data a záloha", icon: "backup", body: () => backupSettings() + shSettings() },
     {
       id: "about",
       name: "O aplikaci",
@@ -15391,6 +15420,12 @@
       case "importOk":
         doImport(v);
         break;
+      case "shSrc": // F4-13: zdroj měření v panelu importu ze Samsung Health
+        shSrcSet(v, t.checked);
+        break;
+      case "shGo":
+        shApply(v);
+        break;
       case "importGo":
         confirmImport(v);
         break;
@@ -15640,6 +15675,10 @@
     }
     if (t.id === "impFile") {
       readImport(t);
+      return;
+    }
+    if (t.id === "shFileIn") {
+      shRead(t); // F4-13
       return;
     }
     if (f === "coachEx" && d) {
@@ -16120,6 +16159,323 @@
     return true;
   }
 
+  /* ---------- IMPORT MĚŘENÍ ZE SAMSUNG HEALTH (F4-13) ----------
+     Nastavení → Data a záloha → Samsung Health (shSettings): Vybrat soubor (shFileIn). Soubor vzniká
+     v Samsung Health → Nastavení → Stáhnout osobní data (složka samsunghealth_<účet>_<čas> se všemi daty).
+     Výběr složky (webkitdirectory) zamítnut 13. 10. 2026: Chrome se ptá „Nahrát 44 571 souborů na tento web?“
+     (celý export), hláška děsí a načtení trvá; úspora je jen jedno klepnutí.
+     shRead přečte CSV (shParse: 1. řádek „com.samsung.health.weight,…“, 2. řádek názvy sloupců, sloupce
+     se hledají podle názvu, ne pořadí). Čas start_time je v UTC (ověřeno s uživatelem 13. 10. 2026),
+     ukládá se skutečný čas měření. Převod sloupců SH_COLS (fat_free_mass / fat_free appka nemá).
+     Panel shSheet: zdroje podle pkg_name s počty a zaškrtávátky (shSrcOn: volba se pamatuje v Local
+     shSrc; výchozí zapnuto, kromě Hevy – její vážení už v appce jsou), souhrn shPlan a Importovat.
+     Pravidla shPlan / shApply:
+     - měření nese ID řádku Samsungu v b.shId; řádek, jehož shId už v appce je, se přeskočí
+       (opakovaný import nic nezdvojí),
+     - ruční měření (bez shId) ze stejného dne s hmotností ±SH_TOL kg se přepíše údaji ze Samsungu (každé
+       nejvýš jednou, nejbližší hmotnost); co Samsung nemá (obvody, poznámka, BMI), zůstane,
+     - ostatní řádky = nová měření (víc vážení za den se nechá, graf dělá denní průměr),
+     - BMI chybí-li v souboru: z hmotnosti a výšky z Nastavení, jinak z výšky v souboru (bmiOf, F3-33),
+     - před zápisem bod obnovy (BK_REASON sh), bez něj jen po potvrzení, stejně jako obnova ze zálohy. */
+  const SH_COLS = [
+    ["weight", "weight", 1],
+    ["body_fat", "fat", 1],
+    ["body_fat_mass", "fatMass", 1],
+    ["skeletal_muscle_mass", "muscleMass", 1],
+    ["skeletal_muscle", "muscle", 1],
+    ["total_body_water", "water", 1],
+    ["basal_metabolic_rate", "bmr", 0],
+    ["bmi", "bmi", 1],
+    ["vfa_level", "visceral", 1],
+  ];
+  const SH_TOL = 0.1;
+  // názvy známých zdrojů (pkg_name), ostatní se ukazují technickým názvem
+  const SH_SRC = {
+    "com.sec.android.app.shealth": "Samsung Health",
+    "com.hevy": "Hevy",
+  };
+  const SH_SRC_OFF = ["com.hevy"]; // zdroje ve výchozím stavu vypnuté
+  const SH_FILE = /^com\.samsung\.health\.weight\.(\d+)\.csv$/;
+  let shData = null; // načtený soubor: { rows, fileAt }
+
+  // je zdroj zaškrtnutý (zapamatovaná volba, jinak výchozí)
+  function shSrcOn(pkg) {
+    const saved = lsGet("shSrc", {});
+    return pkg in saved ? !!saved[pkg] : !SH_SRC_OFF.includes(pkg);
+  }
+
+  /* Nastavení → Data a záloha → Samsung Health */
+  function shSettings() {
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>Samsung Health</h2>
+        ${helpBtn("samsung")}
+      </div>
+      <div class="card stack">
+        <label class="btn" for="shFileIn">Vybrat soubor</label>
+        <input type="file" id="shFileIn" hidden>
+      </div>
+    </section>`;
+  }
+
+  // CSV text na pole řádků (pole hodnot); umí hodnoty v uvozovkách včetně čárek a "" uvnitř
+  function csvRows(text) {
+    const rows = [];
+    let row = [],
+      cell = "",
+      quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') {
+          cell += '"';
+          i++;
+        } else if (ch === '"') {
+          quoted = false;
+        } else {
+          cell += ch;
+        }
+      } else if (ch === '"') {
+        quoted = true;
+      } else if (ch === ",") {
+        row.push(cell);
+        cell = "";
+      } else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") {
+          i++;
+        }
+        row.push(cell);
+        rows.push(row);
+        row = [];
+        cell = "";
+      } else {
+        cell += ch;
+      }
+    }
+    if (cell !== "" || row.length) {
+      row.push(cell);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  /* obsah souboru com.samsung.health.weight…csv na měření
+     { shId, src, date, height, vals: { weight, fat, … } }; null = není to soubor s měřením */
+  function shParse(text) {
+    const lines = csvRows(String(text).replace(/^﻿/, ""));
+    if (lines.length < 2 || !/^com\.samsung\.health\.weight$/.test((lines[0][0] || "").trim())) return null;
+    const head = lines[1].map((h) => h.trim());
+    const col = (name) => head.indexOf(name);
+    const iTime = col("start_time"),
+      iId = col("datauuid"),
+      iSrc = col("pkg_name"),
+      iHeight = col("height");
+    if (iTime < 0 || col("weight") < 0) return null;
+    const out = [];
+    for (const cells of lines.slice(2)) {
+      // čas v UTC: „2026-10-11 13:14:45.569“
+      const date = Date.parse((cells[iTime] || "").trim().replace(" ", "T") + "Z");
+      if (!isFinite(date)) continue;
+      const vals = {};
+      for (const [name, key, dec] of SH_COLS) {
+        const i = col(name);
+        const n = i < 0 ? NaN : num(cells[i]);
+        if (isFinite(n) && n > 0) {
+          const k = Math.pow(10, dec);
+          vals[key] = Math.round(n * k) / k;
+        }
+      }
+      if (!Object.keys(vals).length) continue;
+      out.push({
+        shId: (iId >= 0 && cells[iId].trim()) || "sh" + date + "-" + (vals.weight || ""),
+        src: (iSrc >= 0 && cells[iSrc].trim()) || "?",
+        date,
+        height: iHeight >= 0 ? num(cells[iHeight]) : NaN,
+        vals,
+      });
+    }
+    return out;
+  }
+
+  // vybraný soubor: přečte měření a otevře panel importu
+  async function shRead(inp) {
+    const file = inp.files && inp.files[0];
+    inp.value = "";
+    if (!file) return;
+    let rows = null;
+    try {
+      rows = shParse(await file.text());
+    } catch (e) {
+      rows = null;
+    }
+    if (!rows) {
+      toast("Tohle není soubor s měřením ze Samsung Health (com.samsung.health.weight….csv).");
+      return;
+    }
+    if (!rows.length) {
+      toast("Soubor neobsahuje žádné měření.");
+      return;
+    }
+    const m = SH_FILE.exec(file.name);
+    shData = { rows, fileAt: m ? m[1] : "" };
+    shSheet();
+  }
+
+  // stejný den v místním čase
+  const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+
+  /* co import udělá se zaškrtnutými zdroji: { add: [řádky], upd: [[id, řádek]], skip, off };
+     shody s ručním měřením viz úvodní komentář sekce */
+  function shPlan() {
+    const have = new Set(),
+      manual = [];
+    for (const [id, b] of Object.entries(S.body)) {
+      if (b.shId) {
+        have.add(b.shId);
+      } else if (isFinite(+b.weight)) {
+        manual.push({ id, b });
+      }
+    }
+    const used = new Set();
+    const plan = { add: [], upd: [], skip: 0, off: 0 };
+    for (const r of shData.rows) {
+      if (!shSrcOn(r.src)) {
+        plan.off++;
+        continue;
+      }
+      if (have.has(r.shId)) {
+        plan.skip++;
+        continue;
+      }
+      have.add(r.shId);
+      let best = null;
+      if (r.vals.weight) {
+        for (const x of manual) {
+          const diff = Math.abs(+x.b.weight - r.vals.weight);
+          if (used.has(x.id) || diff > SH_TOL + 1e-9 || !sameDay(x.b.date, r.date)) continue;
+          if (!best || diff < best.diff) {
+            best = { id: x.id, diff };
+          }
+        }
+      }
+      if (best) {
+        used.add(best.id);
+        plan.upd.push([best.id, r]);
+      } else {
+        plan.add.push(r);
+      }
+    }
+    return plan;
+  }
+
+  // panel importu: soubor, zdroje se zaškrtávátky, souhrn a Importovat
+  function shSheet(noanim) {
+    if (!shData) return;
+    const rows = shData.rows;
+    const dates = rows.map((r) => r.date);
+    const fa = shData.fileAt;
+    const fileDate = fa.length >= 8 ? +fa.slice(6, 8) + ". " + +fa.slice(4, 6) + ". " + fa.slice(0, 4) : "";
+    let b = `<p style="margin:0">
+      Soubor${fileDate ? " z <b>" + esc(fileDate) + "</b>" : ""}: ${fmtInt(rows.length)}
+      ${plural(rows.length, "měření", "měření", "měření")}
+      (${fmtDate(Math.min(...dates))} – ${fmtDate(Math.max(...dates))}).
+    </p>`;
+    // zdroje podle počtu měření
+    const bySrc = {};
+    for (const r of rows) {
+      bySrc[r.src] = (bySrc[r.src] || 0) + 1;
+    }
+    b += `<div class="subh">Zdroje</div>`;
+    for (const [pkg, n] of Object.entries(bySrc).sort((a, c) => c[1] - a[1])) {
+      b += `<label class="switch">
+        <input type="checkbox" data-act="shSrc" data-v="${esc(pkg)}" ${shSrcOn(pkg) ? "checked" : ""}>
+        <span>${esc(SH_SRC[pkg] || pkg)} (${fmtInt(n)})</span>
+      </label>`;
+    }
+    const p = shPlan();
+    const nAdd = p.add.length,
+      nUpd = p.upd.length;
+    b += `<div class="subh">Co se stane</div>
+    <div class="stack" style="gap:4px">
+      <div class="frow"><span class="grow">Nová měření</span><b class="num">${fmtInt(nAdd)}</b></div>
+      <div class="frow">
+        <span class="grow">Přepíše ruční měření</span><b class="num">${fmtInt(nUpd)}</b>
+      </div>
+      <div class="frow"><span class="grow">Už v appce</span><b class="num">${fmtInt(p.skip)}</b></div>
+      <div class="frow"><span class="grow">Vynechané zdroje</span><b class="num">${fmtInt(p.off)}</b></div>
+    </div>`;
+    if (pointsApi && nAdd + nUpd) {
+      b += `<div class="xs muted">
+        Před importem se automaticky vytvoří bod obnovy, takže jde krok vrátit.
+      </div>`;
+    }
+    openSheet(
+      "Import ze Samsung Health",
+      b,
+      `<button class="btn grow" data-act="closeSheet">Zrušit</button>
+      <button class="btn primary grow" data-act="shGo" ${nAdd + nUpd ? "" : "disabled"}>Importovat</button>`,
+      noanim,
+    );
+  }
+
+  // zapamatuje volbu zdroje a přepočítá souhrn
+  function shSrcSet(pkg, on) {
+    const saved = Object.assign({}, lsGet("shSrc", {}));
+    saved[pkg] = !!on;
+    lsSet("shSrc", saved);
+    shSheet(true);
+  }
+
+  // údaje řádku Samsungu do měření (BMI z výšky, když ho soubor nemá)
+  function shVals(r, keep) {
+    const o = Object.assign({}, keep, r.vals, { date: r.date, shId: r.shId });
+    if (!isFinite(o.bmi) && o.weight) {
+      const cm = S.cfg.height || (r.height >= 100 && r.height <= 250 ? r.height : 0);
+      if (cm) {
+        o.bmi = bmiOf(o.weight, cm);
+      }
+    }
+    return o;
+  }
+
+  /* Importovat: bod obnovy (v = "!" bez něj, když se nepodařil), pak zápis do body/all */
+  async function shApply(v) {
+    if (!shData) return;
+    if (pointsApi && v !== "!") {
+      toast("Vytvářím bod obnovy…");
+      const ok = await makePoint("sh");
+      if (!ok) {
+        confirmSheet(
+          "Bod obnovy se nepodařilo vytvořit",
+          "Pokračovat bez pojistky? Import pak nepůjde vrátit.",
+          "Pokračovat",
+          "shGo",
+          "!",
+        );
+        return;
+      }
+    }
+    const p = shPlan();
+    const items = Object.assign({}, S.body);
+    for (const [id, r] of p.upd) {
+      // ruční měření: Samsung přepíše své údaje, obvody, poznámka (a BMI, když ho soubor nemá) zůstanou
+      items[id] = shVals(r, items[id]);
+    }
+    for (const r of p.add) {
+      items[uid("b")] = shVals(r, {});
+    }
+    put("body/all", { items });
+    shData = null;
+    closeSheet();
+    toast(
+      "Importováno: " +
+        p.add.length +
+        " " +
+        plural(p.add.length, "nové měření", "nová měření", "nových měření") +
+        (p.upd.length ? ", přepsáno " + p.upd.length : ""),
+    );
+  }
+
   /* ---------- záloha (F0-01) ----------
      Dvě vrstvy ochrany:
      1) Záloha do souboru (JSON) — sdílením rovnou na Disk / OneDrive / e-mail (F0-13, bkShare), nebo se
@@ -16147,6 +16503,7 @@
     gym: "Před smazáním fitka", // F2-06
     exdb: "Před aktualizací databáze cviků",
     manual: "Ručně vytvořený",
+    sh: "Před importem ze Samsung Health", // F4-13
   };
   // počet tréninků ve všech měsících
   const countW = (months) => Object.values(months || {}).reduce((a, m) => a + Object.keys(m || {}).length, 0);
