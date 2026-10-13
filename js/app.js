@@ -9280,7 +9280,7 @@
       ];
     }
     h += `<section class="sec">
-      <div class="chips" data-ck="detailMetric" style="margin-bottom:10px">
+      <div class="chips" data-ck="detailMetric" style="margin-bottom:calc(10px + (34px - var(--tap)) / 2)">
         ${Object.keys(M)
           .map(
             (k) =>
