@@ -216,6 +216,9 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Nová volba nastavení patří do existující skupiny (`SET_PAGES`), nová sekce Statistik do jedné z částí
   (`STATS_PARTS`), nový údaj na obrázek ke sdílení do `shrData` a oba jazyky do `SHR_TXT`.
 - Nová obrazovka (route) se neukládá do `Local` `route`, pokud po restartu nedává smysl (jako `exed`).
+- Rozepsaná stránka po restartu (F3-16): formulář cviku a úprava tréninku / šablony se ukládají samy
+  (`unsavedSync`, `Local` `unsaved`) a po startu je vrací `unsavedRestore`. Nová stránka s rozepsanými daty se doplní
+  do `unsavedSnap` a `unsavedRestore`; koncept nikde jinde ručně nemazat ani nezapisovat.
 - Vývojové nástroje (záznam oznámení, zkušební data `FAKE_PLAN`) jen v `DEV` (testovací verze a lokálně), ve vydané
   verzi nikdy. Nová úloha může do `FAKE_PLAN` přidat své scénáře.
 - Odmítnuté nápady, znovu nenavrhovat: udržování telefonu vzhůru neslyšitelným tónem (F1-04), swipe na ✓ série

@@ -4221,6 +4221,7 @@
     // popis cviku (F3-14): po překreslení kurzor na stejném místě
     const areaSel = act && act.tagName === "TEXTAREA" ? [act.selectionStart, act.selectionEnd] : null;
     app.innerHTML = h;
+    unsavedSync(); // F3-16: rozepsaná úprava nebo formulář cviku do zařízení
     renderTabs();
     updSync();
     drawCharts();
@@ -4269,8 +4270,8 @@
       galReset();
     } // nově otevřená stránka cviku začíná postavou (F2-05)
     S.route = route;
-    // po restartu se otevře záložka, pod kterou stránka svítí (tabOf, F3-34); formulář cviku (F3-14) se
-    // neobnoví, zůstane uložené místo, odkud se na něj přišlo
+    // po restartu se otevře záložka, pod kterou stránka svítí (tabOf, F3-34); u formuláře cviku (F3-14)
+    // zůstane uložené místo, odkud se na něj přišlo. Rozepsaný formulář a úpravu vrací unsavedRestore (F3-16)
     if (route !== "exed") {
       lsSet("route", tabOf(route, S.nav.length));
     }
@@ -11579,7 +11580,7 @@
      exEdOpen(id, from, fx): from = list / detail / info / picker, fx = záznam z online hledání (předvyplnění
      se počítá jako změna). S neuloženými změnami se Zpět i záložka zeptají (akce exDiscard). exEdLeave(re):
      re = jiný panel než uložený (např. výběr cviků po uložení z výsledků hledání). Route exed se neukládá do
-     Local route (po restartu se neobnoví, F3-16).
+     Local route; rozepsaný formulář po zavření appky vrací sekce „ROZEPSANÁ STRÁNKA PO RESTARTU“ (F3-16).
      Duplikovat cvik (F3-30): tlačítko na stránce cviku vedle Upravit (akce dupEx) otevře exEdOpen(null, "detail", null, id)
      = formulář Nový cvik s vlastnostmi originálu (názvy, partie, vybavení, druh, vázáno na fitko, popis,
      odkaz, návrh progrese). Názvy dostanou „ (kopie)“, při shodě „ (kopie 2)“… (exCopyNames). Kopíruje se
@@ -11724,6 +11725,7 @@
     if (rest && f.restOn) {
       f.rest = restNorm(rest.value) || S.cfg.restSec;
     }
+    unsavedSync(); // F3-16
   }
   // návrh progrese u cviku (F4-01): podle nastavení / vlastní rozsah / vypnuto
   const progModeOf = (prog) => (prog === "off" ? "off" : progValid(prog) ? "on" : "def");
@@ -15828,6 +15830,146 @@
   // po klepnutí doplnit kroky (otevřený panel, stránka)
   document.addEventListener("click", () => navEnsure());
 
+  /* ---------- ROZEPSANÁ STRÁNKA PO RESTARTU (F3-16) ----------
+     Rozepsaný formulář Nový / Upravit cvik (exEd) a rozepsaná úprava tréninku nebo šablony (S.editDraft) se
+     ukládají do zařízení (Local "unsaved"), aby přežily, když Android appku na pozadí zavře. Po startu
+     unsavedRestore stránku znovu otevře (hláška „Obnoveny neuložené změny“), Zpět se zeptá „Zahodit změny?“
+     jako jindy.
+     unsavedSync() zapíše aktuální stav, nebo uložený koncept smaže, když už nic rozepsaného není (uloženo,
+     zahozeno, přepnutá záložka). Volá se při každém vykreslení, při psaní do formuláře cviku (exEdCollect)
+     a když appka jde do pozadí; žádné jiné místo koncept nemaže ani nezapisuje.
+     Ukládá se jen stránka se změnami: formulář cviku s neuloženými změnami (exEdDirty), úprava se změnami
+     (edChanged) nebo úprava, nad kterou je rozepsaný formulář cviku. Stránka beze změn se neobnovuje.
+     Místo návratu (S.nav) se ukládá zjednodušeně jako řada stránek (pages): záložka dole → stránka tréninku
+     (jen pod úpravou) → úprava → stránka cviku (jen pod formulářem) → formulář cviku. Panely se neukládají:
+     formulář otevřený z výběru cviků (from picker / info) se po restartu vrací jen na stránku pod ním
+     (from "page") a nový cvik se do tréninku sám nepřidá. Stránka cviku otevřená nad formulářem nebo nad
+     úpravou se neobnovuje, appka skončí o stránku níž.
+     Nová stránka s rozepsanými daty: doplnit do unsavedSnap a unsavedRestore. */
+  // stránky nad záložkou (mají místo návratu v S.nav)
+  const UNSAVED_SUB = ["exd", "exed", "edit", "wd", "replan"];
+  // formulář cviku má neuložené změny (jako exEdChanged, ale i se stránkou cviku otevřenou nad ním)
+  const exEdDirty = () =>
+    !!exEd && (exEdSnap() !== exEd.orig || ((!!exEd.fx || !!exEd.copyOf) && !exEd.id));
+  // co je teď rozepsané: {pages, ed, ex}, null = nic
+  function unsavedSnap() {
+    const chain = S.nav.map((f) => ({ r: f.route, wd: f.wd })).concat({ r: S.route });
+    const routes = chain.map((p) => p.r);
+    const exAt = routes.lastIndexOf("exed"),
+      edAt = routes.lastIndexOf("edit");
+    const ex = exAt >= 0 && exEdDirty();
+    const ed = edAt >= 0 && !!S.editDraft && (edChanged() || (ex && edAt < exAt));
+    if (!ex && !ed) return null;
+    const pages = [{ r: UNSAVED_SUB.includes(routes[0]) ? tabOf(S.route, S.nav.length) : routes[0] }];
+    if (ed) {
+      const under = chain[edAt - 1];
+      if (under && under.r === "wd" && under.wd) {
+        pages.push({ r: "wd", wd: under.wd });
+      }
+      pages.push({ r: "edit" });
+    }
+    if (ex) {
+      if (S.route === "exed" && routes[exAt - 1] === "exd" && S.exDetail) {
+        pages.push({ r: "exd", id: S.exDetail });
+      }
+      pages.push({ r: "exed" });
+    }
+    return {
+      pages,
+      ed: ed ? { draft: S.editDraft, orig: S.editOrig } : null,
+      ex: ex
+        ? {
+            id: exEd.id,
+            from: exEd.from,
+            fx: exEd.fx,
+            copyOf: exEd.copyOf,
+            fxPh: exEd.fxPh,
+            f: exEd.f,
+            orig: exEd.orig,
+          }
+        : null,
+    };
+  }
+  // naposledy zapsaný koncept jako text (zápis jen při změně); null = ještě se nezapisovalo
+  let unsavedLast = null;
+  function unsavedSync() {
+    let snap = null;
+    try {
+      snap = unsavedSnap();
+    } catch (e) {}
+    const txt = snap ? JSON.stringify(snap) : "";
+    if (txt === unsavedLast) return;
+    unsavedLast = txt;
+    Local.set("unsaved", snap);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      unsavedSync();
+    }
+  });
+  window.addEventListener("pagehide", unsavedSync);
+  // po startu appky otevře rozepsanou stránku; true = něco se obnovilo. Volat před prvním vykreslením
+  // (vykreslení koncept bez rozepsané stránky smaže)
+  function unsavedRestore() {
+    const u = Local.get("unsaved", null);
+    if (!u || !Array.isArray(u.pages) || !u.pages.length) return false;
+    let ed = u.ed && u.ed.draft && Array.isArray(u.ed.draft.ex) ? u.ed : null,
+      ex = u.ex && u.ex.f ? u.ex : null;
+    // upravovaný cvik, trénink nebo šablona mezitím zmizely (obnova zálohy): koncept zahodit
+    if (ex && ((ex.id && !S.exLib[ex.id]) || (ex.copyOf && !S.exLib[ex.copyOf]))) {
+      ex = null;
+    }
+    if (ed && ed.draft.mode === "template" && ed.draft.id && !S.templates[ed.draft.id]) {
+      ed = null;
+    }
+    if (ed && ed.draft.mode !== "template" && !(S.months[ed.draft.mk] || {})[ed.draft.id]) {
+      ed = null;
+    }
+    if (!ed && !ex) return false;
+    const base = u.pages[0].r;
+    const tabs = ["train", "home", "hist", "ex", "stats", "body", "set"];
+    S.nav = [];
+    S.route = !tabs.includes(base) || (base === "home" && !S.active) ? "train" : base;
+    // otevře další stránku nad tou současnou (místo návratu bez panelu a posunu)
+    const open = (route) => {
+      const f = navFrame();
+      f.re = null;
+      f.y = 0;
+      S.nav.push(f);
+      S.prevRoute = S.route;
+      S.route = route;
+    };
+    for (const p of u.pages.slice(1)) {
+      if (p.r === "wd" && ed && p.wd && (S.months[p.wd.mk] || {})[p.wd.id]) {
+        open("wd");
+        S.wDetail = p.wd;
+      } else if (p.r === "edit" && ed) {
+        open("edit");
+        S.editDraft = ed.draft;
+        S.editOrig = ed.orig;
+      } else if (p.r === "exd" && ex && S.exLib[p.id]) {
+        open("exd");
+        S.exDetail = p.id;
+        S.exPart = "info";
+        S.detailGym = "all";
+        S.exHistLimit = 25;
+      } else if (p.r === "exed" && ex) {
+        open("exed");
+        exEd = {
+          id: ex.id || null,
+          // výběr cviků po restartu neexistuje: návrat jen na stránku pod formulářem
+          from: ex.from === "picker" || ex.from === "info" ? "page" : ex.from,
+          fx: ex.fx || null,
+          copyOf: ex.copyOf || null,
+          fxPh: Array.isArray(ex.fxPh) ? ex.fxPh : [],
+          f: ex.f,
+          orig: ex.orig,
+        };
+      }
+    }
+    return true;
+  }
+
   /* ---------- záloha (F0-01) ----------
      Dvě vrstvy ochrany:
      1) Záloha do souboru (JSON) — sdílením rovnou na Disk / OneDrive / e-mail (F0-13, bkShare), nebo se
@@ -17047,7 +17189,11 @@
 
   /* ---------- start appky ---------- */
   render.toEx = true; // F1-11: otevřená appka s rozdělaným tréninkem ukáže naposledy změněný cvik
+  const unsavedBack = unsavedRestore(); // F3-16: rozepsaná stránka z minula
   render();
+  if (unsavedBack) {
+    toast("Obnoveny neuložené změny");
+  }
   (async function boot() {
     downloads = LocalDownloads;
     // požádat Chrome, ať data appky nikdy sám nemaže (u nainstalované PWA obvykle povolí bez dotazu)
