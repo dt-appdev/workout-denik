@@ -218,6 +218,16 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   horní okraj obrazovky (ověřit v telefonu). Zamítnuto: šest skupin místo partií (ztratil by se filtr Biceps),
   dvě úrovně čipů (řádek se nevešel), řazení v nadpisu Seznam odděleně od ikon. Uložený filtr z dřívějška se
   převede, neznámá hodnota = Všechny partie. Popis v úvodním komentáři sekce „FILTR PARTIÍ A VYBAVENÍ“ v `js/app.js`.
+- [x] **F3-42** Grafy cviku: objem série, opakování celkem, max zátěž u cviku na čas (přání uživatele 13. 10. 2026;
+  hotovo 13. 10. 2026): stránka cviku → Statistiky vybírá graf čipy v řadě za sebou (posouvá se do strany, jako
+  výběr údaje v Těle) místo přepínače se 4 tlačítky. Cvik s opakováním: Odh. 1RM, Max zátěž, Objem série (největší
+  opakování × zátěž jedné pracovní série v tréninku), Objem tréninku (dřív Objem), Opakování celkem (součet opakování
+  pracovních sérií, u všech cviků s opakováním), Max opak. Cvik na čas: Nejdelší výdrž a Čas celkem (byly už dřív),
+  na čas se zátěží navíc Max zátěž. Dlaždice Objem u cviku na čas a vzdálenost (vždy 0 kg) je nahrazená dlaždicí
+  Čas (celkový čas za období). Nové hodnoty jsou jen grafy, osobní rekordy ani medaile se nemění. Počítá se
+  z uložených tréninků (`exSum`: `setVol`, `totReps`, `maxKg` i pro `timew`), data ani záloha beze změny. Při
+  náhledu nalezena chyba stagnace u cviku na čas se zátěží (F4-14). Popis v úvodním komentáři sekce „GRAFY CVIKU“
+  v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -234,6 +244,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F3-42 | Které grafy u cviku? Jak je vybírat? Nový rekord? | Rozhodnuto 13. 10. 2026 (náhled): Opakování celkem u všech cviků s opakováním; čipy v řadě jako v Těle (ne dva řádky ani rozbalovací výběr); bez nových rekordů; Max zátěž u cviku na čas se zátěží; žádná pátá dlaždice, ale Objem u cviku na čas nahrazen dlaždicí Čas. |
 | F3-41 | Jak zjednodušit filtr partií? Kde řazení a tlačítka? Podle které partie filtrovat? | Rozhodnuto 13. 10. 2026 (náhled, 4 verze): čipy Partie ▾ / Vybavení ▾ s panelem, ve výběru i Jen cviky z historie v řádku filtrů; počet cviků místo nadpisu Seznam s ovládáním vpravo; filtr ve všech hlavních partiích; stejné na všech třech místech (Cviky, výběr cviků, Statistiky). Oprava online databáze s klávesnicí ve stejném PR. |
 | F3-40 | Jak uklidit formulář cviku? Co s čipy partií? | Rozhodnuto 13. 10. 2026 (náhled, 3 varianty): sekce jako karty (B), partie po skupinách, cyklus klepnutí zůstává a vysvětlí ho nápověda, zeměkoule v nadpisu Název místo tlačítka nahoře, bez šedého textu pod Typem zápisu. Popisky nad políčky zůstávají velkým písmem jako ve všech formulářích. Filtr partií v seznamech je samostatná úloha F3-41. |
 | F2-06 | Archivované fitko: skrýt i tréninky? Smazání fitka s tréninky? Šablony, rozdělaný trénink, poslední fitko? | Rozhodnuto 12. a 13. 10.: archivace jen z výběru, tréninky zůstávají ve Statistikách i rekordech a fitko ve filtrech (je-li s tréninky, na konci). Navíc sloučení s jiným fitkem jako volba Sloučit v okně Smazat (stroje: přednost cílové fitko). Smazání s tréninky = smazat je (potvrzení s počtem, Zálohovat, automatický bod obnovy), štítek „Smazané fitko“ jako volba ne. Poslední aktivní fitko ani fitko rozdělaného tréninku archivovat ani mazat nejde. Archivovaná fitka podle abecedy, karta fitka se otevírá klepnutím (bez tlačítka Upravit), nedostupné akce šedé s hláškou. |
