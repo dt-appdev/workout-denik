@@ -57,6 +57,7 @@ flowchart LR
   E3 --> E4[Etapa 4<br/>Drobnosti]
   E4 --> E5[Etapa 5<br/>Jednotný vzhled]
   E5 --> E6[Etapa 6<br/>Zbytek plánu]
+  E6 -.-> E7[Etapa 7<br/>Nativní appka]
 ```
 
 #### Etapa 0 – Priorita uživatele (zapsáno 30. 9. 2026, začít ve čtvrtek 1. 10. 2026)
@@ -110,7 +111,17 @@ flowchart LR
 20. ~~**F3-16** Rozepsaný formulář přežije zavření appky~~ – hotovo 13. 10. 2026.
 21. Dál podle fází: F1-12, F3-15, fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
-Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F1-15, F3-07.
+#### Etapa 7 – Nativní appka (zapsáno 13. 10. 2026)
+
+Kdy začít, určí uživatel; úlohy jdou jen v tomto pořadí (každá stojí na předchozí). Popis a rozhodnutí ve Fázi 6.
+
+22. **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
+23. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
+24. **F6-03** Záloha se zálohou telefonu (Google One).
+25. **F6-04** Složení těla ze Samsung Health do Těla.
+26. **F6-05** Tep z hodinek k tréninku (až po F6-04).
+
+Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25). Odložené: F0-11, F1-15, F3-07. Nahrazené: F0-14 (F6-03).
 
 #### Ověřit při používání (souběžně s etapou 1)
 
@@ -145,7 +156,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [ ] **F0-11** Rozdělit `js/app.js` do víc souborů podle částí (např. datová vrstva a záloha, rozdělaný trénink a pauza, historie s kalendářem a souhrnem, statistiky, záložka Cviky, nastavení; v `app.js` zůstane start, vykreslení a akce). Bez build kroku: víc `<script>` v `index.html` ve správném pořadí a všechny soubory do `FILES` v `sw.js`. **Odloženo 27. 9. 2026 (u F0-12):** přínos pro spotřebu tokenů je po F0-12 střední (sekce mají popis a ID v nadpisu, čte se jen potřebná část), riziko je jisté (dnes je vše v jedné funkci, po rozdělení by jména sdílely všechny soubory a mohla by se srazit s vestavěnými jmény prohlížeče; přerušená historie řádků; obrovské konflikty s otevřenými PR). Vrátit se, až `app.js` naroste nad cca 18 000 řádků nebo se v něm začnou často přetahovat souběžné větve. Dělat jen bez otevřených PR.
 - [x] **F0-12** Úklid repa pro menší spotřebu tokenů (kratší `CLAUDE.md`, rozdělený plán, `.ignore`, smazaná `puvodni/`)
 - [x] **F0-13** Záloha častěji a ze souhrnu
-- [ ] **F0-14** Automatická záloha na Google Disk (nápad 27. 9. 2026 u F0-13; D · střední; **nejdřív zkouška**): appka po uložení tréninku sama nahraje zálohu do skryté složky „data aplikace“ na Disku uživatele (Drive API, `appDataFolder`, oprávnění `drive.appdata`, vidí ji jen tahle appka), drží posledních pár záloh a na novém telefonu po přihlášení nabídne obnovu. Zdarma, ale uživatel jednou založí projekt v Google Cloud (OAuth klient, stav Testing, Google ukáže varování „Aplikace není ověřená“). Přihlášení bez cizích skriptů: okno `accounts.google.com` (token na 1 hodinu) a malá stránka pro návrat ve stejné doméně. Na pozadí to nejde: přístup vyprší po hodině a obnoví se jen po klepnutí (nejlépe navázat na Dokončit v souhrnu, okno Googlu jen problikne). Mění pravidla: řádek o cloudu v Co neděláme, CSP (`connect-src https://www.googleapis.com`), testovací verze musí zálohovat odděleně od vydané. Zkouška: funguje okno přihlášení a návrat do nainstalované appky na Androidu? Alternativa bez programování: aplikace typu Autosync nebo FolderSync, která sama nahrává složku Stažené na Disk (cizí aplikace, zdarma s omezeními). OneDrive přímo z appky nedoporučeno (registrace aplikace u Microsoftu je pro osobní účet složitější, OneDrive pokryje sdílení z F0-13). Záloha telefonu do Googlu (Google One) data webové appky nezahrne (jsou uvnitř Chromu, ten data webů nezálohuje). Zvážit menší zálohu: ZIP (fotky jako JPEG soubory místo base64, které je o třetinu větší; údaje o trénincích zkomprimované 5–10×) nebo `.json.gz`, obojí umí Chrome bez knihovny (`CompressionStream`). U sdílení (F0-13) to nejde, `.zip` ani `.gz` Chrome na Androidu sdílet nedovolí; nahrávání přes Drive API typ souboru neomezuje.
+- [ ] ~~**F0-14** Automatická záloha na Google Disk~~ – **nahrazeno 13. 10. 2026 úlohou F6-03** (záloha se zálohou telefonu v nativní appce, bez přihlašování a Google Cloud projektu). Vrátit se jen, kdyby se od nativní appky upustilo. Původní rozbor: (nápad 27. 9. 2026 u F0-13; D · střední; **nejdřív zkouška**): appka po uložení tréninku sama nahraje zálohu do skryté složky „data aplikace“ na Disku uživatele (Drive API, `appDataFolder`, oprávnění `drive.appdata`, vidí ji jen tahle appka), drží posledních pár záloh a na novém telefonu po přihlášení nabídne obnovu. Zdarma, ale uživatel jednou založí projekt v Google Cloud (OAuth klient, stav Testing, Google ukáže varování „Aplikace není ověřená“). Přihlášení bez cizích skriptů: okno `accounts.google.com` (token na 1 hodinu) a malá stránka pro návrat ve stejné doméně. Na pozadí to nejde: přístup vyprší po hodině a obnoví se jen po klepnutí (nejlépe navázat na Dokončit v souhrnu, okno Googlu jen problikne). Mění pravidla: řádek o cloudu v Co neděláme, CSP (`connect-src https://www.googleapis.com`), testovací verze musí zálohovat odděleně od vydané. Zkouška: funguje okno přihlášení a návrat do nainstalované appky na Androidu? Alternativa bez programování: aplikace typu Autosync nebo FolderSync, která sama nahrává složku Stažené na Disk (cizí aplikace, zdarma s omezeními). OneDrive přímo z appky nedoporučeno (registrace aplikace u Microsoftu je pro osobní účet složitější, OneDrive pokryje sdílení z F0-13). Záloha telefonu do Googlu (Google One) data webové appky nezahrne (jsou uvnitř Chromu, ten data webů nezálohuje). Zvážit menší zálohu: ZIP (fotky jako JPEG soubory místo base64, které je o třetinu větší; údaje o trénincích zkomprimované 5–10×) nebo `.json.gz`, obojí umí Chrome bez knihovny (`CompressionStream`). U sdílení (F0-13) to nejde, `.zip` ani `.gz` Chrome na Androidu sdílet nedovolí; nahrávání přes Drive API typ souboru neomezuje.
 - [x] **F0-15** Čitelný soubor zálohy
 
 ### Fáze 1 – Ovládání při tréninku
@@ -269,18 +280,37 @@ UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravi
 - [ ] **F5-09** Zanedbaná partie: nenápadná informace na obrazovce Trénink („Nohy naposledy před 10 dny“), jen v appce, bez oznámení. Navazuje na skupiny partií (F3-01) a pruhy partií ve Statistikách (radar F3-04 je podle auditu nejistý).
 
 
+### Fáze 6 – Nativní appka
+
+Zapsáno 13. 10. 2026. Webová appka (PWA) na Androidu nezvládne tři věci, které uživatel chce: spolehlivý konec pauzy na pozadí (Chrome drží service worker nejvýš asi 5 min a se zamčeným displejem oznámení zdrží, F1-04), zálohu se zálohou telefonu (data webu jsou uvnitř Chromu) a data ze Samsung Health (jen z nativního kódu). Proto se appka zabalí do nativní aplikace přes **Capacitor** (zdarma, open source): dnešní HTML/CSS/JS zůstane beze změny a běží uvnitř zabudovaného Chromu (WebView), nativní funkce dodají malé doplňky (pluginy). Přepis do Kotlinu zamítnut (zahodil by hotový kód, měsíce práce).
+
+Rozhodnuto 13. 10. 2026:
+
+- Instalace jako APK mimo Google Play (0 Kč), aktualizace přes aplikaci Obtainium z GitHub Releases. Google Play (25 USD, 14 dní testování s 12 testery) ne.
+- Webová verze na GitHub Pages zůstává (záloha pro případ, že se nativní appka neosvědčí); kód je společný.
+- Cloud = jen záloha, ne synchronizace mezi zařízeními.
+- Samsung Health jen směrem do appky (čtení), zápis do Samsung Health zatím ne (vyžaduje partnerství se Samsungem).
+- Hodinky (Galaxy Watch 9): stačí, že zrcadlí oznámení z telefonu. Vlastní aplikace pro Wear OS (odpočet na displeji hodinek) ne.
+- Mění pravidla projektu (upraví F6-01 v `CLAUDE.md`): npm a sestavení jen v GitHub Actions a ve složce nativního obalu, appka sama dál bez build kroku; aktualizace nativní appky už nejsou automatické jako u PWA. Ověřit při zadání: Google chystá ověření vývojářů i pro APK mimo Play (v ČR podle oznámení od 2027, pro hobby vývojáře bezplatná varianta).
+
+- [ ] **F6-01** Nativní obal (Capacitor) · *střední*: ve složce `android/` (nebo `nativni/`) konfigurace Capacitoru, GitHub Actions sestaví podepsané APK a vydá ho jako GitHub Release (klíč v secretu; ztráta klíče = nová verze nejde nainstalovat přes starou). Testovací APK pro PR s jiným ID aplikace, aby šla vedle hlavní (jako dnešní `pr-N`). Appka pozná, že běží nativně, a jen tam nabídne nativní funkce (ve webové verzi zůstane vše jako dnes). Přenos dat: záloha v PWA → obnova v nativní appce (vlastní úložiště, data z Chromu nevidí). Ověřit: offline, tlačítko Zpět (F0-06), stažení a sdílení souborů (`LocalDownloads`, F0-13), fotky u cviků (F2-05), CSP (F0-08), velikost písma (F3-11). Úprava `CLAUDE.md` (struktura souborů, pravidla sestavení, testování).
+- [ ] **F6-02** Spolehlivý konec pauzy · *nízká–střední*: místo oznámení ze service workeru (F1-04) nativní budík na přesný čas konce pauzy (`S.restEnd`) a systémové oznámení s vibrací; přijde i se zamčeným displejem, bez internetu, a Galaxy Watch ho zrcadlí (zavibrují). Úprava +15 / −15 a Přeskočit budík přeplánuje / zruší (`restStop`). Ve webové verzi beze změny. Oprávnění pro přesné budíky (Android 12+) a pro oznámení si appka vyžádá při prvním spuštění pauzy. Vyřeší bod „Chodí oznámení… se zhasnutým displejem“ z Ověřit při používání.
+- [ ] **F6-03** Záloha se zálohou telefonu (Google One) · *nízká*: Android Auto Backup zálohuje data nativní appky do Google One sám (zdarma, bez přihlašování, zhruba jednou denně při nabíjení a Wi-Fi) a na novém telefonu je po přihlášení obnoví. Limit 25 MB: appka po uložení tréninku zapíše zálohu bez fotek (formát F0-01 / F0-15) do souboru, který Android zálohuje; data WebView ze zálohy vyřadit, obnova jen z tohoto souboru. Fotky dál v ruční záloze (F0-13). Nahrazuje F0-14.
+- [ ] **F6-04** Složení těla ze Samsung Health · *střední*: appka při otevření načte nová měření ze Samsung Health a doplní je do Těla (`body/all`, pole `BODY_F`: hmotnost, tuk %, hmotnost tuku, kosterní sval, voda, bazální metabolismus…). Přes **Samsung Health Data SDK** ve vývojářském režimu (Samsung Health → Nastavení → O Samsung Health → 10× klepnout na verzi → Developer Mode for Data Read): ke čtení stačí bez registrace a partnerství, Samsung ho oficiálně uvádí jako režim pro vývoj a testování, pro appku jen pro sebe to stačí. Health Connect zamítnut: kosterní sval a vodu nepřenáší (jen hmotnost, tuk, bazální metabolismus). Vlastní nativní doplněk (Kotlin), hotový pro Capacitor neexistuje; knihovnu SDK možná bude potřeba jednou stáhnout ze Samsung Developers pod účtem uživatele. **Nejdřív zkouška:** malá verze, která jen ukáže poslední měření složení těla z telefonu (ověří, že SDK kosterní sval z Galaxy Watch 9 opravdu vrací), teprve pak import. Rozhodnuto: import automaticky při otevření appky, měření ze Samsung Health s označením zdroje, ručně zapsané hodnoty se nepřepisují, stejné měření se nenačte dvakrát. Náhradní cesta, kdyby Samsung vývojářský režim zrušil: Health Connect (hmotnost, tuk, bazální metabolismus, zbytek ručně).
+- [ ] **F6-05** Tep z hodinek k tréninku · *střední*, až po F6-04: k uloženému tréninku průměrný a maximální tep z Galaxy Watch podle času začátku a konce (stejný doplněk jako F6-04), v souhrnu a detailu tréninku. Nové pole tréninku s výchozí hodnotou (bez tepu chybí), záloha zpětně kompatibilně. Kalorie dál ne (Co neděláme), dokud se nerozhodne jinak.
+
 ## Co neděláme
 
 | Nápad | Proč ne |
 |---|---|
 | Spálené kalorie při tréninku | Odhad přes MET má u posilování chybu ±30–50 %, bez tepu nemá vypovídací hodnotu a svádí k „dojídání". Náhrada: trend tělesné váhy. |
 | Sledování jídla a příjmu kalorií | Samostatná velká aplikace, na to existují specializované appky. |
-| Napojení na hodinky / Health Connect | Z webové appky nedostupné, jen z nativní aplikace. |
-| Vlastní server, synchronizace dat mezi zařízeními | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01 a F0-13 (sdílení souboru na Disk). Záloha na vlastní Google Disk přímo z appky je samostatná úloha F0-14 (čeká na zkoušku). (GitHub slouží jen pro kód a hosting.) |
-| Záloha dat appky se zálohou telefonu (Google One) | Nejde: data nainstalované webové appky jsou uvnitř Chromu a Chrome data webů do zálohy telefonu nedává. Šlo by to jen u nativní appky (zjištěno u F0-13). |
+| Vlastní aplikace pro hodinky (Wear OS), zápis do Samsung Health | Rozhodnuto 13. 10. 2026: hodinkám stačí zrcadlené oznámení z telefonu (F6-02), ze Samsung Health se jen čte (F6-04); zápis vyžaduje partnerství se Samsungem. Health Connect jen jako náhrada, kdyby Samsung zrušil vývojářský režim. |
+| Vlastní server, synchronizace dat mezi zařízeními | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01 a F0-13 (sdílení souboru na Disk) a v nativní appce F6-03 (záloha telefonu do Google One, rozhodnuto 13. 10. 2026: cloud = jen záloha). (GitHub slouží jen pro kód a hosting.) |
+| Záloha dat webové appky se zálohou telefonu (Google One) | Nejde: data nainstalované webové appky jsou uvnitř Chromu a Chrome data webů do zálohy telefonu nedává (zjištěno u F0-13). V nativní appce ano, úloha F6-03. |
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
 | Průvodce prvním spuštěním (onboarding) | Appku používá jeden uživatel, který ji zná (UX audit 27. 9. 2026). Prázdný stav bez fitka řeší F3-24. |
-| Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Řešit až při skutečném přechodu. |
+| Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Nativní appka (Fáze 6) používá stejné rozhraní, vzhled se kvůli ní nemění. |
 | Kratší pauza po zahřívací sérii (F1-17, UX audit 27. 9. 2026) | Zamítnuto 10. 10. 2026: uživatele stejná pauza po zahřívací sérii neobtěžuje, další volba v nastavení by byla zbytečná. Kdyby to někdy začalo vadit, stačí vlastní pauza cviku (F1-09, hotovo); krátká pauza po poslední zahřívací sérii před první pracovní by škodila. |
 
 Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle poznámky u nich):
@@ -300,7 +330,9 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F0-11 | Podle čeho dělit soubory a jak si budou předávat data (dnes je vše v jedné funkci)? | Podle záložek a datové vrstvy; společný stav přes jeden sdílený objekt (např. `window.WD`), pořadí skriptů pevně v `index.html`. |
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
-| F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
+| F6-01 | Jak testovat nativní části v PR? Testovací APK pro každý PR, nebo jen pro PR, které mění nativní obal? | Jen PR s nativní změnou dostane testovací APK; ostatní PR dál testovací webová verze `pr-N`. |
+| F6-01 | Přejít na nativní appku hned, nebo nejdřív souběžně s PWA? | Souběžně týden, data převést zálohou až po vyzkoušení; PWA dál vydávat z `main`. |
+| F6-04 | Jak ukázat měření ze Samsung Health v Těle? | Stejně jako ruční, s malou ikonou zdroje (nová ikona v sadě `IC`, náhled podle F3-20). |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
 | F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
