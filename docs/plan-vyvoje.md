@@ -232,6 +232,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-37** Stránka tréninku: Poprvé a porovnání pod sériemi, český název
 - [x] **F3-38** Série s jednotkou: 12×20kg
 - [x] **F3-39** Políčko Opak. před kg
+- [x] **F3-40** Formulář cviku po sekcích
 
 
 ### Fáze 4 – Chytré funkce

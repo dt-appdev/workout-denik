@@ -194,6 +194,16 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   při zadání: váhu člověk zná před sérií a opakování až po ní (proto má Hevy kg | Opak.), předvyplnění ale dává
   hodnoty do obou políček, takže to v praxi vadí málo. Pořadí je jen v `KIND` (`f`), data ani záloha beze změny.
   Popis v úvodním komentáři sekce „TYPY CVIKŮ“ v `js/app.js`.
+- [x] **F3-40** Formulář cviku po sekcích (přání uživatele 13. 10. 2026: formulář působil jako pracovní verze;
+  náhled se třemi variantami, vybrána B s úpravami): formulář Nový / Upravit cvik je rozdělený na sekce s nadpisem
+  a vlastní kartou jako stránka cviku a Nastavení: Název, Partie, Zápis, Během tréninku, Popis. Předvyplnění
+  z online databáze je ikona zeměkoule v nadpisu Název (jen u nového cviku, jako v záložce Cviky). Partie po šesti
+  skupinách (Hrudník, Ramena, Záda, Paže, Břicho, Nohy, barevná tečka skupiny jako ve Statistikách), legenda Hlavní /
+  Pomocná, klepnutí na čip beze změny (hlavní → pomocná → nic). Vysvětlení z popisků (anglicky jako v Hevy,
+  klepnutím hlavní → pomocná, věta pod Vázáno na fitko, příklady pod Typem zápisu) jsou v nápovědách s otazníkem
+  u Partií, Zápisu a Během tréninku (F3-21). Zamítnuto: jedna karta jen s nadpisy uvnitř (varianta A), přepínač
+  „Klepnutím hlavní / pomocná“, partie v samostatném panelu (varianta C, nový neobvyklý prvek). Data beze změny.
+  Popis v úvodním komentáři sekce „NOVÝ A UPRAVIT CVIK“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -209,6 +219,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F3-40 | Jak uklidit formulář cviku? Co s čipy partií? | Rozhodnuto 13. 10. 2026 (náhled, 3 varianty): sekce jako karty (B), partie po skupinách, cyklus klepnutí zůstává a vysvětlí ho nápověda, zeměkoule v nadpisu Název místo tlačítka nahoře, bez šedého textu pod Typem zápisu. Popisky nad políčky zůstávají velkým písmem jako ve všech formulářích. Filtr partií v seznamech je samostatná úloha F3-41. |
 | F2-06 | Archivované fitko: skrýt i tréninky? Smazání fitka s tréninky? Šablony, rozdělaný trénink, poslední fitko? | Rozhodnuto 12. a 13. 10.: archivace jen z výběru, tréninky zůstávají ve Statistikách i rekordech a fitko ve filtrech (je-li s tréninky, na konci). Navíc sloučení s jiným fitkem jako volba Sloučit v okně Smazat (stroje: přednost cílové fitko). Smazání s tréninky = smazat je (potvrzení s počtem, Zálohovat, automatický bod obnovy), štítek „Smazané fitko“ jako volba ne. Poslední aktivní fitko ani fitko rozdělaného tréninku archivovat ani mazat nejde. Archivovaná fitka podle abecedy, karta fitka se otevírá klepnutím (bez tlačítka Upravit), nedostupné akce šedé s hláškou. |
 | F4-07 | Kde se plánuje? Opakování? Víc plánů na den? Plán z jiného fitka? Zmeškaný plán? Kdy je splněný? Plán vs. šablona na řadě (F2-04)? Přesun plánu? | Rozhodnuto 12. 10. 2026: v kalendáři; bez opakování; jeden plán na den; i při jiném vybraném fitku první, se štítkem fitka; zmeškaný se smaže; splněný = trénink z té šablony ten den; plán má přednost před F2-04; plán si pamatuje fitko; přesun = stránka Přeplánovat se šipkou ← (varianta B2). Bez poznámky k plánu, bez týdenního pruhu a bez vyplnění týdne podle rotace. |
 | F1-09 | Kde je délka uložená (cvik, cvik v šabloně, cvik a fitko)? Jaké délky? Platí po zahřívacích sériích? Po poslední sérii cviku podle hotového, nebo dalšího cviku? Série v supersérii bez kola? Pamatovat si +15 / −15? Ukázat délku v kartě cviku? Jak vyjádřit „bez vlastní pauzy“? Kde se nastavuje? | Rozhodnuto 12. 10. 2026: u cviku obecně (šablona možná později, F1-21); 0:30–5:00 po 30 s posuvníkem jako u zahřívací série, i v Nastavení pro Výchozí časovač a Časovač po pracovní supersérii; ano i po zahřívacích; podle hotového cviku; podle cviku odškrtnuté série; +15 / −15 si nepamatovat; v kartě ani na stránce cviku nic; vypínač Vlastní pauza nad posuvníkem (závislá volba); jen ve formuláři Upravit cvik. |
