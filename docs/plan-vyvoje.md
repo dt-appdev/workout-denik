@@ -109,7 +109,7 @@ flowchart LR
 18. ~~**F1-07** Nastavení stroje podle fitka~~ – hotovo 11. 10. 2026.
 19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
 20. ~~**F3-16** Rozepsaný formulář přežije zavření appky~~ – hotovo 13. 10. 2026.
-21. Dál podle fází: F1-12, F3-15, fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+21. Dál podle fází: F0-16, F1-12, F3-15, fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
 #### Etapa 7 – Nativní appka (zapsáno 13. 10. 2026)
 
@@ -158,6 +158,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-13** Záloha častěji a ze souhrnu
 - [ ] ~~**F0-14** Automatická záloha na Google Disk~~ – **nahrazeno 13. 10. 2026 úlohou F6-03** (záloha se zálohou telefonu v nativní appce, bez přihlašování a Google Cloud projektu). Vrátit se jen, kdyby se od nativní appky upustilo. Původní rozbor: (nápad 27. 9. 2026 u F0-13; D · střední; **nejdřív zkouška**): appka po uložení tréninku sama nahraje zálohu do skryté složky „data aplikace“ na Disku uživatele (Drive API, `appDataFolder`, oprávnění `drive.appdata`, vidí ji jen tahle appka), drží posledních pár záloh a na novém telefonu po přihlášení nabídne obnovu. Zdarma, ale uživatel jednou založí projekt v Google Cloud (OAuth klient, stav Testing, Google ukáže varování „Aplikace není ověřená“). Přihlášení bez cizích skriptů: okno `accounts.google.com` (token na 1 hodinu) a malá stránka pro návrat ve stejné doméně. Na pozadí to nejde: přístup vyprší po hodině a obnoví se jen po klepnutí (nejlépe navázat na Dokončit v souhrnu, okno Googlu jen problikne). Mění pravidla: řádek o cloudu v Co neděláme, CSP (`connect-src https://www.googleapis.com`), testovací verze musí zálohovat odděleně od vydané. Zkouška: funguje okno přihlášení a návrat do nainstalované appky na Androidu? Alternativa bez programování: aplikace typu Autosync nebo FolderSync, která sama nahrává složku Stažené na Disk (cizí aplikace, zdarma s omezeními). OneDrive přímo z appky nedoporučeno (registrace aplikace u Microsoftu je pro osobní účet složitější, OneDrive pokryje sdílení z F0-13). Záloha telefonu do Googlu (Google One) data webové appky nezahrne (jsou uvnitř Chromu, ten data webů nezálohuje). Zvážit menší zálohu: ZIP (fotky jako JPEG soubory místo base64, které je o třetinu větší; údaje o trénincích zkomprimované 5–10×) nebo `.json.gz`, obojí umí Chrome bez knihovny (`CompressionStream`). U sdílení (F0-13) to nejde, `.zip` ani `.gz` Chrome na Androidu sdílet nedovolí; nahrávání přes Drive API typ souboru neomezuje.
 - [x] **F0-15** Čitelný soubor zálohy
+- [ ] **F0-16** Hromadné a hromadné selektivní mazání záznamů (tréninků, měření) (přání uživatele 13. 10. 2026, nic nerozhodnuto): dnes jde smazat jen jeden trénink nebo jedno měření. Rozhodnout: kde (Historie, Tělo, Nastavení → Data a záloha), jak vybírat (zaškrtávání v seznamu, filtr podle období, fitka, u měření podle zdroje: ruční / import ze Samsung Health F4-13 s `shId`), potvrzení s počtem a bod obnovy před smazáním (jako před obnovou ze zálohy).
 
 ### Fáze 1 – Ovládání při tréninku
 
