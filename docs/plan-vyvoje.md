@@ -250,6 +250,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F4-10** Anglická verze appky (přání 25. 9. 2026 u F4-08, nic nerozhodnuto): přepínač jazyka Čeština / English v Nastavení → Vzhled, všechny texty appky přeložené. Cviky z databáze už mají anglický název (`name`) i český (`cz`), obrázek souhrnu (F4-08) už anglicky umí (texty `SHR_TXT` v `js/app.js`). Rozhodnout: jak texty v kódu oddělit (jeden slovník pro celou appku), formát data a čísel (82.5 / 82,5), co s popisy cviků (jen česky?) a s vlastními názvy (tréninky, šablony, fitka se nepřekládají).
 - [ ] **F4-11** Vylepšit panel Sdílet trénink (přání 25. 9. 2026 u F4-08: rozvržení je v první verzi „stačí, ale nejsem moc spokojený“). Dnes: panel přes skoro celou výšku, náhled vyplní místo nahoře, pod ním tři řádky ovládání (Příspěvek | Příběh; Tmavý | Světlý a CZ | EN; fotka a přepínací tlačítko Postava) a patička Uložit obrázek | Sdílet, bez nápovědy (`sheetShare` v `js/app.js`). Při písmu „Největší“ se „Změnit fotku“ zalomí na 2 řádky. Nejdřív udělat náhledy víc variant (např. volby jako ikony nebo menší štítky, náhled přes celou šířku, volby v rozbalovací liště) a vybrat s uživatelem.
 - [x] **F4-12** Kopírovat pro coache (osobní, skrytá funkce)
+- [x] **F4-13** Import měření ze Samsung Health
 
 
 ### Fáze 5 – Motivace
@@ -275,7 +276,7 @@ UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravi
 |---|---|
 | Spálené kalorie při tréninku | Odhad přes MET má u posilování chybu ±30–50 %, bez tepu nemá vypovídací hodnotu a svádí k „dojídání". Náhrada: trend tělesné váhy. |
 | Sledování jídla a příjmu kalorií | Samostatná velká aplikace, na to existují specializované appky. |
-| Napojení na hodinky / Health Connect | Z webové appky nedostupné, jen z nativní aplikace. |
+| Napojení na hodinky / Health Connect | Z webové appky nedostupné, jen z nativní aplikace. Náhrada: ruční import souboru ze Samsung Health (F4-13). |
 | Vlastní server, synchronizace dat mezi zařízeními | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01 a F0-13 (sdílení souboru na Disk). Záloha na vlastní Google Disk přímo z appky je samostatná úloha F0-14 (čeká na zkoušku). (GitHub slouží jen pro kód a hosting.) |
 | Záloha dat appky se zálohou telefonu (Google One) | Nejde: data nainstalované webové appky jsou uvnitř Chromu a Chrome data webů do zálohy telefonu nedává. Šlo by to jen u nativní appky (zjištěno u F0-13). |
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
