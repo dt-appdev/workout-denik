@@ -108,7 +108,7 @@ flowchart LR
 18. ~~**F1-07** Nastavení stroje podle fitka~~ – hotovo 11. 10. 2026.
 19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
 20. **F3-16** Rozepsaný formulář přežije zavření appky.
-21. Dál podle fází: F1-12, F2-06, F3-15, fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+21. Dál podle fází: F1-12, F3-15, fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
 Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25), F0-14 (automatická záloha na Google Disk, nejdřív zkouška). Odložené: F0-11, F1-15, F3-07.
 
@@ -181,10 +181,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [ ] **F2-04** Šablona na řadě jako hlavní akce úvodu (rotace programu; doplněno podle UX auditu 27. 9. 2026, §2 B, §4 Úvod a §11; P2 · B · střední): appka ukáže, která šablona je na řadě. Dnes je na úvodní obrazovce nejvýraznější „Začít prázdný trénink“ a všechna „Začít“ u šablon jsou stejně korálová, i když běžný den začíná šablonou. Návrh: nahoře karta „Dnes na řadě: Pull“ s jediným hlavním tlačítkem Začít, pod ní ostatní šablony s vedlejším Začít, prázdný trénink jako vedlejší tlačítko. Nejjednodušší pravidlo bez nových dat: na řadě je nejdéle necvičená šablona ve vybraném fitku (Otevřené otázky). Rozhodnuto u F4-07: v naplánovaný den má přednost plán (sekce „Naplánovaný trénink“ pod Začít prázdný trénink), šablona na řadě platí jen ve dnech bez plánu. Dlaždici Objem 30 dní nahradit údajem „Poslední trénink: před 2 dny (Legs)“. Během tréninku zůstává „Probíhá trénink“ (F2-09). Od F2-13 karty šablon tlačítko Začít nemají (klepnutí na kartu = Začít, ostatní v panelu ⋯), karta „Dnes na řadě“ to musí respektovat (hlavní akce = výrazná karta nebo jedno tlačítko jen u ní).
 - [x] **F2-05** Vlastní fotky u cviku
 - [x] **F2-08** Jedinečné názvy šablon
-- [ ] **F2-06** Archivace a smazání fitka (vzniklo u F3-01; zadání upřesněno 10. 10. 2026 u F3-24; D · střední):
-  - **Archivovat fitko** (Nastavení → Fitka → Upravit fitko): fitko zmizí z výběru „Kde dnes cvičíš“ a z filtrů. Skryje se i vše, co k němu patří: jeho tréninky (Historie, kalendář), šablony jen pro toto fitko a jeho data ve Statistikách (počty, objem, rekordy, grafy, progres cviků). Nic se nemaže, archivaci jde vrátit (Obnovit) a vše se ukáže zpátky. Archivovaná fitka v Nastavení → Fitka zvlášť dole.
-  - **Smazat fitko**: dnes nejde smazat fitko, které má tréninky (hláška v panelu fitka). Nově se zeptá, co s tréninky a šablonami: smazat je, nebo je nechat se štítkem „Smazané fitko“ (štítek i bez barvy umí od F3-24 `gymPill` / `gymName`). Mazání tréninků nevratné, proto dotaz s počtem a předtím připomínka zálohy.
-  - Rozhodnout (Otevřené otázky): šablona přiřazená k víc fitkům (zůstane u ostatních), rozdělaný trénink v archivovaném fitku, cviky vázané na fitko (jejich hodnoty z minula), rekordy počítané napříč fitky (přepočítat bez archivovaných?), co ukáže záloha (archivace se zálohuje, nová vlastnost fitka `archived` s výchozí hodnotou `false`). Kde: sekce barva fitka (F0-07) a Nastavení → Fitka (`sheetGym`, akce `delGym`).
+- [x] **F2-06** Archivace a smazání fitka
 - [x] **F2-09** Úvodní obrazovka během tréninku
 - [x] **F2-07** Pořadí přetažením prstu
 - [x] **F2-10** Poznámka ke cviku v šabloně a z historie
@@ -302,7 +299,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
 | F0-14 | Dělat automatickou zálohu na Google Disk? Jak často nahrávat a kolik záloh na Disku držet? | Nejdřív zkouška přihlášení v nainstalované appce na Androidu. Když projde: nahrávat po uložení tréninku, když od poslední zálohy na Disk uplynul aspoň den, na Disku držet posledních 10. |
-| F2-06 | Archivované fitko: zmizí jeho tréninky i ze součtů ve Statistikách a z rekordů jiných fitek? Šablona pro víc fitek? Rozdělaný trénink v archivovaném fitku? Smazání fitka s tréninky: smazat, nebo štítek „Smazané fitko“? | Archivace skryje tréninky všude (i součty a rekordy, po obnovení se vrátí); šablona pro víc fitek zůstane u ostatních; archivovat nejde během tréninku v tom fitku. Smazání nabídne obě volby, výchozí „ponechat se štítkem“. |
 | F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
 | F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
 | F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
