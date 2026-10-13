@@ -932,6 +932,13 @@ select.inp {
 .tpl.tap:active {
   background: var(--surface-2);
 }
+/* F2-06: karta fitka v Nastavení → Fitka, klepnutí otevře panel fitka */
+.gym-c {
+  cursor: pointer;
+}
+.gym-c:active {
+  background: var(--surface-2);
+}
 .tpl-h {
   display: flex;
   gap: 8px;
@@ -1425,6 +1432,10 @@ tr.done .effb {
 /* F3-17: upozornění (stejný český název), uložit jde; odkaz na cvik se stejným názvem */
 .fmsg.warn {
   color: var(--warm);
+}
+/* F2-06: řádek v okně Smazat fitko, u Přesunout neutrální, u Smazat varování (.warn) */
+.fmsg.gd-msg:not(.warn) {
+  color: var(--ink-2);
 }
 .fmsg .link {
   font: inherit;

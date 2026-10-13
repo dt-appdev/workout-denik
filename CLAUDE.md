@@ -209,6 +209,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   návrh progrese a text pro coache. Nový výpis série nikdy „kg × opak.“ ani bez jednotky. Políčka série ve stejném
   pořadí (opakování / čas před váhou, `KIND` f, F3-39).
 - Akce, které mění pracovní série bez hodnot (+ Série, smazání, změna druhu), volají `progTouch`.
+- Výběr fitka (čipy, rozbalovací výběr) jen z aktivních fitek `gymsOn()` / `gymOn(id)`; archivované fitko (`g.archived`,
+  F2-06) jen tam, kde už je vybrané (úprava tréninku, šablony). Filtry Historie a Statistik přes `gymsFilter()`.
 - Štítek fitka u tréninku jen přes `gymPill` (trénink bez fitka štítek nemá, smazané fitko „Smazané fitko“, F3-24).
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Nová volba nastavení patří do existující skupiny (`SET_PAGES`), nová sekce Statistik do jedné z částí

@@ -1280,6 +1280,9 @@
     if (g) return g.name;
     return id ? "Smazané fitko" : "Bez fitka"; // trénink ze smazaného fitka / bez fitka (F3-24)
   };
+  // fitka, která jdou vybrat: bez archivovaných (F2-06, sekce ARCHIVACE A SMAZÁNÍ FITKA)
+  const gymsOn = () => S.cfg.gyms.filter((g) => !g.archived);
+  const gymOn = (id) => !!id && gymsOn().some((g) => g.id === id);
   const gymIdx = (id) => {
     const i = S.cfg.gyms.findIndex((g) => g.id === id);
     return i < 0 ? 0 : i;
@@ -1342,7 +1345,10 @@
     c.gyms = (Array.isArray(c.gyms) ? c.gyms : [])
       .filter((g) => g && g.id)
       .map((g, i) =>
-        g.col >= 1 && g.col <= GYM_COLORS ? g : Object.assign({}, g, { col: (i % GYM_COLORS) + 1 }),
+        Object.assign({}, g, {
+          col: g.col >= 1 && g.col <= GYM_COLORS ? g.col : (i % GYM_COLORS) + 1,
+          archived: g.archived === true, // archivované fitko (F2-06), starší data false
+        }),
       );
     return c;
   }
@@ -4288,7 +4294,11 @@
     // v naplánovaný den předvybrané fitko plánu, dokud ho nezměníš (F4-07)
     const plan = !S.selGym && planToday();
     if (plan && plan.gymId) return plan.gymId;
-    return S.selGym || S.cfg.defaultGymId || (S.cfg.gyms[0] && S.cfg.gyms[0].id) || null;
+    // archivované fitko se nevybírá (F2-06)
+    if (gymOn(S.selGym)) return S.selGym;
+    if (gymOn(S.cfg.defaultGymId)) return S.cfg.defaultGymId;
+    const on = gymsOn();
+    return on[0] ? on[0].id : null;
   }
   function vHome() {
     const { all } = derive();
@@ -4326,7 +4336,7 @@
       <div class="sec-h"><h2>Kde dnes cvičíš</h2></div>
       ${addGym}
       <div class="chips" data-ck="selGym">
-        ${S.cfg.gyms
+        ${gymsOn()
           .map(
             (g) =>
               `<button class="chip" data-act="selGym" data-v="${g.id}"
@@ -4619,6 +4629,7 @@
         <div class="small" style="font-weight:600">Fitka</div>
         <div class="chips" data-ck="tplGym">
           ${S.cfg.gyms
+            .filter((g) => !g.archived || gyms.includes(g.id)) // archivované jen k odebrání (F2-06)
             .map(
               (g) =>
                 `<button class="chip" data-act="tplGym" data-v="${g.id}" aria-pressed="${gyms.includes(g.id)}">
@@ -5575,6 +5586,7 @@
           <label class="f grow" style="min-width:150px">
             Fitko
             <select class="inp" id="ed-gym" data-f="gymId">${S.cfg.gyms
+              .filter((g) => !g.archived || g.id === d.gymId)
               .map(
                 (g) =>
                   `<option value="${g.id}"${g.id === d.gymId ? " selected" : ""}>${esc(g.name)}</option>`,
@@ -6068,6 +6080,7 @@
   }
 
   /* ---------- HISTORIE (F3-06) ---------- */
+  // čipy fitek: s „Všechna fitka“ filtr (Historie, Statistiky), jinak výběr fitka (jen aktivní, F2-06)
   function gymChips(act, cur, withAll) {
     return (
       `<div class="chips" data-ck="${act}">
@@ -6078,7 +6091,7 @@
             </button>`
             : ""
         }` +
-      `${S.cfg.gyms
+      `${(withAll ? gymsFilter() : gymsOn())
         .map(
           (g) =>
             `<button class="chip" data-act="${act}" data-v="${g.id}" aria-pressed="${cur === g.id}">
@@ -7934,7 +7947,7 @@
     const p = S.plan[k];
     const t = p && S.templates[p.tplId];
     if (!t || t.hidden) return null;
-    return { tplId: p.tplId, gymId: p.gymId && gymExists(p.gymId) ? p.gymId : null, t };
+    return { tplId: p.tplId, gymId: gymOn(p.gymId) ? p.gymId : null, t }; // archivované = bez fitka (F2-06)
   }
   // splněný plán: ten den už je trénink z naplánované šablony
   function planDone(k, p, all) {
@@ -8000,9 +8013,9 @@
         <div class="line"><span>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</span></div>
       </button>`;
     let b = '<div class="stack" style="gap:12px">';
-    if (S.cfg.gyms.length > 1) {
+    if (gymsOn().length > 1) {
       b += `<div class="chips" data-ck="planGym">
-        ${S.cfg.gyms
+        ${gymsOn()
           .map(
             (g) =>
               `<button class="chip" data-act="planGym" data-v="${g.id}" data-k="${k}"
@@ -9680,6 +9693,7 @@
     return `<div class="chips" data-ck="${act}">
       <button class="chip" data-act="${act}" data-v="" aria-pressed="${!cur}">Bez fitka</button>
       ${S.cfg.gyms
+        .filter((g) => !g.archived || g.id === cur) // archivované fitko nejde vybrat (F2-06)
         .map(
           (g) =>
             `<button class="chip" data-act="${act}" data-v="${g.id}" aria-pressed="${cur === g.id}">` +
@@ -10687,8 +10701,9 @@
       items: () => [
         [
           "Co jsou body obnovy",
-          "Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy. Chrání před " +
-            `chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. Drží se posledních ` +
+          "Kopie dat uložené v appce: automaticky jednou týdně a vždy před obnovou ze zálohy a smazáním " +
+            `fitka. Chrání před chybou v nové verzi nebo špatnou obnovou, ne před ztrátou telefonu. ` +
+            `Drží se posledních ` +
             `${BK_MAX_POINTS}. Fotky u cviků v nich nejsou (zabraly by moc místa).`,
         ],
       ],
@@ -10883,34 +10898,44 @@
     h += "</div></section>";
     return h;
   }
-  /* Nastavení → Fitka */
+  /* Nastavení → Fitka: aktivní fitka (pořadí přetažením), pod nimi archivovaná podle abecedy (F2-06);
+     klepnutí na kartu otevře panel fitka */
   function gymSettings() {
-    const counts = {};
-    for (const w of derive().all) {
-      counts[w.gymId] = (counts[w.gymId] || 0) + 1;
-    }
+    const counts = gymCounts();
+    const on = gymsOn();
     let h = `<section class="sec">
         <div class="sec-h">
           <h2>Moje fitka</h2>
           ${icoBtn("addGym", "plus", "Přidat fitko")}
         </div>
-        <div class="stack dnd-list" data-dnd="gyms" style="gap:6px">`;
-    const many = S.cfg.gyms.length > 1;
-    S.cfg.gyms.forEach((g) => {
-      h += `<div class="card row dnd-it" style="padding:10px 12px">
+        <div class="stack dnd-list" data-dnd="gyms" style="gap:6px">
+          ${on.map((g) => gymCard(g, counts, on.length > 1)).join("")}
+        </div>
+      </section>`;
+    const arch = gymsArch();
+    if (arch.length) {
+      h += `<section class="sec">
+        <div class="sec-h"><h2>Archivovaná fitka</h2></div>
+        <div class="stack" style="gap:6px">${arch.map((g) => gymCard(g, counts, false)).join("")}</div>
+      </section>`;
+    }
+    return h;
+  }
+  // karta fitka v Nastavení → Fitka; grip = úchyt pro přetažení (jen aktivní fitka)
+  function gymCard(g, counts, grip) {
+    const n = counts[g.id] || 0;
+    const def = S.cfg.defaultGymId === g.id ? " · výchozí" : "";
+    return `<div class="card row gym-c${grip ? " dnd-it" : ""}" role="button" tabindex="0" data-act="editGym"
+        data-v="${g.id}" style="padding:10px 12px">
         <span class="sw" style="width:12px;height:12px;border-radius:50%;background:${gymColor(g.id)}"></span>
         <div class="grow">
           <b>${esc(g.name)}</b>
           <div class="xs muted">
-            ${counts[g.id] || 0} tréninků${S.cfg.defaultGymId === g.id ? " · výchozí" : ""}
+            ${n} ${plural(n, "trénink", "tréninky", "tréninků")}${def}
           </div>
         </div>
-        <button class="btn sm" data-act="editGym" data-v="${g.id}">Upravit</button>
-        ${many ? dndGrip(g.name) : ""}
+        ${grip ? dndGrip(g.name) : ""}
       </div>`;
-    });
-    h += "</div></section>";
-    return h;
   }
   /* Nastavení → Vzhled */
   function themeSettings() {
@@ -10981,14 +11006,17 @@
       </section>`
     );
   }
+  // panel fitka: název, výchozí, barva; u uloženého Archivovat / Obnovit a Smazat (F2-06)
   function sheetGym(id) {
     const g = id ? S.cfg.gyms.find((x) => x.id === id) : { name: "" };
-    const cnt = id ? derive().all.filter((w) => w.gymId === id).length : 0;
+    if (!g) return;
+    const arch = !!g.archived;
+    // archivované fitko nemůže být výchozí (závislá volba zešedne, F3-23)
     let b = `<label class="f">
       Název
       <input class="inp" id="g-name" value="${esc(g.name)}" placeholder="např. Fitness Brno-střed">
     </label>
-    <label class="switch">
+    <label class="switch${arch ? " dep off" : ""}"${arch ? " inert" : ""}>
       <input type="checkbox" id="g-def" ${id && S.cfg.defaultGymId === id ? "checked" : ""}> Výchozí
       fitko
     </label>`;
@@ -11012,21 +11040,236 @@
           .join("")}
       </div>
     </div>`;
-    if (id && cnt) {
-      b += `<div class="small muted">
-        Fitko má ${cnt} ${plural(cnt, "trénink", "tréninky", "tréninků")}, proto ho nelze smazat.
-        Tréninky můžeš přesunout jinam v Historii → Upravit.
-      </div>`;
+    // akce, která teď nejde, je šedá (.off) a klepnutí řekne proč (gymBlock)
+    const off = id && gymBlock(id) ? " off" : "";
+    if (id) {
+      b += arch
+        ? `<button class="btn block" data-act="gymUnarch" data-v="${id}">Obnovit fitko</button>`
+        : `<button class="btn block${off}" data-act="gymArch" data-v="${id}">Archivovat fitko</button>`;
     }
     openSheet(
       id ? "Upravit fitko" : "Nové fitko",
       b,
       `${
-        id && !cnt && S.cfg.gyms.length > 1
-          ? `<button class="btn danger grow" data-act="delGym" data-v="${id}">Smazat</button>`
+        id && S.cfg.gyms.length > 1
+          ? `<button class="btn danger grow${off}" data-act="delGym" data-v="${id}">Smazat</button>`
           : ""
       }<button class="btn primary grow" data-act="saveGym" data-v="${id || ""}">Uložit</button>`,
     );
+  }
+
+  /* ---------- ARCHIVACE A SMAZÁNÍ FITKA (F2-06) ----------
+     Archivovat (do fitka už nechodím): fitko má archived: true (výchozí false doplní cfgNorm, zálohuje se
+     s nastavením). Zmizí z každého výběru fitka: Kde dnes cvičíš, fitko tréninku, Cvičit znovu, šablona,
+     plánování, fotky (gymsOn, gymOn; u upravovaného tréninku a šablony zůstane jen jejich vlastní fitko, aby
+     šlo odebrat). Jeho tréninky zůstávají všude (Historie, Statistiky, rekordy, minule, nastavení strojů)
+     s barevným štítkem; ve filtrech Historie a Statistik je fitko, jen když má tréninky, a až na konci
+     (gymsFilter). Plán v archivovaném fitku se bere jako plán bez fitka (planOf). Šablona jen pro archivovaná
+     fitka je na úvodní obrazovce mezi ostatními. Archivovaná fitka v Nastavení → Fitka zvlášť dole podle
+     abecedy (gymsArch), v panelu fitka Obnovit fitko. Archivací přestane být výchozí (výchozí je první
+     aktivní).
+     Smazat: fitko bez tréninků se smaže hned (gymRemove, odebere se i ze šablon). U fitka s tréninky okno
+     sheetGymDel (stav gymDel) s volbou Přesunout (výchozí, do jiného aktivního fitka: tréninky, šablony,
+     plán, nastavení strojů s předností cílového fitka, fotky) nebo Smazat (tréninky se smažou). Před
+     provedením bod obnovy (makePoint "gym"), tlačítko Zálohovat do souboru. Řádek pod výběrem má v obou
+     stavech stejnou délku, aby se okno při přepínání neměnilo.
+     Nejde (gymBlock, tlačítko je šedé .off a klepnutí ukáže důvod): archivovat ani smazat poslední aktivní
+     fitko a fitko rozdělaného tréninku. Smazání úplně posledního fitka tlačítko nemá. */
+  let gymDel = null; // okno Smazat fitko s tréninky: {id, mode: "move" | "del", to}
+  // počet tréninků podle fitka
+  function gymCounts() {
+    const counts = {};
+    for (const w of derive().all) {
+      counts[w.gymId] = (counts[w.gymId] || 0) + 1;
+    }
+    return counts;
+  }
+  // archivovaná fitka podle abecedy
+  const gymsArch = () =>
+    S.cfg.gyms.filter((g) => g.archived).sort((a, b) => a.name.localeCompare(b.name, "cs"));
+  // fitka do filtru Historie a Statistik: aktivní, za nimi archivovaná s tréninky
+  function gymsFilter() {
+    const counts = gymCounts();
+    return gymsOn().concat(gymsArch().filter((g) => counts[g.id]));
+  }
+  // proč fitko teď nejde archivovat ani smazat ("" = jde)
+  function gymBlock(id) {
+    if (S.active && S.active.gymId === id) return "V tomhle fitku máš rozdělaný trénink. Nejdřív ho dokonči.";
+    if (gymOn(id) && gymsOn().length < 2) return "Poslední aktivní fitko nejde archivovat ani smazat.";
+    return "";
+  }
+  // archivace a obnovení fitka
+  function gymArchive(id, on) {
+    const cfg = JSON.parse(JSON.stringify(S.cfg));
+    const g = cfg.gyms.find((x) => x.id === id);
+    if (!g) return;
+    g.archived = on;
+    if (on && cfg.defaultGymId === id) {
+      const first = cfg.gyms.find((x) => !x.archived);
+      cfg.defaultGymId = first ? first.id : null;
+    }
+    if (on && S.selGym === id) {
+      S.selGym = null;
+    }
+    put("config/main", cfg);
+  }
+  // odebere fitko z nastavení a ze šablon; to = fitko, které ho v šablonách nahradí (přesun), jinak null
+  function gymRemove(id, to) {
+    const cfg = JSON.parse(JSON.stringify(S.cfg));
+    cfg.gyms = cfg.gyms.filter((g) => g.id !== id);
+    if (cfg.defaultGymId === id) {
+      const first = to ? { id: to } : cfg.gyms.find((g) => !g.archived) || cfg.gyms[0];
+      cfg.defaultGymId = first ? first.id : null;
+    }
+    put("config/main", cfg);
+    // smazané fitko zmizí i ze šablon (F2-02), při přesunu ho nahradí cílové
+    if (Object.values(S.templates).some((x) => (x.gyms || []).includes(id))) {
+      const items = {};
+      for (const [tid, x] of Object.entries(S.templates)) {
+        const gyms = (x.gyms || []).map((g) => (g === id ? to : g)).filter(Boolean);
+        items[tid] = Object.assign({}, x, { gyms: [...new Set(gyms)] });
+      }
+      put("config/templates", { items });
+    }
+    if (S.selGym === id) {
+      S.selGym = null;
+    }
+    if (S.histGym === id) {
+      S.histGym = "all";
+    }
+    if (S.statsGym === id) {
+      S.statsGym = "all";
+    }
+  }
+  // tvar slovesa podle počtu („se přesune“ / „se přesunou“)
+  const verbN = (n, one, few) => (n >= 2 && n <= 4 ? few : one);
+  // okno Smazat fitko s tréninky: Přesunout / Smazat, kam přesunout
+  function sheetGymDel(noanim) {
+    const del = gymDel;
+    if (!del) return;
+    const n = gymCounts()[del.id] || 0;
+    const move = del.mode === "move";
+    const nTxt = n + " " + plural(n, "trénink", "tréninky", "tréninků");
+    const msg = move
+      ? nTxt + " " + verbN(n, "se přesune", "se přesunou") + " do vybraného fitka."
+      : nTxt + " " + verbN(n, "se smaže", "se smažou") + ", nejde to vrátit.";
+    const b = `<p style="margin:0">${esc(gymName(del.id))} má ${nTxt}. Co s nimi?</p>
+      <div class="seg seg-wide">
+        <button data-act="gymDelMode" data-v="move" aria-pressed="${move}">Přesunout</button>
+        <button data-act="gymDelMode" data-v="del" aria-pressed="${!move}">Smazat</button>
+      </div>
+      <div class="dep${move ? "" : " off"}"${move ? "" : " inert"}>
+        <div class="f lbl-f" style="margin-bottom:8px">Do fitka</div>
+        <div class="chips" data-ck="gymDelTo">
+          ${gymsOn()
+            .filter((g) => g.id !== del.id)
+            .map(
+              (g) =>
+                `<button class="chip" data-act="gymDelTo" data-v="${g.id}" aria-pressed="${del.to === g.id}">
+                  <span class="sw" style="background:${gymColor(g.id)}"></span>
+                  ${esc(g.name)}
+                </button>`,
+            )
+            .join("")}
+        </div>
+      </div>
+      <div class="fmsg gd-msg${move ? "" : " warn"}">${msg}</div>
+      <button class="btn block" data-act="${navigator.canShare ? "bkShare" : "export"}">
+        Zálohovat do souboru
+      </button>`;
+    openSheet(
+      "Smazat fitko?",
+      b,
+      `<button class="btn grow" data-act="closeSheet">Zrušit</button>
+      <button class="btn primary grow" data-act="gymDelGo">Smazat fitko</button>`,
+      noanim,
+      { lv: 2, back: () => sheetGym(del.id) },
+    );
+  }
+  // smazání fitka s tréninky podle okna sheetGymDel; force = bez bodu obnovy (nepodařilo se ho vytvořit)
+  async function gymDelDo(force) {
+    const del = gymDel;
+    if (!del) return;
+    const move = del.mode === "move" && gymOn(del.to);
+    if (pointsApi && !force) {
+      toast("Vytvářím bod obnovy…");
+      const ok = await makePoint("gym");
+      if (!ok) {
+        confirmSheet(
+          "Bod obnovy se nepodařilo vytvořit",
+          "Pokračovat bez pojistky? Krok pak nepůjde vrátit.",
+          "Pokračovat",
+          "gymDelGo",
+          "!",
+        );
+        return;
+      }
+    }
+    const id = del.id,
+      to = move ? del.to : null,
+      toName = move ? gymName(to) : "";
+    let n = 0;
+    for (const mk of Object.keys(S.months)) {
+      const items = {};
+      let hit = false;
+      for (const [wid, w] of Object.entries(S.months[mk])) {
+        if (w.gymId !== id) {
+          items[wid] = w;
+          continue;
+        }
+        hit = true;
+        n++;
+        if (move) {
+          items[wid] = Object.assign({}, w, { gymId: to });
+        }
+      }
+      if (hit) {
+        put("workouts/" + mk, { items });
+      }
+    }
+    if (move) {
+      gymMoveRest(id, to);
+    }
+    gymRemove(id, to);
+    gymDel = null;
+    closeSheet();
+    toast(
+      move
+        ? "Fitko smazané, tréninky (" + n + ") jsou teď v: " + toName + "."
+        : "Fitko smazané i s tréninky (" + n + ").",
+    );
+  }
+  // přesun plánu, nastavení strojů (přednost má cílové fitko) a fotek z fitka id do fitka to
+  function gymMoveRest(id, to) {
+    if (Object.values(S.plan).some((p) => p && p.gymId === id)) {
+      const items = {};
+      for (const [k, p] of Object.entries(S.plan)) {
+        items[k] = p && p.gymId === id ? Object.assign({}, p, { gymId: to }) : p;
+      }
+      put("config/plan", { items });
+    }
+    const exItems = Object.assign({}, S.exLib);
+    let changed = false;
+    for (const [exId, ex] of Object.entries(S.exLib)) {
+      if (!ex.machine || typeof ex.machine[id] !== "string") continue;
+      const machine = Object.assign({}, ex.machine);
+      if (!machine[to]) {
+        machine[to] = machine[id];
+      }
+      delete machine[id];
+      exItems[exId] = Object.assign({}, ex, { machine });
+      changed = true;
+    }
+    if (changed) {
+      putEx(exItems);
+    }
+    if (S.photosOn) {
+      for (const ph of Object.values(S.photos)) {
+        if (ph.gymId === id) {
+          photoUpdate(ph.id, { gymId: to }).catch(() => {});
+        }
+      }
+    }
   }
 
   /* ---------- výběr cviků ----------
@@ -12172,8 +12415,11 @@
   function dndDrop(kind, from, to) {
     const move = (a) => a.splice(to, 0, a.splice(from, 1)[0]);
     if (kind === "gyms") {
+      // přetahují se jen aktivní fitka, archivovaná zůstanou za nimi (F2-06)
       const cfg = JSON.parse(JSON.stringify(S.cfg));
-      move(cfg.gyms);
+      const on = cfg.gyms.filter((g) => !g.archived);
+      move(on);
+      cfg.gyms = on.concat(cfg.gyms.filter((g) => g.archived));
       put("config/main", cfg);
     } else if (kind === "ex") {
       const d = curDraft();
@@ -13282,6 +13528,7 @@
   document.addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-act]");
     if (!t) return;
+    if (ev.target.closest(".dnd-h")) return; // úchyt v kartě, která je tlačítko (F2-06), kartu neotevře
     const act = t.dataset.act,
       v = t.dataset.v,
       i = +t.dataset.i,
@@ -14566,7 +14813,7 @@
       case "wToTpl": {
         const w = S.months[t.dataset.m][v];
         // fitko tréninku (F2-02; s jedním fitkem bez přiřazení)
-        const gyms = S.cfg.gyms.length > 1 ? tplGyms({ gyms: [w.gymId] }) : [];
+        const gyms = S.cfg.gyms.length > 1 && gymOn(w.gymId) ? [w.gymId] : []; // archivované ne (F2-06)
         // stejný název ve stejném fitku: zeptat se (F2-08)
         const clash = tplClash(w.title, gyms, null);
         if (clash.length) {
@@ -14796,24 +15043,50 @@
         closeSheet();
         break;
       }
+      case "gymArch": {
+        const why = gymBlock(v);
+        if (why) {
+          toast(why);
+          break;
+        }
+        gymArchive(v, true);
+        closeSheet();
+        toast("Fitko archivované.", null, () => gymArchive(v, false));
+        break;
+      }
+      case "gymUnarch":
+        gymArchive(v, false);
+        closeSheet();
+        toast("Fitko obnovené.");
+        break;
       case "delGym": {
-        const cfg = JSON.parse(JSON.stringify(S.cfg));
-        cfg.gyms = cfg.gyms.filter((g) => g.id !== v);
-        if (cfg.defaultGymId === v) {
-          cfg.defaultGymId = cfg.gyms[0].id;
+        const why = gymBlock(v);
+        if (why) {
+          toast(why);
+          break;
         }
-        put("config/main", cfg);
-        // smazané fitko zmizí i ze šablon (F2-02)
-        if (Object.values(S.templates).some((x) => (x.gyms || []).includes(v))) {
-          const items = {};
-          for (const [id, x] of Object.entries(S.templates)) {
-            items[id] = Object.assign({}, x, { gyms: (x.gyms || []).filter((g) => g !== v) });
-          }
-          put("config/templates", { items });
+        // fitko s tréninky: zeptat se, co s nimi (F2-06)
+        if (gymCounts()[v]) {
+          const to = gymsOn().find((g) => g.id !== v);
+          gymDel = { id: v, mode: "move", to: to ? to.id : null };
+          sheetGymDel();
+          break;
         }
+        gymRemove(v, null);
         closeSheet();
         break;
       }
+      case "gymDelMode":
+        gymDel.mode = v;
+        sheetGymDel(true);
+        break;
+      case "gymDelTo":
+        gymDel.to = v;
+        sheetGymDel(true);
+        break;
+      case "gymDelGo":
+        gymDelDo(v === "!");
+        break;
       case "restAlert":
         put("config/main", Object.assign({}, S.cfg, { restAlert: v }));
         restPost();
@@ -15528,7 +15801,8 @@
         stáhne do telefonu (doExport). Datum poslední zálohy je v config/backup.last.
         Po BK_REMIND_DAYS (7) dnech bez zálohy ukáže úvodní obrazovka pruh s připomínkou.
      2) Body obnovy uvnitř appky (IndexedDB, úložiště "points"): automaticky jednou za 7 dní,
-        vždy před obnovou ze zálohy a ručně. Drží se posledních BK_MAX_POINTS.
+        vždy před obnovou ze zálohy, před smazáním fitka s tréninky (F2-06) a ručně. Drží se posledních
+        BK_MAX_POINTS.
      Nepovinné pole "plan" (plánované tréninky, F4-07) verzi nemění, starší zálohy ho nemají.
      Formát souboru: version 2 = version 1 + pole "photos" (fotky u cviků F2-05, jen v souboru
      s přepínačem „Zálohovat i fotky“; body obnovy mají photos prázdné, includes.photos = false).
@@ -15545,6 +15819,7 @@
   const BK_REASON = {
     auto: "Automatický (týdenní)",
     pre: "Před obnovou ze zálohy",
+    gym: "Před smazáním fitka", // F2-06
     exdb: "Před aktualizací databáze cviků",
     manual: "Ručně vytvořený",
   };
