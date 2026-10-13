@@ -10708,6 +10708,33 @@
         ],
       ],
     },
+    gyms: {
+      title: "Fitka",
+      items: () => [
+        [
+          "Archivovat",
+          "Fitko zmizí z výběru fitka (Kde dnes cvičíš, trénink, šablony, plánování). Jeho tréninky zůstávají " +
+            "v Historii, Statistikách i rekordech. Obnovit ho jde kdykoli v panelu fitka.",
+        ],
+        [
+          "Sloučit",
+          "Tréninky, šablony a plánované tréninky se přesunou do vybraného fitka a fitko se smaže. Nastavení " +
+            "strojů se přenese, jen když ho cílové fitko u cviku ještě nemá; jinak platí to z cílového fitka. " +
+            "Fotky se přesunou taky.",
+        ],
+        ["Smazat", "Smaže fitko i všechny jeho tréninky. Šablony zůstanou, jen se z nich fitko odebere."],
+        [
+          "Bod obnovy",
+          "Před sloučením nebo smazáním appka sama uloží bod obnovy. Krok jde vrátit v Nastavení → Data " +
+            "a záloha → Body obnovy. Bod obnovy je jen v telefonu; pro jistotu ulož i zálohu do souboru.",
+        ],
+        [
+          "Co nejde",
+          "Archivovat ani smazat nejde fitko, ve kterém máš rozdělaný trénink. V seznamu musí vždy zůstat " +
+            "aspoň jedno aktivní fitko, proto poslední aktivní fitko nejde archivovat ani smazat.",
+        ],
+      ],
+    },
     effort: {
       title: "Náročnost série",
       items: () => [
@@ -10906,7 +10933,10 @@
     let h = `<section class="sec">
         <div class="sec-h">
           <h2>Moje fitka</h2>
-          ${icoBtn("addGym", "plus", "Přidat fitko")}
+          <div class="sec-btns">
+            ${helpBtn("gyms")}
+            ${icoBtn("addGym", "plus", "Přidat fitko")}
+          </div>
         </div>
         <div class="stack dnd-list" data-dnd="gyms" style="gap:6px">
           ${on.map((g) => gymCard(g, counts, on.length > 1)).join("")}
@@ -11075,7 +11105,9 @@
      stavech stejnou délku, aby se okno při přepínání neměnilo. Potvrzovací tlačítko podle volby: Sloučit /
      Smazat (že se fitko smaže v obou případech, říká nadpis Smazat fitko?).
      Nejde (gymBlock, tlačítko je šedé .off a klepnutí ukáže důvod): archivovat ani smazat poslední aktivní
-     fitko a fitko rozdělaného tréninku. Smazání úplně posledního fitka tlačítko nemá. */
+     fitko a fitko rozdělaného tréninku. Smazání úplně posledního fitka tlačítko nemá.
+     Nápověda: otazník v nadpisu Moje fitka (HELP.gyms); okno Smazat fitko nápovědu ani větu o bodu obnovy
+     nemá (krátký panel, rozhodnuto 13. 10.). */
   let gymDel = null; // okno Smazat fitko s tréninky: {id, mode: "move" | "del", to}
   // počet tréninků podle fitka
   function gymCounts() {
