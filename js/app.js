@@ -8830,7 +8830,7 @@
      filtrů: čip Partie ▾ (a Vybavení ▾, ve výběru i Jen cviky z historie). Bez výběru čip otevře panel
      (sheetMf, sheetEq), s výběrem ukazuje hodnotu s křížkem („Paže ×“) a klepnutí výběr zruší (akce mfOpen,
      eqOpen). Panel Partie: Všechny partie, pak každá skupina MPICK s nadpisem a čipy (u skupiny s víc partiemi
-     „Celá záda“ + jednotlivé partie). Panel Vybavení: seznam pod sebou, Všechno vybavení a pak abecedně. Hodnota filtru: "all", "g:<skupina z MGRP>" nebo partie z MKEYS;
+     „Celá záda“ + jednotlivé partie). Panel Vybavení: čipy pod sebou, Všechno vybavení a pak abecedně. Hodnota filtru: "all", "g:<skupina z MGRP>" nebo partie z MKEYS;
      cvik do filtru patří, když ji má mezi hlavními partiemi (mfMatch, libovolná hlavní, ne jen první).
      Uložená hodnota z doby před F3-41 (skupiny MUSCLES) se při startu převede přes mfNorm (u MPICK), neznámá
      = "all".
@@ -8932,15 +8932,15 @@
   const MF_ALL = { back: "Celá záda", arms: "Celé paže", core: "Celé břicho", legs: "Celé nohy" };
   function sheetEq(from) {
     const cur = MF[from].eq();
-    // seznam pod sebou: Všechno vybavení, pak abecedně; vybrané má fajfku
+    // čipy pod sebou: Všechno vybavení, pak abecedně
     const opts = Object.entries(EQUIP).sort((a, b) => a[1].localeCompare(b[1], "cs"));
-    const b = `<div class="card setlist">
+    const b = `<div class="chips fcol">
       ${[["all", "Všechno vybavení"]]
         .concat(opts)
         .map(
           ([k, l]) =>
-            `<button class="setrow optrow" data-act="eqSet" data-v="${from}|${k}" aria-pressed="${cur === k}">
-              <span class="grow">${esc(l)}</span>${cur === k ? icon("check") : ""}
+            `<button class="chip" data-act="eqSet" data-v="${from}|${k}" aria-pressed="${cur === k}">
+              ${esc(l)}
             </button>`,
         )
         .join("")}

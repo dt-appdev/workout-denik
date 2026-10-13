@@ -788,6 +788,11 @@ a.btn {
   flex-wrap: wrap;
   overflow: visible;
 }
+/* řádky čipů nad sebou: mezera 10 px, aby se dotykové plochy (--tap) nepřekrývaly */
+.chips.fwrap,
+.chips.fcol {
+  row-gap: 10px;
+}
 .mf-h {
   display: flex;
   align-items: center;
@@ -802,16 +807,11 @@ a.btn {
   height: 8px;
   border-radius: 50%;
 }
-/* volba v seznamu pod sebou (panel Vybavení): nižší řádek, vybraná s fajfkou v barvě výběru */
-.optrow {
-  min-height: var(--tap);
-  padding-block: 8px;
-}
-.optrow[aria-pressed="true"] {
-  font-weight: 600;
-}
-.optrow .ic {
-  color: var(--accent);
+/* čipy pod sebou (panel Vybavení) */
+.chips.fcol {
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: visible;
 }
 .cnt-h {
   flex-wrap: wrap;
