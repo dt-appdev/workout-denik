@@ -73,6 +73,7 @@ flowchart LR
 - ~~**F3-32** Smazat vlastní cvik~~ – hotovo 8. 10. 2026.
 - ~~**F3-42** Grafy cviku: objem série, opakování celkem~~ – hotovo 13. 10. 2026.
 - **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží (hned po F3-42).
+- **F3-43** Jednotné svislé mezery a jejich kontrola (po F4-14).
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -249,6 +250,24 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-40** Formulář cviku po sekcích
 - [x] **F3-41** Filtr partií v panelu
 - [x] **F3-42** Grafy cviku: objem série, opakování celkem, max zátěž u cviku na čas
+- [ ] **F3-43** Jednotné svislé mezery a jejich kontrola (přání uživatele 13. 10. 2026 u F3-42, dělat po F4-14, nejlépe
+  bez jiných otevřených PR, sahá skoro do všech obrazovek): mezery mezi bloky působí nesjednoceně. Změřeno 13. 10. 2026
+  (412 px, zkušební data): appka používá hlavně 10 a 22 px, ale bez pravidla, kdy kterou. Statistiky: přepínač
+  Přehled/Partie/Cviky → čipy fitek 10, čipy fitek → období 22, období → dlaždice 10. Historie: čipy fitek → dlaždice
+  10. Tělo: Nové měření → čipy 22, čipy → období 8. Trénink: čipy fitek → Začít prázdný trénink 22. Příčina: `.sec` má
+  `margin-top: 22px` a ovládání v sekcích má ručně dopsané `style="margin-…"` (10, 12, 14 px, asi 60 míst v `js/app.js`);
+  čipy (`.chips`) mají záporný okraj kvůli dotykové ploše (F3-23), takže ruční odsazení u nich vyjde o 5 px jinak
+  (8 v Tělo; pod čipy grafů F3-42 opraveno výpočtem `calc(10px + (34px - var(--tap)) / 2)`).
+  **Rozhodnuto 13. 10. 2026:** jen svislé mezery (vodorovné mezi čipy a tlačítky zůstávají), dvě proměnné v `:root`
+  v `css/app.css`: 10 px uvnitř skupiny (nadpis sekce → obsah; celý blok ovládání nahoře – přepínač části, fitka,
+  období – mezi sebou i k obsahu, který filtruje), 22 px mezi skupinami (sekce → sekce; samostatné velké tlačítko
+  přes celou šířku jako Začít prázdný trénink nebo Nové měření od filtrů i od dalšího obsahu). Ruční odsazení
+  nahradit třídami nebo proměnnými, pravidlo dopsat do `CLAUDE.md` (Konvence). Kontrola: (1) úloha „kontrola“
+  v `.github/workflows/nasazeni.yml` odmítne PR, který v `js/app.js` přidá `style="…margin…"` s hodnotou v px místo
+  proměnné (jako hledání kódu v HTML, F0-08); (2) měřicí skript pro Playwright v `tools/` (projde hlavní obrazovky se
+  zkušebními daty a vypíše svislé mezery mezi bloky `.seg`, `.chips` – měřeno k viditelnému čipu, `.kpis`, `.card`,
+  `.btn.block`, `.sec-h`…), spouští se lokálně před PR se změnou vzhledu, v GitHubu ne (Playwright by byl npm
+  závislost). Nejdřív náhled Dnes / Po změně: Statistiky, Tělo, Trénink, Historie, stránka cviku, oba motivy.
 
 
 ### Fáze 4 – Chytré funkce
