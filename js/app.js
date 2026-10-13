@@ -4590,7 +4590,7 @@
             ${icoBtn("newTpl", "plus", "Nová šablona")}
           </div>
         </div>
-        <div class="stack">`;
+        <div class="stack list">`;
     if (!tpls.length && hiddenTpls.length) {
       h += '<div class="empty">Všechny šablony jsou skryté.</div>';
     } else if (!tpls.length) {
@@ -4610,7 +4610,7 @@
     if (other.length && (tplOther || !here.length)) {
       h += `<section class="sec">
           <div class="sec-h"><h2>Ostatní šablony</h2></div>
-          <div class="stack">`;
+          <div class="stack list">`;
       for (const [id, t] of other) {
         h += tplCard(id, t, all, null);
       }
@@ -4630,7 +4630,7 @@
           <h2>Skryté šablony</h2>
           ${helpBtn("tplHidden")}
         </div>
-        <div class="stack">
+        <div class="stack list">
           ${hiddenTpls.map(([id, t]) => tplCard(id, t, all, null, true)).join("")}
           ${btn}
         </div>
@@ -5557,6 +5557,22 @@
      - Mazání: .btn.danger je vždy červený obrys. Patička panelu: vedlejší vlevo, hlavní vpravo, stejně široká
        (Smazat | Uložit u měření a fitka); potvrzovací okno má plné potvrzení (Smazat fotku?), menu cviku
        Odebrat cvik za čárou .bzone. */
+  /* ---------- SVISLÉ MEZERY (F3-43) ----------
+     Svislé mezery mezi bloky stránky jen ze tří proměnných v :root v css/app.css, žádné ruční style="margin…"
+     v px (úloha „kontrola“ v .github/workflows/nasazeni.yml takový nový řádek v js/app.js odmítne):
+     - --gap-in (10 px) uvnitř skupiny: nadpis sekce → obsah (.sec-h), blok ovládání nahoře (přepínač části,
+       čipy fitek, období, hledání, filtry) mezi sebou i k obsahu, který filtruje, pruhy (.banner) mezi sebou,
+     - --gap-out (22 px) mezi skupinami: sekce → sekce (.sec), nadpis sekce i hned pod filtry, samostatné velké
+       tlačítko přes celou šířku (Začít prázdný trénink, Nové měření), měsíc v Historii (.mhead) mezi měsíci,
+     - --gap-list (8 px) karty a řádky seznamu pod sebou: .stack.list (šablony, měření, cviky, historie cviku),
+       .mb-list (tréninky v Historii).
+     Třídy: .sec.cont = sekce, která pokračuje ve skupině nad ní (období pod čipy fitek ve Statistikách, obsah
+     stránky cviku pod přepínačem), .mt-in / .mb-in = odsazení bloku o --gap-in. Pruh hned pod záhlavím (.top +
+     .banner) a přepínač části nemají mezeru od záhlaví. Řádek čipů (.chips) nikdy nedostává vlastní margin:
+     má záporný okraj kvůli dotykové ploše (F3-23), odsazení dostane soused (dřív výpočet calc u čipů grafů).
+     Mezery uvnitř karet a panelů (formuláře, nápovědy, rekordy, galerie) a stránky trénink, uložený trénink,
+     Upravit cvik a Popis cviku řeší F3-44. Kontrola: tools/mezery.js (Playwright, lokálně) vypíše mezery
+     mezi bloky hlavních obrazovek se zkušebními daty. */
   /* ---------- ODZNAK DRUHU SÉRIE A HOTOVÝ ŘÁDEK (F3-35) ----------
      Jen v css/app.css (přání uživatele 10. 10. 2026, náhled schválen 11. 10.). Po ✓ ztratí políčka
      kg / opak. a RIR/RPE šedý podklad (tr.done .cell, tr.done .effb), odznak pracovní série si ho ale
@@ -6144,7 +6160,7 @@
     const { all } = derive();
     const list = all.filter((w) => S.histGym === "all" || w.gymId === S.histGym);
     let h = topbar("Historie", list.length + " " + plural(list.length, "trénink", "tréninky", "tréninků"));
-    h += `<div class="seg seg-wide" style="margin-bottom:10px">${[
+    h += `<div class="seg seg-wide mb-in">${[
       ["cal", "Kalendář"],
       ["list", "Seznam"],
     ]
@@ -6155,7 +6171,7 @@
       .join("")}</div>`;
     h += gymChips("histGym", S.histGym, true);
     if (S.histView === "cal") return h + vCal(all, list);
-    if (!list.length) return `${h}<div class="empty" style="margin-top:14px">Žádné tréninky.</div>`;
+    if (!list.length) return `${h}<div class="empty mt-in">Žádné tréninky.</div>`;
     let curM = "";
     const lim = S.histLimit || 40;
     list.slice(0, lim).forEach((w) => {
@@ -6166,8 +6182,7 @@
         h += `<div class="mhead">${m}</div>`;
       }
       h +=
-        `<button class="hw" data-act="openW" data-v="${esc(w.id)}" data-m="${w.mk}"
-          style="margin-bottom:8px">
+        `<button class="hw mb-list" data-act="openW" data-v="${esc(w.id)}" data-m="${w.mk}">
         <div class="row">
           <h3 class="grow">
             ${esc(w.title)}` +
@@ -8478,7 +8493,7 @@
     const ws = wsAll.filter((w) => w.start >= since);
     const s = summarize(ws);
     let h = topbar("Statistiky", g === "all" ? "Všechna fitka" : gymName(g));
-    h += `<div class="seg seg-wide" style="margin-bottom:10px">${STATS_PARTS.map(
+    h += `<div class="seg seg-wide mb-in">${STATS_PARTS.map(
       ([k, l]) =>
         `<button data-act="statsPart" data-v="${k}" aria-pressed="${S.statsPart === k}">${l}</button>`,
     ).join("")}</div>`;
@@ -8491,9 +8506,9 @@
   // Přehled: období s dlaždicemi, Průběh, Podle fitek, souhrn za kalendářní období
   function statsOver({ g, range, wsAll, ws, s }) {
     const pr = rangePrev(range);
-    let h = `<section class="sec">
+    let h = `<section class="sec cont">
       ${rangeSeg("statsRange", range)}
-      <div style="margin-top:10px">${kpiGrid(s, pr && prevSum(wsAll, pr.a, pr.b))}</div>
+      <div class="mt-in">${kpiGrid(s, pr && prevSum(wsAll, pr.a, pr.b))}</div>
     </section>`;
     // graf
     const m = S.statsMetric;
@@ -8559,7 +8574,7 @@
   }
   // Partie: období, postava a pruhy podle partií (později radar F3-04)
   function statsMus({ range, s }) {
-    let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
+    let h = `<section class="sec cont">${rangeSeg("statsRange", range)}</section>`;
     const mv = Object.entries(s.mus).sort((a, b) => b[1] - a[1]);
     h += `<section class="sec">
       <div class="sec-h"><h2>Pracovní série podle partie</h2></div>
@@ -8597,7 +8612,7 @@
     rows.sort((a, b) => b.last.w.start - a.last.w.start);
     return `<section class="sec">
       <div class="sec-h"><h2>Bez zlepšení</h2><span class="xs muted">${rows.length}</span></div>
-      <div class="stack" style="gap:6px">
+      <div class="stack list">
         ${rows
           .map((r) => {
             const ex = exOf(r.exId);
@@ -8806,7 +8821,7 @@
     return b.last - a.last;
   }
   function statsEx({ g, range, since }) {
-    let h = `<section class="sec">${rangeSeg("statsRange", range)}</section>`;
+    let h = `<section class="sec cont">${rangeSeg("statsRange", range)}</section>`;
     const all = progRows(g, since);
     h += progBest(all);
     h += statsStag(g);
@@ -8819,14 +8834,14 @@
       ${cntHead(rows.length)}
       <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
           value="${esc(S.exSearch)}">
-      <div class="row" style="margin-top:8px;gap:8px">
+      <div class="row mt-in" style="gap:8px">
         ${mfChip("stats")}
         <div class="seg" style="margin-left:auto">
           <button data-act="exSort" data-v="last" aria-pressed="${!pct}">Naposledy</button>
           <button data-act="exSort" data-v="prog" aria-pressed="${pct}">Zlepšení</button>
         </div>
       </div>
-      <div class="stack" style="margin-top:10px;gap:6px">`;
+      <div class="stack list mt-in">`;
     for (const r of rows.slice(0, S.exLimit || 60)) {
       const p = r.p;
       h +=
@@ -9016,7 +9031,7 @@
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(S.exlQ)}" autocomplete="off">`;
     // řádek filtrů (F3-41), skryté cviky jako další filtr
-    h += `<div class="row wrap-r" style="margin-top:8px;gap:8px">
+    h += `<div class="row wrap-r mt-in" style="gap:8px">
       ${mfChip("list")}${eqChip("list")}
       ${
         nHid
@@ -9058,7 +9073,7 @@
         }` +
         `</div>`;
     }
-    h += '<div class="stack" style="gap:6px">';
+    h += '<div class="stack list">';
     for (const r of rows.slice(0, lim)) {
       const e = r.e;
       h +=
@@ -9166,7 +9181,7 @@
       `<button class="iconbtn" data-act="exBack" aria-label="Zpět">${IC.back}</button>`,
       "czsub",
     );
-    h += `<div class="seg seg-wide" style="margin-bottom:10px">
+    h += `<div class="seg seg-wide mb-in">
       ${[
         ["info", "Popis"],
         ["stats", "Statistiky"],
@@ -9220,13 +9235,13 @@
     }
     if (!list.length) {
       return `${h}
-      <div class="empty" style="margin-top:14px">S tímto cvikem zatím nemáš žádný záznam.</div>`;
+      <div class="empty">S tímto cvikem zatím nemáš žádný záznam.</div>`;
     }
     if (S.exPart === "hist") {
       return h + vExHist(id, ex, list, gymsWith, live);
     }
     // statistiky
-    h += `<p class="xs muted" style="margin:0 0 8px">${
+    h += `<p class="xs muted mb-in" style="margin-top:0">${
       ex.gymDep
         ? `Vázáno na fitko${gdIcon()}: počítá se zvlášť pro každé fitko.`
         : "Nevázáno na fitko: data ze všech fitek se sčítají."
@@ -9255,9 +9270,9 @@
     if (live && live.lr.ex.length && prIn(live.list[0].w.start, live.list[0].w.gymId)) {
       pr++;
     }
-    h += `<section class="sec">
+    h += `<section class="sec cont">
       ${rangeSeg("detailRange", S.detailRange)}
-      <div class="kpis k4" style="margin-top:10px">
+      <div class="kpis k4 mt-in">
         <div class="kpi"><b>${sel.length}</b><span>Tréninky</span></div>
         <div class="kpi"><b>${ps}</b><span>Série</span></div>
         ${exTile3(kind, sel)}
@@ -9294,7 +9309,7 @@
       ];
     }
     h += `<section class="sec">
-      <div class="chips" data-ck="detailMetric" style="margin-bottom:calc(10px + (34px - var(--tap)) / 2)">
+      <div class="chips" data-ck="detailMetric">
         ${Object.keys(M)
           .map(
             (k) =>
@@ -9304,7 +9319,7 @@
           .join("")}
       </div>`;
     h +=
-      `<div class="card">
+      `<div class="card mt-in">
         ${chartPh(
           {
             type: "line",
@@ -9446,8 +9461,8 @@
         ? list.filter((s) => s.w.gymId === S.detailGym)
         : list;
     const R = recs();
-    h += `<section class="sec">
-      <div class="stack" style="gap:6px">`;
+    h += `<section class="sec cont">
+      <div class="stack list">`;
     for (const s of sel.slice(0, S.exHistLimit || 25)) {
       // medaile: zlatá za rekord, stříbrná za zlepšení (F3-25), bez počtu; rozdělaný trénink: živý rekord
       const imp = s.w.live
@@ -10464,14 +10479,14 @@
               : ""
         }</button>`,
     ).join("")}</div>`;
-    h += `<div style="margin-top:8px">${rangeSeg("bodyRange", S.bodyRange)}</div>`;
+    h += `<div class="mt-in">${rangeSeg("bodyRange", S.bodyRange)}</div>`;
     if (pts.length) {
       const lastV = pts[pts.length - 1].y,
         firstV = pts[0].y,
         diff = lastV - firstV;
       const unit = f[2] ? " " + f[2] : "";
       const dAvg = avg.length > 1 ? avg[avg.length - 1].y - avg[0].y : 0;
-      h += `<div class="card" style="margin-top:10px">
+      h += `<div class="card mt-in">
         <div class="row" style="align-items:flex-end;margin-bottom:6px">
           <div class="grow">
             <div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">
@@ -10525,14 +10540,14 @@
         </div>
       </div>`;
     } else {
-      h += `<div class="empty" style="margin-top:10px">
+      h += `<div class="empty mt-in">
         Pro „${esc(f[1])}“ v tomto období žádné měření.
       </div>`;
     }
     h += `</section>
     <section class="sec">
       <div class="sec-h"><h2>Měření</h2><span class="xs muted">${items.length}</span></div>
-      <div class="stack" style="gap:6px">`;
+      <div class="stack list">`;
     for (const i of items.slice(0, S.bodyLimit || 30)) {
       h += `<button class="hw" data-act="editBody" data-v="${i.id}">
         <div class="row">

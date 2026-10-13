@@ -228,6 +228,32 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   z uložených tréninků (`exSum`: `setVol`, `totReps`, `maxKg` i pro `timew`), data ani záloha beze změny. Při
   náhledu nalezena chyba stagnace u cviku na čas se zátěží (F4-14). Popis v úvodním komentáři sekce „GRAFY CVIKU“
   v `js/app.js`.
+- [x] **F3-43** Jednotné svislé mezery a jejich kontrola (přání uživatele 13. 10. 2026 u F3-42; hotovo 13. 10. 2026; dělat po F4-14, nejlépe
+  bez jiných otevřených PR, sahá skoro do všech obrazovek): mezery mezi bloky působí nesjednoceně. Změřeno 13. 10. 2026
+  (412 px, zkušební data): appka používá hlavně 10 a 22 px, ale bez pravidla, kdy kterou. Statistiky: přepínač
+  Přehled/Partie/Cviky → čipy fitek 10, čipy fitek → období 22, období → dlaždice 10. Historie: čipy fitek → dlaždice
+  10. Tělo: Nové měření → čipy 22, čipy → období 8. Trénink: čipy fitek → Začít prázdný trénink 22. Příčina: `.sec` má
+  `margin-top: 22px` a ovládání v sekcích má ručně dopsané `style="margin-…"` (10, 12, 14 px, asi 60 míst v `js/app.js`);
+  čipy (`.chips`) mají záporný okraj kvůli dotykové ploše (F3-23), takže ruční odsazení u nich vyjde o 5 px jinak
+  (8 v Tělo; pod čipy grafů F3-42 opraveno výpočtem `calc(10px + (34px - var(--tap)) / 2)`).
+  **Rozhodnuto 13. 10. 2026:** jen svislé mezery (vodorovné mezi čipy a tlačítky zůstávají), dvě proměnné v `:root`
+  v `css/app.css`: 10 px uvnitř skupiny (nadpis sekce → obsah; celý blok ovládání nahoře – přepínač části, fitka,
+  období – mezi sebou i k obsahu, který filtruje), 22 px mezi skupinami (sekce → sekce; samostatné velké tlačítko
+  přes celou šířku jako Začít prázdný trénink nebo Nové měření od filtrů i od dalšího obsahu). Ruční odsazení
+  nahradit třídami nebo proměnnými, pravidlo dopsat do `CLAUDE.md` (Konvence). Kontrola: (1) úloha „kontrola“
+  v `.github/workflows/nasazeni.yml` odmítne PR, který v `js/app.js` přidá `style="…margin…"` s hodnotou v px místo
+  proměnné (jako hledání kódu v HTML, F0-08); (2) měřicí skript pro Playwright v `tools/` (projde hlavní obrazovky se
+  zkušebními daty a vypíše svislé mezery mezi bloky `.seg`, `.chips` – měřeno k viditelnému čipu, `.kpis`, `.card`,
+  `.btn.block`, `.sec-h`…), spouští se lokálně před PR se změnou vzhledu, v GitHubu ne (Playwright by byl npm
+  závislost). Nejdřív náhled Dnes / Po změně: Statistiky, Tělo, Trénink, Historie, stránka cviku, oba motivy.
+  **Výsledek:** proměnné `--gap-in` (10), `--gap-out` (22) a `--gap-list` (8, karty a řádky seznamu pod sebou: šablony
+  10 → 8, měření, cviky a historie cviku 6 → 8, Historie 8) v `:root`, třídy `.sec.cont`, `.mt-in`, `.mb-in`,
+  `.mb-list`, `.stack.list`. Změny: Statistiky čipy fitek → období 22 → 10; Tělo čipy → období 8 → 10; Historie měsíc
+  22 nad / 10 pod (bylo 18 / 8), první pod filtry 10; stránka cviku přepínač → Historie 22 → 10, poznámka „Vázáno na
+  fitko“ → období 22 → 10; Cviky hledání → filtry 8 → 10; úvod pruh zálohy od záhlaví 8 → 0, k dlaždicím 8 → 10.
+  Nadpis sekce pod filtry zůstává 22 px. Kontrola v úloze „kontrola“ (`git diff` PR, `style="…margin…Npx"`)
+  a `tools/mezery.js`. Mezery uvnitř karet a panelů a stránky mimo náhled → F3-44. Popis v úvodním komentáři sekce
+  „SVISLÉ MEZERY“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -252,6 +278,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F3-43 | Které mezery sjednotit? Nadpis sekce pod filtry? Karty seznamu? Vnitřek karet a panelů? | Rozhodnuto 13. 10. 2026 (náhled): jen svislé mezery bloků stránky, 10 px uvnitř skupiny, 22 px mezi skupinami; nadpis sekce i hned pod filtry 22 px; karty a řádky seznamu pod sebou všude 8 px (ne 6 ani 10), měsíc v Historii jako nadpis skupiny; kontrola jen `margin` v px (ne `padding`, `gap`); vnitřek karet a panelů samostatná úloha F3-44. |
 | F4-14 | Co je u cviku na čas se zátěží zlepšení? | Rozhodnuto 13. 10. 2026: vyšší max. zátěž (při stejné váze delší čas) nebo delší výdrž, ne čas × váha; platí pro stagnaci, rekordy (nový rekord Max. zátěž, zpětně) i progres ve Statistikách → Cviky; bez náhledu, snímek v PR. |
 | F3-42 | Které grafy u cviku? Jak je vybírat? Nový rekord? | Rozhodnuto 13. 10. 2026 (náhled): Opakování celkem u všech cviků s opakováním; čipy v řadě jako v Těle (ne dva řádky ani rozbalovací výběr); bez nových rekordů; Max zátěž u cviku na čas se zátěží; žádná pátá dlaždice, ale Objem u cviku na čas nahrazen dlaždicí Čas. |
 | F3-41 | Jak zjednodušit filtr partií? Kde řazení a tlačítka? Podle které partie filtrovat? | Rozhodnuto 13. 10. 2026 (náhled, 4 verze): čipy Partie ▾ / Vybavení ▾ s panelem, ve výběru i Jen cviky z historie v řádku filtrů; počet cviků místo nadpisu Seznam s ovládáním vpravo; filtr ve všech hlavních partiích; stejné na všech třech místech (Cviky, výběr cviků, Statistiky). Oprava online databáze s klávesnicí ve stejném PR. |

@@ -70,6 +70,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
+| `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
@@ -180,6 +181,13 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   viditelně nezvětšovat prvky ani mezery (zamítnuto: vyšší přepínače `.seg`, ✓ 52 × 40, který zvýšil řádek série).
   Okraj sahá nejvýš do poloviny mezery k sousednímu prvku, plochy se nesmí překrývat (zaškrtávátka 36 px).
   Všechny prvky v řádku série mají výšku `--row-h` (odznak, políčka, RIR/RPE, ✓), řádek `--tap`.
+- Mezery (F3-43, sekce „SVISLÉ MEZERY“): svislé mezery mezi bloky stránky jen z proměnných v `:root`: `--gap-in` 10 px
+  uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu), `--gap-out` 22 px mezi skupinami
+  (sekce, nadpis sekce i pod filtry, samostatné velké tlačítko), `--gap-list` 8 px karty a řádky seznamu pod sebou
+  (`.stack.list`). Místo `style="margin…"` v px třídy `.sec.cont`, `.mt-in`, `.mb-in`, `.mb-list`; úloha „kontrola“
+  nový `style="…margin…Npx"` v `js/app.js` odmítne. Řádek čipů `.chips` vlastní margin nedostává (záporný okraj kvůli
+  dotykové ploše), odsazení dá sousedovi. Vnitřek karet a panelů zatím bez pravidla (F3-44). Před PR se změnou vzhledu
+  změřit `tools/mezery.js` (postup v hlavičce skriptu).
 - Formuláře (F3-23): políčka `.inp` a rozbalovací výběry mají všude stejnou velikost (aspoň 44 px, písmo `--fs-lg`),
   jednotlivě se nezmenšují (zamítnuto: menší výběr fitka v tréninku). Delší formulář v panelu se dělí na sekce
   nadpisem `.subh` (formulář měření: Hmotnost a složení, Obvody).

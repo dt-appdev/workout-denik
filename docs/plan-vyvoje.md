@@ -73,7 +73,8 @@ flowchart LR
 - ~~**F3-32** Smazat vlastní cvik~~ – hotovo 8. 10. 2026.
 - ~~**F3-42** Grafy cviku: objem série, opakování celkem~~ – hotovo 13. 10. 2026.
 - ~~**F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží~~ – hotovo 13. 10. 2026.
-- **F3-43** Jednotné svislé mezery a jejich kontrola (po F4-14).
+- ~~**F3-43** Jednotné svislé mezery a jejich kontrola~~ – hotovo 13. 10. 2026.
+- **F3-44** Mezery uvnitř karet a panelů (po F3-43, nejlépe bez jiných otevřených PR).
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -250,24 +251,20 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-40** Formulář cviku po sekcích
 - [x] **F3-41** Filtr partií v panelu
 - [x] **F3-42** Grafy cviku: objem série, opakování celkem, max zátěž u cviku na čas
-- [ ] **F3-43** Jednotné svislé mezery a jejich kontrola (přání uživatele 13. 10. 2026 u F3-42, dělat po F4-14, nejlépe
-  bez jiných otevřených PR, sahá skoro do všech obrazovek): mezery mezi bloky působí nesjednoceně. Změřeno 13. 10. 2026
-  (412 px, zkušební data): appka používá hlavně 10 a 22 px, ale bez pravidla, kdy kterou. Statistiky: přepínač
-  Přehled/Partie/Cviky → čipy fitek 10, čipy fitek → období 22, období → dlaždice 10. Historie: čipy fitek → dlaždice
-  10. Tělo: Nové měření → čipy 22, čipy → období 8. Trénink: čipy fitek → Začít prázdný trénink 22. Příčina: `.sec` má
-  `margin-top: 22px` a ovládání v sekcích má ručně dopsané `style="margin-…"` (10, 12, 14 px, asi 60 míst v `js/app.js`);
-  čipy (`.chips`) mají záporný okraj kvůli dotykové ploše (F3-23), takže ruční odsazení u nich vyjde o 5 px jinak
-  (8 v Tělo; pod čipy grafů F3-42 opraveno výpočtem `calc(10px + (34px - var(--tap)) / 2)`).
-  **Rozhodnuto 13. 10. 2026:** jen svislé mezery (vodorovné mezi čipy a tlačítky zůstávají), dvě proměnné v `:root`
-  v `css/app.css`: 10 px uvnitř skupiny (nadpis sekce → obsah; celý blok ovládání nahoře – přepínač části, fitka,
-  období – mezi sebou i k obsahu, který filtruje), 22 px mezi skupinami (sekce → sekce; samostatné velké tlačítko
-  přes celou šířku jako Začít prázdný trénink nebo Nové měření od filtrů i od dalšího obsahu). Ruční odsazení
-  nahradit třídami nebo proměnnými, pravidlo dopsat do `CLAUDE.md` (Konvence). Kontrola: (1) úloha „kontrola“
-  v `.github/workflows/nasazeni.yml` odmítne PR, který v `js/app.js` přidá `style="…margin…"` s hodnotou v px místo
-  proměnné (jako hledání kódu v HTML, F0-08); (2) měřicí skript pro Playwright v `tools/` (projde hlavní obrazovky se
-  zkušebními daty a vypíše svislé mezery mezi bloky `.seg`, `.chips` – měřeno k viditelnému čipu, `.kpis`, `.card`,
-  `.btn.block`, `.sec-h`…), spouští se lokálně před PR se změnou vzhledu, v GitHubu ne (Playwright by byl npm
-  závislost). Nejdřív náhled Dnes / Po změně: Statistiky, Tělo, Trénink, Historie, stránka cviku, oba motivy.
+- [x] **F3-43** Jednotné svislé mezery a jejich kontrola
+- [ ] **F3-44** Mezery uvnitř karet a panelů (přání uživatele 13. 10. 2026 u F3-43, dělat po F3-43, nejlépe bez jiných
+  otevřených PR): F3-43 sjednotilo mezery mezi bloky stránky (10 / 22 px, karty seznamu 8 px), uvnitř komponent zůstalo
+  asi 200 ručních hodnot (asi 150 v `css/app.css`, asi 40 `style="margin…"` a 20 `style="gap…"` v `js/app.js`):
+  svisle 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 14 a 18 px. Příklady: panel `.sheet-b` 12 px mezi políčky, `.subh` 14 nad
+  a 8 pod, karty v kartě cviku (návrh progrese, stagnace, stroj, poznámka) 8 px, legenda grafu 8 / 12 px, galerie
+  4 / 9 / 10 / 12 px; 25× `style="margin:0"` jen ruší výchozí okraj odstavce. Patří sem i stránky, které F3-43 nemělo
+  v náhledu: rozdělaný trénink a úprava tréninku / šablony (karty cviků 10 px, odsazení 12 px), uložený trénink, Upravit
+  cvik a Popis cviku (tlačítka dole 12 nebo 22 px, poznámka 12 px), výběr cviků v panelu (`.pick` 10 px).
+  Návrh (13. 10. 2026, neodsouhlaseno): stupnice 2 px (název → drobný popis pod ním, typografie, nesjednocovat na víc)
+  / 6 px (prvky uvnitř karty) / 10 px (uvnitř skupiny, políčka formuláře) / 22 px (mezi skupinami), nadpis `.subh`
+  v panelu jako nadpis sekce na stránce, tlačítka dole na stránce jako samostatná skupina (22 px), karty cviků v tréninku
+  8 px jako ostatní karty seznamu, `p { margin: 0 }` místo 25× `style="margin:0"`. Kontrolu v úloze „kontrola“
+  rozšířit na `gap`, `tools/mezery.js` o panely. Nejdřív náhled Dnes / Po změně (panely, formuláře, karty, oba motivy).
 
 
 ### Fáze 4 – Chytré funkce
