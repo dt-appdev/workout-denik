@@ -292,6 +292,11 @@
     ["core", ["abs", "oblique"]],
     ["legs", ["glutes", "quads", "hams", "adductor", "calves"]],
   ];
+  // hodnota filtru partií (F3-41): "all", "g:<skupina>" nebo partie; jiná (i uložená před F3-41) = "all"
+  const mfNorm = (v) =>
+    typeof v === "string" && (v === "all" || MKEYS.includes(v) || (v.startsWith("g:") && !!MGRP[v.slice(2)]))
+      ? v
+      : "all";
   const GROUP_OF = {
     neck: "neck",
     chest: "chest",
@@ -1115,8 +1120,8 @@
     wDetail: null, // otevřená stránka tréninku {id, mk, saved} (F3-19)
     exPart: "info",
     exlQ: "",
-    exlM: lsGet("exlM", "all"),
-    exlEq: lsGet("exlEq", "all"),
+    exlM: mfNorm(lsGet("exlM", "all")),
+    exlEq: EQUIP[lsGet("exlEq", "all")] ? lsGet("exlEq", "all") : "all",
     exlSort: lsGet("exlSort", "last"),
     exlHid: false,
     histGym: "all",
@@ -8781,33 +8786,19 @@
     h += statsStag(g);
     // seznam cviků
     const pct = S.exSort === "prog";
-    const rows = all.filter(
-      (r) => (S.exMuscle === "all" || exGroup(r.ex) === S.exMuscle) && exMatch(r.ex, S.exSearch),
-    );
+    const rows = all.filter((r) => mfMatch(r.ex, S.exMuscle) && exMatch(r.ex, S.exSearch));
     rows.sort(pct ? progSort : (a, b) => b.last - a.last);
+    // počet cviků jako nadpis, pod hledáním filtr partií vlevo a řazení vpravo (F3-41)
     h += `<section class="sec">
-      <div class="sec-h">
-        <h2>Cviky</h2><span class="xs muted">${rows.length}</span>
+      ${cntHead(rows.length)}
+      <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
+          value="${esc(S.exSearch)}">
+      <div class="row" style="margin-top:8px;gap:8px">
+        ${mfChip("stats")}
         <div class="seg" style="margin-left:auto">
           <button data-act="exSort" data-v="last" aria-pressed="${!pct}">Naposledy</button>
           <button data-act="exSort" data-v="prog" aria-pressed="${pct}">Zlepšení</button>
         </div>
-      </div>
-      <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
-          value="${esc(S.exSearch)}">
-      <div class="chips" data-ck="exMuscle" style="margin-top:3px">
-        <button class="chip" data-act="exMuscle" data-v="all" aria-pressed="${S.exMuscle === "all"}">
-          Vše
-        </button>
-        ${Object.entries(MUSCLES)
-          .filter(([k]) => k !== "other")
-          .map(
-            ([k, l]) =>
-              `<button class="chip" data-act="exMuscle" data-v="${k}" aria-pressed="${S.exMuscle === k}">
-                ${l}
-              </button>`,
-          )
-          .join("")}
       </div>
       <div class="stack" style="margin-top:10px;gap:6px">`;
     for (const r of rows.slice(0, S.exLimit || 60)) {
@@ -8834,10 +8825,142 @@
     return h;
   }
 
+  /* ---------- FILTR PARTIÍ A VYBAVENÍ (F3-41) ----------
+     Záložka Cviky, panel Přidat cviky / Nahradit cvik a Statistiky → Cviky mají místo řádků čipů jeden řádek
+     filtrů: čip Partie ▾ (a Vybavení ▾, ve výběru i Jen cviky z historie). Bez výběru čip otevře panel
+     (sheetMf, sheetEq), s výběrem ukazuje hodnotu s křížkem („Paže ×“) a klepnutí výběr zruší (akce mfOpen,
+     eqOpen). Panel Partie: Všechny partie, pak každá skupina MPICK s nadpisem a čipy (u skupiny s víc partiemi
+     „Celá záda“ + jednotlivé partie). Panel Vybavení: čipy pod sebou, Všechno vybavení a pak abecedně. Hodnota filtru: "all", "g:<skupina z MGRP>" nebo partie z MKEYS;
+     cvik do filtru patří, když ji má mezi hlavními partiemi (mfMatch, libovolná hlavní, ne jen první).
+     Uložená hodnota z doby před F3-41 (skupiny MUSCLES) se při startu převede přes mfNorm (u MPICK), neznámá
+     = "all".
+     Kde je který stav: MF[from] (list = S.exlM / S.exlEq v Local, picker = pick.m / pick.eq, stats =
+     S.exMuscle). Panel nad výběrem cviků je o úroveň výš (Zpět vrátí výběr), jinde zavře panel.
+     Pod filtry je místo nadpisu sekce počet cviků („18 cviků“, .cnt-h) a vpravo ovládání (řazení, zeměkoule,
+     plus); když se při velkém písmu nevejde, tlačítka se zalomí pod počet. */
+  // cvik patří do filtru partií: hledá se ve všech hlavních partiích
+  function mfMatch(e, v) {
+    if (v === "all") return true;
+    const pri = exPri(e);
+    if (v.startsWith("g:")) return pri.some((k) => MGRP_OF[k] === v.slice(2));
+    return pri.includes(v);
+  }
+  const mfLabel = (v) => (v.startsWith("g:") ? MGRP[v.slice(2)] : MUSCLE_MAP.NAMES[v]);
+  const MF = {
+    list: {
+      get: () => S.exlM,
+      set: (v) => {
+        S.exlM = v;
+        lsSet("exlM", v);
+        S.exlLimit = 0;
+      },
+      eq: () => S.exlEq,
+      setEq: (v) => {
+        S.exlEq = v;
+        lsSet("exlEq", v);
+        S.exlLimit = 0;
+      },
+    },
+    picker: {
+      get: () => pick.m,
+      set: (v) => {
+        pick.m = v;
+        pick.limit = 0;
+      },
+      eq: () => pick.eq,
+      setEq: (v) => {
+        pick.eq = v;
+        pick.limit = 0;
+      },
+    },
+    stats: {
+      get: () => S.exMuscle,
+      set: (v) => {
+        S.exMuscle = v;
+      },
+    },
+  };
+  // čip filtru: bez výběru název a šipka (otevře panel), s výběrem hodnota a křížek (zruší výběr)
+  function fltChip(act, from, name, val) {
+    const on = val !== null;
+    return `<button class="chip fchip" data-act="${act}" data-v="${from}" aria-pressed="${on}"
+        aria-label="${esc(on ? name + ": " + val + ", zrušit" : name)}">
+      ${esc(on ? val : name)}${icon(on ? "close" : "down")}
+    </button>`;
+  }
+  const mfChip = (from) => {
+    const v = MF[from].get();
+    return fltChip("mfOpen", from, "Partie", v === "all" ? null : mfLabel(v));
+  };
+  const eqChip = (from) => {
+    const v = MF[from].eq();
+    return fltChip("eqOpen", from, "Vybavení", v === "all" ? null : EQUIP[v]);
+  };
+  // počet cviků místo nadpisu sekce, vpravo tlačítka (id = pro přepsání počtu při psaní ve výběru)
+  function cntHead(n, btns, id) {
+    return `<div class="sec-h cnt-h">
+      <h2${id ? ` id="${id}"` : ""}>${n} ${plural(n, "cvik", "cviky", "cviků")}</h2>
+      ${btns ? `<div class="sec-btns">${btns}</div>` : ""}
+    </div>`;
+  }
+  // panel s volbami filtru; nad výběrem cviků o úroveň výš, Zpět vrátí výběr
+  function mfSheet(from, title, body, re) {
+    openSheet(
+      title,
+      body,
+      "",
+      false,
+      from === "picker" ? { lv: 2, back: () => renderPicker(true), re } : { re },
+    );
+  }
+  function sheetMf(from) {
+    const cur = MF[from].get();
+    const chip = (v, label) =>
+      `<button class="chip" data-act="mfSet" data-v="${from}|${v}" aria-pressed="${cur === v}">` +
+      `${esc(label)}</button>`;
+    // každá skupina má nadpis, ve stejném pořadí jako formulář cviku; skupina s víc partiemi i „Celá …“
+    let b = `<div class="chips fwrap">${chip("all", "Všechny partie")}</div>`;
+    for (const [g, keys] of MPICK) {
+      b += `<div class="mf-h"><i style="background:var(--g-${g})"></i>${esc(MGRP[g])}</div>
+        <div class="chips fwrap">
+          ${keys.length > 1 ? chip("g:" + g, MF_ALL[g]) : ""}
+          ${keys.map((k) => chip(k, MUSCLE_MAP.NAMES[k])).join("")}
+        </div>`;
+    }
+    mfSheet(from, "Partie", b, () => sheetMf(from));
+  }
+  const MF_ALL = { back: "Celá záda", arms: "Celé paže", core: "Celé břicho", legs: "Celé nohy" };
+  function sheetEq(from) {
+    const cur = MF[from].eq();
+    // čipy pod sebou: Všechno vybavení, pak abecedně
+    const opts = Object.entries(EQUIP).sort((a, b) => a[1].localeCompare(b[1], "cs"));
+    const b = `<div class="chips fcol">
+      ${[["all", "Všechno vybavení"]]
+        .concat(opts)
+        .map(
+          ([k, l]) =>
+            `<button class="chip" data-act="eqSet" data-v="${from}|${k}" aria-pressed="${cur === k}">
+              ${esc(l)}
+            </button>`,
+        )
+        .join("")}
+    </div>`;
+    mfSheet(from, "Vybavení", b, () => sheetEq(from));
+  }
+  // po výběru ve filtru: výběr cviků se překreslí, jinde se panel zavře a překreslí stránka
+  function mfDone(from) {
+    if (from === "picker") {
+      renderPicker(true);
+      return;
+    }
+    closeSheet();
+    scheduleRender();
+  }
+
   /* ---------- ZÁLOŽKA CVIKY (F0-05) ----------
      Route ex (vExList), filtry S.exlM / S.exlEq / S.exlSort v localStorage. Hledání přes exMatch (po slovech,
      bez diakritiky, se synonymy; sekce HLEDÁNÍ CVIKŮ, F1-06). Bez rozdělení podle fitka (to má jen výběr
-     cviků). */
+     cviků). Řádek filtrů a počet cviků místo nadpisu Seznam: sekce FILTR PARTIÍ A VYBAVENÍ (F3-41). */
   function vExList() {
     const { byEx } = derive();
     const all = Object.entries(S.exLib);
@@ -8851,9 +8974,8 @@
           // skrytých je málo, filtry partie a vybavení se na ně nepoužijí (jen hledání)
           (S.exlHid
             ? !!e.archived
-            : !e.archived &&
-              (S.exlM === "all" || exGroup(e) === S.exlM) &&
-              (S.exlEq === "all" || e.equip === S.exlEq)) && exMatch(e, S.exlQ),
+            : !e.archived && mfMatch(e, S.exlM) && (S.exlEq === "all" || e.equip === S.exlEq)) &&
+          exMatch(e, S.exlQ),
       )
       .map(([id, e]) => {
         const l = byEx[id];
@@ -8864,42 +8986,24 @@
     const az = (a, b) => a.e.name.localeCompare(b.e.name, "cs");
     rows.sort(S.exlSort === "az" ? az : (a, b) => b.last - a.last || b.rel - a.rel || az(a, b));
     const lim = S.exlLimit || 100;
-    // počet podle hledání a filtrů, bez nich celá databáze (F3-24)
-    const filtered = S.exlQ || S.exlHid || S.exlM !== "all" || S.exlEq !== "all";
-    const nShow = filtered ? rows.length : all.length;
-    const countTxt = nShow + " " + plural(nShow, "cvik", "cviky", "cviků") + (filtered ? "" : " v databázi");
-    let h = topbar("Cviky", countTxt);
+    let h = topbar("Cviky");
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(S.exlQ)}" autocomplete="off">`;
-    h += `<div class="chips" data-ck="exlM" style="margin-top:3px">
-      <button class="chip" data-act="exlM" data-v="all" aria-pressed="${S.exlM === "all"}">
-        Všechny partie
-      </button>
-      ${Object.entries(MUSCLES)
-        .filter(([k]) => k !== "other")
-        .map(
-          ([k, l]) =>
-            `<button class="chip" data-act="exlM" data-v="${k}" aria-pressed="${S.exlM === k}">
-              ${l}
-            </button>`,
-        )
-        .join("")}
-    </div>`;
-    h += `<div class="chips" data-ck="exlEq" style="margin-top:1px">
-      <button class="chip" data-act="exlEq" data-v="all" aria-pressed="${S.exlEq === "all"}">
-        Všechno vybavení
-      </button>
-      ${Object.entries(EQUIP)
-        .map(
-          ([k, l]) =>
-            `<button class="chip" data-act="exlEq" data-v="${k}" aria-pressed="${S.exlEq === k}">
-              ${l}
-            </button>`,
-        )
-        .join("")}
-    </div>`;
+    // řádek filtrů (F3-41), skryté cviky jako další filtr
     h += `<div class="row wrap-r" style="margin-top:8px;gap:8px">
-      <div class="seg">
+      ${mfChip("list")}${eqChip("list")}
+      ${
+        nHid
+          ? `<button class="chip" data-act="exlHid" aria-pressed="${S.exlHid}">Skryté (${nHid})</button>`
+          : ""
+      }
+    </div>`;
+    // místo nadpisu Seznam počet cviků, vpravo řazení, online databáze a nový cvik (F3-41);
+    // u skrytých cviků vysvětlení pod tlačítkem s otazníkem (F3-21)
+    h += `<section class="sec">
+    ${cntHead(
+      rows.length,
+      `<div class="seg">
         ${[
           ["last", "Naposledy"],
           ["az", "A–Z"],
@@ -8910,24 +9014,10 @@
           )
           .join("")}
       </div>
-      ${
-        nHid
-          ? `<button class="chip" data-act="exlHid" aria-pressed="${S.exlHid}">Skryté (${nHid})</button>`
-          : ""
-      }
-      <span class="grow"></span>
+      ${S.exlHid ? helpBtn("hidden") : ""}
       ${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "list")}
-      ${icoBtn("exlNew", "plus", "Nový cvik")}
-    </div>`;
-    // u skrytých cviků vysvětlení pod tlačítkem s otazníkem (F3-21)
-    h += `<section class="sec">
-    <div class="sec-h">
-      <h2>${S.exlHid ? "Skryté cviky" : "Seznam"}</h2>
-      <div class="sec-btns" style="gap:8px">
-        <span class="xs muted">${rows.length}</span>
-        ${S.exlHid ? helpBtn("hidden") : ""}
-      </div>
-    </div>`;
+      ${icoBtn("exlNew", "plus", "Nový cvik")}`,
+    )}`;
     if (!rows.length) {
       h +=
         `<div class="empty">
@@ -10850,7 +10940,7 @@
         ],
         [
           "Hlavní a pomocná",
-          "Hlavní partie cvik procvičuje nejvíc, podle první hlavní partie se cvik řadí do filtru partií. " +
+          "Hlavní partie cvik procvičuje nejvíc, filtr partií v seznamech cviků hledá ve všech hlavních. " +
             "Ve Statistikách se počítají jen hlavní partie, v souhrnu tréninku pomocná partie jako půl série.",
         ],
       ],
@@ -11392,7 +11482,7 @@
     for (const [id, e] of Object.entries(S.exLib)) {
       if (
         e.archived ||
-        (pick.m !== "all" && exGroup(e) !== pick.m) ||
+        !mfMatch(e, pick.m) ||
         (pick.eq !== "all" && e.equip !== pick.eq) ||
         (pick.hist && !byEx[id]) ||
         !exMatch(e, pick.q)
@@ -11484,41 +11574,16 @@
     const n = pickerRows().length;
     return `<input class="inp" id="pickQ" data-f="pickQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(pick.q)}" autocomplete="off">
-    <div class="chips" data-ck="pickM">
-      <button class="chip" data-act="pickM" data-v="all" aria-pressed="${pick.m === "all"}">
-        Všechny partie
-      </button>
-      ${Object.entries(MUSCLES)
-        .filter(([k]) => k !== "other")
-        .map(
-          ([k, l]) =>
-            `<button class="chip" data-act="pickM" data-v="${k}" aria-pressed="${pick.m === k}">
-              ${l}
-            </button>`,
-        )
-        .join("")}
-    </div>
-    <div class="chips" data-ck="pickEq">
-      <button class="chip" data-act="pickEq" data-v="all" aria-pressed="${pick.eq === "all"}">
-        Všechno vybavení
-      </button>
-      ${Object.entries(EQUIP)
-        .map(
-          ([k, l]) =>
-            `<button class="chip" data-act="pickEq" data-v="${k}" aria-pressed="${pick.eq === k}">
-              ${l}
-            </button>`,
-        )
-        .join("")}
-    </div>
     <div class="row wrap-r" style="gap:8px">
+      ${mfChip("picker")}${eqChip("picker")}
       <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
-      <span class="row" style="margin-left:auto">
-        <span class="xs muted" id="pickN">${pickCount(n)}</span>
-        ${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "picker")}
-        ${icoBtn("newEx", "plus", "Nový cvik")}
-      </span>
     </div>
+    ${cntHead(
+      n,
+      `${icoBtn("fedbOpen", "globe", "Hledat v online databázi", "picker")}
+      ${icoBtn("newEx", "plus", "Nový cvik")}`,
+      "pickN",
+    )}
     <div class="stack" id="pickList" style="gap:6px">${pickerList()}</div>`;
   }
   function renderPicker(keep) {
@@ -12228,7 +12293,9 @@
       Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před
       uložením je zkontroluj.
     </p>`;
+    // pevná výška (cls fedb, F3-41): s klávesnicí panel při načtení výsledků neroste nad horní okraj
     openSheet("Online databáze cviků", b, '<button class="btn grow" data-act="fsBack">Zpět</button>', false, {
+      cls: "fedb",
       lv: fsLv(),
       back: fsBack,
       re: renderFs,
@@ -14042,16 +14109,30 @@
         }
         renderPicker(true);
         break;
-      case "pickM":
-        pick.m = v;
-        pick.limit = 0;
-        renderPicker(true);
+      // filtr partií a vybavení (F3-41): čip s výběrem ho zruší, bez výběru otevře panel
+      case "mfOpen":
+        if (MF[v].get() !== "all") {
+          MF[v].set("all");
+          mfDone(v);
+        } else {
+          sheetMf(v);
+        }
         break;
-      case "pickEq":
-        pick.eq = v;
-        pick.limit = 0;
-        renderPicker(true);
+      case "eqOpen":
+        if (MF[v].eq() !== "all") {
+          MF[v].setEq("all");
+          mfDone(v);
+        } else {
+          sheetEq(v);
+        }
         break;
+      case "mfSet":
+      case "eqSet": {
+        const [from, val] = v.split("|");
+        act === "mfSet" ? MF[from].set(val) : MF[from].setEq(val);
+        mfDone(from);
+        break;
+      }
       case "pickHist":
         pick.hist = !pick.hist;
         pick.limit = 0;
@@ -14977,10 +15058,6 @@
         scheduleRender();
         window.scrollTo(0, 0);
         break;
-      case "exMuscle":
-        S.exMuscle = v;
-        scheduleRender();
-        break;
       case "exSort":
         S.exSort = v;
         lsSet("exSort", v);
@@ -15020,18 +15097,6 @@
         render.keepScroll = false;
         scheduleRender();
         window.scrollTo(0, 0);
-        break;
-      case "exlM":
-        S.exlM = v;
-        lsSet("exlM", v);
-        S.exlLimit = 0;
-        scheduleRender();
-        break;
-      case "exlEq":
-        S.exlEq = v;
-        lsSet("exlEq", v);
-        S.exlLimit = 0;
-        scheduleRender();
         break;
       case "exlSort":
         S.exlSort = v;
