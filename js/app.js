@@ -11069,10 +11069,10 @@
      abecedy (gymsArch), v panelu fitka Obnovit fitko. Archivací přestane být výchozí (výchozí je první
      aktivní).
      Smazat: fitko bez tréninků se smaže hned (gymRemove, odebere se i ze šablon). U fitka s tréninky okno
-     sheetGymDel (stav gymDel) s volbou Přesunout (výchozí, do jiného aktivního fitka: tréninky, šablony,
+     sheetGymDel (stav gymDel) s volbou Sloučit (výchozí, s jiným aktivním fitkem: tréninky, šablony,
      plán, nastavení strojů s předností cílového fitka, fotky) nebo Smazat (tréninky se smažou). Před
      provedením bod obnovy (makePoint "gym"), tlačítko Zálohovat do souboru. Řádek pod výběrem má v obou
-     stavech stejnou délku, aby se okno při přepínání neměnilo. Potvrzovací tlačítko podle volby: Přesunout /
+     stavech stejnou délku, aby se okno při přepínání neměnilo. Potvrzovací tlačítko podle volby: Sloučit /
      Smazat (že se fitko smaže v obou případech, říká nadpis Smazat fitko?).
      Nejde (gymBlock, tlačítko je šedé .off a klepnutí ukáže důvod): archivovat ani smazat poslední aktivní
      fitko a fitko rozdělaného tréninku. Smazání úplně posledního fitka tlačítko nemá. */
@@ -11144,7 +11144,7 @@
   }
   // tvar slovesa podle počtu („se přesune“ / „se přesunou“)
   const verbN = (n, one, few) => (n >= 2 && n <= 4 ? few : one);
-  // okno Smazat fitko s tréninky: Přesunout / Smazat, kam přesunout
+  // okno Smazat fitko s tréninky: Sloučit / Smazat, s kterým fitkem sloučit
   function sheetGymDel(noanim) {
     const del = gymDel;
     if (!del) return;
@@ -11154,13 +11154,13 @@
     const msg = move
       ? nTxt + " " + verbN(n, "se přesune", "se přesunou") + " do vybraného fitka."
       : nTxt + " " + verbN(n, "se smaže", "se smažou") + ", nejde to vrátit.";
-    const b = `<p style="margin:0">${esc(gymName(del.id))} má ${nTxt}. Co s nimi?</p>
+    const b = `<p style="margin:0">${esc(gymName(del.id))} má ${nTxt}.</p>
       <div class="seg seg-wide">
-        <button data-act="gymDelMode" data-v="move" aria-pressed="${move}">Přesunout</button>
+        <button data-act="gymDelMode" data-v="move" aria-pressed="${move}">Sloučit</button>
         <button data-act="gymDelMode" data-v="del" aria-pressed="${!move}">Smazat</button>
       </div>
       <div class="dep${move ? "" : " off"}"${move ? "" : " inert"}>
-        <div class="f lbl-f" style="margin-bottom:8px">Do fitka</div>
+        <div class="f lbl-f" style="margin-bottom:8px">S fitkem</div>
         <div class="chips" data-ck="gymDelTo">
           ${gymsOn()
             .filter((g) => g.id !== del.id)
@@ -11182,7 +11182,7 @@
       "Smazat fitko?",
       b,
       `<button class="btn grow" data-act="closeSheet">Zrušit</button>
-      <button class="btn primary grow" data-act="gymDelGo">${move ? "Přesunout" : "Smazat"}</button>`,
+      <button class="btn primary grow" data-act="gymDelGo">${move ? "Sloučit" : "Smazat"}</button>`,
       noanim,
       { lv: 2, back: () => sheetGym(del.id) },
     );
@@ -11236,7 +11236,7 @@
     closeSheet();
     toast(
       move
-        ? "Fitko smazané, tréninky (" + n + ") jsou teď v: " + toName + "."
+        ? "Fitko sloučené, tréninky (" + n + ") jsou teď v: " + toName + "."
         : "Fitko smazané i s tréninky (" + n + ").",
     );
   }
