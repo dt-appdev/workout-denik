@@ -1396,7 +1396,7 @@
      bwplus vlastní váha + zátěž      zátěž = hmotnost + přidané kg
      assist s dopomocí                zátěž = hmotnost − dopomoc
      time   na čas                    bez objemu, rekord nejdelší výdrž
-     timew  na čas se zátěží          bez objemu, rekord nejdelší výdrž
+     timew  na čas se zátěží          bez objemu, rekordy nejdelší výdrž a max. zátěž (F4-14)
      dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo
      Pořadí políček f (F3-39): opakování / čas před váhou, stejně jako text série „12×40kg“ (setStr). Platí
      pro tabulku sérií (trénink, úprava tréninku, šablona), krokovač i Enter na klávesnici. Data se ukládají
@@ -3285,7 +3285,9 @@
        stránce cviku, bez počtů a bez oslavy.
      computeRecords vrací byW (jen rekordy, pro všechny počty, souhrn, sdílení a oslavu), byEx (všechna
      zlepšení cviku, rekord má r.main), best a cnt (počet tréninků v kontextu, pro liveRecords).
-     Počty i oslava berou rekordy vždy přes wRecs(w). */
+     Počty i oslava berou rekordy vždy přes wRecs(w).
+     Cvik na čas se zátěží (F4-14) má kromě výdrže i max. zátěž: nejvyšší váha ze série s časem, při stejné
+     váze delší čas. Platí i pro stagnaci (F4-06), která bere stejné ukazatele. */
   const REC = {
     maxKg: "Max. zátěž",
     e1rm: "Odh. 1RM",
@@ -3372,6 +3374,13 @@
         totSec += sec;
         if (!m.maxSec || sec > m.maxSec.v + EPS) {
           m.maxSec = { v: sec, set: s, j };
+        }
+        // na čas se zátěží: max. zátěž, při stejné váze delší čas (F4-14)
+        const L = kind === "timew" ? setLoad(kind, s, t) : 0;
+        const heavier = m.maxKg && L > m.maxKg.v + EPS;
+        const longer = m.maxKg && Math.abs(L - m.maxKg.v) < EPS && sec > m.maxKg.set.sec;
+        if (L > 0 && (!m.maxKg || heavier || longer)) {
+          m.maxKg = { v: L, set: Object.assign({}, s, { load: L }), j };
         }
       }
       if (kind === "dist") {
@@ -3564,7 +3573,8 @@
   /* ---------- STAGNACE (F4-06) ----------
      Cvik stagnuje, když posledních N uložených tréninků s cvikem (S.cfg.stagN) po sobě nepřekonalo trénink
      těsně před nimi ani sebe navzájem v žádném ukazateli pracovních sérií. Ukazatele jsou stejné jako
-     u rekordů (exMetrics: max. zátěž, odh. 1RM, nejlepší série, objem, výdrž, čas, vzdálenost, tempo),
+     u rekordů (exMetrics: max. zátěž – i u cviku na čas se zátěží, F4-14 –, odh. 1RM, nejlepší série, objem,
+     výdrž, čas, vzdálenost, tempo),
      u cviku s vlastní vahou jen opakování (nejvíc v sérii a celkem), aby zlepšení nedělala tělesná hmotnost.
      Nový ukazatel (např. první série se zátěží) se bere jako zlepšení. Porovnává se jen s tréninky těsně
      před posledními N, ne s rekordem z celé historie (po pauze nebo zranění by hlásil stagnaci pořád).
@@ -8657,7 +8667,8 @@
      Ukazatel (progMetric) podle druhu cviku: váha × opakování odh. 1RM, ale když mají pracovní série obvykle
      (medián) víc než PROG_HI_REPS opakování, max. zátěž (odhad 1RM je tam nepřesný); vlastní váha nejvíc
      opakování v sérii (aby zlepšení nedělala tělesná hmotnost, jako stagnace F4-06); se zátěží a s dopomocí
-     odh. 1RM včetně tělesné hmotnosti (jako graf na stránce cviku); na čas nejdelší výdrž; vzdálenost tempo
+     odh. 1RM včetně tělesné hmotnosti (jako graf na stránce cviku); na čas nejdelší výdrž, na čas se zátěží
+     max. zátěž (F4-14, jinak by přidaná váha při stejné výdrži vyšla jako 0 %); vzdálenost tempo
      (km/h, jako rekordy). Funkci může převzít i F3-28 (výchozí graf stránky cviku).
      Změna (progOf): nejlepší hodnota z prvních PROG_EDGE tréninků v období proti nejlepší z posledních
      PROG_EDGE, jen když je v období aspoň PROG_MIN tréninků s cvikem rozložených aspoň na PROG_SPAN dní, jinak
@@ -8688,7 +8699,10 @@
   function progMetric(exId, ss) {
     const kind = kindOf(exId);
     const kg = (v) => fmtKg(Math.round(v * 10) / 10);
-    if (kind === "time" || kind === "timew") {
+    if (kind === "timew") {
+      return { key: "maxKg", l: "max. zátěž", fmt: kg, fmtD: (d) => kg(d) + " kg" };
+    }
+    if (kind === "time") {
       return { key: "maxSec", l: "výdrž", fmt: fmtSec, fmtD: fmtSec };
     }
     if (kind === "dist") {
@@ -9383,7 +9397,7 @@
             const r = c.b[t];
             const sub =
               t === "e1rm" || t === "maxKg"
-                ? r.set.reps + "×" + fmtKg(r.set.kg) + "kg · "
+                ? setStr(kindOf(id), r.set) + " · "
                 : t === "bestSet"
                   ? fmtInt(r.v) + " kg · "
                   : "";
@@ -10771,7 +10785,7 @@
           "Co se porovnává",
           "Opakování a váha: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
             "nepřesný). Vlastní váha: nejvíc opakování v sérii. Se zátěží a s dopomocí: odhad 1RM včetně " +
-            "tělesné hmotnosti. Na čas: nejdelší výdrž. Vzdálenost: tempo v km/h.",
+            "tělesné hmotnosti. Na čas: nejdelší výdrž, se zátěží max. zátěž. Vzdálenost: tempo v km/h.",
         ],
         [
           "Největší zlepšení a řazení Zlepšení",
@@ -17387,7 +17401,7 @@
       exId: "farmers-walk",
       note:
         "na čas se zátěží (F3-42): stránka cviku → Statistiky čipy Nejdelší výdrž, Čas celkem, Max zátěž " +
-        "(24 → 30 kg), dlaždice Čas místo Objemu",
+        "(24 → 30 kg), dlaždice Čas místo Objemu; váha roste, proto bez stagnace (F4-14)",
       sets: [
         [
           { t: "n", kg: 24, sec: 40 },
@@ -17413,6 +17427,18 @@
           { t: "n", kg: 30, sec: 40 },
           { t: "n", kg: 30, sec: 35 },
         ],
+      ],
+    },
+    {
+      exId: "wrist-roller",
+      note: "na čas se zátěží, stejná váha i výdrž: 4 tréninky bez zlepšení (F4-14)",
+      sets: [
+        null,
+        [{ t: "n", kg: 10, sec: 35 }],
+        [{ t: "n", kg: 10, sec: 30 }],
+        [{ t: "n", kg: 10, sec: 35 }],
+        [{ t: "n", kg: 10, sec: 30 }],
+        [{ t: "n", kg: 10, sec: 35 }],
       ],
     },
     {

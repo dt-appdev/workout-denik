@@ -72,7 +72,7 @@ flowchart LR
 - ~~**F3-30** Nový cvik kopií jiného cviku~~ – hotovo 7. 10. 2026.
 - ~~**F3-32** Smazat vlastní cvik~~ – hotovo 8. 10. 2026.
 - ~~**F3-42** Grafy cviku: objem série, opakování celkem~~ – hotovo 13. 10. 2026.
-- **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží (hned po F3-42).
+- ~~**F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží~~ – hotovo 13. 10. 2026.
 - **F3-43** Jednotné svislé mezery a jejich kontrola (po F4-14).
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
@@ -285,11 +285,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F4-11** Vylepšit panel Sdílet trénink (přání 25. 9. 2026 u F4-08: rozvržení je v první verzi „stačí, ale nejsem moc spokojený“). Dnes: panel přes skoro celou výšku, náhled vyplní místo nahoře, pod ním tři řádky ovládání (Příspěvek | Příběh; Tmavý | Světlý a CZ | EN; fotka a přepínací tlačítko Postava) a patička Uložit obrázek | Sdílet, bez nápovědy (`sheetShare` v `js/app.js`). Při písmu „Největší“ se „Změnit fotku“ zalomí na 2 řádky. Nejdřív udělat náhledy víc variant (např. volby jako ikony nebo menší štítky, náhled přes celou šířku, volby v rozbalovací liště) a vybrat s uživatelem.
 - [x] **F4-12** Kopírovat pro coache (osobní, skrytá funkce)
 - [x] **F4-13** Import měření ze Samsung Health
-- [ ] **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží nebere v úvahu váhu (nalezeno 13. 10. 2026 u F3-42, dělat
-  hned po F3-42): farmářská chůze hlásí „4 tréninky bez zlepšení“, přestože váha rostla z 24 na 30 kg při stejné
-  výdrži (zkušební data, cvik `farmers-walk` ve `FAKE_PLAN`). Stagnace (`stagInfo`, F4-06) u typu `timew` porovnává
-  jen čas. Vyšší váha při stejném nebo delším čase by měla být zlepšení. Rozhodnout: počítat i čas × váha, nebo
-  zlepšení = lepší výdrž, nebo vyšší váha? Totéž zkontrolovat u rekordů (`exMetrics`: `timew` nemá max. zátěž).
+- [x] **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží
 
 
 ### Fáze 5 – Motivace
