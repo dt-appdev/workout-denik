@@ -133,6 +133,13 @@ img {
   --tap: 44px;
   /* výška všech prvků v řádku série (F3-23): odznak druhu, políčka kg / opak., RIR/RPE a ✓ */
   --row-h: 36px;
+  /* Svislé mezery mezi bloky stránky (F3-43), jiné hodnoty mezi bloky nepoužívat:
+     --gap-in = uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu),
+     --gap-out = mezi skupinami (sekce → sekce, samostatné velké tlačítko od okolí),
+     --gap-list = karty a řádky seznamu pod sebou. */
+  --gap-in: 10px;
+  --gap-out: 22px;
+  --gap-list: 8px;
   /* Stupnice písma (F3-11): jiné velikosti písma než tyto nepoužívat.
      --fs-k = zvětšení písma z Nastavení → Vzhled (data-fs na <html>, fontScale v js/app.js). */
   --fs-k: 1;
@@ -432,14 +439,26 @@ body:has(#rest:not([hidden])) .wrap {
 
 /* generic */
 .sec {
-  margin-top: 22px;
+  margin-top: var(--gap-out);
+}
+/* svislé mezery (F3-43): sekce, která pokračuje ve skupině nad ní (období pod filtry, obsah pod přepínačem),
+   a odsazení bloků místo ručního style="margin…" (u .chips ne: mají záporný okraj, odsazení dostane soused) */
+.sec.cont,
+.mt-in {
+  margin-top: var(--gap-in);
+}
+.mb-in {
+  margin-bottom: var(--gap-in);
+}
+.mb-list {
+  margin-bottom: var(--gap-list);
 }
 .sec-h {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: var(--gap-in);
 }
 .sec-h h2 {
   font-family: var(--display);
@@ -459,7 +478,11 @@ body:has(#rest:not([hidden])) .wrap {
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--gap-in);
+}
+/* seznam karet nebo řádků pod sebou (F3-43) */
+.stack.list {
+  gap: var(--gap-list);
 }
 .row {
   display: flex;
@@ -936,7 +959,11 @@ select.inp {
   padding: 10px 12px;
   font-size: var(--fs-sm);
   font-weight: 500;
-  margin-top: 8px;
+  margin-top: var(--gap-in);
+}
+/* pruh hned pod záhlavím bez mezery jako přepínač v Historii (F3-43) */
+.top + .banner {
+  margin-top: 0;
 }
 .banner.act {
   display: flex;
@@ -1041,7 +1068,7 @@ select.inp {
 }
 /* F1-11: mezera mezi připomínkou zálohy (nebo jiným pruhem) a kartami čísel na úvodní obrazovce */
 .banner + .kpis {
-  margin-top: 8px;
+  margin-top: var(--gap-in);
 }
 .kpi {
   background: var(--surface);
@@ -1949,7 +1976,11 @@ tr.done .okb {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-3);
-  margin: 18px 0 8px;
+  margin: var(--gap-out) 0 var(--gap-in);
+}
+/* měsíc v Historii = nadpis skupiny, první pod filtry jen --gap-in (F3-43) */
+.chips + .mhead {
+  margin-top: var(--gap-in);
 }
 .dset {
   display: flex;

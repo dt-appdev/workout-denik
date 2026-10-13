@@ -36,12 +36,24 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2 # F3-43: rodič HEAD^1 = základní větev (porovnání změn v PR)
       # F0-08: kód zapsaný přímo v HTML (onclick=, onerror= …, javascript:) by pravidla
       # zabezpečení (Content-Security-Policy v index.html) zablokovala a nefungoval by
       - name: Kontrola kódu v HTML
         run: |
           if grep -nE '\bon[a-z]+=["'"'"'`]|javascript:' index.html js/*.js sw.js; then
             echo "::error::Kód přímo v HTML (viz řádky výše) pravidla zabezpečení zablokují, použij posluchač."
+            exit 1
+          fi
+      # F3-43: svislé mezery mezi bloky jen přes proměnné a třídy z css/app.css (--gap-in, --gap-out,
+      # --gap-list, .mt-in, .mb-in, .sec.cont …), ne ručně v px; hlídá jen řádky přidané v tomto PR
+      - name: Kontrola ručních mezer v px
+        run: |
+          if git diff -U0 HEAD^1 HEAD -- js/app.js | grep -E '^\+[^+]' \
+            | grep -E 'style="[^"]*margin[a-z-]*:[^;"]*[0-9]px'; then
+            echo "::error::Mezera v px přímo ve style=\"…\" (viz řádky výše). Použij třídu nebo proměnnou" \
+              "z css/app.css (F3-43, CLAUDE.md → Konvence → Mezery)."
             exit 1
           fi
       - name: Sestavit web (zkouška)
