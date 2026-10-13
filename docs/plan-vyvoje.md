@@ -99,7 +99,7 @@ flowchart LR
 #### Etapa 4 – Drobnosti a doladění (P3, rychlé)
 
 12. ~~**F3-24** Texty a drobnosti z auditu~~ – hotovo 10. 10. 2026.
-13. ~~**F1-17** Kratší pauza po zahřívací sérii~~ – zamítnuto 10. 10. 2026, viz Co neděláme.
+13. ~~**F1-17** Kratší pauza po zahřívací sérii~~ – zamítnuto 10. 10. 2026, obnoveno jako F1-22 (hotovo 13. 10. 2026).
 14. ~~**F3-28** Stránka cviku: záložka Historie~~ – hotovo 10. 10. 2026.
 15. **F3-29** Formulář měření jen s používanými údaji · *Tělo · P3 · B · nízká*.
 
@@ -186,7 +186,8 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-16** Pruh pauzy nezakrývá obsah
 - [x] **F1-18** Větší dotykové plochy v tréninku
 - [x] **F1-19** Minule jako text u cviku místo sloupce
-- [ ] **F1-21** Pauza cviku v šabloně (odloženo 12. 10. 2026 u F1-09; nápad, rozhodnout později): v úpravě šablony v nabídce cviku (⋯) položka „Pauza: …“, která otevře krátký panel se stejným vypínačem Vlastní pauza a posuvníkem jako formulář Upravit cvik (náhled panelu z F1-09, tam ukázaný v nabídce cviku v tréninku). Platí jen pro cvik v té šabloně, přednost šablona → cvik (F1-09, `rest` u cviku) → Výchozí časovač. Přenos do tréninku ze šablony (přes `exEntryFor`, nové pole cviku v tréninku, kopírování přes Cvičit znovu a Uložit jako šablonu jako `ssOf` / `noteOf`). Rozhodnout: má jít pauzu změnit i v nabídce cviku v rozdělaném tréninku, a mění pak šablonu (Aktualizovat šablonu), nebo jen ten trénink? Délku vybírá `toggleSetDone` přes `exRest`.
+- [ ] **F1-21** Pauza cviku v šabloně (odloženo 12. 10. 2026 u F1-09; nápad, rozhodnout později): v úpravě šablony v nabídce cviku (⋯) položka „Pauza: …“, která otevře krátký panel se stejným vypínačem Vlastní pauza a posuvníkem jako formulář Upravit cvik (náhled panelu z F1-09, tam ukázaný v nabídce cviku v tréninku). Platí jen pro cvik v té šabloně, přednost šablona → cvik (F1-09, `rest` u cviku) → Výchozí časovač. Přenos do tréninku ze šablony (přes `exEntryFor`, nové pole cviku v tréninku, kopírování přes Cvičit znovu a Uložit jako šablonu jako `ssOf` / `noteOf`). Rozhodnout: má jít pauzu změnit i v nabídce cviku v rozdělaném tréninku, a mění pak šablonu (Aktualizovat šablonu), nebo jen ten trénink? Délku vybírá `restAfter` přes `exRest`; platí jen po pracovních sériích, po zahřívací vždy Časovač po zahřívací sérii (F1-22).
+- [x] **F1-22** Pauza po zahřívací sérii
 - [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
 
 ### Fáze 2 – Šablony a historie
@@ -333,7 +334,6 @@ Rozhodnuto 13. 10. 2026:
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
 | Průvodce prvním spuštěním (onboarding) | Appku používá jeden uživatel, který ji zná (UX audit 27. 9. 2026). Prázdný stav bez fitka řeší F3-24. |
 | Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Nativní appka (Fáze 6) používá stejné rozhraní, vzhled se kvůli ní nemění. |
-| Kratší pauza po zahřívací sérii (F1-17, UX audit 27. 9. 2026) | Zamítnuto 10. 10. 2026: uživatele stejná pauza po zahřívací sérii neobtěžuje, další volba v nastavení by byla zbytečná. Kdyby to někdy začalo vadit, stačí vlastní pauza cviku (F1-09, hotovo); krátká pauza po poslední zahřívací sérii před první pracovní by škodila. |
 
 Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle poznámky u nich):
 

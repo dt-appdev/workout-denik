@@ -231,7 +231,7 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   verzi nikdy. Nová úloha může do `FAKE_PLAN` přidat své scénáře.
 - Odmítnuté nápady, znovu nenavrhovat: udržování telefonu vzhůru neslyšitelným tónem (F1-04), swipe na ✓ série
   (tah od levého okraje je v Chromu Zpět), tlačítko Vrátit u smazané série (F2-03),
-  schovat přečas pauzy mimo záložku Trénink (F1-16), kratší pauza po zahřívací sérii (F1-17), výchozí graf Max
+  schovat přečas pauzy mimo záložku Trénink (F1-16), výchozí graf Max
   zátěž u cviků s vysokými opakováními na stránce cviku (F3-28), viditelně vyšší přepínače, větší ✓ zvyšující řádek
   a menší výběr fitka v tréninku (F3-23).
 

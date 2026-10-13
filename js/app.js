@@ -1089,6 +1089,7 @@
       restOn: true,
       restSec: 120,
       restSs: 180,
+      restWarm: 60,
       restAlert: "both",
       restOver: true,
       restNotify: true,
@@ -1323,6 +1324,7 @@
         restOn: true,
         restSec: 120,
         restSs: 180,
+        restWarm: 60,
         restAlert: "both",
         restOver: true,
         restNotify: true,
@@ -1347,6 +1349,7 @@
     );
     c.restSec = restNorm(c.restSec) || 120;
     c.restSs = restNorm(c.restSs) || 180;
+    c.restWarm = restNorm(c.restWarm) || 60;
     const pct = Math.round(+c.warmPct / WARM_PCT.step) * WARM_PCT.step;
     c.warmPct = pct >= WARM_PCT.min && pct <= WARM_PCT.max ? pct : WARM_PCT.def;
     if (!progValid([c.progMin, c.progMax])) {
@@ -2194,8 +2197,9 @@
     s.done = true;
     s.at = Date.now();
     delete s.atEnd;
-    // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05), jinak podle cviku
-    // (F1-09), s vypnutým časovačem pauzy (S.cfg.restOn) žádná, po poslední sérii tréninku taky žádná
+    // pauza (v úpravě staršího tréninku bez časovače); v supersérii podle kola (F4-05), po zahřívací sérii
+    // Časovač po zahřívací sérii (F1-22), jinak podle cviku (F1-09); s vypnutým časovačem pauzy
+    // (S.cfg.restOn) žádná, po poslední sérii tréninku taky žádná
     if (d === S.active) {
       const rest = ssRest(d, i, j);
       if (allSetsDone(d)) {
@@ -2206,7 +2210,7 @@
       } else if (S.cfg.restOn === false) {
         restStop();
       } else {
-        restStart(rest === "ss" ? S.cfg.restSs : exRest(e.exId)); // pauza podle cviku (F1-09)
+        restStart(restAfter(e, s, rest));
       }
     }
     const lr = liveRecords(d, i);
@@ -4898,8 +4902,9 @@
      Série se párují podle druhu jako u Minule (setGrp: zahřívací se zahřívacími, ostatní s pracovními)
      a podle pořadí. Po ✓ série rozhodne ssRest o pauze:
      - dvojice v jiném cviku supersérie ještě není hotová → bez pauzy, jen hláška „Další: …“,
-     - kolo je hotové → pracovní kolo S.cfg.restSs (Časovač po pracovní supersérii), zahřívací podle cviku,
-     - série nemá v jiném cviku dvojici (série navíc) → pauza podle cviku (F1-09, jinak výchozí časovač).
+     - kolo je hotové → pracovní kolo S.cfg.restSs (Časovač po pracovní supersérii), zahřívací kolo
+       S.cfg.restWarm (Časovač po zahřívací sérii, F1-22),
+     - série nemá v jiném cviku dvojici (série navíc) → jako mimo supersérii (restAfter, F1-22).
      ssNorm se volá po odebrání cviku, po přetažení (ssMoved), v draftToWorkout a při uložení šablony. Menu
      cviku ssOn (ssLink) / ssOff (ssUnlink). Karty jedné supersérie obaluje ssWrap (.ssg = menší mezera),
      karta má třídu ss-on (proužek vlevo přes ::before, rozměry karty beze změny; i na stránce tréninku a v
@@ -10714,9 +10719,14 @@
           "Po odškrtnutí série se spustí odpočinek. Vypnuto = po sérii žádná pauza, pípnutí ani oznámení.",
         ],
         [
+          "Časovač po zahřívací sérii",
+          "Délka pauzy po každé zahřívací sérii u všech cviků, i po poslední zahřívací před první " +
+            "pracovní. V supersérii po dokončení kola zahřívacích sérií.",
+        ],
+        [
           "Výchozí časovač",
-          "Délka pauzy po sérii cviku, který nemá vlastní pauzu. Vlastní pauzu cviku nastavíš ve formuláři " +
-            "Upravit cvik (Cviky → cvik → Upravit).",
+          "Délka pauzy po pracovní sérii cviku, který nemá vlastní pauzu. Vlastní pauzu cviku nastavíš ve " +
+            "formuláři Upravit cvik (Cviky → cvik → Upravit).",
         ],
         [
           "Časovač po pracovní supersérii",
@@ -11072,8 +11082,9 @@
       items: () => [
         [
           "Vlastní pauza",
-          "Zapnuto = po odškrtnutí série tohoto cviku běží pauza nastavená posuvníkem. Vypnuto = platí " +
-            "Výchozí časovač z Nastavení → Trénink → Odpočinek mezi sériemi.",
+          "Zapnuto = po odškrtnutí pracovní série tohoto cviku běží pauza nastavená posuvníkem. Vypnuto = " +
+            "platí Výchozí časovač z Nastavení → Trénink → Odpočinek mezi sériemi. Po zahřívací sérii běží " +
+            "vždy Časovač po zahřívací sérii.",
         ],
         [
           "Návrh progrese",
@@ -12846,6 +12857,22 @@
     );
   }
 
+  /* ---------- PAUZA PO ZAHŘÍVACÍ SÉRII (F1-22) ----------
+     Po ✓ zahřívací série (s.t = "w") běží jedna společná délka pro všechny cviky: Časovač po zahřívací
+     sérii (S.cfg.restWarm v config/main, 0:30–5:00 po 30 s, výchozí 1:00; starší data doplní cfgNorm).
+     Platí i po poslední zahřívací sérii před první pracovní (rozhodnutí uživatele 13. 10. 2026). Vlastní
+     pauza cviku (F1-09, exRest) platí jen po ostatních druzích série (pracovní, do selhání, drop).
+     V supersérii (F4-05) po kole pracovních sérií Časovač po pracovní supersérii, po kole zahřívacích
+     restWarm, mezi cviky kola bez pauzy (o tom rozhoduje ssRest). Posuvník je v Nastavení → Odpočinek mezi
+     sériemi jako první. Délku vybírá restAfter, volá ho toggleSetDone. Zamítnuto dřív jako F1-17
+     (10. 10. 2026), obnoveno 13. 10. 2026. */
+  // délka pauzy po odškrtnuté sérii s cviku e; rest = výsledek ssRest ("ss" = po kole pracovní supersérie)
+  function restAfter(e, s, rest) {
+    if (rest === "ss") return S.cfg.restSs;
+    if (s.t === "w") return S.cfg.restWarm;
+    return exRest(e.exId);
+  }
+
   /* ---------- PAUZA PODLE CVIKU (F1-09) ----------
      Cvik může mít vlastní délku pauzy (jako v Hevy, např. dřep 3 min, biceps 1 min). Uložená je u cviku
      v config/exercises jako rest (sekundy, REST_RANGE: 0:30–5:00 po 30 s); bez vlastní pauzy pole chybí
@@ -12854,11 +12881,11 @@
      Vlastní pauza (x-rest-on) a pod ním posuvník (x-rest); s vypnutým vypínačem posuvník zešedne, je inert
      a ukazuje Výchozí časovač (závislá volba F3-23). Vrátit na výchozí pauzu nechá (jako nastavení stroje,
      osobní údaj, ne údaj z databáze cviků), Duplikovat ji zkopíruje (je ve formuláři).
-     Délku po ✓ série vybírá toggleSetDone: po kole pracovních sérií supersérie (ssRest = "ss") platí
-     Časovač po pracovní supersérii, jinak exRest(cvik právě odškrtnuté série), i po zahřívacích sériích
-     a po poslední sérii cviku (pauza podle hotového cviku, ne podle dalšího). Úprava +15 / −15 v pruhu
-     pauzy délku cviku nemění.
-     Posuvníky (restSlider) jsou i v Nastavení → Odpočinek (restSec, restSs; dřív přepínače s 5 délkami):
+     Délku po ✓ série vybírá restAfter (sekce F1-22): po kole pracovních sérií supersérie (ssRest = "ss")
+     platí Časovač po pracovní supersérii, po zahřívací sérii Časovač po zahřívací sérii (od F1-22, vlastní
+     pauza cviku ne), jinak exRest(cvik právě odškrtnuté série), i po poslední sérii cviku (pauza podle
+     hotového cviku, ne podle dalšího). Úprava +15 / −15 v pruhu pauzy délku cviku nemění.
+     Posuvníky (restSlider) jsou i v Nastavení → Odpočinek (restWarm, restSec, restSs; dřív přepínače):
      hodnota se při tažení ukazuje hned (restSliderShow), uloží se po puštění.
      Rozhodnuto 12. 10. 2026: pauza cviku jen v šabloně (panel z nabídky cviku v úpravě šablony, přednost
      šablona → cvik → výchozí) je odložená úloha F1-21. */
@@ -12867,7 +12894,7 @@
     const val = Math.round(+sec / REST_RANGE.step) * REST_RANGE.step;
     return val >= REST_RANGE.min && val <= REST_RANGE.max ? val : null;
   }
-  // délka pauzy po sérii cviku: vlastní pauza cviku, jinak Výchozí časovač
+  // délka pauzy po pracovní sérii cviku: vlastní pauza cviku, jinak Výchozí časovač
   const exRest = (exId) => restNorm(exOf(exId).rest) || S.cfg.restSec;
   // posuvník délky pauzy: id = id posuvníku (hodnota se ukazuje v id + "V"), label = popisek, sec = délka
   function restSlider(id, label, sec, off) {
@@ -12882,7 +12909,7 @@
   }
   // při tažení posuvníku hned ukázat délku (true = byl to posuvník pauzy)
   function restSliderShow(t) {
-    if (!["restSec", "restSs", "x-rest"].includes(t.id)) return false;
+    if (!["restWarm", "restSec", "restSs", "x-rest"].includes(t.id)) return false;
     document.getElementById(t.id + "V").textContent = fmtClock(+t.value);
     return true;
   }
@@ -12893,7 +12920,7 @@
         <input type="checkbox" id="x-rest-on" ${f.restOn ? "checked" : ""}>
         <span>Vlastní pauza</span>
       </label>
-      ${restSlider("x-rest", "Pauza po sérii", f.restOn ? f.rest : S.cfg.restSec, !f.restOn)}
+      ${restSlider("x-rest", "Pauza po pracovní sérii", f.restOn ? f.rest : S.cfg.restSec, !f.restOn)}
     </div>`;
   }
   // obnova zálohy: vlastní pauza cviku jen jako platná délka
@@ -12928,7 +12955,8 @@
       <span>Časovač pauzy</span>
     </label>`;
     h += `<div class="stack rest-set${on ? "" : " off"}"${on ? "" : " inert"}>`;
-    // délky pauzy posuvníkem (F1-09), uloží se po puštění
+    // délky pauzy posuvníkem (F1-09), uloží se po puštění; F1-22: po každé zahřívací sérii
+    h += restSlider("restWarm", "Časovač po zahřívací sérii", c.restWarm);
     h += restSlider("restSec", "Výchozí časovač", c.restSec);
     // F4-05: po dokončení kola pracovních sérií supersérie
     h += restSlider("restSs", "Časovač po pracovní supersérii", c.restSs);
@@ -15777,7 +15805,7 @@
       put("config/main", Object.assign({}, S.cfg, { warmPct: +t.value }));
       return;
     }
-    if (t.id === "restSec" || t.id === "restSs") {
+    if (t.id === "restWarm" || t.id === "restSec" || t.id === "restSs") {
       put("config/main", Object.assign({}, S.cfg, { [t.id]: restNorm(t.value) || S.cfg[t.id] }));
       return;
     } // F1-09: posuvníky délky pauzy
