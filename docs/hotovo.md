@@ -204,6 +204,19 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   u Partií, Zápisu a Během tréninku (F3-21). Zamítnuto: jedna karta jen s nadpisy uvnitř (varianta A), přepínač
   „Klepnutím hlavní / pomocná“, partie v samostatném panelu (varianta C, nový neobvyklý prvek). Data beze změny.
   Popis v úvodním komentáři sekce „NOVÝ A UPRAVIT CVIK“ v `js/app.js`.
+- [x] **F3-41** Filtr partií v panelu (přání uživatele 13. 10. 2026 spolu s F3-40: 15 čipů partií a 10 čipů vybavení
+  v řádcích posouvaných do strany, špatná orientace): v záložce Cviky, v panelu Přidat cviky / Nahradit cvik
+  a ve Statistikách → Cviky je místo řádků čipů jeden řádek filtrů: Partie ▾ a Vybavení ▾ (ve výběru i Jen
+  cviky z historie, v Cvikách Skryté). Klepnutí otevře panel: Partie po skupinách (Všechny partie, Hrudník, Ramena,
+  pak Záda, Paže, Břicho a Nohy s volbou „Celá …“ a jednotlivými partiemi), Vybavení. Vybraný filtr je v čipu
+  s křížkem („Paže ×“), klepnutí ho zruší. Filtr hledá ve všech hlavních partiích cviku (dřív jen v první). Místo
+  nadpisu Seznam je počet cviků („18 cviků“, mění se s filtrem), vpravo v Cvikách Naposledy / A–Z, zeměkoule a plus,
+  ve výběru zeměkoule a plus; ve Statistikách počet nad hledáním a Naposledy / Zlepšení vpravo vedle Partie.
+  Podtitulek „388 cviků v databázi“ v záložce Cviky odpadl (počet by tam byl dvakrát). Oprava: panel Online
+  databáze cviků má pevnou výšku jako výběr cviků, s otevřenou klávesnicí už po načtení výsledků nevyjede nad
+  horní okraj obrazovky (ověřit v telefonu). Zamítnuto: šest skupin místo partií (ztratil by se filtr Biceps),
+  dvě úrovně čipů (řádek se nevešel), řazení v nadpisu Seznam odděleně od ikon. Uložený filtr z dřívějška se
+  převede, neznámá hodnota = Všechny partie. Popis v úvodním komentáři sekce „FILTR PARTIÍ A VYBAVENÍ“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
@@ -219,6 +232,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F3-41 | Jak zjednodušit filtr partií? Kde řazení a tlačítka? Podle které partie filtrovat? | Rozhodnuto 13. 10. 2026 (náhled, 4 verze): čipy Partie ▾ / Vybavení ▾ s panelem, ve výběru i Jen cviky z historie v řádku filtrů; počet cviků místo nadpisu Seznam s ovládáním vpravo; filtr ve všech hlavních partiích; stejné na všech třech místech (Cviky, výběr cviků, Statistiky). Oprava online databáze s klávesnicí ve stejném PR. |
 | F3-40 | Jak uklidit formulář cviku? Co s čipy partií? | Rozhodnuto 13. 10. 2026 (náhled, 3 varianty): sekce jako karty (B), partie po skupinách, cyklus klepnutí zůstává a vysvětlí ho nápověda, zeměkoule v nadpisu Název místo tlačítka nahoře, bez šedého textu pod Typem zápisu. Popisky nad políčky zůstávají velkým písmem jako ve všech formulářích. Filtr partií v seznamech je samostatná úloha F3-41. |
 | F2-06 | Archivované fitko: skrýt i tréninky? Smazání fitka s tréninky? Šablony, rozdělaný trénink, poslední fitko? | Rozhodnuto 12. a 13. 10.: archivace jen z výběru, tréninky zůstávají ve Statistikách i rekordech a fitko ve filtrech (je-li s tréninky, na konci). Navíc sloučení s jiným fitkem jako volba Sloučit v okně Smazat (stroje: přednost cílové fitko). Smazání s tréninky = smazat je (potvrzení s počtem, Zálohovat, automatický bod obnovy), štítek „Smazané fitko“ jako volba ne. Poslední aktivní fitko ani fitko rozdělaného tréninku archivovat ani mazat nejde. Archivovaná fitka podle abecedy, karta fitka se otevírá klepnutím (bez tlačítka Upravit), nedostupné akce šedé s hláškou. |
 | F4-07 | Kde se plánuje? Opakování? Víc plánů na den? Plán z jiného fitka? Zmeškaný plán? Kdy je splněný? Plán vs. šablona na řadě (F2-04)? Přesun plánu? | Rozhodnuto 12. 10. 2026: v kalendáři; bez opakování; jeden plán na den; i při jiném vybraném fitku první, se štítkem fitka; zmeškaný se smaže; splněný = trénink z té šablony ten den; plán má přednost před F2-04; plán si pamatuje fitko; přesun = stránka Přeplánovat se šipkou ← (varianta B2). Bez poznámky k plánu, bez týdenního pruhu a bez vyplnění týdne podle rotace. |
