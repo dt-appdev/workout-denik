@@ -114,7 +114,7 @@ flowchart LR
 18. ~~**F1-07** Nastavení stroje podle fitka~~ – hotovo 11. 10. 2026.
 19. ~~**F0-17** Automatické testy (kouřový test, záloha tam a zpět)~~ – hotovo 14. 10. 2026.
 20. ~~**F3-16** Rozepsaný formulář přežije zavření appky~~ – hotovo 13. 10. 2026.
-21. **F1-24** Stopky u série na čas.
+21. ~~**F1-24** Stopky u série na čas~~ – hotovo 14. 10. 2026.
 22. Bez priority (užitek zatím nejasný, rozhodne uživatel): F1-12, F1-21, F1-20, F3-15, F4-09, F4-11, F5-04, F5-05, F5-08, F5-09.
 
 #### Etapa 7 – Nativní appka (zapsáno 13. 10. 2026)
@@ -194,7 +194,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-22** Pauza po zahřívací sérii
 - [x] **F1-23** Rychlé přepisování čísel v sériích
 - [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
-- [ ] **F1-24** Stopky u série na čas (přání uživatele 14. 10. 2026; *nízká–střední*): u cviků na čas (`KIND` `time`, `timew`, případně `dist`) je dnes políčko Čas jen číselné (`FLD.sec`), čas se musí změřit jinde a opsat. Pauza (F1-04) běží až po ✓ a čas nahoře měří celý trénink, sérii nic. Návrh: u série tlačítko Start, po Stop se naměřené sekundy zapíšou do políčka (pak se dá série odškrtnout jako dnes). Rozhodnout v session: odpočet na cílový čas (z minula, ze šablony) s vibrací, nebo jen stopky; co se stane při zhasnutí displeje (webová verze: Wake Lock jako F1-02, nativně F6-02); jak to vypadá v řádku série (`--row-h`, nejdřív náhled podle F3-23); má Stop rovnou odškrtnout sérii a spustit pauzu.
+- [x] **F1-24** Stopky u série na čas
 
 ### Fáze 2 – Šablony a historie
 
