@@ -49,11 +49,12 @@ jobs:
       # F3-43: svislé mezery mezi bloky jen přes proměnné a třídy z css/app.css (--gap-in, --gap-out,
       # --gap-list, .mt-in, .mt-out, .mb-in, .sec.cont …), ne ručně v px; hlídá jen řádky přidané v tomto PR.
       # F3-44: i svislý gap (row-gap, gap sloupce .stack → .stack.list / .inner / .tight); vodorovný gap řádku ne
+      # F3-47: i padding v px (okraj karty dává .card, jinak třída v css/app.css)
       - name: Kontrola ručních svislých mezer v px
         run: |
           if git diff -U0 HEAD^1 HEAD -- js/app.js | grep -E '^\+[^+]' \
-            | grep -E 'style="[^"]*margin[a-z-]*:[^;"]*[0-9]px|style="[^"]*row-gap:[^;"]*[0-9]px|class="([^"]* )?stack[ "][^>]*style="([^"]*;)?gap:[^;"]*[0-9]px'; then
-            echo "::error::Svislá mezera v px přímo ve style=\"…\" (margin, row-gap nebo gap sloupce .stack, viz" \
+            | grep -E 'style="[^"]*(margin|padding)[a-z-]*:[^;"]*[0-9]px|style="[^"]*row-gap:[^;"]*[0-9]px|class="([^"]* )?stack[ "][^>]*style="([^"]*;)?gap:[^;"]*[0-9]px'; then
+            echo "::error::Svislá mezera v px přímo ve style=\"…\" (margin, padding, row-gap nebo gap sloupce .stack, viz" \
               "řádky výše). Použij třídu nebo proměnnou z css/app.css (F3-43, F3-44, CLAUDE.md → Konvence → Mezery)."
             exit 1
           fi

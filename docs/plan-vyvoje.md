@@ -75,7 +75,7 @@ flowchart LR
 - ~~**F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží~~ – hotovo 13. 10. 2026.
 - ~~**F3-43** Jednotné svislé mezery a jejich kontrola~~ – hotovo 13. 10. 2026.
 - ~~**F3-44** Mezery uvnitř karet a panelů~~ – hotovo 14. 10. 2026.
-- **F3-47** Zbylé ruční mezery mimo karty (přání uživatele 14. 10. 2026 u F3-44: „ostatní místa se musí opravit taky“).
+- ~~**F3-47** Zbylé ruční mezery mimo karty~~ – hotovo 14. 10. 2026.
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -257,20 +257,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-43** Jednotné svislé mezery a jejich kontrola
 - [x] **F3-44** Mezery uvnitř karet a panelů
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků
-- [ ] **F3-47** Zbylé ruční mezery mimo karty (přání uživatele 14. 10. 2026 u F3-44, nejlépe bez jiných otevřených PR).
-  Po F3-44 zůstalo v `js/app.js` 25 ručních `style="…px"` s mezerou a k tomu svislé hodnoty mimo stupnici v `css/app.css`.
-  Svislé (podle stupnice 2 / 4 / 8 / 10 / 22 px na třídy `.mt-in`, `.mt-out`, `.mb-in`, `.mb-lbl`, `.stack.tight` /
-  `.inner` / `.list`): Statistiky → Přehled (přepínač nad grafem `margin-bottom:10px`), Partie (poznámka pod postavou
-  `margin:8px 0 0`), Cviky → seznam a výběr cviků (tlačítko online databáze `margin-top:10px`), historie cviku
-  (`vExHist`: karta `padding:10px 12px`, řádek `margin-top:4px`), online databáze (`renderFp`, `renderFs`: tlačítko
-  Zkusit znovu, popisek pod filtry `margin:2px 0 0`), Tělo (`vBody`: hlavička grafu `margin-bottom:6px`, poznámka
-  `margin-top:6px`), karta fitka v Nastavení (`padding:10px 12px`), panel Plán (`sheetPlan` `gap:12px`), záznam
-  oznámení o pauze (`restPost`), obrázek ke sdílení (`pvChrome` `gap:12px`, `shSheet` `gap:4px`), prázdný graf
-  (`drawCharts` `padding-top:60px`). Vodorovné `gap` v řádcích (`.row`, 6 míst) jen převést na třídu, hodnotu nechat.
-  V `css/app.css` projít svislé `margin` / `padding` / `gap` / `row-gap` komponent mimo karty a panely (např. `.gal-add`
-  2 / 12 px) a sjednotit na stupnici; výjimky odsouhlasené dřív zůstávají (nadpis skupiny ve výběru cviků 14 / 6 px,
-  supersérie 6 px, stagnace −4 px, okraj karty 14 px). Kontrolu v úloze „kontrola“ případně rozšířit i na `padding`.
-  Nejdřív náhled Dnes / Po změně (dotčené obrazovky, oba motivy).
+- [x] **F3-47** Zbylé ruční mezery mimo karty
 - [ ] **F3-46** Tlačítko „i“ ve výběru cviků jako ikona (přání uživatele 13. 10. 2026 u F3-45, uživatel ho chce
   přepracovat): tlačítko vedle cviku ve výběru cviků (`.infob`, akce `exInfo`, sekce výběru cviků) je písmeno „i“
   v úzkém písmu, ne SVG ikona, což porušuje pravidlo F3-20 (žádné znaky písma jako ikona). Návrh: ikona ze sady `IC`

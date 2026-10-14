@@ -460,6 +460,13 @@ body:has(#rest:not([hidden])) .wrap {
 .mb-list {
   margin-bottom: var(--gap-list);
 }
+/* prvek pod jiným v kartě (8 px) a řádek pod nadpisem (4 px) mimo sloupec .stack (F3-47) */
+.mt-list {
+  margin-top: var(--gap-list);
+}
+.mt-lbl {
+  margin-top: var(--gap-lbl);
+}
 /* samostatný popisek .lbl-f nad obsahem mimo sloupec s mezerou (F3-44) */
 .mb-lbl {
   margin-bottom: var(--gap-lbl);
@@ -1699,7 +1706,7 @@ tr.done .okb {
 .coach {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gap-in);
 }
 .coach-h {
   display: flex;
@@ -1729,7 +1736,7 @@ tr.done .okb {
 .coach-b {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--gap-in);
 }
 .coach-sl .row {
   align-items: center;
@@ -2040,6 +2047,14 @@ tr.done .okb {
   position: relative;
   width: 100%;
   touch-action: pan-y;
+}
+/* prázdný graf: text uprostřed plochy grafu (F3-47, dřív ručně 60 px shora) */
+.chart-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 .chart svg {
   display: block;
@@ -2607,7 +2622,7 @@ tr.done .okb {
   border-radius: 7px;
   overflow: hidden;
   gap: 2px;
-  margin: 4px 0 8px;
+  margin: 0 0 var(--gap-list);
 }
 .gstack i {
   min-width: 4px;
@@ -2617,7 +2632,7 @@ tr.done .okb {
   flex-wrap: wrap;
   gap: 4px 12px;
   font-size: var(--fs-sm);
-  margin-bottom: 12px;
+  margin-bottom: var(--gap-list);
   color: var(--ink-2);
 }
 .glegend span {
@@ -2640,6 +2655,10 @@ tr.done .okb {
   justify-content: center;
   gap: 10px;
   margin: 4px 0 10px;
+}
+/* postava v kartě (Partie, souhrn tréninku): od okraje karty jen jeho 14 px, pod ní 8 px (F3-47) */
+.card > .figs {
+  margin: 0 0 var(--gap-list);
 }
 .figs figure {
   margin: 0;
@@ -2763,7 +2782,7 @@ tr.done .okb {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 2px 0 12px;
+  margin: 0 0 var(--gap-list);
 }
 /* náhledy fotek (přidání, výběr z online databáze) */
 .thumbs {
@@ -2914,7 +2933,7 @@ tr.done .okb {
 .pv-f {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gap-in);
   padding: 10px 14px 16px;
   background: #0c0d10;
 }
@@ -3012,10 +3031,12 @@ tr.done .okb {
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
-  margin: 14px 0 8px;
+  margin: var(--gap-list) 0;
 }
-/* nadpis sekce formuláře v panelu (F3-23): rozestupy dává mezera panelu, nad i pod --gap-in (F3-44) */
-.sheet-b > .subh {
+/* nadpis sekce formuláře v panelu (F3-23): rozestupy dává mezera panelu, nad i pod --gap-in (F3-44),
+   stejně ve sloupci uvnitř panelu (Ostatní šablony v panelu Naplánovat, F3-47) */
+.sheet-b > .subh,
+.sheet-b .stack > .subh {
   margin: 0;
 }
 .hbar .hl {
@@ -3182,7 +3203,7 @@ tr.done .okb {
 }
 /* formulář Nový / Upravit cvik na stránce (F3-14): stejné mezery jako dřív v panelu */
 .ex-form {
-  gap: 12px;
+  gap: var(--gap-in);
 }
 .mpick {
   display: flex;
@@ -3337,7 +3358,7 @@ textarea.inp {
 }
 /* stránka tréninku (F3-19): mezery mezi rámečky souhrnu jako dřív v panelu */
 .wsum {
-  gap: 12px;
+  gap: var(--gap-in);
 }
 .cmp {
   all: unset;
