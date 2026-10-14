@@ -1,6 +1,7 @@
-/* Měření svislých mezer mezi bloky stránky (F3-43). Spouští se lokálně před PR se změnou vzhledu, v GitHubu ne
-   (Playwright by byl npm závislost). Pravidlo: 10 px uvnitř skupiny, 22 px mezi skupinami, 8 px mezi kartami
-   a řádky seznamu (--gap-in, --gap-out, --gap-list v css/app.css).
+/* Měření svislých mezer mezi bloky stránky (F3-43) a panelu (F3-44). Spouští se lokálně před PR se změnou
+   vzhledu, v GitHubu ne (Playwright by byl npm závislost). Pravidlo: 10 px uvnitř skupiny, 22 px mezi
+   skupinami, 8 px mezi kartami a řádky seznamu (--gap-in, --gap-out, --gap-list v css/app.css). V panelu
+   stejně, popisek nad políčkem nebo čipy 4 px (--gap-lbl).
 
    Postup:
      python3 -m http.server 8000            (v kořeni repa, v jiném terminálu)
@@ -10,7 +11,8 @@
    a 3 šablony z tréninků, projde hlavní obrazovky a pro každou vypíše mezery mezi bloky shora dolů:
    „mezera v px  předchozí blok → další blok“. U čipů (.chips) měří k viditelnému čipu, ne k neviditelnému okraji
    dotykové plochy. styl.css = nepovinný styl přidaný do stránky (simulace změny pro náhled Dnes / Po změně),
-   s předponou snímků uloží snímek každé obrazovky (PNG, 2× zvětšený). */
+   s předponou snímků uloží snímek každé obrazovky (PNG, 2× zvětšený). Nakonec stejně projde panely (PANELS),
+   mezery měří uvnitř obsahu panelu (.sheet-b) od jeho horního okraje. */
 const { chromium } = require("playwright");
 const fs = require("fs");
 
@@ -37,6 +39,32 @@ const BLOCK = [
   "p",
   ".inp",
 ].join(", ");
+
+// bloky uvnitř panelu (F3-44): navíc popisky, nadpisy sekcí formuláře a řádky výběru
+const PANEL_BLOCK = [
+  BLOCK,
+  ".lbl-f",
+  "label.f",
+  ".frow",
+  ".switch",
+  ".subh",
+  ".hlp",
+  ".pick-sec",
+  ".pickrow",
+  ".bzone",
+  ".figs",
+  ".mus",
+  ".cpick",
+  ".banner",
+].join(", ");
+
+// panely: název a akce (data-act, data-v), které ho otevřou
+const PANELS = [
+  ["Panel Nové měření", [["addBody"]]],
+  ["Panel Nové fitko", [["addGym"]]],
+  ["Panel Nápověda (Návrh progrese)", [["help", "prog"]]],
+  ["Panel Přidat cviky", [["tab", "train"], ["startEmpty"], ["addEx"]]],
+];
 
 // obrazovky: název a akce (data-act, data-v), které na ni vedou
 const SCREENS = [
@@ -71,54 +99,63 @@ const SCREENS = [
 ];
 
 // mezery mezi bloky na aktuální obrazovce jako text (jeden řádek = jedna mezera)
-function measure(page) {
-  return page.evaluate((blockSel) => {
-    const blocks = [];
-    // viditelný rozsah bloku; u čipů jen samotné čipy (řádek má okraj navíc kvůli dotykové ploše)
-    function visible(el) {
-      if (el.classList.contains("chips")) {
-        const rects = [...el.children].map((c) => c.getBoundingClientRect()).filter((r) => r.height);
-        if (!rects.length) return null;
-        return {
-          top: Math.min(...rects.map((r) => r.top)),
-          bottom: Math.max(...rects.map((r) => r.bottom)),
-        };
+function measure(page, panel) {
+  return page.evaluate(
+    ([blockSel, panel]) => {
+      const blocks = [];
+      // viditelný rozsah bloku; u čipů jen samotné čipy (řádek má okraj navíc kvůli dotykové ploše)
+      function visible(el) {
+        if (el.classList.contains("chips")) {
+          const rects = [...el.children].map((c) => c.getBoundingClientRect()).filter((r) => r.height);
+          if (!rects.length) return null;
+          return {
+            top: Math.min(...rects.map((r) => r.top)),
+            bottom: Math.max(...rects.map((r) => r.bottom)),
+          };
+        }
+        const r = el.getBoundingClientRect();
+        return r.height ? r : null;
       }
-      const r = el.getBoundingClientRect();
-      return r.height ? r : null;
-    }
-    function label(el) {
-      const text = el.textContent.trim().replace(/\s+/g, " ").slice(0, 18);
-      const name = (el.tagName.toLowerCase() + "." + [...el.classList].join(".")).slice(0, 34);
-      return text ? `${name} «${text}»` : name;
-    }
-    function walk(el) {
-      for (const child of el.children) {
-        if (child.classList.contains("top") || child.hidden) continue;
-        if (getComputedStyle(child).display === "none") continue;
-        if (child.matches(blockSel) && !child.matches("section")) {
-          const r = visible(child);
-          if (r) {
-            blocks.push({ name: label(child), top: r.top + scrollY, bottom: r.bottom + scrollY });
+      function label(el) {
+        const text = el.textContent.trim().replace(/\s+/g, " ").slice(0, 18);
+        const name = (el.tagName.toLowerCase() + "." + [...el.classList].join(".")).slice(0, 34);
+        return text ? `${name} «${text}»` : name;
+      }
+      function walk(el) {
+        for (const child of el.children) {
+          if (child.classList.contains("top") || child.hidden) continue;
+          if (getComputedStyle(child).display === "none") continue;
+          if (child.matches(blockSel) && !child.matches("section")) {
+            const r = visible(child);
+            if (r) {
+              blocks.push({ name: label(child), top: r.top + scrollY, bottom: r.bottom + scrollY });
+            }
+          } else {
+            walk(child);
           }
-        } else {
-          walk(child);
         }
       }
-    }
-    walk(document.getElementById("app"));
-    const top = document.querySelector("#app .top");
-    let prevBottom = top ? top.getBoundingClientRect().bottom + scrollY : 0;
-    let prevName = "ZÁHLAVÍ";
-    const lines = [];
-    for (const b of blocks.slice(0, 16)) {
-      const gap = String(Math.round(b.top - prevBottom)).padStart(4);
-      lines.push(`${gap}  ${prevName.padEnd(42)} → ${b.name}`);
-      prevBottom = b.bottom;
-      prevName = b.name;
-    }
-    return lines.join("\n");
-  }, BLOCK);
+      const root = panel ? document.querySelector(".sheet-b") : document.getElementById("app");
+      if (!root) return "  (panel se neotevřel)";
+      walk(root);
+      const top = panel ? null : document.querySelector("#app .top");
+      let prevBottom = panel
+        ? root.getBoundingClientRect().top + scrollY
+        : top
+          ? top.getBoundingClientRect().bottom + scrollY
+          : 0;
+      let prevName = panel ? "OKRAJ PANELU" : "ZÁHLAVÍ";
+      const lines = [];
+      for (const b of blocks.slice(0, 16)) {
+        const gap = String(Math.round(b.top - prevBottom)).padStart(4);
+        lines.push(`${gap}  ${prevName.padEnd(42)} → ${b.name}`);
+        prevBottom = b.bottom;
+        prevName = b.name;
+      }
+      return lines.join("\n");
+    },
+    [panel ? PANEL_BLOCK : BLOCK, panel],
+  );
 }
 
 (async () => {
@@ -182,6 +219,19 @@ function measure(page) {
       await page.waitForTimeout(150);
       await page.screenshot({ path: `${SHOT}-${name.replace(/[^\p{L}\d]+/gu, "_")}.png` });
     }
+  }
+  for (const [name, steps] of PANELS) {
+    for (const [a, v] of steps) {
+      await act(a, v);
+      await page.waitForTimeout(300);
+    }
+    console.log(`\n## ${name}\n${await measure(page, true)}`);
+    const sheet = await page.$(".sheet");
+    if (SHOT && sheet) {
+      await sheet.screenshot({ path: `${SHOT}-${name.replace(/[^\p{L}\d]+/gu, "_")}.png` });
+    }
+    await act("closeSheet");
+    await page.waitForTimeout(300);
   }
   await browser.close();
 })();

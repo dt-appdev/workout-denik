@@ -256,6 +256,22 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   Nadpis sekce pod filtry zůstává 22 px. Kontrola v úloze „kontrola“ (`git diff` PR, `style="…margin…Npx"`)
   a `tools/mezery.js`. Mezery uvnitř karet a panelů a stránky mimo náhled → F3-44. Popis v úvodním komentáři sekce
   „SVISLÉ MEZERY“ v `js/app.js`.
+- [x] **F3-44 krok A** Mezery v panelech a formulářích (hotovo 14. 10. 2026; krok B – karty – zůstává otevřený
+  v plánu): uvnitř panelů a komponent bylo asi 200 ručních hodnot 1–18 px bez pravidla. **Rozhodnuto 14. 10. 2026
+  (náhledy):** stupnice A 2 / 8 / 10 / 22 px (varianta B 4 / 8 / 12 / 22 zamítnuta, na kartě nebyl rozdíl vidět
+  a stránky by se natáhly), krok popisek → políčko ale 4 px (`--gap-lbl`), 2 px uživatel v náhledu zamítl („původně to
+  bylo přirozenější“). Panel (`.sheet-b`): okraj nahoře a mezi bloky `--gap-in` (dřív 12), okraj dole a po stranách
+  16 px, záhlaví a patička beze změny; nadpis sekce formuláře `.subh` 10 nad i pod (dřív 18 / 12); popisek nad čipy
+  přímo v panelu `.sheet-b > .lbl-f` 4 px (dřív 12), samostatný popisek jinde třída `.mb-lbl` (Barva, S fitkem; dřív
+  ručně 8 px); odstavce v panelu bez výchozího okraje pravidlem `:where(.sheet-b) p` (nízká priorita, okraje tříd jako
+  `.desc` a `.hlp p` platí), 24× `style="margin:0"` pryč (zůstal jen v `tplGymPick` na stránce šablony); čára
+  `.bzone` před nebezpečnou akcí bez vlastního okraje, nad i pod 10 px z mezery sloupce (dřív 14 / 10, i dole na
+  stránkách); výběr cviků: řádky `.stack.list` 8 px (dřív 6), nadpis skupiny `.pick-sec` zůstává 14 nad / 6 pod
+  (uživatel chtěl původní); Informace o cviku: postavy a partie jedna skupina (10), popis a čísla nové skupiny (22),
+  odkaz k popisu (10). `tools/mezery.js` měří i panely (Nové měření, Nové fitko, Nápověda, Přidat cviky). Výběr barvy
+  fitka: okraj vybrané barvy (stín 5 px) zasahoval do popisku Barva a do názvu fitka pod kolečkem, kolečka mají
+  nahoře a dole 5 px místa (`.cpick i`), mezery se měří od okraje (varianta A z náhledu; B = okraj uvnitř kolečka
+  zamítnuta).
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků (dotaz uživatele 13. 10. 2026, jestli mají názvy šablon,
   cviků a tréninků stejné písmo; náhled Dnes / Po změně schválen týž den). Zjištěno: názvy v kartách jsou všude Barlow
   700 `--fs-lg`, jen Historie měla výšku řádku 1,4 místo 1,2. **Zamítnuto:** názvy v kartách polotučně (600), v kartě
@@ -290,6 +306,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F3-44 | Stupnice mezer uvnitř komponent: 2 / 8 / 10 / 22, nebo 4 / 8 / 12 / 22? Popisek nad políčkem? Nadpis skupiny ve výběru cviků? | Rozhodnuto 14. 10. 2026 (náhledy): 2 / 8 / 10 / 22, popisek → políčko nebo čipy 4 px (2 px zamítnuto), nadpis `.subh` v panelu 10 / 10, nadpis skupiny ve výběru cviků beze změny (14 / 6), vodorovné mezery mimo úlohu, karty v kroku B. |
 | F3-43 | Které mezery sjednotit? Nadpis sekce pod filtry? Karty seznamu? Vnitřek karet a panelů? | Rozhodnuto 13. 10. 2026 (náhled): jen svislé mezery bloků stránky, 10 px uvnitř skupiny, 22 px mezi skupinami; nadpis sekce i hned pod filtry 22 px; karty a řádky seznamu pod sebou všude 8 px (ne 6 ani 10), měsíc v Historii jako nadpis skupiny; kontrola jen `margin` v px (ne `padding`, `gap`); vnitřek karet a panelů samostatná úloha F3-44. |
 | F4-14 | Co je u cviku na čas se zátěží zlepšení? | Rozhodnuto 13. 10. 2026: vyšší max. zátěž (při stejné váze delší čas) nebo delší výdrž, ne čas × váha; platí pro stagnaci, rekordy (nový rekord Max. zátěž, zpětně) i progres ve Statistikách → Cviky; bez náhledu, snímek v PR. |
 | F3-42 | Které grafy u cviku? Jak je vybírat? Nový rekord? | Rozhodnuto 13. 10. 2026 (náhled): Opakování celkem u všech cviků s opakováním; čipy v řadě jako v Těle (ne dva řádky ani rozbalovací výběr); bez nových rekordů; Max zátěž u cviku na čas se zátěží; žádná pátá dlaždice, ale Objem u cviku na čas nahrazen dlaždicí Čas. |
