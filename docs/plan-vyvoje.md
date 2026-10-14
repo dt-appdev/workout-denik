@@ -271,7 +271,10 @@ Předpoklad: F0-02 (svalové partie).
   přepracovat): tlačítko vedle cviku ve výběru cviků (`.infob`, akce `exInfo`, sekce výběru cviků) je písmeno „i“
   v úzkém písmu, ne SVG ikona, což porušuje pravidlo F3-20 (žádné znaky písma jako ikona). Návrh: ikona ze sady `IC`
   ve stylu ostatních (nová kresba nebo existující „info“, jedna kresba = jeden význam), případně přepracovat celé
-  tlačítko (velikost, umístění, co otevírá). Nejdřív náhled ikon (dnes / návrh, světlý i tmavý motiv).
+  tlačítko (velikost, umístění, co otevírá). Patří sem i panel, který tlačítko otevírá (Informace o cviku,
+  `sheetExInfo`): v patičce má tři tlačítka vedle sebe a různě široká (Zpět na výběr / Upravit / Stránka cviku), což
+  porušuje pravidlo F3-23 (nejvýš dvě, stejně široká; zjištěno 14. 10. 2026 u F3-44). Nejdřív náhled ikon (dnes /
+  návrh, světlý i tmavý motiv).
 
 
 ### Fáze 4 – Chytré funkce
