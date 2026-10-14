@@ -74,7 +74,7 @@ flowchart LR
 - ~~**F3-42** Grafy cviku: objem série, opakování celkem~~ – hotovo 13. 10. 2026.
 - ~~**F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží~~ – hotovo 13. 10. 2026.
 - ~~**F3-43** Jednotné svislé mezery a jejich kontrola~~ – hotovo 13. 10. 2026.
-- **F3-44** Mezery uvnitř karet a panelů (po F3-43, nejlépe bez jiných otevřených PR).
+- **F3-44** Mezery uvnitř karet a panelů – krok A (panely, formuláře) hotový 14. 10. 2026, zbývá krok B (karty).
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -254,19 +254,18 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-41** Filtr partií v panelu
 - [x] **F3-42** Grafy cviku: objem série, opakování celkem, max zátěž u cviku na čas
 - [x] **F3-43** Jednotné svislé mezery a jejich kontrola
-- [ ] **F3-44** Mezery uvnitř karet a panelů (přání uživatele 13. 10. 2026 u F3-43, dělat po F3-43, nejlépe bez jiných
-  otevřených PR): F3-43 sjednotilo mezery mezi bloky stránky (10 / 22 px, karty seznamu 8 px), uvnitř komponent zůstalo
-  asi 200 ručních hodnot (asi 150 v `css/app.css`, asi 40 `style="margin…"` a 20 `style="gap…"` v `js/app.js`):
-  svisle 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 14 a 18 px. Příklady: panel `.sheet-b` 12 px mezi políčky, `.subh` 14 nad
-  a 8 pod, karty v kartě cviku (návrh progrese, stagnace, stroj, poznámka) 8 px, legenda grafu 8 / 12 px, galerie
-  4 / 9 / 10 / 12 px; 25× `style="margin:0"` jen ruší výchozí okraj odstavce. Patří sem i stránky, které F3-43 nemělo
-  v náhledu: rozdělaný trénink a úprava tréninku / šablony (karty cviků 10 px, odsazení 12 px), uložený trénink, Upravit
-  cvik a Popis cviku (tlačítka dole 12 nebo 22 px, poznámka 12 px), výběr cviků v panelu (`.pick` 10 px).
-  Návrh (13. 10. 2026, neodsouhlaseno): stupnice 2 px (název → drobný popis pod ním, typografie, nesjednocovat na víc)
-  / 6 px (prvky uvnitř karty) / 10 px (uvnitř skupiny, políčka formuláře) / 22 px (mezi skupinami), nadpis `.subh`
-  v panelu jako nadpis sekce na stránce, tlačítka dole na stránce jako samostatná skupina (22 px), karty cviků v tréninku
-  8 px jako ostatní karty seznamu, `p { margin: 0 }` místo 25× `style="margin:0"`. Kontrolu v úloze „kontrola“
-  rozšířit na `gap`, `tools/mezery.js` o panely. Nejdřív náhled Dnes / Po změně (panely, formuláře, karty, oba motivy).
+- [ ] **F3-44** Mezery uvnitř karet a panelů (přání uživatele 13. 10. 2026 u F3-43, nejlépe bez jiných otevřených PR).
+  Stupnice odsouhlasená 14. 10. 2026: 2 px název → drobný popis (typografie) / 4 px popisek → políčko nebo čipy
+  (`--gap-lbl`) / 8 px prvky uvnitř karty a řádky seznamu / 10 px uvnitř skupiny / 22 px mezi skupinami.
+  **Krok A (panely a formuláře) hotový 14. 10. 2026**, popis v `docs/hotovo.md`. **Zbývá krok B – karty:** vnitřní
+  mezery a svislé okraje karet (karta cviku v tréninku: okraj nahoře 12 → 10, hlavička → Minule 6 → 8, karty cviků pod
+  sebou 10 → 8 px jako ostatní seznamy; karty v kartě cviku – návrh progrese, stagnace, stroj, poznámka; karta s časy
+  v Dokončit trénink 15 / 8 px; dlaždice čísel 9 / 5 / 12 px; legenda grafu 8 / 12 px; galerie 4 / 9 / 10 / 12 px),
+  stránky mimo náhled F3-43 (rozdělaný trénink, úprava tréninku / šablony, uložený trénink, Upravit cvik a Popis cviku:
+  tlačítka dole 12 nebo 22 px, poznámka 12 px) a sloupce popisek + čipy na stránkách se `style="gap:6px"` (fitka
+  šablony `tplGymPick`, fotky z databáze `exEdPhotos`: popisek → obsah 6 → 4 px). Vodorovné mezery (ikona–text, čipy)
+  zůstávají mimo úlohu. Kontrolu v úloze „kontrola“ rozšířit jen na svislé `gap` / `row-gap`. Nejdřív náhled Dnes /
+  Po změně (karty, oba motivy), ve kterém popisky nad políčky zůstávají 4 px (2 px uživatel 14. 10. 2026 zamítl).
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků
 - [ ] **F3-46** Tlačítko „i“ ve výběru cviků jako ikona (přání uživatele 13. 10. 2026 u F3-45, uživatel ho chce
   přepracovat): tlačítko vedle cviku ve výběru cviků (`.infob`, akce `exInfo`, sekce výběru cviků) je písmeno „i“

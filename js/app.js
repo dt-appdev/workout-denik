@@ -2127,8 +2127,8 @@
   // okAct = akce tlačítka „Ano, je to správně“ (Označit v okně Dokončit trénink má vlastní, F1-14)
   function sheetJump(i, j, jump, okAct = "jumpOk") {
     const body = `
-    <p style="margin:0">${esc(jump.refTxt)}: <b>${esc(jumpFmt(jump.f, jump.ref))}</b></p>
-    <p style="margin:0">Není to překlep?</p>`;
+    <p>${esc(jump.refTxt)}: <b>${esc(jumpFmt(jump.f, jump.ref))}</b></p>
+    <p>Není to překlep?</p>`;
     const foot = `<button class="btn grow" data-act="jumpFix" data-i="${i}" data-j="${j}"
         data-v="${esc(jump.f)}">
       Opravit
@@ -2659,7 +2659,7 @@
     if (!s || !mode) return;
     const body = `<div class="kk-sub"><span class="grow">${esc(setLabel(e, j))}</span></div>
       ${effRow(i, j, s)}
-      <p class="xs muted" style="margin:0">${EFF_HINT[mode]}</p>`;
+      <p class="xs muted">${EFF_HINT[mode]}</p>`;
     const foot =
       effOf(s) != null
         ? `<button class="btn grow" data-act="effDel" data-i="${i}" data-j="${j}">Smazat</button>`
@@ -4573,7 +4573,7 @@
     const where = S.cfg.gyms.length > 1 ? " pro stejné fitko" : "";
     openSheet(
       "Šablona už existuje",
-      `<p style="margin:0">
+      `<p>
         Šablonu „${esc(t.name)}“ už máš${where}${t.hidden ? " (je skrytá a po přepsání zůstane skrytá)" : ""}.
         Můžeš ji přepsat cviky a sériemi z tohoto tréninku
         (název, fitka a pořadí šablony zůstanou), nebo uložit novou šablonu s jiným názvem.
@@ -5045,12 +5045,12 @@
       n = (w.ex || []).length - againEx(w).length;
     return (
       (w.gymId && again.gym !== w.gymId
-        ? `<p class="small muted" style="margin:0">
+        ? `<p class="small muted">
           Trénink byl v ${esc(gymName(w.gymId))}. Hodnoty z minula se vezmou z vybraného fitka.
         </p>`
         : "") +
       (n
-        ? `<p class="small muted" style="margin:0">
+        ? `<p class="small muted">
           ${n} ${plural(n, "cvik už v appce není", "cviky už v appce nejsou", "cviků už v appce není")}` +
           `${n === 1 ? ", vynechá se." : ", vynechají se."}
         </p>`
@@ -5061,7 +5061,7 @@
     again = { w, gym: S.cfg.gyms.some((g) => g.id === curGym()) ? curGym() : w.gymId };
     const ex = againEx(w);
     const b =
-      `<p style="margin:0">
+      `<p>
       ${ex.length} ${plural(ex.length, "cvik", "cviky", "cviků")}: ` +
       `${esc(ex.map((e) => exName(e.exId)).join(", "))}
     </p>
@@ -5128,7 +5128,7 @@
     const canFinish = done || finUndone(d).val;
     openSheet(
       "Probíhá trénink",
-      `<p style="margin:0">
+      `<p>
         Trénink „${esc(d.title)}“ ještě běží (${doneTxt}). Chceš ho ukončit a začít ${esc(runNextName(next))}?
       </p>`,
       (canFinish
@@ -5222,7 +5222,7 @@
       ? `${ex.length} ${plural(ex.length, "cvik", "cviky", "cviků")}, ` +
         `${nSets} ${plural(nSets, "série", "série", "sérií")}.`
       : "Zatím žádná hotová série.";
-    let b = `<p style="margin:0">${cnt}</p>`;
+    let b = `<p>${cnt}</p>`;
     if (undone.val) {
       b += `<div class="banner act" style="margin-top:0">
         <span class="grow">${finValTxt(undone.val)}</span>
@@ -5250,7 +5250,7 @@
     b += coachPart(d); // Pro coache (F4-12)
     // Dokončit a začít nový (F2-09): co začne po uložení
     if (runNext) {
-      b += `<p class="small muted" style="margin:0">Po uložení začne ${esc(runNextName(runNext))}.</p>`;
+      b += `<p class="small muted">Po uložení začne ${esc(runNextName(runNext))}.</p>`;
     }
     if (d.tplId && S.templates[d.tplId]) {
       b +=
@@ -5582,9 +5582,21 @@
      stránky cviku pod přepínačem), .mt-in / .mb-in = odsazení bloku o --gap-in. Pruh hned pod záhlavím (.top +
      .banner) a přepínač části nemají mezeru od záhlaví. Řádek čipů (.chips) nikdy nedostává vlastní margin:
      má záporný okraj kvůli dotykové ploše (F3-23), odsazení dostane soused (dřív výpočet calc u čipů grafů).
-     Mezery uvnitř karet a panelů (formuláře, nápovědy, rekordy, galerie) a stránky trénink, uložený trénink,
-     Upravit cvik a Popis cviku řeší F3-44. Kontrola: tools/mezery.js (Playwright, lokálně) vypíše mezery
-     mezi bloky hlavních obrazovek se zkušebními daty. */
+     Kontrola: tools/mezery.js (Playwright, lokálně) vypíše mezery mezi bloky hlavních obrazovek a panelů
+     se zkušebními daty. */
+  /* ---------- MEZERY V PANELECH A FORMULÁŘÍCH (F3-44, krok A) ----------
+     Stupnice uvnitř komponent (odsouhlasená 14. 10. 2026): 2 px název → drobný popis pod ním (typografie),
+     4 px popisek nad políčkem nebo čipy → obsah (--gap-lbl), 8 px prvky uvnitř karty a řádky seznamu,
+     10 px uvnitř skupiny (--gap-in), 22 px mezi skupinami (--gap-out). Jen CSS a třídy:
+     - obsah panelu (.sheet-b z openSheet): okraj nahoře i bloky pod sebou --gap-in, dole a po stranách 16 px,
+       nadpis sekce formuláře (.subh) bez vlastního okraje (10 nad i pod),
+     - popisek: label.f / .lbl-f má k obsahu --gap-lbl; samostatný div.lbl-f přímo v panelu ho dostane pravidlem
+       .sheet-b > .lbl-f, jinde třídou .mb-lbl (2 px uživatel v náhledu zamítl),
+     - odstavec v panelu nemá výchozí okraj (:where(.sheet-b) p), proto bez style="margin:0",
+     - čára .bzone před nebezpečnou akcí nemá vlastní okraj, nad i pod ní je mezera sloupce tlačítek,
+     - výběr cviků: řádky .stack.list (--gap-list), nadpis skupiny .pick-sec 14 px nad a 6 px pod (přání uživatele),
+     - Informace o cviku (sheetExInfo): postavy a partie jedna skupina, popis a dlaždice čísel nové skupiny.
+     Krok B (vnitřek karet, stránky trénink, uložený trénink, Upravit cvik, Popis cviku) zůstává v plánu. */
   /* ---------- TYPOGRAFIE (F3-45) ----------
      Jen v css/app.css a třídy v šablonách (přání uživatele 13. 10. 2026, náhled schválen týž den).
      Jedno písmo pro jednu roli, aby stejné věci vypadaly všude stejně:
@@ -10062,7 +10074,7 @@
     if (pv.id === PV_FIG) return;
     openSheet(
       "Smazat fotku?",
-      `<p style="margin:0">Fotka se smaže z telefonu. Smazání nejde vrátit (fotky nejsou v bodech
+      `<p>Fotka se smaže z telefonu. Smazání nejde vrátit (fotky nejsou v bodech
         obnovy, jen v záloze do souboru s fotkami).</p>`,
       `<button class="btn grow" data-act="pvDelNo">Zrušit</button>
       <button class="btn primary grow" data-act="pvDelOk">Smazat</button>`,
@@ -10200,7 +10212,7 @@
     }
     if (!fp.x) {
       const direct = fedbMatch(fp.exId);
-      const b = `<p class="small" style="margin:0">
+      const b = `<p class="small">
           ${
             direct
               ? "Najdi cvik v online databázi a vyber jeho fotky."
@@ -10217,7 +10229,7 @@
     }
     const x = fp.x,
       n = fp.sel.length;
-    const b = `<p class="small" style="margin:0">
+    const b = `<p class="small">
         Fotky cviku <b>${esc(x.n)}</b>${x.cz ? ` (${esc(x.cz)})` : ""} z databáze free-exercise-db
         (volné dílo). Klepnutím vyber, které uložit do telefonu.
       </p>
@@ -11338,7 +11350,7 @@
     // barva (F3-01): předvybraná vlastní, u nového fitka první volná; pod obsazenou barvou název fitka
     const cur = id && g.col ? g.col : freeGymCol(S.cfg.gyms);
     b += `<div>
-      <div class="f lbl-f" style="margin-bottom:8px">Barva</div>
+      <div class="f lbl-f mb-lbl">Barva</div>
       <div class="cpick" role="radiogroup" aria-label="Barva fitka">
         ${Array.from({ length: GYM_COLORS }, (_, i) => i + 1)
           .map((c) => {
@@ -11471,13 +11483,13 @@
     const msg = move
       ? nTxt + " " + verbN(n, "se přesune", "se přesunou") + " do vybraného fitka."
       : nTxt + " " + verbN(n, "se smaže", "se smažou") + ", nejde to vrátit.";
-    const b = `<p style="margin:0">${esc(gymName(del.id))} má ${nTxt}.</p>
+    const b = `<p>${esc(gymName(del.id))} má ${nTxt}.</p>
       <div class="seg seg-wide">
         <button data-act="gymDelMode" data-v="move" aria-pressed="${move}">Sloučit</button>
         <button data-act="gymDelMode" data-v="del" aria-pressed="${!move}">Smazat</button>
       </div>
       <div class="dep${move ? "" : " off"}"${move ? "" : " inert"}>
-        <div class="f lbl-f" style="margin-bottom:8px">S fitkem</div>
+        <div class="f lbl-f mb-lbl">S fitkem</div>
         <div class="chips" data-ck="gymDelTo">
           ${gymsOn()
             .filter((g) => g.id !== del.id)
@@ -11720,7 +11732,7 @@
       ${icoBtn("newEx", "plus", "Nový cvik")}`,
       "pickN",
     )}
-    <div class="stack" id="pickList" style="gap:6px">${pickerList()}</div>`;
+    <div class="stack list" id="pickList">${pickerList()}</div>`;
   }
   function renderPicker(keep) {
     const sb = document.querySelector(".sheet-b");
@@ -12291,7 +12303,7 @@
     if (u.w || u.tpls.length || u.draft) {
       openSheet(
         "Cvik nejde smazat",
-        `<p style="margin:0">Cvik je ${esc(exUsesText(u))}. Tréninky by přišly o jeho název a partie.
+        `<p>Cvik je ${esc(exUsesText(u))}. Tréninky by přišly o jeho název a partie.
           ${e.archived ? "Z výběru už je skrytý." : "Můžeš ho skrýt z výběru."}</p>`,
         e.archived
           ? '<button class="btn primary grow" data-act="closeSheet">Zavřít</button>'
@@ -12794,7 +12806,7 @@
       .join("");
     openSheet(
       "Pořadí cviků",
-      `<p class="xs muted" style="margin:0">
+      `<p class="xs muted">
         Cvik přesuneš tažením za úchyt vpravo.` +
         `${
           d.ex.some((e, i) => ssRun(d.ex, i))
@@ -12826,7 +12838,7 @@
       .join("");
     openSheet(
       "Pořadí šablon",
-      `<p class="xs muted" style="margin:0">
+      `<p class="xs muted">
         Šablonu přesuneš tažením za úchyt vpravo. Pořadí platí ve všech fitkách, nahoře jsou vždy
         šablony vybraného fitka.
       </p>
@@ -12872,7 +12884,7 @@
   function confirmSheet(title, text, btn, act, v) {
     openSheet(
       title,
-      `<p style="margin:0">${text}</p>`,
+      `<p>${text}</p>`,
       `<button class="btn grow" data-act="closeSheet">Zrušit</button>
       <button class="btn primary grow" data-act="${act}" data-v="${esc(v || "")}">${esc(btn)}</button>`,
     );
@@ -16568,7 +16580,7 @@
     const dates = rows.map((r) => r.date);
     const fa = shData.fileAt;
     const fileDate = fa.length >= 8 ? +fa.slice(6, 8) + ". " + +fa.slice(4, 6) + ". " + fa.slice(0, 4) : "";
-    let b = `<p style="margin:0">
+    let b = `<p>
       Soubor${fileDate ? " z <b>" + esc(fileDate) + "</b>" : ""}: ${fmtInt(rows.length)}
       ${plural(rows.length, "měření", "měření", "měření")}
       (${fmtDate(Math.min(...dates))} – ${fmtDate(Math.max(...dates))}).
@@ -16876,10 +16888,10 @@
   }
   // okno po stažení zálohy s návodem, jak ji dostat mimo telefon (F0-13: dřív i tlačítko Jak na Disk?)
   function showBackupHelp(name) {
-    let b = `<p style="margin:0">
+    let b = `<p>
       Soubor <b>${esc(name)}</b> je v telefonu ve složce <b>Stažené</b> (Download).
     </p>`;
-    b += `<p class="small muted" style="margin:0">
+    b += `<p class="small muted">
       Aby záloha přežila i ztrátu telefonu, pošli ji mimo něj (rychleji to jde tlačítkem Sdílet):
     </p>`;
     b += `<ol class="steps small">
@@ -16890,7 +16902,7 @@
       <li>Podrž soubor zálohy a zvol <b>Sdílet</b>.</li>
       <li>Vyber <b>Disk</b> → Uložit (nebo Gmail a pošli si ho).</li>
     </ol>`;
-    b += `<p class="xs muted" style="margin:0">
+    b += `<p class="xs muted">
       Obnova: Nastavení → Data a záloha → Obnovit ze souboru a vybrat soubor (z Disku jde vybrat přímo).
     </p>`;
     const foot = `<button class="btn grow" data-act="bkNoHelp">Příště neukazovat</button>
@@ -17126,13 +17138,13 @@
       nc = countW(S.months),
       nm = mergeCount(o);
     let b =
-      `<p style="margin:0">
+      `<p>
       ${esc(label)}${o.exported ? ` z <b>${esc(fmtDate(Date.parse(o.exported)))}</b>` : ""}: ` +
       `${fmtInt(nb)} ${plural(nb, "trénink", "tréninky", "tréninků")}. V appce je teď ${fmtInt(nc)}.
     </p>`;
     const np = Object.keys(o.photos).length;
     if (np) {
-      b += `<p class="small muted" style="margin:0">
+      b += `<p class="small muted">
         Záloha obsahuje i ${fmtInt(np)} ${plural(np, "fotku", "fotky", "fotek")} u cviků. Sloučit doplní
         chybějící, Nahradit vše je přidá. Fotky, které v appce máš, se nesmažou.
       </p>`;

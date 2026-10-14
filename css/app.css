@@ -136,10 +136,13 @@ img {
   /* Svislé mezery mezi bloky stránky (F3-43), jiné hodnoty mezi bloky nepoužívat:
      --gap-in = uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu),
      --gap-out = mezi skupinami (sekce → sekce, samostatné velké tlačítko od okolí),
-     --gap-list = karty a řádky seznamu pod sebou. */
+     --gap-list = karty a řádky seznamu pod sebou.
+     Uvnitř panelu (F3-44) stejně: bloky --gap-in, nová skupina --gap-out; --gap-lbl = popisek nad políčkem
+     nebo čipy (label.f, .lbl-f) → obsah. Drobný popis pod názvem 2 px je typografie, ne mezera mezi bloky. */
   --gap-in: 10px;
   --gap-out: 22px;
   --gap-list: 8px;
+  --gap-lbl: 4px;
   /* Stupnice písma (F3-11): jiné velikosti písma než tyto nepoužívat.
      --fs-k = zvětšení písma z Nastavení → Vzhled (data-fs na <html>, fontScale v js/app.js). */
   --fs-k: 1;
@@ -453,6 +456,10 @@ body:has(#rest:not([hidden])) .wrap {
 .mb-list {
   margin-bottom: var(--gap-list);
 }
+/* samostatný popisek .lbl-f nad obsahem mimo sloupec s mezerou (F3-44) */
+.mb-lbl {
+  margin-bottom: var(--gap-lbl);
+}
 .sec-h {
   display: flex;
   align-items: baseline;
@@ -542,8 +549,7 @@ a.btn {
   width: 100%;
 }
 .bzone {
-  border-top: 1px solid var(--line-2);
-  margin-top: 4px;
+  border-top: 1px solid var(--line-2); /* mezeru nad i pod čarou dává sloupec tlačítek (F3-44) */
 }
 .btn.sm {
   min-height: 34px;
@@ -881,7 +887,7 @@ label.f,
 .lbl-f {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--gap-lbl);
   font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -2253,12 +2259,29 @@ tr.done .okb {
   font-size: var(--fs-2xl);
   letter-spacing: 0.01em;
 }
+/* obsah panelu (F3-44): bloky pod sebou po --gap-in, nahoře stejně, dole a po stranách okraj panelu 16 px */
 .sheet-b {
   overflow: auto;
-  padding: 12px 16px 16px;
+  padding: var(--gap-in) 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gap-in);
+}
+/* odstavec v panelu bez výchozího okraje (místo style="margin:0"), vlastní okraj třídy (.desc, .hlp p) má přednost */
+:where(.sheet-b) p {
+  margin: 0;
+}
+/* popisek nad čipy přímo v panelu: k obsahu jen --gap-lbl (F3-44) */
+.sheet-b > .lbl-f {
+  margin-bottom: calc(var(--gap-lbl) - var(--gap-in));
+}
+/* informace o cviku v panelu (F3-44): postavy a partie jedna skupina, popis s odkazem a čísla nové skupiny */
+.sheet-b > .figs {
+  margin: 0;
+}
+.sheet-b > .desc,
+.sheet-b > .kpis {
+  margin: calc(var(--gap-out) - var(--gap-in)) 0 0;
 }
 .sheet-b > .chips,
 .sheet-b > .row,
@@ -2308,7 +2331,8 @@ tr.done .okb {
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-2);
-  margin: 8px 0 0;
+  /* řádky seznamu mají --gap-list (F3-44), nadpis skupiny k nim těsněji: 14 px nad, 6 px pod */
+  margin: calc(14px - var(--gap-list)) 0 calc(6px - var(--gap-list));
 }
 .pick-sec:first-child {
   margin-top: 0;
@@ -2978,9 +3002,9 @@ tr.done .okb {
   font-weight: 600;
   margin: 14px 0 8px;
 }
-/* nadpis sekce formuláře v panelu (F3-23): rozestupy dává mezera panelu */
+/* nadpis sekce formuláře v panelu (F3-23): rozestupy dává mezera panelu, nad i pod --gap-in (F3-44) */
 .sheet-b > .subh {
-  margin: 6px 0 0;
+  margin: 0;
 }
 .hbar .hl {
   white-space: nowrap;
