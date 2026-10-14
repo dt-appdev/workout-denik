@@ -734,7 +734,7 @@ a.btn {
 .cpick {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px 8px;
+  gap: 5px 8px; /* mezi řádky 10 px od kolečka, 5 px z nich dává místo pro okraj (.cpick i) */
 }
 .cpick button {
   border: 0;
@@ -749,6 +749,9 @@ a.btn {
 .cpick i {
   width: 40px;
   height: 40px;
+  /* místo pro okraj vybrané barvy (stín 3 + 2 px přesahuje kolečko), aby nezasahoval do popisku Barva
+     a do názvu fitka pod kolečkem; mezery se měří od okraje (F3-44) */
+  margin-block: 5px;
   border-radius: 50%;
   display: flex;
   align-items: center;

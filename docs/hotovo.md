@@ -268,7 +268,10 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   `.bzone` před nebezpečnou akcí bez vlastního okraje, nad i pod 10 px z mezery sloupce (dřív 14 / 10, i dole na
   stránkách); výběr cviků: řádky `.stack.list` 8 px (dřív 6), nadpis skupiny `.pick-sec` zůstává 14 nad / 6 pod
   (uživatel chtěl původní); Informace o cviku: postavy a partie jedna skupina (10), popis a čísla nové skupiny (22),
-  odkaz k popisu (10). `tools/mezery.js` měří i panely (Nové měření, Nové fitko, Nápověda, Přidat cviky).
+  odkaz k popisu (10). `tools/mezery.js` měří i panely (Nové měření, Nové fitko, Nápověda, Přidat cviky). Výběr barvy
+  fitka: okraj vybrané barvy (stín 5 px) zasahoval do popisku Barva a do názvu fitka pod kolečkem, kolečka mají
+  nahoře a dole 5 px místa (`.cpick i`), mezery se měří od okraje (varianta A z náhledu; B = okraj uvnitř kolečka
+  zamítnuta).
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků (dotaz uživatele 13. 10. 2026, jestli mají názvy šablon,
   cviků a tréninků stejné písmo; náhled Dnes / Po změně schválen týž den). Zjištěno: názvy v kartách jsou všude Barlow
   700 `--fs-lg`, jen Historie měla výšku řádku 1,4 místo 1,2. **Zamítnuto:** názvy v kartách polotučně (600), v kartě
