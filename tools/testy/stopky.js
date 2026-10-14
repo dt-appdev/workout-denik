@@ -1,6 +1,7 @@
 /* Test 5 (F1-24): stopky u série na čas. Odpočet před startem se v Nastavení zkrátí na 1 s. Tlačítko stopek mají
    jen série na čas, Zrušit při odpočtu nic nezapíše, Stop za běhu zapíše naměřený čas (sérii neodškrtne) a při
-   dalším tréninku se z něj stane cíl: stopky se v cíli samy zastaví a zapíšou cílový čas. */
+   dalším tréninku se z něj stane cíl: stopky se v cíli samy zastaví a zapíšou cílový čas. Čas přepsaný
+   v políčku má přednost před časem z minula. */
 const P = require("./pomocne.js");
 
 const ROW = '#app table.sets [data-act="stwGo"]';
@@ -86,6 +87,23 @@ async function run({ browser, url, check }) {
     "false",
     "ani cíl sérii neodškrtl",
   );
+  await page.click('#app [data-act="addSet"][data-i="0"]');
+  await app.settle(200);
+  // přepsaná hodnota v políčku má před hodnotou z minula přednost: cíl 0:02 místo 0:03
+  await page.$eval('#app input[data-f="sec"][data-j="1"]', (el) => {
+    el.removeAttribute("readonly");
+    el.value = "0:02";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await app.settle();
+  await page.click(`${ROW}[data-j="1"]`);
+  await app.settle(1500);
+  const typedLabel = await page.$eval("#restClock", (el) => el.nextElementSibling.textContent.trim());
+  check.eq(typedLabel, "Výdrž · cíl 0:02", "cíl je přepsaná hodnota, ne hodnota z minula");
+  await app.settle(3000);
+  check.eq(await secValue(page, 1), "0:02", "v přepsaném cíli se zapsal 0:02");
+  check.ok(await page.$eval("#rest", (el) => el.hidden), "stopky v přepsaném cíli skončily");
   check.eq(await page.evaluate(() => localStorage.length > 0), true, "úložiště je v pořádku");
   check.eq(app.errors, [], "žádné chyby v konzoli");
   await app.close();

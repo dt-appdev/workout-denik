@@ -10837,8 +10837,9 @@
         ],
         [
           "Cíl",
-          "Cíl je šedá hodnota Čas z minula (nebo ze šablony). Bez ní stopky počítají jen nahoru, " +
-            "dokud neklepneš na Stop. Deset sekund před cílem pípnou ještě dvakrát.",
+          "Cíl je čas, který si v políčku přepíšeš, jinak šedá hodnota Čas z minula (nebo ze šablony). " +
+            "Bez cíle stopky počítají jen nahoru, dokud neklepneš na Stop. Deset sekund před cílem " +
+            "pípnou ještě dvakrát.",
         ],
         [
           "Odpočet před startem",
@@ -13519,8 +13520,9 @@
   /* ---------- STOPKY U SÉRIE NA ČAS (F1-24) ----------
      U sérií druhů se sloupcem Čas (KIND time, timew, dist; isTimed) je v rozdělaném tréninku za políčky
      tlačítko ▶ (stwCell, akce stwGo). Klepnutí: odpočet před startem (S.cfg.stwPre, 0–15 s, výchozí 5,
-     Nastavení → Trénink → Stopky u série na čas), pak se čas počítá od nuly nahoru. Cíl je šedá hodnota
-     Čas z minula nebo ze šablony (draftHints); bez ní se jen počítá nahoru. V cíli pípne (beep, jako
+     Nastavení → Trénink → Stopky u série na čas), pak se čas počítá od nuly nahoru. Cíl je čas přepsaný
+     v políčku série, jinak šedá hodnota Čas z minula nebo ze šablony (draftHints); bez obojího se jen
+     počítá nahoru (hodnota zapsaná Stopem je v políčku, takže další start na téže sérii ji bere za cíl). V cíli pípne (beep, jako
      konec pauzy), stopky se samy zastaví a do políčka se zapíše cílový čas; dřívější Stop (stwStop)
      zapíše naměřené celé sekundy. Sérii neodškrtávají, to zůstává na uživateli (pak se spustí pauza).
      Podoba i chování jsou jako u pauzy (F1-04): stejný pruh #rest (stwRender), čas se počítá z uloženého
@@ -13623,6 +13625,8 @@
     if (S.restEnd) {
       restStop();
     }
+    // cíl: přepsaná hodnota v políčku, jinak šedá hodnota z minula nebo ze šablony
+    const typed = Math.round(parseSec(s.sec));
     const hint = draftHints(d, e)[j].h;
     const now = Date.now();
     const pre = stwNorm(S.cfg.stwPre);
@@ -13632,7 +13636,7 @@
       exId: e.exId,
       ref: s,
       pre,
-      goal: hint && hint.sec > 0 ? Math.round(hint.sec) : 0,
+      goal: typed > 0 ? typed : hint && hint.sec > 0 ? Math.round(hint.sec) : 0,
       t0: now,
       runAt: pre ? null : now,
       fl: {},
