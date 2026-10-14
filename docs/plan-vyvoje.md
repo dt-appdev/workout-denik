@@ -113,7 +113,7 @@ flowchart LR
 18. ~~**F1-07** Nastavení stroje podle fitka~~ – hotovo 11. 10. 2026.
 19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
 20. ~~**F3-16** Rozepsaný formulář přežije zavření appky~~ – hotovo 13. 10. 2026.
-21. Dál podle fází: F0-16, F1-12, F3-15, fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+21. Dál podle fází: F0-16, F1-12, F3-15, F3-47 (jen když se uživatel rozhodne), fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
 
 #### Etapa 7 – Nativní appka (zapsáno 13. 10. 2026)
 
@@ -275,6 +275,14 @@ Předpoklad: F0-02 (svalové partie).
   `sheetExInfo`): v patičce má tři tlačítka vedle sebe a různě široká (Zpět na výběr / Upravit / Stránka cviku), což
   porušuje pravidlo F3-23 (nejvýš dvě, stejně široká; zjištěno 14. 10. 2026 u F3-44). Nejdřív náhled ikon (dnes /
   návrh, světlý i tmavý motiv).
+- [ ] **F3-47** Design manuál (přání uživatele 14. 10. 2026, **odloženo**: uživatel zatím není přesvědčen, vrátí se
+  sám). HTML stránka `manual/` na webu appky s pravidly vzhledu: barvy, písma, mezery, prvky a nákresy stránek.
+  Závazný text pravidel zůstává v `CLAUDE.md`, manuál je obrázkový přehled s odkazy na ID pravidel. Nutná úprava
+  `sw.js` (dnes vrací `index.html` na každé otevření stránky pod adresou appky, manuál by se neotevřel).
+  **Krok A:** barvy, písma, mezery, prvky a pravidla, vykreslené živě ze skutečného `css/app.css` (kostra HTML prvků
+  opsaná, ikony `IC` čtené z `js/app.js`), bez snímků. **Krok B** (až po F3-44 krok B): snímky stránek ze skriptu
+  podle `tools/mezery.js` s vyznačenými mezerami, jen světlý motiv, obnovovat jen při větší změně vzhledu.
+  Celá diskuse, výhody, nevýhody, odhad náročnosti a otevřené otázky v `docs/navrhy/F3-47-design-manual.md`.
 
 
 ### Fáze 4 – Chytré funkce
