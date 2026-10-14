@@ -337,7 +337,7 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   a Celkový čas = součet; na čas se zátěží Max. zátěž a Nejdelší výdrž; vzdálenost Nejdelší vzdálenost a Nejvyšší
   tempo), nejlepší hodnoty za celou dobu. Cvik vázaný na fitko jen z fitka tréninku nebo šablony (štítek fitka),
   u šablony s víc fitky čipy na přepnutí; ostatní cviky ze všech fitek (jako stránka cviku, F3-31). Ve fitku bez
-  záznamu „–“ a věta „V tomto fitku zatím bez záznamu.“. Počet sérií a poslední rekordy z panelu zmizely (rekordy jsou na stránce cviku). Přepnutí čipu fitka drží posun panelu. Mezery: štítek a čipy patří
+  záznamu „–“ a věta „V tomto fitku zatím bez záznamu.“. Dlaždice 2 × 2 s jednotkami (připomínka po prvním vyzkoušení; 4 v řadě se s jednotkami na 360 px nevejdou, náhled 4). Počet sérií a poslední rekordy z panelu zmizely (rekordy jsou na stránce cviku). Přepnutí čipu fitka drží posun panelu. Mezery: štítek a čipy patří
   k číslům (22 px nad, 10 px k dlaždicím; v prvním náhledu obráceně, opraveno podle komentáře). Popis v úvodním
   komentáři sekce „INFORMACE O CVIKU (F3-46)“ v `js/app.js`.
 

@@ -11793,7 +11793,8 @@
      Dlaždice: Tréninků, Naposledy a dvě podle druhu cviku (EXI_TILES, nejlepší hodnoty za celou dobu přes
      exMetrics, Celkový čas = součet). Cvik vázaný na fitko se počítá jen z fitka, pro které se vybírá
      (pickGyms): jedno fitko = štítek gymPill nad dlaždicemi, šablona s víc fitky = čipy (pick.infoGym, akce
-     exInfoGym). Ostatní cviky ze všech fitek, bez štítku (jako stránka cviku, F3-31). Řádek Minule podle
+     exInfoGym). Ostatní cviky ze všech fitek, bez štítku (jako stránka cviku, F3-31). Dlaždice 2 × 2 (.kpis.exi),
+     hodnoty s jednotkou (exiVal), čtyři v řadě se s jednotkami na úzký telefon nevejdou. Řádek Minule podle
      stejného fitka, rekordy panel neukazuje (jsou na stránce cviku).
      Přepnutí čipu panel překreslí na stejném místě (sheetExInfo(id, keep) drží posun). Ve fitku bez záznamu dlaždice „–“ a věta pod nimi. Štítek nebo čipy patří
      ke skupině čísel (.exi-gym: velká mezera nad nimi, k dlaždicím --gap-in). */
@@ -11828,12 +11829,10 @@
       ["speed", "Nejvyšší tempo"],
     ],
   };
-  // hodnota dlaždice: kg bez jednotky (jako ostatní dlaždice), série přes recFmt („12×20kg“), jinak s jednotkou
+  // hodnota dlaždice s jednotkou jako u rekordů (recFmt: „45 kg“, „12×20kg“, „1:30“…), odh. 1RM na celá kg
   function exiVal(type, m) {
     if (!m) return "–";
-    if (type === "e1rm") return fmtKg(Math.round(m.v));
-    if (type === "maxKg") return fmtKg(m.v);
-    if (type === "reps") return fmtInt(m.v);
+    if (type === "e1rm") return fmtKg(Math.round(m.v)) + " kg";
     return recFmt(type, m.v, m.set);
   }
   // nejlepší hodnoty ze seznamu tréninků cviku (derive().byEx), Celkový čas = součet všech tréninků
@@ -11902,7 +11901,7 @@
       const best = exiBest(id, list);
       const tile = (v, label) => `<div class="kpi"><b>${esc(v)}</b><span>${esc(label)}</span></div>`;
       b += `${top}
-      <div class="kpis k4">
+      <div class="kpis exi">
         ${tile(list.length ? list.length : "–", "Tréninků")}
         ${tile(list.length ? fmtDateS(list[0].w.start) : "–", "Naposledy")}
         ${EXI_TILES[kindOf(id)].map(([type, label]) => tile(exiVal(type, best[type]), label)).join("")}

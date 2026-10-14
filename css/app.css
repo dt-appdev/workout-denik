@@ -2326,6 +2326,16 @@ tr.done .okb {
 .sheet-b > .exi-gym + .kpis {
   margin-top: 0;
 }
+/* dlaždice informací o cviku 2 × 2 (F3-46): hodnoty s jednotkou se 4 v řadě nevejdou */
+.kpis.exi {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.kpis.exi .kpi {
+  padding: 8px 10px;
+}
+.kpis.exi .kpi b {
+  font-size: var(--fs-xl);
+}
 .sheet-b > .chips,
 .sheet-b > .row,
 .sheet-b > .pickrow {
