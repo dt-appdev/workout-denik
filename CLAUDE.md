@@ -192,8 +192,11 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   nový `style="…margin…Npx"` v `js/app.js` odmítne. Řádek čipů `.chips` vlastní margin nedostává (záporný okraj kvůli
   dotykové ploše), odsazení dá sousedovi. Uvnitř panelu (F3-44) stejně: okraj nahoře a bloky `--gap-in`, nová
   skupina `--gap-out`; popisek nad políčkem nebo čipy → obsah vždy `--gap-lbl` 4 px (ne 2; samostatný popisek třída
-  `.mb-lbl`), odstavec v panelu bez `style="margin:0"`. Vnitřek karet zatím bez pravidla (F3-44 krok B). Před PR se
-  změnou vzhledu změřit `tools/mezery.js` (postup v hlavičce skriptu).
+  `.mb-lbl`), odstavec v panelu bez `style="margin:0"`. Uvnitř karty prvky pod sebou i vedle sebe 8 px, k okraji
+  karty 14 px (karta cviku nahoře 10, název má vlastní výšku řádku). Sloupce místo `style="gap…"` třídami
+  `.stack.tight` (popisek → obsah 4 px), `.stack.inner` (v kartě 8), `.stack.list`; tlačítka dole na stránce `.mt-out`
+  (22). Kontrola odmítá i svislý `gap` v px. Před PR se změnou vzhledu změřit `tools/mezery.js` (postup v hlavičce
+  skriptu).
 - Formuláře (F3-23): políčka `.inp` a rozbalovací výběry mají všude stejnou velikost (aspoň 44 px, písmo `--fs-lg`),
   jednotlivě se nezmenšují (zamítnuto: menší výběr fitka v tréninku). Delší formulář v panelu se dělí na sekce
   nadpisem `.subh` (formulář měření: Hmotnost a složení, Obvody).

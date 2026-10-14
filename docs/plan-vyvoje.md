@@ -74,7 +74,8 @@ flowchart LR
 - ~~**F3-42** Grafy cviku: objem série, opakování celkem~~ – hotovo 13. 10. 2026.
 - ~~**F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží~~ – hotovo 13. 10. 2026.
 - ~~**F3-43** Jednotné svislé mezery a jejich kontrola~~ – hotovo 13. 10. 2026.
-- **F3-44** Mezery uvnitř karet a panelů – krok A (panely, formuláře) hotový 14. 10. 2026, zbývá krok B (karty).
+- ~~**F3-44** Mezery uvnitř karet a panelů~~ – hotovo 14. 10. 2026.
+- **F3-47** Zbylé ruční mezery mimo karty (přání uživatele 14. 10. 2026 u F3-44: „ostatní místa se musí opravit taky“).
 
 #### Etapa 1 – Nic se neztratí, zápis bez zbytečných klepnutí (P1, rychlé)
 
@@ -254,19 +255,22 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-41** Filtr partií v panelu
 - [x] **F3-42** Grafy cviku: objem série, opakování celkem, max zátěž u cviku na čas
 - [x] **F3-43** Jednotné svislé mezery a jejich kontrola
-- [ ] **F3-44** Mezery uvnitř karet a panelů (přání uživatele 13. 10. 2026 u F3-43, nejlépe bez jiných otevřených PR).
-  Stupnice odsouhlasená 14. 10. 2026: 2 px název → drobný popis (typografie) / 4 px popisek → políčko nebo čipy
-  (`--gap-lbl`) / 8 px prvky uvnitř karty a řádky seznamu / 10 px uvnitř skupiny / 22 px mezi skupinami.
-  **Krok A (panely a formuláře) hotový 14. 10. 2026**, popis v `docs/hotovo.md`. **Zbývá krok B – karty:** vnitřní
-  mezery a svislé okraje karet (karta cviku v tréninku: okraj nahoře 12 → 10, hlavička → Minule 6 → 8, karty cviků pod
-  sebou 10 → 8 px jako ostatní seznamy; karty v kartě cviku – návrh progrese, stagnace, stroj, poznámka; karta s časy
-  v Dokončit trénink 15 / 8 px; dlaždice čísel 9 / 5 / 12 px; legenda grafu 8 / 12 px; galerie 4 / 9 / 10 / 12 px),
-  stránky mimo náhled F3-43 (rozdělaný trénink, úprava tréninku / šablony, uložený trénink, Upravit cvik a Popis cviku:
-  tlačítka dole 12 nebo 22 px, poznámka 12 px) a sloupce popisek + čipy na stránkách se `style="gap:6px"` (fitka
-  šablony `tplGymPick`, fotky z databáze `exEdPhotos`: popisek → obsah 6 → 4 px). Vodorovné mezery (ikona–text, čipy)
-  zůstávají mimo úlohu. Kontrolu v úloze „kontrola“ rozšířit jen na svislé `gap` / `row-gap`. Nejdřív náhled Dnes /
-  Po změně (karty, oba motivy), ve kterém popisky nad políčky zůstávají 4 px (2 px uživatel 14. 10. 2026 zamítl).
+- [x] **F3-44** Mezery uvnitř karet a panelů
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků
+- [ ] **F3-47** Zbylé ruční mezery mimo karty (přání uživatele 14. 10. 2026 u F3-44, nejlépe bez jiných otevřených PR).
+  Po F3-44 zůstalo v `js/app.js` 25 ručních `style="…px"` s mezerou a k tomu svislé hodnoty mimo stupnici v `css/app.css`.
+  Svislé (podle stupnice 2 / 4 / 8 / 10 / 22 px na třídy `.mt-in`, `.mt-out`, `.mb-in`, `.mb-lbl`, `.stack.tight` /
+  `.inner` / `.list`): Statistiky → Přehled (přepínač nad grafem `margin-bottom:10px`), Partie (poznámka pod postavou
+  `margin:8px 0 0`), Cviky → seznam a výběr cviků (tlačítko online databáze `margin-top:10px`), historie cviku
+  (`vExHist`: karta `padding:10px 12px`, řádek `margin-top:4px`), online databáze (`renderFp`, `renderFs`: tlačítko
+  Zkusit znovu, popisek pod filtry `margin:2px 0 0`), Tělo (`vBody`: hlavička grafu `margin-bottom:6px`, poznámka
+  `margin-top:6px`), karta fitka v Nastavení (`padding:10px 12px`), panel Plán (`sheetPlan` `gap:12px`), záznam
+  oznámení o pauze (`restPost`), obrázek ke sdílení (`pvChrome` `gap:12px`, `shSheet` `gap:4px`), prázdný graf
+  (`drawCharts` `padding-top:60px`). Vodorovné `gap` v řádcích (`.row`, 6 míst) jen převést na třídu, hodnotu nechat.
+  V `css/app.css` projít svislé `margin` / `padding` / `gap` / `row-gap` komponent mimo karty a panely (např. `.gal-add`
+  2 / 12 px) a sjednotit na stupnici; výjimky odsouhlasené dřív zůstávají (nadpis skupiny ve výběru cviků 14 / 6 px,
+  supersérie 6 px, stagnace −4 px, okraj karty 14 px). Kontrolu v úloze „kontrola“ případně rozšířit i na `padding`.
+  Nejdřív náhled Dnes / Po změně (dotčené obrazovky, oba motivy).
 - [ ] **F3-46** Tlačítko „i“ ve výběru cviků jako ikona (přání uživatele 13. 10. 2026 u F3-45, uživatel ho chce
   přepracovat): tlačítko vedle cviku ve výběru cviků (`.infob`, akce `exInfo`, sekce výběru cviků) je písmeno „i“
   v úzkém písmu, ne SVG ikona, což porušuje pravidlo F3-20 (žádné znaky písma jako ikona). Návrh: ikona ze sady `IC`
