@@ -160,7 +160,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   zůstávají u ovládání.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět"): každý stisk = jeden krok `navBack()`, šipky ← v appce ho volají.
   Nový panel přes `openSheet(…, noanim, nav)`, nová podstránka (route) se musí doplnit do `navBack`, `navDepth`
-  a `go`; postup v úvodním komentáři sekce.
+  a `go`; postup v úvodním komentáři sekce. Panel nad jiným panelem (F3-46) má místo × šipku ← vlevo
+  (`openSheet` volba `backBtn`), která vrací o úroveň.
 - Písmo (F3-11): velikost jen přes proměnné `--fs-*` ze stupnice v `:root` v `css/app.css`, nikdy `font-size`
   v px (ani v `style=` v JS). Nová obrazovka se musí vejít i při Velikost písma „Největší“ (`--fs-k` 1,3) na šířku
   360 px: rozměry podle textu v `em`, ne pevné px; přepínač `.seg` s víc volbami pod nadpis (`.seg-wide`), ne vedle
@@ -192,8 +193,11 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   nový `style="…margin…Npx"` v `js/app.js` odmítne. Řádek čipů `.chips` vlastní margin nedostává (záporný okraj kvůli
   dotykové ploše), odsazení dá sousedovi. Uvnitř panelu (F3-44) stejně: okraj nahoře a bloky `--gap-in`, nová
   skupina `--gap-out`; popisek nad políčkem nebo čipy → obsah vždy `--gap-lbl` 4 px (ne 2; samostatný popisek třída
-  `.mb-lbl`), odstavec v panelu bez `style="margin:0"`. Vnitřek karet zatím bez pravidla (F3-44 krok B). Před PR se
-  změnou vzhledu změřit `tools/mezery.js` (postup v hlavičce skriptu).
+  `.mb-lbl`), odstavec v panelu bez `style="margin:0"`. Uvnitř karty prvky pod sebou i vedle sebe 8 px, k okraji
+  karty 14 px (karta cviku nahoře 10, název má vlastní výšku řádku). Sloupce místo `style="gap…"` třídami
+  `.stack.tight` (popisek → obsah 4 px), `.stack.inner` (v kartě 8), `.stack.list`; tlačítka dole na stránce `.mt-out`
+  (22). Kontrola odmítá i svislý `gap` a `padding` v px (F3-47), karta má okraj jen z `.card`. Před PR se změnou
+  vzhledu změřit `tools/mezery.js` (postup v hlavičce skriptu).
 - Formuláře (F3-23): políčka `.inp` a rozbalovací výběry mají všude stejnou velikost (aspoň 44 px, písmo `--fs-lg`),
   jednotlivě se nezmenšují (zamítnuto: menší výběr fitka v tréninku). Delší formulář v panelu se dělí na sekce
   nadpisem `.subh` (formulář měření: Hmotnost a složení, Obvody).

@@ -1,4 +1,4 @@
-# F3-47 Design manuál – návrh
+# F3-48 Design manuál – návrh
 
 **Stav:** odloženo 14. 10. 2026. Uživatel zatím není přesvědčen, že úloha stojí za svou náročnost, vrátí se
 k ní sám. Tady je celá diskuse, aby se na ni dalo navázat.
@@ -23,7 +23,7 @@ je obrázkový přehled pravidel s odkazy na jejich ID (F3-11, F3-23, F3-43, F3-
 - **Prvky živě, ne snímky:** stránka načte skutečný `css/app.css`, takže barvy, písma a mezery jsou vždy
   aktuální, s přepínačem motivu a velikosti písma. Snímky v gitu by zůstaly navždy a každé obnovení by přidalo
   několik MB do historie repa.
-- **Rozdělení do dvou kroků** (kvůli spotřebě tokenů a kvůli F3-44 krok B, která ještě mění karty).
+- **Rozdělení do dvou kroků** (kvůli spotřebě tokenů a kvůli F3-44 krok B, tehdy ještě otevřené; hotová týž den).
 
 ## Krok A – pravidla a prvky (bez snímků)
 
@@ -41,7 +41,7 @@ spouští jako appka, takže manuál nemůže volat jeho funkce (`icoBtn`, šabl
 HTML prvků je nutné do manuálu opsat (může zastarat, při změně tříd prvku manuál upravit). Ikony `IC` lze
 číst z `js/app.js` jako text při otevření manuálu (křehké: přejmenování `IC` by to rozbilo).
 
-## Krok B – nákresy stránek (až po F3-44 krok B)
+## Krok B – nákresy stránek
 
 Skript podle `tools/mezery.js` (Playwright lokálně, zkušební data, šířka 412 px) udělá snímek každé stránky
 (asi 12) a hlavních panelů s vyznačenými mezerami (barevné pruhy s px) a odkazem na pravidlo. Jen světlý
@@ -60,5 +60,5 @@ stránky (1 000–1 500 řádků HTML) asi 25 %, skript na snímky asi 10 %, pro
    (všechny stránky + hlavní panely)
 2. Tmavý motiv ve snímcích: jen jeden přehledový snímek, nebo všechny? (jen přehledový)
 3. Zdroj pravdy: `CLAUDE.md` zůstává závazný, manuál je přehled s odkazy na ID pravidel (ano).
-4. Pořadí: krok A kdykoli, krok B až po F3-44 krok B (ano).
+4. Pořadí: krok A, pak krok B (F3-44 a F3-46 už hotové, karty se nemění).
 5. Odkaz na manuál z appky (např. Nastavení → O aplikaci, jen v testovací verzi)? (ne, jen adresa)

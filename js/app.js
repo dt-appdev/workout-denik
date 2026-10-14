@@ -2874,7 +2874,7 @@
         ${coachSlider(d, "feel")}
         ${coachSlider(d, "energy")}
         ${coachSlider(d, "sleep")}
-        <div class="stack" style="gap:6px">
+        <div class="stack tight">
           <b>Bolest</b>
           <input class="inp" data-f="coachWhere" value="${esc(pain.where || "")}"
               placeholder="Kde (např. pravé koleno)" aria-label="Kde bolí">
@@ -3232,7 +3232,7 @@
           ${progRangeInputs("progMin", "progMax", [S.cfg.progMin, S.cfg.progMax], "prog")}
         </div>
         <span class="fmsg" id="prog-msg"></span>
-        <div class="stack" style="gap:6px">
+        <div class="stack tight">
           <span>Přidat váhu</span>
           <div class="seg seg-wide">
             ${[
@@ -4058,7 +4058,7 @@
     // volby zvuku zůstávají na místě, bez oslavy jen zešednou (F3-23)
     const celOn = c.recCelEx || c.recCelW;
     h += `<div class="stack dep${celOn ? "" : " off"}"${celOn ? "" : " inert"}>`;
-    h += `<div class="stack" style="gap:6px">
+    h += `<div class="stack tight">
       <span>Zvuk oslavy</span>
       <div class="spick">
         ${[["off", "Vypnuto"]]
@@ -4104,7 +4104,7 @@
     </label>`;
     // počet tréninků zůstává na místě, s vypnutým upozorněním jen zešedne (F3-23)
     const off = c.stagOn ? "" : " off";
-    h += `<div class="stack dep${off}" style="gap:6px"${c.stagOn ? "" : " inert"}>
+    h += `<div class="stack tight dep${off}"${c.stagOn ? "" : " inert"}>
       <span>Po kolika trénincích bez zlepšení</span>
       <div class="seg seg-wide">
         ${STAG_N.map(
@@ -4673,7 +4673,7 @@
   // výběr fitek v úpravě šablony (víc najednou, žádné = všechna fitka)
   function tplGymPick(d) {
     const gyms = d.gyms || [];
-    return `<div class="stack" style="gap:6px">
+    return `<div class="stack tight">
         <div class="lbl-f">Fitka</div>
         <div class="chips" data-ck="tplGym">
           ${S.cfg.gyms
@@ -5067,7 +5067,7 @@
     </p>
     <div class="lbl-f">Kde dnes cvičíš</div>
     ${gymChips("againGym", again.gym, false)}
-    <div class="stack" id="againInfo" style="gap:6px">${againInfo()}</div>`;
+    <div class="stack tight" id="againInfo">${againInfo()}</div>`;
     openSheet(
       "Cvičit znovu: " + w.title,
       b,
@@ -5234,7 +5234,7 @@
         ${undone.empty} ${plural(undone.empty, "série", "série", "sérií")} bez zapsaných hodnot se neuloží.
       </div>`;
     }
-    b += `<div class="card stack" style="gap:8px">
+    b += `<div class="card stack inner">
       <div class="row">
         <label class="f grow">
           Začátek
@@ -5584,7 +5584,7 @@
      má záporný okraj kvůli dotykové ploše (F3-23), odsazení dostane soused (dřív výpočet calc u čipů grafů).
      Kontrola: tools/mezery.js (Playwright, lokálně) vypíše mezery mezi bloky hlavních obrazovek a panelů
      se zkušebními daty. */
-  /* ---------- MEZERY V PANELECH A FORMULÁŘÍCH (F3-44, krok A) ----------
+  /* ---------- MEZERY V PANELECH, FORMULÁŘÍCH A KARTÁCH (F3-44) ----------
      Stupnice uvnitř komponent (odsouhlasená 14. 10. 2026): 2 px název → drobný popis pod ním (typografie),
      4 px popisek nad políčkem nebo čipy → obsah (--gap-lbl), 8 px prvky uvnitř karty a řádky seznamu,
      10 px uvnitř skupiny (--gap-in), 22 px mezi skupinami (--gap-out). Jen CSS a třídy:
@@ -5595,8 +5595,28 @@
      - odstavec v panelu nemá výchozí okraj (:where(.sheet-b) p), proto bez style="margin:0",
      - čára .bzone před nebezpečnou akcí nemá vlastní okraj, nad i pod ní je mezera sloupce tlačítek,
      - výběr cviků: řádky .stack.list (--gap-list), nadpis skupiny .pick-sec 14 px nad a 6 px pod (přání uživatele),
-     - Informace o cviku (sheetExInfo): postavy a partie jedna skupina, popis a dlaždice čísel nové skupiny.
-     Krok B (vnitřek karet, stránky trénink, uložený trénink, Upravit cvik, Popis cviku) zůstává v plánu. */
+     - Informace o cviku (sheetExInfo): postavy a partie jedna skupina, popis a dlaždice čísel nové skupiny
+       (štítek fitka nebo čipy nad dlaždicemi patří k číslům, .exi-gym, F3-46).
+     Krok B (karty a stránky, náhled odsouhlasen 14. 10. 2026):
+     - karta cviku (vExCard): okraj nahoře --gap-in (název má vlastní výšku řádku), název → řádky pod ním
+       (Minule, stroj, poznámka, návrh progrese) 8 px, série → + Série / + Zahřívací 8 px, pod tlačítky 14 px
+       jako po stranách (přání uživatele: tlačítka mají ke spodku karty stejně jako k bokům, jako políčka ve
+       formuláři); boky 14 px zůstávají kvůli zarovnání řádků (F3-36). Stagnace přitažená k Minule (−4 px),
+       karty v supersérii (.ssg) 6 px, aby bylo vidět, že patří k sobě,
+     - karty cviků pod sebou (trénink, úprava tréninku, šablona) .stack.list, nad první kartou .mt-in,
+     - tlačítka dole na stránce a blok Pro coache jsou nová skupina: .mt-out (--gap-out),
+     - třídy sloupců místo style="gap:…": .stack.tight = popisek nad přepínačem, políčkem nebo čipy → obsah
+       (--gap-lbl), .stack.inner = prvky uvnitř karty (8 px), .stack.list = seznam karet nebo řádků (8 px).
+       Prvky vedle sebe v kartě (tlačítka, dlaždice čísel) 8 px. Vodorovné mezery jinak mimo pravidlo.
+     Úloha „kontrola“ odmítne nový svislý gap v px (row-gap, gap sloupce .stack) stejně jako margin.
+     F3-47 (zbylá místa mimo F3-43 a F3-44, náhled odsouhlasen 14. 10. 2026):
+     - karta má vždy okraj .card (14 px), žádný ruční padding (historie cviku, karta fitka v Nastavení),
+     - prvky v kartě mimo sloupec: .mt-list / .mb-list (8 px), řádek pod nadpisem .mt-lbl (4 px); v kartě
+       i postava (.card > .figs bez okraje nahoře), pruh skupin, legenda a nadpis .subh po 8 px,
+     - sloupce stránek a panelů (souhrn tréninku .wsum, formulář cviku .ex-form, Pro coache, prohlížení
+       fotky, panel Naplánovat) --gap-in; nadpis .subh ve sloupci panelu bez vlastního okraje,
+     - .row má gap 8 px sám, style="gap:8px" je zbytečný; prázdný graf na střed třídou .chart-empty,
+     - úloha „kontrola“ odmítá i padding v px ve style="…". */
   /* ---------- TYPOGRAFIE (F3-45) ----------
      Jen v css/app.css a třídy v šablonách (přání uživatele 13. 10. 2026, náhled schválen týž den).
      Jedno písmo pro jednu roli, aby stejné věci vypadaly všude stejně:
@@ -5718,18 +5738,18 @@
     if (mode === "template") {
       h += tplHintsPick(d);
     }
-    h += '<div class="stack" style="margin-top:12px">';
+    h += '<div class="stack list mt-in">';
     h += ssWrap(
       d.ex,
       d.ex.map((e, i) => vExCard(d, e, i)),
     );
     h += "</div>";
     if (mode === "edit" && coachOn()) {
-      h += `<div style="margin-top:12px">${coachPart(d)}</div>`; // Pro coache (F4-12)
+      h += `<div class="mt-out">${coachPart(d)}</div>`; // Pro coache (F4-12)
     }
     // jedna hlavní akce (F3-23): v tréninku bez hotové série Přidat cvik, od první ✓ Dokončit trénink
     const addMain = mode === "active" && !anyDone(d);
-    h += `<div class="stack" style="margin-top:12px">
+    h += `<div class="stack mt-out">
         <button class="btn${addMain ? " primary" : ""} block" data-act="addEx">
           ${icon("plus")}Přidat cvik
         </button>`;
@@ -6559,7 +6579,7 @@
     h += `<div class="stack wsum">${wSummary(w, o.saved)}</div>`;
     // tlačítka pod sebou (F2-12): hlavní, pak Upravit, Sdílet (F4-08), Uložit jako šablonu a Kopírovat pro coache;
     // po uložení nad nimi nabídka zálohy (F0-13)
-    h += `<div class="stack" style="margin-top:12px">
+    h += `<div class="stack mt-out">
       ${o.saved ? bkSumCard() : ""}
       ${
         o.saved
@@ -7920,7 +7940,7 @@
       }
       return;
     }
-    let b = '<div class="stack" style="gap:8px">';
+    let b = '<div class="stack list">';
     for (const w of ws) {
       b += `<button class="hw" data-act="calW" data-v="${esc(w.id)}" data-m="${w.mk}" data-k="${k}">
         <div class="row">
@@ -8102,7 +8122,7 @@
         <div class="row"><h3 class="grow">${esc(t.name)}</h3></div>
         <div class="line"><span>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</span></div>
       </button>`;
-    let b = '<div class="stack" style="gap:12px">';
+    let b = '<div class="stack">';
     if (gymsOn().length > 1) {
       b += `<div class="chips" data-ck="planGym">
         ${gymsOn()
@@ -8123,13 +8143,13 @@
       planOther = true; // bez šablon pro fitko rovnou ostatní (jako na úvodu)
     }
     if (here.length) {
-      b += `<div class="stack" style="gap:8px">${here.map(row).join("")}</div>`;
+      b += `<div class="stack list">${here.map(row).join("")}</div>`;
     }
     if (other.length && !planOther) {
       b += `<button class="btn block" data-act="planOther" data-k="${k}">Ostatní šablony</button>`;
     } else if (other.length) {
       b += `<div class="subh">Ostatní šablony</div>
-        <div class="stack" style="gap:8px">${other.map(row).join("")}</div>`;
+        <div class="stack list">${other.map(row).join("")}</div>`;
     }
     b += "</div>";
     const root = document.getElementById("sheetRoot");
@@ -8172,7 +8192,7 @@
         ${tplHead(t.name, p.gymId ? [p.gymId] : [])}
         <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
       </div>`;
-    const foot = `<div class="stack" style="width:100%;gap:8px">
+    const foot = `<div class="stack list" style="width:100%">
         ${today ? `<button class="btn primary full" data-act="planStart" data-v="${k}">Začít trénink</button>` : ""}
         <button class="btn full" data-act="planChange" data-v="${k}">Změnit šablonu nebo fitko</button>
         <button class="btn full" data-act="planReplan" data-v="${k}">Přeplánovat</button>
@@ -8592,7 +8612,7 @@
     const ps = summarize(wsAll.filter((w) => w.start >= p.a && w.start < p.b));
     h += `<section class="sec">
       <div class="sec-h"><h2>Souhrn · ${esc(p.l)}</h2></div>
-      <div class="seg seg-wide" style="margin-bottom:10px">
+      <div class="seg seg-wide mb-in">
         ${Object.entries(P)
           .map(
             ([k, v]) =>
@@ -8624,7 +8644,7 @@
               hbarList(mv.map(([k, v]) => ({ label: MUSCLE_MAP.NAMES[k], v, sw: mgCol(k) })))
             : '<div class="muted small">V tomto období nic.</div>'
         }
-        <p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p>
+        <div class="xs muted mt-list">Počítá se hlavní partie cviku.</div>
       </div>
     </section>`;
     return h;
@@ -8872,7 +8892,7 @@
       ${cntHead(rows.length)}
       <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
           value="${esc(S.exSearch)}">
-      <div class="row mt-in" style="gap:8px">
+      <div class="row mt-in">
         ${mfChip("stats")}
         <div class="seg" style="margin-left:auto">
           <button data-act="exSort" data-v="last" aria-pressed="${!pct}">Naposledy</button>
@@ -9069,7 +9089,7 @@
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(S.exlQ)}" autocomplete="off">`;
     // řádek filtrů (F3-41), skryté cviky jako další filtr
-    h += `<div class="row wrap-r mt-in" style="gap:8px">
+    h += `<div class="row wrap-r mt-in">
       ${mfChip("list")}${eqChip("list")}
       ${
         nHid
@@ -9104,7 +9124,7 @@
         `${
           S.exlQ.trim() && !S.exlHid
             ? `<br>
-            <button class="btn sm" data-act="fedbOpen" data-v="list" style="margin-top:10px">
+            <button class="btn sm mt-in" data-act="fedbOpen" data-v="list">
               Hledat „${esc(S.exlQ.trim())}“ online
             </button>`
             : ""
@@ -9250,12 +9270,12 @@
       </div>`;
       h += machInfo(ex, id); // nastavení stroje po fitkách (F1-07)
       if (ex.archived) {
-        h += `<div class="card small" style="margin-top:10px">
+        h += `<div class="card small mt-in">
           <b>Skrytý cvik.</b> <span class="muted">Nenabízí se při přidávání do tréninku. Vrátíš ho
             přes Upravit cvik → Zobrazit.</span>
         </div>`;
       }
-      h += `<p class="small muted" style="margin-top:12px">
+      h += `<p class="small muted mt-in">
         ${
           list.length
             ? `Cvičeno ${list.length}× · naposledy ${fmtDate(list[0].w.start)} ` +
@@ -9265,7 +9285,7 @@
         }
       </p>`;
       // akce cviku na konci stránky jako u uloženého tréninku (F3-30)
-      h += `<div class="stack" style="margin-top:12px">
+      h += `<div class="stack mt-out">
         <button class="btn block" data-act="editExDetail" data-v="${esc(id)}">Upravit</button>
         <button class="btn block" data-act="dupEx" data-v="${esc(id)}">Duplikovat</button>
       </div>`;
@@ -9391,11 +9411,11 @@
     if (stagList.length) {
       h += `<section class="sec">
         <div class="sec-h"><h2>Bez zlepšení</h2></div>
-        <div class="card stack" style="gap:8px">
+        <div class="card stack inner">
           ${stagList
             .map(
               (x) =>
-                `<div class="row" style="gap:8px;align-items:flex-start">
+                `<div class="row" style="align-items:flex-start">
                   <span class="stag-ico" aria-hidden="true">${IC.stag}</span>
                   <div class="grow">
                     <b>${esc(stagCount(x.n))}</b>
@@ -9430,7 +9450,7 @@
           <h2>Osobní rekordy</h2>
           ${helpBtn("exRec:" + id)}
         </div>
-        <div class="stack" style="gap:8px">`;
+        <div class="stack list">`;
     for (const c of ctxs) {
       if (!c.b) continue;
       h +=
@@ -9507,7 +9527,7 @@
         ? live.lr.ex.slice(0, 1).map((type) => ({ type }))
         : (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
       h +=
-        `<div class="card" style="padding:10px 12px">
+        `<div class="card">
         <div class="row small">
           <b class="grow">
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
@@ -9515,7 +9535,7 @@
           </b>
           ${s.w.gymId ? gymPill(s.w.gymId) : ""}
         </div>
-        <div class="small num" style="margin-top:4px">
+        <div class="small num mt-lbl">
           ${s.e.sets
             .map(
               (st) =>
@@ -10036,8 +10056,8 @@
           ? `<span class="sw" style="background:${gymColor(p.gymId)}"></span>`
           : "";
     foot.innerHTML = `${galDots(ids.length, ids.indexOf(pv.id))}
-      <div class="stack${fig ? " pv-off" : ""}" style="gap:12px"${fig ? ' aria-hidden="true"' : ""}>
-      <div class="row" style="gap:8px">
+      <div class="stack${fig ? " pv-off" : ""}"${fig ? ' aria-hidden="true"' : ""}>
+      <div class="row">
         <button class="btn grow pv-gym" data-act="pvGym" aria-expanded="${pv.gymOpen}">
           ${gymSw}
           <span class="grow">Fitko: ${esc(gymTxt)}</span>${icon("down", pv.gymOpen ? "up" : "")}
@@ -10201,7 +10221,7 @@
           if (el) {
             el.innerHTML = `Online databázi se nepodařilo načíst. Poprvé je potřeba internet, potom
               funguje i offline.<br>
-              <button class="btn sm" data-act="fpRetry" style="margin-top:10px">Zkusit znovu</button>`;
+              <button class="btn sm mt-in" data-act="fpRetry">Zkusit znovu</button>`;
           }
         });
       return;
@@ -10222,7 +10242,7 @@
         </p>
         <input class="inp" id="fpQ" data-f="fpQ" value="${esc(fp.q)}" autocomplete="off"
             placeholder="Název anglicky i česky">
-        <div class="stack" id="fpList" style="gap:6px"></div>`;
+        <div class="stack list" id="fpList"></div>`;
       openSheet(title, b, '<button class="btn grow" data-act="closeSheet">Zrušit</button>', noanim, nav);
       refreshFp();
       return;
@@ -10525,7 +10545,7 @@
       const unit = f[2] ? " " + f[2] : "";
       const dAvg = avg.length > 1 ? avg[avg.length - 1].y - avg[0].y : 0;
       h += `<div class="card mt-in">
-        <div class="row" style="align-items:flex-end;margin-bottom:6px">
+        <div class="row mb-list" style="align-items:flex-end">
           <div class="grow">
             <div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">
               ${esc(f[1])}
@@ -10572,7 +10592,7 @@
           <span><i style="background:var(--ink-3);height:7px;width:7px;border-radius:50%"></i>Jednotlivá
             měření</span>
         </div>
-        <div class="xs muted" style="margin-top:6px">
+        <div class="xs muted mt-list">
           ${pts.length} ${plural(pts.length, "den s měřením", "dny s měřením", "dnů s měřením")} v
           období${all.length > pts.length ? " z " + all.length + " měření celkem" : ""}
         </div>
@@ -11235,7 +11255,7 @@
             ${icoBtn("addGym", "plus", "Přidat fitko")}
           </div>
         </div>
-        <div class="stack dnd-list" data-dnd="gyms" style="gap:6px">
+        <div class="stack list dnd-list" data-dnd="gyms">
           ${on.map((g) => gymCard(g, counts, on.length > 1)).join("")}
         </div>
       </section>`;
@@ -11243,7 +11263,7 @@
     if (arch.length) {
       h += `<section class="sec">
         <div class="sec-h"><h2>Archivovaná fitka</h2></div>
-        <div class="stack" style="gap:6px">${arch.map((g) => gymCard(g, counts, false)).join("")}</div>
+        <div class="stack list">${arch.map((g) => gymCard(g, counts, false)).join("")}</div>
       </section>`;
     }
     return h;
@@ -11253,7 +11273,7 @@
     const n = counts[g.id] || 0;
     const def = S.cfg.defaultGymId === g.id ? " · výchozí" : "";
     return `<div class="card row gym-c${grip ? " dnd-it" : ""}" role="button" tabindex="0" data-act="editGym"
-        data-v="${g.id}" style="padding:10px 12px">
+        data-v="${g.id}">
         <span class="sw" style="width:12px;height:12px;border-radius:50%;background:${gymColor(g.id)}"></span>
         <div class="grow">
           <div class="row-n">${esc(g.name)}</div>
@@ -11665,7 +11685,7 @@
         `${
           pick.q.trim()
             ? `<br>
-            <button class="btn sm" data-act="fedbOpen" data-v="picker" style="margin-top:10px">
+            <button class="btn sm mt-in" data-act="fedbOpen" data-v="picker">
               Hledat „${esc(pick.q.trim())}“ online
             </button>`
             : ""
@@ -11705,9 +11725,7 @@
           </div>
         </button>
         <button class="infob" data-act="exInfo" data-v="${esc(id)}"
-            aria-label="Info o cviku ${esc(e.name)}" title="Popis a statistiky">
-          i
-        </button>
+            aria-label="Informace o cviku ${esc(e.name)}">${IC.next}</button>
       </div>`;
     }
     if (arr.length > (pick.limit || 120)) {
@@ -11722,7 +11740,7 @@
     const n = pickerRows().length;
     return `<input class="inp" id="pickQ" data-f="pickQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(pick.q)}" autocomplete="off">
-    <div class="row wrap-r" style="gap:8px">
+    <div class="row wrap-r">
       ${mfChip("picker")}${eqChip("picker")}
       <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
     </div>
@@ -11768,13 +11786,103 @@
       cnt.textContent = pickCount(pickerRows().length);
     }
   }
-  /* info o cviku nad výběrem – výběr i hledání zůstanou zachované */
-  function sheetExInfo(id) {
+  /* ---------- INFORMACE O CVIKU (F3-46) ----------
+     Panel nad výběrem cviků (sheetExInfo, akce exInfo = šipka › v kartě cviku). Výběr i hledání zůstanou
+     zachované: šipka ← v hlavičce (openSheet nav.backBtn, akce sheetBack) i Zpět vrací do výběru, × panel nemá.
+     Patička: Upravit | Stránka cviku (hlavní).
+     Dlaždice: Tréninků, Naposledy a dvě podle druhu cviku (EXI_TILES, nejlepší hodnoty za celou dobu přes
+     exMetrics, Celkový čas = součet). Cvik vázaný na fitko se počítá jen z fitka, pro které se vybírá
+     (pickGyms): jedno fitko = štítek gymPill nad dlaždicemi, šablona s víc fitky = čipy (pick.infoGym, akce
+     exInfoGym). Ostatní cviky ze všech fitek, bez štítku (jako stránka cviku, F3-31). Dlaždice 2 × 2 (.kpis.exi),
+     hodnoty s jednotkou (exiVal), čtyři v řadě se s jednotkami na úzký telefon nevejdou. Řádek Minule podle
+     stejného fitka, rekordy panel neukazuje (jsou na stránce cviku).
+     Přepnutí čipu panel překreslí na stejném místě (sheetExInfo(id, keep) drží posun). Ve fitku bez záznamu dlaždice „–“ a věta pod nimi. Štítek nebo čipy patří
+     ke skupině čísel (.exi-gym: velká mezera nad nimi, k dlaždicím --gap-in). */
+  // třetí a čtvrtá dlaždice podle druhu cviku: [typ metriky z exMetrics, popisek]
+  const EXI_TILES = {
+    wr: [
+      ["e1rm", "Odh. 1RM"],
+      ["maxKg", "Max. zátěž"],
+    ],
+    bwplus: [
+      ["e1rm", "Odh. 1RM"],
+      ["maxKg", "Max. zátěž"],
+    ],
+    bw: [
+      ["reps", "Max. opakování"],
+      ["bestSet", "Nejlepší série"],
+    ],
+    assist: [
+      ["reps", "Max. opakování"],
+      ["bestSet", "Nejlepší série"],
+    ],
+    time: [
+      ["maxSec", "Nejdelší výdrž"],
+      ["totSec", "Celkový čas"],
+    ],
+    timew: [
+      ["maxKg", "Max. zátěž"],
+      ["maxSec", "Nejdelší výdrž"],
+    ],
+    dist: [
+      ["maxKm", "Nejdelší vzdálenost"],
+      ["speed", "Nejvyšší tempo"],
+    ],
+  };
+  // hodnota dlaždice s jednotkou jako u rekordů (recFmt: „45 kg“, „12×20kg“, „1:30“…), odh. 1RM na celá kg
+  function exiVal(type, m) {
+    if (!m) return "–";
+    if (type === "e1rm") return fmtKg(Math.round(m.v)) + " kg";
+    return recFmt(type, m.v, m.set);
+  }
+  // nejlepší hodnoty ze seznamu tréninků cviku (derive().byEx), Celkový čas = součet všech tréninků
+  function exiBest(id, list) {
+    const best = {};
+    let totSec = 0;
+    for (const x of list) {
+      const m = exMetrics(id, x.e.sets, x.w.start);
+      if (!m) continue;
+      for (const [type, val] of Object.entries(m)) {
+        if (!best[type] || val.v > best[type].v) {
+          best[type] = val;
+        }
+      }
+      totSec += m.totSec ? m.totSec.v : 0;
+    }
+    if (totSec > 0) {
+      best.totSec = { v: totSec };
+    }
+    return best;
+  }
+  // fitko, ze kterého se počítají čísla (null = všechna) a štítek nebo čipy nad dlaždicemi
+  function exiGym(e) {
+    const gyms = e.gymDep ? pickGyms() : [];
+    if (!gyms.length) return { gym: null, top: "" };
+    if (gyms.length === 1) {
+      return { gym: gyms[0], top: `<div class="exi-gym">${gymPill(gyms[0])}</div>` };
+    }
+    const gym = gyms.includes(pick.infoGym) ? pick.infoGym : gyms[0];
+    const chips = gyms
+      .map(
+        (g) =>
+          `<button class="chip" data-act="exInfoGym" data-v="${esc(g)}" aria-pressed="${g === gym}">
+            <span class="sw" style="background:${gymColor(g)}"></span>
+            ${esc(gymName(g))}
+          </button>`,
+      )
+      .join("");
+    return { gym, top: `<div class="chips exi-gym">${chips}</div>` };
+  }
+  // keep = překreslení po přepnutí fitka: obsah panelu zůstane posunutý na stejném místě
+  function sheetExInfo(id, keep) {
+    const sb = keep ? document.querySelector(".sheet-b") : null;
+    const st = sb ? sb.scrollTop : 0;
     exEd = null;
+    pick.infoId = id;
     const e = exOf(id);
-    const list = derive().byEx[id] || [];
-    const R = recs();
-    const rl = (R.byEx[id] || []).slice(-3).reverse();
+    const all = derive().byEx[id] || [];
+    const { gym, top } = exiGym(e);
+    const list = gym ? all.filter((x) => x.w.gymId === gym) : all;
     let b =
       `${
         photoGallery(e, id) +
@@ -11789,42 +11897,23 @@
       <span class="xs muted">` +
       `${esc(EQUIP[e.equip] || "")}${e.gymDep ? " · vázáno na fitko" + gdIcon() : ""}</span>
     </div>`;
-    if (list.length) {
-      let best = 0,
-        nSets = 0;
-      for (const x of list) {
-        if (x.best > best) {
-          best = x.best;
-        }
-        nSets += x.nWork;
-      }
-      b += `<div class="kpis k4">
-        <div class="kpi"><b>${list.length}</b><span>Tréninků</span></div>
-        <div class="kpi"><b>${nSets}</b><span>Sérií</span></div>
-        <div class="kpi"><b>${best ? fmtKg(Math.round(best)) : "–"}</b><span>Odh. 1RM</span></div>
-        <div class="kpi"><b>${fmtDateS(list[0].w.start)}</b><span>Naposledy</span></div>
+    if (all.length) {
+      const best = exiBest(id, list);
+      const tile = (v, label) => `<div class="kpi"><b>${esc(v)}</b><span>${esc(label)}</span></div>`;
+      b += `${top}
+      <div class="kpis exi">
+        ${tile(list.length ? list.length : "–", "Tréninků")}
+        ${tile(list.length ? fmtDateS(list[0].w.start) : "–", "Naposledy")}
+        ${EXI_TILES[kindOf(id)].map(([type, label]) => tile(exiVal(type, best[type]), label)).join("")}
       </div>`;
-      b +=
-        `<div class="small">
-        Minule: <span class="num">${esc(setsStr(list[0].e.sets, true, kindOf(id)))}</span> ` +
-        `<span class="muted">(` +
-        `${esc(gymName(list[0].w.gymId))})</span>
-      </div>`;
-      if (rl.length) {
-        b += `<div class="reclist">
-          ${rl
-            .map(
-              (r) =>
-                `<div class="rec">
-                  <span class="md">${medal([r.type])}</span>
-                  <div class="grow">
-                    ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
-                `<span class="muted">· ` +
-                `${fmtDate(r.w.start)}</span>
-                  </div>
-                </div>`,
-            )
-            .join("")}
+      if (!list.length) {
+        b += '<div class="small muted">V tomto fitku zatím bez záznamu.</div>';
+      } else {
+        b +=
+          `<div class="small">
+          Minule: <span class="num">${esc(setsStr(list[0].e.sets, true, kindOf(id)))}</span> ` +
+          `<span class="muted">(` +
+          `${esc(gymName(list[0].w.gymId))})</span>
         </div>`;
       }
     } else {
@@ -11833,15 +11922,18 @@
     openSheet(
       e.name,
       b,
-      `<button class="btn grow" data-act="backPicker">Zpět na výběr</button>
-      <button class="btn" data-act="editExInfo" data-v="${esc(id)}">Upravit</button>
-      <button class="btn primary" data-act="openEx" data-v="${esc(id)}" data-p="info">
+      `<button class="btn grow" data-act="editExInfo" data-v="${esc(id)}">Upravit</button>
+      <button class="btn primary grow" data-act="openEx" data-v="${esc(id)}" data-p="info">
         Stránka cviku
       </button>`,
       true,
-      { lv: 2, back: () => renderPicker(true), re: () => sheetExInfo(id) },
+      { lv: 2, back: () => renderPicker(true), re: () => sheetExInfo(id), backBtn: true },
     );
     galRestore(document.getElementById("sheetRoot"));
+    const nb = document.querySelector(".sheet-b");
+    if (nb && st) {
+      nb.scrollTop = st;
+    }
   }
   /* ---------- NOVÝ A UPRAVIT CVIK (F3-14, F3-30, F3-40) ----------
      Formulář je samostatná stránka (route "exed") se šipkou ←, ne panel. Otevírá se jen přes exEdOpen,
@@ -12013,7 +12105,7 @@
       off: "Vypnuto",
     };
     return (
-      `<div class="stack" style="gap:6px">
+      `<div class="stack tight">
       <label class="f">
         Návrh progrese
         <select class="inp" id="x-prog">
@@ -12066,7 +12158,7 @@
   }
   // výběr fotek z online databáze ve formuláři Nový cvik (F2-05); nic není předvybrané
   function exEdPhotos(fx) {
-    return `<div class="stack" style="gap:6px">
+    return `<div class="stack tight">
       <div class="f lbl-f">Fotky z databáze · klepnutím vyber, které uložit</div>
       <div class="thumbs">
         ${[0, 1]
@@ -12242,7 +12334,7 @@
         <span class="fmsg" id="x-url-msg">${esc(urlProblem(f.url))}</span>
       </label>`,
     );
-    h += `<div class="stack" style="margin-top:22px">
+    h += `<div class="stack mt-out">
       <button class="btn primary block${names.block ? " off" : ""}" id="ex-save" data-act="saveEx"
           data-v="${esc(id || "")}" aria-disabled="${!!names.block}">Uložit cvik</button>`;
     if (id && exChanged(id)) {
@@ -12435,9 +12527,9 @@
     const b = `<input class="inp" id="fsQ" data-f="fsQ"
         placeholder="Název anglicky i česky, např. bench press, dřep…" value="${esc(fs.q)}"
         autocomplete="off">
-    <div class="row wrap-r" id="fsBar" style="gap:8px"></div>
-    <div class="stack" id="fsList" style="gap:6px"></div>
-    <p class="xs muted" style="margin:2px 0 0">
+    <div class="row wrap-r" id="fsBar"></div>
+    <div class="stack list" id="fsList"></div>
+    <p class="xs muted">
       Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před
       uložením je zkontroluj.
     </p>`;
@@ -12462,7 +12554,7 @@
             el.innerHTML = `<div class="empty">
               Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i
               offline.<br>
-              <button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button>
+              <button class="btn sm mt-in" data-act="fsRetry">Zkusit znovu</button>
             </div>`;
           }
         });
@@ -12853,16 +12945,19 @@
   // sheetNav: otevřený panel pro tlačítko Zpět – lv = kolik stisků Zpět ho zavře (panel v panelu má víc),
   // back = jeden krok zpět, re = znovu otevřít (návrat ze stránky cviku nebo z úpravy tréninku)
   let sheetNav = null;
-  // nav.cls = třída navíc pro panel (např. krokovač "kk")
+  // nav.cls = třída navíc pro panel (např. krokovač "kk"); nav.backBtn = panel nad jiným panelem má místo ×
+  // šipku ← vlevo, která vrací o úroveň (navBack), ne zavře všechno (F3-46, Informace o cviku nad výběrem)
   function openSheet(title, body, foot, noanim, nav) {
     kkEnd();
     const cls = nav && nav.cls ? " " + nav.cls : "";
+    const back = nav && nav.backBtn;
     document.getElementById("sheetRoot").innerHTML = `<div class="scrim${cls}" data-act="scrim">
       <div class="sheet${noanim ? " noanim" : ""}" role="dialog" aria-modal="true"
           aria-label="${esc(title)}">
-        <div class="sheet-h">
+        <div class="sheet-h${back ? " bk" : ""}">
+          ${back ? `<button class="iconbtn" data-act="sheetBack" aria-label="Zpět">${IC.back}</button>` : ""}
           <h2>${esc(title)}</h2>
-          <button class="iconbtn" data-act="closeSheet" aria-label="Zavřít">${IC.close}</button>
+          ${back ? "" : `<button class="iconbtn" data-act="closeSheet" aria-label="Zavřít">${IC.close}</button>`}
         </div>
         <div class="sheet-b">${body}</div>
         ${foot ? `<div class="sheet-f">${foot}</div>` : ""}
@@ -12948,7 +13043,7 @@
   }
   // formulář Upravit cvik: vypínač Vlastní pauza a posuvník
   function exEdRest(f) {
-    return `<div class="stack" style="gap:6px">
+    return `<div class="stack">
       <label class="switch">
         <input type="checkbox" id="x-rest-on" ${f.restOn ? "checked" : ""}>
         <span>Vlastní pauza</span>
@@ -12993,7 +13088,7 @@
     h += restSlider("restSec", "Výchozí časovač", c.restSec);
     // F4-05: po dokončení kola pracovních sérií supersérie
     h += restSlider("restSs", "Časovač po pracovní supersérii", c.restSs);
-    h += `<div class="stack" style="gap:6px">
+    h += `<div class="stack tight">
       <span>Na konci pauzy</span>
       <div class="seg seg-wide">
         ${[
@@ -13198,12 +13293,12 @@
     const a = await restLogRead();
     openSheet(
       "Záznam oznámení",
-      `<div class="xs muted" style="margin-bottom:8px">
+      `<div class="xs muted mb-list">
         Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
       </div>
       ${
         a.length
-          ? `<div class="stack" style="gap:4px">
+          ? `<div class="stack tight">
             ${a
               .map(
                 (x) =>
@@ -13686,7 +13781,7 @@
       } else {
         pts = sp.series.flatMap((s) => s.pts);
         if (!pts.length) {
-          el.innerHTML = `<div class="muted small" style="padding-top:60px;text-align:center">
+          el.innerHTML = `<div class="muted small chart-empty">
             V tomto období žádná data.
           </div>`;
           return;
@@ -14311,6 +14406,10 @@
         galReset();
         sheetExInfo(v);
         break;
+      case "exInfoGym":
+        pick.infoGym = v;
+        sheetExInfo(pick.infoId, true);
+        break;
       case "pickDone": {
         const dd = curDraft();
         if (!dd) {
@@ -14350,7 +14449,7 @@
       case "newEx":
         exEdOpen(null, "picker");
         break;
-      case "backPicker":
+      case "sheetBack":
         navBack();
         break;
       case "fedbOpen": {
@@ -16601,7 +16700,7 @@
     const nAdd = p.add.length,
       nUpd = p.upd.length;
     b += `<div class="subh">Co se stane</div>
-    <div class="stack" style="gap:4px">
+    <div class="stack tight">
       <div class="frow"><span class="grow">Nová měření</span><b class="num">${fmtInt(nAdd)}</b></div>
       <div class="frow">
         <span class="grow">Přepíše ruční měření</span><b class="num">${fmtInt(nUpd)}</b>
@@ -17149,7 +17248,7 @@
         chybějící, Nahradit vše je přidá. Fotky, které v appce máš, se nesmažou.
       </p>`;
     }
-    b += `<div class="card stack" style="gap:6px">
+    b += `<div class="card stack inner">
       <b>Sloučit</b>
       <div class="small muted">
         Doplní jen to, co v appce chybí (tréninky, cviky, šablony, měření, fitka). Nic se nepřepíše ani
@@ -17157,7 +17256,7 @@
       </div>
       <button class="btn primary" data-act="importGo" data-v="merge">Sloučit</button>
     </div>`;
-    b += `<div class="card stack" style="gap:6px">
+    b += `<div class="card stack inner">
       <b>Nahradit vše</b>
       <div class="small muted">
         Současná data se smažou a nahradí obsahem zálohy. Fotky u cviků zůstanou.
