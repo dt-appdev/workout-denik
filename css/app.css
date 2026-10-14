@@ -1940,6 +1940,64 @@ tr.done .okb {
 .rest-in button:last-child::after {
   right: -8px;
 }
+/* stopky přes celou obrazovku (F1-24): černá vrstva, jasný čas, velké tlačítko Stop dole s okrajem jako ostatní */
+.stwf {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #000;
+  color: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 24px calc(28px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  touch-action: none;
+  user-select: none;
+}
+.stwf-clock {
+  font-family: var(--display);
+  font-size: var(--fs-clock);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.stwf-lab {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.stwf-ex {
+  font-size: var(--fs-lg);
+  max-width: 320px;
+  opacity: 0.75;
+}
+.stwf-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 6px;
+  background: var(--accent);
+}
+.stwf .btn {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  width: auto;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  min-height: 3.6em;
+  font-size: var(--fs-xl);
+}
+/* tlačítko Zrušit na černé vrstvě: obrys místo bílé výplně */
+.stwf .btn:not(.primary) {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
 /* ztmavení během pauzy (F1-02): černá obrazovka jen s odpočtem, po konci pauzy světlejší */
 .dim {
   position: fixed;

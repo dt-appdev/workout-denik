@@ -26,6 +26,7 @@
     "restSs": 210,
     "restWarm": 90,
     "stwPre": 8,
+    "stwView": "full",
     "restAlert": "both",
     "restOver": false,
     "restNotify": false,

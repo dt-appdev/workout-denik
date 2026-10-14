@@ -104,6 +104,27 @@ async function run({ browser, url, check }) {
   await app.settle(3000);
   check.eq(await secValue(page, 1), "0:02", "v přepsaném cíli se zapsal 0:02");
   check.ok(await page.$eval("#rest", (el) => el.hidden), "stopky v přepsaném cíli skončily");
+  // Celá obrazovka: vrstva místo pruhu, Stop v ní zapíše čas, Zpět v telefonu stopky zastaví
+  await app.act("stwView", "full");
+  await app.settle(200);
+  await page.click('#app [data-act="addSet"][data-i="0"]');
+  await app.settle(200);
+  await page.click(`${ROW}[data-j="2"]`);
+  await app.settle(1700);
+  check.ok(await page.$(".stwf"), "na celé obrazovce se otevřela vrstva stopek");
+  check.ok(await page.$eval("#rest", (el) => el.hidden), "pruh dole je schovaný");
+  check.ok(await page.$eval(".stwf", (el) => /Plank/.test(el.textContent)), "vrstva ukazuje cvik");
+  await app.settle(1200);
+  await page.click('.stwf [data-act="stwStop"]');
+  await app.settle(300);
+  check.ok(!(await page.$(".stwf")), "po Stop vrstva zmizela");
+  check.ok(/^0:0[1-3]$/.test(await secValue(page, 2)), "Stop na celé obrazovce zapsal čas");
+  await page.click(`${ROW}[data-j="2"]`);
+  await app.settle(300);
+  check.ok(await page.$(".stwf"), "vrstva se otevřela znovu");
+  await page.goBack().catch(() => {});
+  await app.settle(400);
+  check.ok(!(await page.$(".stwf")), "Zpět v telefonu stopky zastavilo");
   check.eq(await page.evaluate(() => localStorage.length > 0), true, "úložiště je v pořádku");
   check.eq(app.errors, [], "žádné chyby v konzoli");
   await app.close();

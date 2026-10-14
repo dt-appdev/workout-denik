@@ -1096,6 +1096,7 @@
       restSs: 180,
       restWarm: 60,
       stwPre: 5,
+      stwView: "bar",
       restAlert: "both",
       restOver: true,
       restNotify: true,
@@ -1332,6 +1333,7 @@
         restSs: 180,
         restWarm: 60,
         stwPre: 5,
+        stwView: "bar",
         restAlert: "both",
         restOver: true,
         restNotify: true,
@@ -1358,6 +1360,7 @@
     c.restSs = restNorm(c.restSs) || 180;
     c.restWarm = restNorm(c.restWarm) || 60;
     c.stwPre = stwNorm(c.stwPre);
+    c.stwView = c.stwView === "full" ? "full" : "bar";
     const pct = Math.round(+c.warmPct / WARM_PCT.step) * WARM_PCT.step;
     c.warmPct = pct >= WARM_PCT.min && pct <= WARM_PCT.max ? pct : WARM_PCT.def;
     if (!progValid([c.progMin, c.progMax])) {
@@ -3718,6 +3721,7 @@
   const recCount = (list, text) =>
     `<span class="medals">${medal(list.map((r) => r.type))}${text === undefined ? list.length : text}</span>`;
   let celEl = null;
+  let stwFullEl = null; // vrstva stopek přes celou obrazovku (F1-24)
   const exDone = (e) => {
     const w = e.sets.filter((s) => isWork(s.t));
     return w.length > 0 && w.every((s) => s.done);
@@ -10842,6 +10846,12 @@
             "pípnou ještě dvakrát.",
         ],
         [
+          "Zobrazení stopek",
+          "Pruh: stopky běží v pruhu dole jako pauza. Celá obrazovka: černá obrazovka s velkým časem a " +
+            "tlačítkem Stop, čitelná z dálky. Displej v tomhle režimu nezhasne po celou dobu stopek, " +
+            "tlačítko Zpět v telefonu stopky zastaví.",
+        ],
+        [
           "Odpočet před startem",
           "Čas na zaujetí polohy, 0 až 15 s. Poslední tři sekundy pípají, start je delší tón. Zvuk " +
             "a vibrace se řídí volbou Na konci pauzy. 0 = stopky se spustí hned.",
@@ -13424,6 +13434,7 @@
       stwRender(); // stopky mají v pruhu přednost (F1-24)
       return;
     }
+    stwFullHide();
     if (!S.restEnd || !S.active) {
       el.hidden = true;
       return;
@@ -13532,6 +13543,10 @@
      startu, dvojité pípnutí STW_WARN s před cílem, v cíli beep(). Pípnutí, která by přišla pozdě (appka
      byla na pozadí), se přeskočí. Displej drží Wake Lock jako u pauzy (volba screenOn), ztmavení jen
      při pauze.
+     Volba S.cfg.stwView (Pruh / Celá obrazovka, výchozí Pruh): v Pruhu stopky běží v pruhu pauzy, na Celé
+     obrazovce v černé vrstvě stwFullShow (velký čas, popisek, cvik a série, velké tlačítko Stop, pásek cíle
+     u spodního okraje) hned od odpočtu startu. Klepnutí mimo tlačítko nic nedělá, Zpět v Androidu = Stop /
+     Zrušit (navBack), displej drží Wake Lock vždy (ne jen s volbou screenOn).
      Stav S.stw: { i, j, exId, ref, pre, goal, t0, runAt, fl }; ref je objekt série (po zavření appky se
      série najde podle i, j a exId), runAt prázdné = běží odpočet startu, fl = už zahrané signály.
      Stopky ukončí konec tréninku (activeEnd) i smazání série (stwSet sérii nenajde). Názvy začínají
@@ -13561,6 +13576,20 @@
           </div>
           <input type="range" class="range" id="stwPre" min="${STW_PRE.min}" max="${STW_PRE.max}" step="1"
               value="${sec}" aria-label="Odpočet před startem">
+        </div>
+        <div class="stack tight">
+          <span>Zobrazení stopek</span>
+          <div class="seg seg-wide">
+            ${[
+              ["bar", "Pruh"],
+              ["full", "Celá obrazovka"],
+            ]
+              .map(
+                ([k, l]) =>
+                  `<button data-act="stwView" data-v="${k}" aria-pressed="${S.cfg.stwView === k}">${l}</button>`,
+              )
+              .join("")}
+          </div>
         </div>
       </div>
     </section>`;
@@ -13720,6 +13749,12 @@
       now = Date.now();
     const label = !run ? "Start za" : w.goal ? "Výdrž · cíl " + fmtSec(w.goal) : "Výdrž";
     const barPct = run && w.goal ? Math.min(100, (now - w.runAt) / 10 / w.goal) : 0;
+    if (S.cfg.stwView === "full") {
+      el.hidden = true;
+      stwFullShow(w, label, barPct, now);
+      return;
+    }
+    stwFullHide();
     el.hidden = false;
     el.innerHTML = `<div class="rest-in">
       ${run && w.goal ? `<div class="bar" id="restBar" style="width:${barPct}%"></div>` : ""}
@@ -13727,6 +13762,33 @@
       <span class="rest-l"><i>${esc(label)}</i></span>
       <button data-act="stwStop">${run ? "Stop" : "Zrušit"}</button>
     </div>`;
+  }
+  // vrstva přes celou obrazovku (volba Celá obrazovka): čas, popisek, cvik a série, velké tlačítko Stop
+  function stwFullShow(w, label, barPct, now) {
+    const c = stwSet();
+    if (!c) return;
+    const n = c.e.sets.slice(0, w.j + 1).filter((x) => x.t === "n").length;
+    const what = c.s.t === "n" ? n + ". série" : TYPE_NAME[c.s.t].toLowerCase() + " série";
+    const run = !!w.runAt;
+    if (!stwFullEl) {
+      stwFullEl = document.createElement("div");
+      stwFullEl.className = "stwf";
+      stwFullEl.setAttribute("role", "dialog");
+      stwFullEl.setAttribute("aria-label", "Stopky");
+      stwFullEl.addEventListener("touchmove", (ev) => ev.preventDefault(), { passive: false });
+      document.body.appendChild(stwFullEl);
+    }
+    stwFullEl.innerHTML = `
+      <b class="stwf-clock" id="stwfClock">${fmtClock(stwClock(w, now))}</b>
+      <span class="stwf-lab">${esc(label)}</span>
+      <span class="stwf-ex">${esc(exName(c.e.exId))} · ${esc(what)}</span>
+      ${run && w.goal ? `<div class="stwf-bar" id="stwfBar" style="width:${barPct}%"></div>` : ""}
+      <button class="btn block${run ? " primary" : ""}" data-act="stwStop">${run ? "Stop" : "Zrušit"}</button>`;
+  }
+  function stwFullHide() {
+    if (!stwFullEl) return;
+    stwFullEl.remove();
+    stwFullEl = null;
   }
   /* tik stopek (každých 200 ms): přechod z odpočtu startu na běh, signály, konec v cíli, obnova hodin.
      Stopky, jejichž série zmizela, se tiše ukončí. */
@@ -13781,13 +13843,19 @@
   }
   // obnoví hodiny a pásek v pruhu bez překreslení
   function stwClockShow(w, now) {
-    const clock = document.getElementById("restClock"),
-      bar = document.getElementById("restBar");
-    if (clock) {
-      clock.textContent = fmtClock(stwClock(w, now));
+    const text = fmtClock(stwClock(w, now)),
+      width = w.runAt && w.goal ? Math.min(100, (now - w.runAt) / 10 / w.goal) + "%" : "";
+    for (const id of ["restClock", "stwfClock"]) {
+      const clock = document.getElementById(id);
+      if (clock) {
+        clock.textContent = text;
+      }
     }
-    if (bar && w.runAt && w.goal) {
-      bar.style.width = Math.min(100, (now - w.runAt) / 10 / w.goal) + "%";
+    for (const id of ["restBar", "stwfBar"]) {
+      const bar = document.getElementById(id);
+      if (bar && width) {
+        bar.style.width = width;
+      }
     }
   }
   setInterval(stwTick, 200);
@@ -13825,7 +13893,9 @@
 
   // pauza v rozdělaném tréninku se zapnutou volbou, appka na očích, baterie v pořádku
   function wakeActive() {
-    return !!(S.cfg.screenOn && S.active && (S.restEnd || S.stw) && !document.hidden && !batteryLow());
+    // stopky na celé obrazovce drží displej vždy, jinak jen s volbou (F1-24)
+    const want = (S.stw && (S.cfg.screenOn || S.cfg.stwView === "full")) || (S.cfg.screenOn && S.restEnd);
+    return !!(want && S.active && !document.hidden && !batteryLow());
   }
 
   // srovná zámek displeje a ztmavení se stavem appky; volá se při změně pauzy a z restTick
@@ -15873,6 +15943,9 @@
         put("config/main", Object.assign({}, S.cfg, { restAlert: v }));
         restPost();
         break;
+      case "stwView":
+        put("config/main", Object.assign({}, S.cfg, { stwView: v === "full" ? "full" : "bar" }));
+        break;
       case "restOver":
         put("config/main", Object.assign({}, S.cfg, { restOver: t.checked }));
         break;
@@ -16479,7 +16552,7 @@
     } else if (r === "set" && S.setPage) {
       page = 2 + train; // podstránka Nastavení → rozcestník → Trénink
     }
-    return (celEl ? 1 : 0) + (sheetNav ? sheetNav.lv : 0) + page;
+    return (celEl ? 1 : 0) + (stwFullEl ? 1 : 0) + (sheetNav ? sheetNav.lv : 0) + page;
   }
   // místo, kam se vrátit ze stránky cviku, z úpravy nebo z formuláře cviku (i s otevřeným panelem a posunem
   // stránky)
@@ -16535,6 +16608,10 @@
      Nastavení → rozcestník, jiná záložka → Trénink;
      force = zahodit neuložené změny bez ptaní; false = už není kam (hlavní obrazovka Tréninku) */
   function navBack(force) {
+    if (stwFullEl) {
+      stwStop(); // stopky na celé obrazovce: Zpět = Stop, při odpočtu startu Zrušit (F1-24)
+      return true;
+    }
     if (celEl) {
       celClose();
       return true;
