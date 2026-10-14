@@ -324,6 +324,22 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   výběru cviků a měsíc v Historii 15 px jako nadpis sekce, drobné popisky velkými proložení 0,06 em a 600; velká čísla
   v krokovači a Statistikách → Cviky 600 jako ostatní; zbytečný řez 800 u zatržítka fotek pryč. Tlačítko „i“ jako
   písmeno → F3-46. Popis v úvodním komentáři sekce „TYPOGRAFIE“ v `js/app.js`, pravidlo v `CLAUDE.md`.
+- [x] **F3-46** Šipka u cviku ve výběru a panel Informace o cviku (přání uživatele 13. 10. 2026 u F3-45; náhledy
+  Dnes / Po změně 14. 10. 2026, tři kola). Původně: tlačítko vedle cviku ve výběru (`.infob`) bylo písmeno „i“
+  v úzkém písmu (proti F3-20) a panel Informace o cviku měl v patičce tři různě široká tlačítka (proti F3-23).
+  Zjištěno navíc: × v panelu zavřelo celý výběr a zaškrtnuté cviky se ztratily. **Zamítnuto:** kroužek s „i“
+  (`IC.info` = O aplikaci), kniha (`IC.ex` = Cviky), samostatné tlačítko vedle karty (uživatel chce šipku v kartě
+  jako v Nastavení), svislá čára před šipkou (omylem otevřený panel vrátí jedno Zpět, nic nevratného se nestane).
+  **Provedeno:** šipka › (`IC.next`) vpravo uvnitř karty cviku, rámeček má celá karta, vybraný cvik ji orámuje
+  v `--accent`. Panel: místo × šipka ← vlevo (`openSheet` volba `backBtn`, akce `sheetBack`), vrací do výběru;
+  patička Upravit | Stránka cviku (hlavní), stejně široká. Dlaždice Tréninků, Naposledy a dvě podle druhu cviku
+  (Odh. 1RM a Max. zátěž; vlastní váha a s dopomocí Max. opakování a Nejlepší série; na čas Nejdelší výdrž
+  a Celkový čas = součet; na čas se zátěží Max. zátěž a Nejdelší výdrž; vzdálenost Nejdelší vzdálenost a Nejvyšší
+  tempo), nejlepší hodnoty za celou dobu. Cvik vázaný na fitko jen z fitka tréninku nebo šablony (štítek fitka),
+  u šablony s víc fitky čipy na přepnutí; ostatní cviky ze všech fitek (jako stránka cviku, F3-31). Ve fitku bez
+  záznamu „–“ a věta „V tomto fitku zatím bez záznamu.“. Počet sérií z panelu zmizel. Mezery: štítek a čipy patří
+  k číslům (22 px nad, 10 px k dlaždicím; v prvním náhledu obráceně, opraveno podle komentáře). Popis v úvodním
+  komentáři sekce „INFORMACE O CVIKU (F3-46)“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
