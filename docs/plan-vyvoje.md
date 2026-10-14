@@ -56,7 +56,7 @@ flowchart LR
   E2 --> E3[Etapa 3<br/>Co dnes,<br/>zlepšuji se?]
   E3 --> E4[Etapa 4<br/>Drobnosti]
   E4 --> E5[Etapa 5<br/>Jednotný vzhled]
-  E5 --> E6[Etapa 6<br/>Zbytek plánu]
+  E5 --> E6[Etapa 6<br/>Testy a stopky]
   E6 -.-> E7[Etapa 7<br/>Nativní appka]
 ```
 
@@ -92,7 +92,7 @@ flowchart LR
 
 #### Etapa 3 – „Co dnes?“ a „Zlepšuji se?“ (P2, větší úpravy)
 
-8. **F2-04** Šablona na řadě jako hlavní akce úvodu · *Úvod · P2 · B · střední* – nejčastější akce nemá největší váhu.
+8. ~~**F2-04** Šablona na řadě jako hlavní akce úvodu~~ – zrušeno 14. 10. 2026 (stačí plánované tréninky v kalendáři, F4-07).
 9. ~~**F3-26** Progres po cvicích ve Statistikách~~ – hotovo 9. 10. 2026.
 10. ~~**F3-25** Rekord jako skutečná událost~~ – hotovo 10. 10. 2026.
 11. ~~**F3-27** Porovnání s předchozím obdobím~~ – hotovo 10. 10. 2026.
@@ -102,31 +102,33 @@ flowchart LR
 12. ~~**F3-24** Texty a drobnosti z auditu~~ – hotovo 10. 10. 2026.
 13. ~~**F1-17** Kratší pauza po zahřívací sérii~~ – zamítnuto 10. 10. 2026, obnoveno jako F1-22 (hotovo 13. 10. 2026).
 14. ~~**F3-28** Stránka cviku: záložka Historie~~ – hotovo 10. 10. 2026.
-15. **F3-29** Formulář měření jen s používanými údaji · *Tělo · P3 · B · nízká*.
+15. ~~**F3-29** Formulář měření jen s používanými údaji~~ – zrušeno 14. 10. 2026 (měření doplní F4-13 a F6-04).
 
 #### Etapa 5 – Jednotný vzhled
 
 16. ~~**F3-23** Jednotný vzhled v úzkém rozsahu~~ – hotovo 10. 10. 2026.
 
-#### Etapa 6 – Zbytek plánu
+#### Etapa 6 – Před nativní appkou (zhodnoceno 14. 10. 2026)
 
 17. ~~**F3-33** Výška v Nastavení a BMI z hmotnosti~~ – hotovo 10. 10. 2026.
 18. ~~**F1-07** Nastavení stroje podle fitka~~ – hotovo 11. 10. 2026.
-19. **F5-02** Týdenní cíl a **F5-01** Kolik chybí na rekord (F5-01 až po F3-25) – podle auditu nejužitečnější z motivace.
+19. **F0-17** Automatické testy (kouřový test a záloha tam a zpět) – nutné před F6-01 i před F0-11.
 20. ~~**F3-16** Rozepsaný formulář přežije zavření appky~~ – hotovo 13. 10. 2026.
-21. Dál podle fází: F0-16, F1-12, F3-15, F3-48 (jen když se uživatel rozhodne), fáze 4 (F4-02, F4-03, F4-09, F4-10, F4-11) a zbytek fáze 5 (F5-04, F5-05, F5-08, F5-09).
+21. **F1-24** Stopky u série na čas.
+22. Bez priority (užitek zatím nejasný, rozhodne uživatel): F1-12, F1-21, F1-20, F3-15, F4-09, F4-11, F5-04, F5-05, F5-08, F5-09.
 
 #### Etapa 7 – Nativní appka (zapsáno 13. 10. 2026)
 
-Kdy začít, určí uživatel; úlohy jdou jen v tomto pořadí (každá stojí na předchozí). Popis a rozhodnutí ve Fázi 6.
+Kdy začít, určí uživatel; úlohy jdou jen v tomto pořadí (každá stojí na předchozí). Popis a rozhodnutí ve Fázi 6. Před F6-01 hotová F0-17 (testy). F5-02 nezávisí na nativní appce, doporučené místo je za F6-03.
 
-22. **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
-23. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
-24. **F6-03** Záloha se zálohou telefonu (Google One).
-25. **F6-04** Složení těla ze Samsung Health do Těla.
-26. **F6-05** Tep z hodinek k tréninku (až po F6-04).
+23. **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
+24. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
+25. **F6-03** Záloha se zálohou telefonu (Google One).
+26. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
+27. **F6-04** Složení těla ze Samsung Health do Těla.
+28. **F6-05** Tep z hodinek k tréninku (až po F6-04).
 
-Čeká na rozhodnutí (audit doporučuje nedělat nebo odložit, viz Otevřené otázky): F3-04 a F3-05 (radar), F5-03, F5-06 a F5-07 (až budou rekordy čitelné, F3-25). Odložené: F0-11, F1-15, F3-07. Nahrazené: F0-14 (F6-03).
+Zrušené 14. 10. 2026 (popisy v `hotovo.md`, sekce Zrušené úlohy): F2-04, F3-04, F3-05, F3-29, F3-48, F4-03, F4-10, F5-01, F5-03, F5-06, F5-07. Odložené: F0-11 (podmínky u úlohy), F0-16, F1-15, F3-07, F4-02. Nahrazené: F0-14 (F6-03).
 
 #### Ověřit při používání (souběžně s etapou 1)
 
@@ -158,12 +160,13 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-08** Pravidla zabezpečení (Content-Security-Policy)
 - [x] **F0-09** Odkaz u cviku jen http(s)
 - [x] **F0-10** Čitelný kód (přeformátování)
-- [ ] **F0-11** Rozdělit `js/app.js` do víc souborů podle částí (např. datová vrstva a záloha, rozdělaný trénink a pauza, historie s kalendářem a souhrnem, statistiky, záložka Cviky, nastavení; v `app.js` zůstane start, vykreslení a akce). Bez build kroku: víc `<script>` v `index.html` ve správném pořadí a všechny soubory do `FILES` v `sw.js`. **Odloženo 27. 9. 2026 (u F0-12):** přínos pro spotřebu tokenů je po F0-12 střední (sekce mají popis a ID v nadpisu, čte se jen potřebná část), riziko je jisté (dnes je vše v jedné funkci, po rozdělení by jména sdílely všechny soubory a mohla by se srazit s vestavěnými jmény prohlížeče; přerušená historie řádků; obrovské konflikty s otevřenými PR). Vrátit se, až `app.js` naroste nad cca 18 000 řádků nebo se v něm začnou často přetahovat souběžné větve. Dělat jen bez otevřených PR.
+- [ ] **F0-11** Rozdělit `js/app.js` do víc souborů podle částí (např. datová vrstva a záloha, rozdělaný trénink a pauza, historie s kalendářem a souhrnem, statistiky, záložka Cviky, nastavení; v `app.js` zůstane start, vykreslení a akce). Bez build kroku: víc `<script>` v `index.html` ve správném pořadí a všechny soubory do `FILES` v `sw.js`. **Odloženo 27. 9. 2026 (u F0-12):** přínos pro spotřebu tokenů je po F0-12 střední (sekce mají popis a ID v nadpisu, čte se jen potřebná část), riziko je jisté (dnes je vše v jedné funkci, po rozdělení by jména sdílely všechny soubory a mohla by se srazit s vestavěnými jmény prohlížeče; přerušená historie řádků; obrovské konflikty s otevřenými PR). **Kdy se vrátit (upraveno 14. 10. 2026, místo hranice 18 000 řádků, kterou `app.js` překročil):** nutné podmínky jsou hotové automatické testy (F0-17) a žádný otevřený PR; spouštěč je, že se souběžné větve v `app.js` opakovaně přetahují o stejná místa, nebo že F6-01 bude potřebovat oddělit nativní část. Počet řádků sám o sobě důvod není.
 - [x] **F0-12** Úklid repa pro menší spotřebu tokenů (kratší `CLAUDE.md`, rozdělený plán, `.ignore`, smazaná `puvodni/`)
 - [x] **F0-13** Záloha častěji a ze souhrnu
 - [ ] ~~**F0-14** Automatická záloha na Google Disk~~ – **nahrazeno 13. 10. 2026 úlohou F6-03** (záloha se zálohou telefonu v nativní appce, bez přihlašování a Google Cloud projektu). Vrátit se jen, kdyby se od nativní appky upustilo. Původní rozbor: (nápad 27. 9. 2026 u F0-13; D · střední; **nejdřív zkouška**): appka po uložení tréninku sama nahraje zálohu do skryté složky „data aplikace“ na Disku uživatele (Drive API, `appDataFolder`, oprávnění `drive.appdata`, vidí ji jen tahle appka), drží posledních pár záloh a na novém telefonu po přihlášení nabídne obnovu. Zdarma, ale uživatel jednou založí projekt v Google Cloud (OAuth klient, stav Testing, Google ukáže varování „Aplikace není ověřená“). Přihlášení bez cizích skriptů: okno `accounts.google.com` (token na 1 hodinu) a malá stránka pro návrat ve stejné doméně. Na pozadí to nejde: přístup vyprší po hodině a obnoví se jen po klepnutí (nejlépe navázat na Dokončit v souhrnu, okno Googlu jen problikne). Mění pravidla: řádek o cloudu v Co neděláme, CSP (`connect-src https://www.googleapis.com`), testovací verze musí zálohovat odděleně od vydané. Zkouška: funguje okno přihlášení a návrat do nainstalované appky na Androidu? Alternativa bez programování: aplikace typu Autosync nebo FolderSync, která sama nahrává složku Stažené na Disk (cizí aplikace, zdarma s omezeními). OneDrive přímo z appky nedoporučeno (registrace aplikace u Microsoftu je pro osobní účet složitější, OneDrive pokryje sdílení z F0-13). Záloha telefonu do Googlu (Google One) data webové appky nezahrne (jsou uvnitř Chromu, ten data webů nezálohuje). Zvážit menší zálohu: ZIP (fotky jako JPEG soubory místo base64, které je o třetinu větší; údaje o trénincích zkomprimované 5–10×) nebo `.json.gz`, obojí umí Chrome bez knihovny (`CompressionStream`). U sdílení (F0-13) to nejde, `.zip` ani `.gz` Chrome na Androidu sdílet nedovolí; nahrávání přes Drive API typ souboru neomezuje.
 - [x] **F0-15** Čitelný soubor zálohy
-- [ ] **F0-16** Hromadné a hromadné selektivní mazání záznamů (tréninků, měření) (přání uživatele 13. 10. 2026, nic nerozhodnuto): dnes jde smazat jen jeden trénink nebo jedno měření. Rozhodnout: kde (Historie, Tělo, Nastavení → Data a záloha), jak vybírat (zaškrtávání v seznamu, filtr podle období, fitka, u měření podle zdroje: ruční / import ze Samsung Health F4-13 s `shId`), potvrzení s počtem a bod obnovy před smazáním (jako před obnovou ze zálohy).
+- [ ] **F0-16** Hromadné a hromadné selektivní mazání záznamů (tréninků, měření) (přání uživatele 13. 10. 2026, **odloženo 14. 10. 2026**: pro jednoho uživatele malý přínos, nevratné mazání): dnes jde smazat jen jeden trénink nebo jedno měření. Rozhodnout: kde (Historie, Tělo, Nastavení → Data a záloha), jak vybírat (zaškrtávání v seznamu, filtr podle období, fitka, u měření podle zdroje: ruční / import ze Samsung Health F4-13 s `shId`), potvrzení s počtem a bod obnovy před smazáním (jako před obnovou ze zálohy).
+- [ ] **F0-17** Automatické testy (návrh 14. 10. 2026, schváleno uživatelem; *střední*): dnes se každý PR ověřuje jen ručně v telefonu. Playwright s předinstalovaným Chromiem v GitHub Actions (úloha „kontrola“), skripty ve `tools/` (na web se nekopírují), appka sama dál bez npm a bez build kroku. Testy se zkušebními daty (`FAKE_PLAN`): (1) kouřový test – appka se spustí bez chyby v konzoli, projde záložky, zapíše a dokončí trénink; (2) záloha tam a zpět – export, smazání dat, obnova a porovnání, že data jsou stejná (i fotky); (3) starší formát zálohy se načte (`normBackup`, `BK_VERSION`). Rozhodnout v session: spouštět v každém PR, nebo jen ručně; zda testovat i šířku 360 px s písmem Největší. Předpoklad pro F6-01 (jiné prostředí: WebView, úložiště, soubory) a F0-11.
 
 ### Fáze 1 – Ovládání při tréninku
 
@@ -191,13 +194,14 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-22** Pauza po zahřívací sérii
 - [x] **F1-23** Rychlé přepisování čísel v sériích
 - [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
+- [ ] **F1-24** Stopky u série na čas (přání uživatele 14. 10. 2026; *nízká–střední*): u cviků na čas (`KIND` `time`, `timew`, případně `dist`) je dnes políčko Čas jen číselné (`FLD.sec`), čas se musí změřit jinde a opsat. Pauza (F1-04) běží až po ✓ a čas nahoře měří celý trénink, sérii nic. Návrh: u série tlačítko Start, po Stop se naměřené sekundy zapíšou do políčka (pak se dá série odškrtnout jako dnes). Rozhodnout v session: odpočet na cílový čas (z minula, ze šablony) s vibrací, nebo jen stopky; co se stane při zhasnutí displeje (webová verze: Wake Lock jako F1-02, nativně F6-02); jak to vypadá v řádku série (`--row-h`, nejdřív náhled podle F3-23); má Stop rovnou odškrtnout sérii a spustit pauzu.
 
 ### Fáze 2 – Šablony a historie
 
 - [x] **F2-01** Cvičit znovu z historie
 - [x] **F2-02** Šablony podle fitka
 - [x] **F2-03** Smazání série tahem, Vrátit cvik
-- [ ] **F2-04** Šablona na řadě jako hlavní akce úvodu (rotace programu; doplněno podle UX auditu 27. 9. 2026, §2 B, §4 Úvod a §11; P2 · B · střední): appka ukáže, která šablona je na řadě. Dnes je na úvodní obrazovce nejvýraznější „Začít prázdný trénink“ a všechna „Začít“ u šablon jsou stejně korálová, i když běžný den začíná šablonou. Návrh: nahoře karta „Dnes na řadě: Pull“ s jediným hlavním tlačítkem Začít, pod ní ostatní šablony s vedlejším Začít, prázdný trénink jako vedlejší tlačítko. Nejjednodušší pravidlo bez nových dat: na řadě je nejdéle necvičená šablona ve vybraném fitku (Otevřené otázky). Rozhodnuto u F4-07: v naplánovaný den má přednost plán (sekce „Naplánovaný trénink“ pod Začít prázdný trénink), šablona na řadě platí jen ve dnech bez plánu. Dlaždici Objem 30 dní nahradit údajem „Poslední trénink: před 2 dny (Legs)“. Během tréninku zůstává „Probíhá trénink“ (F2-09). Od F2-13 karty šablon tlačítko Začít nemají (klepnutí na kartu = Začít, ostatní v panelu ⋯), karta „Dnes na řadě“ to musí respektovat (hlavní akce = výrazná karta nebo jedno tlačítko jen u ní).
+- [ ] ~~**F2-04** Šablona na řadě jako hlavní akce úvodu~~ – zrušeno 14. 10. 2026.
 - [x] **F2-05** Vlastní fotky u cviku
 - [x] **F2-08** Jedinečné názvy šablon
 - [x] **F2-06** Archivace a smazání fitka
@@ -215,8 +219,8 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-01** Barvy fitek a partií, tmavý režim
 - [x] **F3-02** Osobní rekordy s oslavou
 - [x] **F3-03** Souhrn po tréninku
-- [ ] **F3-04** Radar svalových partií ve statistikách: aktuální vs předchozí období, filtr fitka, klepnutí na osu ukáže cviky. Karty s rozdíly (tréninky, čas, objem, série) přesunuté do F3-27. **UX audit 27. 9. 2026 doporučuje radar nedělat** (§6, §11): partie už ukazuje postava a pruhy, radar se 6 osami přináší stejnou informaci hůř čitelně. Rozhodnout (Otevřené otázky).
-- [ ] **F3-05** Radar v souhrnu po tréninku: volitelné, přepínatelné doplnění ke schématu postavy (F3-03), ne jeho náhrada. Audit 27. 9. 2026 doporučuje nedělat, stejně jako F3-04.
+- [ ] ~~**F3-04** Radar svalových partií ve statistikách~~ – zrušeno 14. 10. 2026.
+- [ ] ~~**F3-05** Radar v souhrnu po tréninku~~ – zrušeno 14. 10. 2026.
 - [x] **F3-06** Kalendář
 - [ ] **F3-07** Roční heatmapa tréninků (barva podle počtu sérií). **Odloženo 24. 9. 2026:** po náhledech samoúčelná, co a kdy se cvičilo ukazuje kalendář (F3-06) a graf Průběh. Celá diskuse, rozhodnutí, náhledy a odkaz na hotový kód v `docs/navrhy/F3-07-heatmapa.md`.
 - [x] **F3-08** Jednotky v grafech
@@ -240,7 +244,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-26** Progres po cvicích ve Statistikách
 - [x] **F3-27** Porovnání s předchozím obdobím
 - [x] **F3-28** Stránka cviku: záložka Historie
-- [ ] **F3-29** Formulář měření jen s používanými údaji (UX audit 27. 9. 2026, §2 I; P3 · B · nízká): Nové měření ukazuje vždy všech 13 polí a záložka Tělo 13 čipů metrik, i když se měří 4. Návrh: ve formuláři nahoře pole vyplněná minule, ostatní pod „Další údaje“ (rozbalit); čipy grafu jen pro metriky s daty. Kde: sekce TĚLO. Pozor: BMI se předvyplňuje z hmotnosti a výšky (F3-33), schované BMI se ukládá i bez vyplnění.
+- [ ] ~~**F3-29** Formulář měření jen s používanými údaji~~ – zrušeno 14. 10. 2026.
 - [x] **F3-30** Nový cvik kopií jiného cviku
 - [x] **F3-31** Vázáno na fitko jen ve formuláři Upravit cvik
 - [x] **F3-32** Smazat vlastní cvik
@@ -259,28 +263,21 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků
 - [x] **F3-47** Zbylé ruční mezery mimo karty
 - [x] **F3-46** Šipka u cviku ve výběru a panel Informace o cviku
-- [ ] **F3-48** Design manuál (přání uživatele 14. 10. 2026, **odloženo**: uživatel zatím není přesvědčen, vrátí se
-  sám). HTML stránka `manual/` na webu appky s pravidly vzhledu: barvy, písma, mezery, prvky a nákresy stránek.
-  Závazný text pravidel zůstává v `CLAUDE.md`, manuál je obrázkový přehled s odkazy na ID pravidel. Nutná úprava
-  `sw.js` (dnes vrací `index.html` na každé otevření stránky pod adresou appky, manuál by se neotevřel).
-  **Krok A:** barvy, písma, mezery, prvky a pravidla, vykreslené živě ze skutečného `css/app.css` (kostra HTML prvků
-  opsaná, ikony `IC` čtené z `js/app.js`), bez snímků. **Krok B:** snímky stránek ze skriptu podle `tools/mezery.js`
-  s vyznačenými mezerami, jen světlý motiv, obnovovat jen při větší změně vzhledu.
-  Celá diskuse, výhody, nevýhody, odhad náročnosti a otevřené otázky v `docs/navrhy/F3-48-design-manual.md`.
+- [ ] ~~**F3-48** Design manuál~~ – zrušeno 14. 10. 2026.
 
 
 ### Fáze 4 – Chytré funkce
 
 - [x] **F4-01** Návrh progrese (double progression)
-- [ ] **F4-02** Generátor rozcvičkových sérií z pracovní váhy.
-- [ ] **F4-03** Kalkulačka kotoučů na osu.
+- [ ] **F4-02** Generátor rozcvičkových sérií z pracovní váhy. **Odloženo 14. 10. 2026** (uživateli zatím nepřijde užitečný; z velké části ho pokrývá F1-08, při návratu spíš rozšířit F1-08).
+- [ ] ~~**F4-03** Kalkulačka kotoučů na osu~~ – zrušeno 14. 10. 2026.
 - [x] **F4-04** RIR/RPE u série
 - [x] **F4-05** Supersérie se společnou pauzou
 - [x] **F4-06** Upozornění na stagnaci
 - [x] **F4-07** Plánované tréninky v kalendáři
 - [x] **F4-08** Sdílení souhrnu tréninku jako obrázek
 - [ ] **F4-09** Export do CSV pro Excel.
-- [ ] **F4-10** Anglická verze appky (přání 25. 9. 2026 u F4-08, nic nerozhodnuto): přepínač jazyka Čeština / English v Nastavení → Vzhled, všechny texty appky přeložené. Cviky z databáze už mají anglický název (`name`) i český (`cz`), obrázek souhrnu (F4-08) už anglicky umí (texty `SHR_TXT` v `js/app.js`). Rozhodnout: jak texty v kódu oddělit (jeden slovník pro celou appku), formát data a čísel (82.5 / 82,5), co s popisy cviků (jen česky?) a s vlastními názvy (tréninky, šablony, fitka se nepřekládají).
+- [ ] ~~**F4-10** Anglická verze appky~~ – zrušeno 14. 10. 2026.
 - [ ] **F4-11** Vylepšit panel Sdílet trénink (přání 25. 9. 2026 u F4-08: rozvržení je v první verzi „stačí, ale nejsem moc spokojený“). Dnes: panel přes skoro celou výšku, náhled vyplní místo nahoře, pod ním tři řádky ovládání (Příspěvek | Příběh; Tmavý | Světlý a CZ | EN; fotka a přepínací tlačítko Postava) a patička Uložit obrázek | Sdílet, bez nápovědy (`sheetShare` v `js/app.js`). Při písmu „Největší“ se „Změnit fotku“ zalomí na 2 řádky. Nejdřív udělat náhledy víc variant (např. volby jako ikony nebo menší štítky, náhled přes celou šířku, volby v rozbalovací liště) a vybrat s uživatelem.
 - [x] **F4-12** Kopírovat pro coache (osobní, skrytá funkce)
 - [x] **F4-13** Import měření ze Samsung Health
@@ -291,15 +288,15 @@ Předpoklad: F0-02 (svalové partie).
 
 Předpoklad: F3-02 (oslava rekordu). Vše se počítá z uložených tréninků, nic nového se neukládá (kromě nastavení). Každá funkce jde vypnout, volby patří do skupiny Nastavení → Rekordy a pokrok (přejmenovaná z „Rekordy“ v F4-06). Žádná oznámení na pozadí a žádné výčitky („ztratíš streak“).
 
-UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravidelnost) a F5-01 (motivace v okamžiku série), obě v etapě 6. F5-03, F5-06 a F5-07 odložit, dokud nejsou rekordy čitelné (F3-25): odznaky a obrazná srovnání jsou spíš vizuální prvky než motivační mechanismus. Rozhodnutí „žádné XP a levely“ audit považuje za správné.
+UX audit 27. 9. 2026 (§11): nejvíc smyslu mají F5-02 (přímo podporuje pravidelnost) a F5-01 (motivace v okamžiku série). Odznaky a obrazná srovnání jsou spíš vizuální prvky než motivační mechanismus. Rozhodnutí „žádné XP a levely“ audit považuje za správné. Zhodnoceno 14. 10. 2026: F5-02 zkusit (etapa 7), F5-01, F5-03, F5-06 a F5-07 zrušené.
 
-- [ ] **F5-01** Kolik chybí na rekord: u série v rozdělaném tréninku drobná nápověda, co je potřeba na nový rekord (např. „[medaile] 8 opak. = nový 1RM“, „85 kg = max. zátěž“). Navazuje na F4-01. Až po F3-25 (jeden rekord na cvik a trénink), jinak by nápověda ukazovala víc druhů rekordů najednou.
+- [ ] ~~**F5-01** Kolik chybí na rekord~~ – zrušeno 14. 10. 2026.
 - [ ] **F5-02** Týdenní cíl: v Nastavení počet tréninků za týden (např. 3), na obrazovce Trénink kolečko „2 / 3 tento týden“, streak počítá týdny se splněným cílem (dnes `calStreak` = týdny aspoň s 1 tréninkem).
-- [ ] **F5-03** Milníky (odznaky): 10./50./100. trénink, N týdnů v řadě, celkem zvednuto 10/100 t, první trénink v novém fitku… Při dosažení oslava jako u rekordu (odznak místo medaile), ve Statistikách nástěnka se získanými i zamčenými odznaky.
+- [ ] ~~**F5-03** Milníky (odznaky)~~ – zrušeno 14. 10. 2026.
 - [ ] **F5-04** Pokrok v čase: karta „Před rokem jsi na bench dal 60 kg, dnes 85 kg (+42 %)“ u nejčastějších cviků (Statistiky, případně stránka cviku). F3-26 (hotovo) ukazuje změnu za období u každého cviku; zbývá jen karta s delším srovnáním.
 - [ ] **F5-05** Měsíční shrnutí: na začátku měsíce karta za minulý měsíc (tréninky, rekordy, nejlepší cvik, porovnání s předchozím měsícem), na konci roku „Rok v posilovně“. Porovnání s předchozím obdobím navazuje na F3-27.
-- [ ] **F5-06** Kluby síly: odznaky „Klub 100 kg bench“, „bench = tělesná hmotnost“ apod. (tělesnou hmotnost appka zná).
-- [ ] **F5-07** Objem obrazně: „Tento měsíc jsi zvedl 42 t, to jsou 3 autobusy.“
+- [ ] ~~**F5-06** Kluby síly~~ – zrušeno 14. 10. 2026.
+- [ ] ~~**F5-07** Objem obrazně~~ – zrušeno 14. 10. 2026.
 - [ ] **F5-08** Osobní výzvy: appka navrhne výzvu podle průměru (např. „12 tréninků v říjnu“, „+10 % objemu nohou“), průběh na obrazovce Trénink.
 - [ ] **F5-09** Zanedbaná partie: nenápadná informace na obrazovce Trénink („Nohy naposledy před 10 dny“), jen v appce, bez oznámení. Navazuje na skupiny partií (F3-01) a pruhy partií ve Statistikách (radar F3-04 je podle auditu nejistý).
 
@@ -317,7 +314,7 @@ Rozhodnuto 13. 10. 2026:
 - Hodinky (Galaxy Watch 9): stačí, že zrcadlí oznámení z telefonu. Vlastní aplikace pro Wear OS (odpočet na displeji hodinek) ne.
 - Mění pravidla projektu (upraví F6-01 v `CLAUDE.md`): npm a sestavení jen v GitHub Actions a ve složce nativního obalu, appka sama dál bez build kroku; aktualizace nativní appky už nejsou automatické jako u PWA. Ověřit při zadání: Google chystá ověření vývojářů i pro APK mimo Play (v ČR podle oznámení od 2027, pro hobby vývojáře bezplatná varianta).
 
-- [ ] **F6-01** Nativní obal (Capacitor) · *střední*: ve složce `android/` (nebo `nativni/`) konfigurace Capacitoru, GitHub Actions sestaví podepsané APK a vydá ho jako GitHub Release (klíč v secretu; ztráta klíče = nová verze nejde nainstalovat přes starou). Testovací APK pro PR s jiným ID aplikace, aby šla vedle hlavní (jako dnešní `pr-N`). Appka pozná, že běží nativně, a jen tam nabídne nativní funkce (ve webové verzi zůstane vše jako dnes). Přenos dat: záloha v PWA → obnova v nativní appce (vlastní úložiště, data z Chromu nevidí). Ověřit: offline, tlačítko Zpět (F0-06), stažení a sdílení souborů (`LocalDownloads`, F0-13), fotky u cviků (F2-05), CSP (F0-08), velikost písma (F3-11). Úprava `CLAUDE.md` (struktura souborů, pravidla sestavení, testování).
+- [ ] **F6-01** Nativní obal (Capacitor) · *střední*: ve složce `android/` (nebo `nativni/`) konfigurace Capacitoru, GitHub Actions sestaví podepsané APK a vydá ho jako GitHub Release (klíč v secretu; ztráta klíče = nová verze nejde nainstalovat přes starou). Testovací APK pro PR s jiným ID aplikace, aby šla vedle hlavní (jako dnešní `pr-N`). Appka pozná, že běží nativně, a jen tam nabídne nativní funkce (ve webové verzi zůstane vše jako dnes). Přenos dat: záloha v PWA → obnova v nativní appce (vlastní úložiště, data z Chromu nevidí). **Rozhodnuto 14. 10. 2026: žádné dvě živé kopie dat** (synchronizace není, trénink zapsaný do „špatné“ appky by se ztratil): nativní appka se nejdřív zkouší jen se zkušebními daty, pak jeden den přechodu (záloha v PWA → obnova v nativní appce) a PWA od té chvíle ukazuje výrazný pruh „Data jsou v nativní appce“. Předpoklad: F0-17 (testy). Ověřit: offline, tlačítko Zpět (F0-06), stažení a sdílení souborů (`LocalDownloads`, F0-13), fotky u cviků (F2-05), CSP (F0-08), velikost písma (F3-11). Úprava `CLAUDE.md` (struktura souborů, pravidla sestavení, testování).
 - [ ] **F6-02** Spolehlivý konec pauzy · *nízká–střední*: místo oznámení ze service workeru (F1-04) nativní budík na přesný čas konce pauzy (`S.restEnd`) a systémové oznámení s vibrací; přijde i se zamčeným displejem, bez internetu, a Galaxy Watch ho zrcadlí (zavibrují). Úprava +15 / −15 a Přeskočit budík přeplánuje / zruší (`restStop`). Ve webové verzi beze změny. Oprávnění pro přesné budíky (Android 12+) a pro oznámení si appka vyžádá při prvním spuštění pauzy. Vyřeší bod „Chodí oznámení… se zhasnutým displejem“ z Ověřit při používání.
 - [ ] **F6-03** Záloha se zálohou telefonu (Google One) · *nízká*: Android Auto Backup zálohuje data nativní appky do Google One sám (zdarma, bez přihlašování, zhruba jednou denně při nabíjení a Wi-Fi) a na novém telefonu je po přihlášení obnoví. Limit 25 MB: appka po uložení tréninku zapíše zálohu bez fotek (formát F0-01 / F0-15) do souboru, který Android zálohuje; data WebView ze zálohy vyřadit, obnova jen z tohoto souboru. Fotky dál v ruční záloze (F0-13). Nahrazuje F0-14.
 - [ ] **F6-04** Složení těla ze Samsung Health · *střední*: appka při otevření načte nová měření ze Samsung Health a doplní je do Těla (`body/all`, pole `BODY_F`: hmotnost, tuk %, hmotnost tuku, kosterní sval, voda, bazální metabolismus…). Přes **Samsung Health Data SDK** ve vývojářském režimu (Samsung Health → Nastavení → O Samsung Health → 10× klepnout na verzi → Developer Mode for Data Read): ke čtení stačí bez registrace a partnerství, Samsung ho oficiálně uvádí jako režim pro vývoj a testování, pro appku jen pro sebe to stačí. Health Connect zamítnut: kosterní sval a vodu nepřenáší (jen hmotnost, tuk, bazální metabolismus). Vlastní nativní doplněk (Kotlin), hotový pro Capacitor neexistuje; knihovnu SDK možná bude potřeba jednou stáhnout ze Samsung Developers pod účtem uživatele. **Nejdřív zkouška:** malá verze, která jen ukáže poslední měření složení těla z telefonu (ověří, že SDK kosterní sval z Galaxy Watch 9 opravdu vrací), teprve pak import. Rozhodnuto: import automaticky při otevření appky, měření ze Samsung Health s označením zdroje, ručně zapsané hodnoty se nepřepisují, stejné měření se nenačte dvakrát. Náhradní cesta, kdyby Samsung vývojářský režim zrušil: Health Connect (hmotnost, tuk, bazální metabolismus, zbytek ručně). Navazuje na F4-13 (import souboru ze Samsung Health, hotovo): měření z importu nese ID řádku Samsungu `shId` (`datauuid`); když ho SDK vrací stejné, F6-04 už importovaná měření nezdvojí. Rozpor k vyřešení: F4-13 ruční měření ze stejného dne a hmotnosti ±0,1 kg přepisuje údaji ze Samsungu (přání uživatele 13. 10. 2026), F6-04 má „ručně zapsané hodnoty se nepřepisují“.
@@ -332,6 +329,8 @@ Rozhodnuto 13. 10. 2026:
 | Vlastní aplikace pro hodinky (Wear OS), zápis do Samsung Health | Rozhodnuto 13. 10. 2026: hodinkám stačí zrcadlené oznámení z telefonu (F6-02), ze Samsung Health se jen čte (F6-04); zápis vyžaduje partnerství se Samsungem. Health Connect jen jako náhrada, kdyby Samsung zrušil vývojářský režim. |
 | Vlastní server, synchronizace dat mezi zařízeními | Jen offline a zdarma, data zůstávají v telefonu, zálohu řeší F0-01 a F0-13 (sdílení souboru na Disk) a v nativní appce F6-03 (záloha telefonu do Google One, rozhodnuto 13. 10. 2026: cloud = jen záloha). (GitHub slouží jen pro kód a hosting.) |
 | Záloha dat webové appky se zálohou telefonu (Google One) | Nejde: data nainstalované webové appky jsou uvnitř Chromu a Chrome data webů do zálohy telefonu nedává (zjištěno u F0-13). V nativní appce ano, úloha F6-03. |
+| Série na partii za týden s doporučeným rozsahem (návrh 14. 10. 2026) | Sestavení tréninku je práce coache, ne appky; do textu pro coache (F4-12) taky ne. Série podle partie za období ukazují Statistiky. |
+| Anglická verze, kalkulačka kotoučů, šablona na řadě, radar, odznaky a kluby síly | Zrušeno 14. 10. 2026 (důvody v `hotovo.md`, sekce Zrušené úlohy). |
 | XP body a levely | Působí uměle a neříkají nic o skutečném pokroku; motivaci řeší rekordy, milníky a týdenní cíl (fáze 5). |
 | Průvodce prvním spuštěním (onboarding) | Appku používá jeden uživatel, který ji zná (UX audit 27. 9. 2026). Prázdný stav bez fitka řeší F3-24. |
 | Úpravy vzhledu a ovládání kvůli budoucímu iOS nebo nativní appce | UX audit 27. 9. 2026: nic v současném ovládání tomu nebrání a datový formát (JSON, záloha s verzí) je přenositelný. Nativní appka (Fáze 6) používá stejné rozhraní, vzhled se kvůli ní nemění. |
@@ -339,7 +338,7 @@ Rozhodnuto 13. 10. 2026:
 Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle poznámky u nich):
 
 - Automatická volba fitka podle GPS: ruční volba stačí, GPS vyžaduje oprávnění a baterii.
-- Silueta postavy obarvená podle zatížení ve Statistikách: radar (F3-04) pokryje totéž jednodušeji. (V souhrnu po tréninku je postava od F3-03.)
+- Silueta postavy obarvená podle zatížení ve Statistikách (radar F3-04 zrušen 14. 10. 2026; v souhrnu po tréninku je postava od F3-03).
 - Jemnější dělení partií (biceps/triceps, kvadricepsy/hamstringy/hýždě): podle odpovědi na otevřenou otázku.
 - Méně záložek ve spodní liště (dnes 6, Material Design doporučuje 3–5; UX audit 27. 9. 2026, D): audit doporučuje neměnit, přínos je malý a změna zvyku velká. Vrátit se, jen když přibude záložka nebo to začne vadit (Ověřit při používání).
 - Filtry v záložce Cviky schované pod jedno tlačítko „Filtr“ (audit, C): není nutné.
@@ -354,12 +353,6 @@ Rozhodnout nejpozději v session dané úlohy. U každé je návrh výchozí vol
 | F3-07 | Heatmapa: rozložení, období, podle čeho barvit, umístění? | Odloženo 24. 9. (samoúčelná, málo informací navíc proti kalendáři a grafu Průběh). Dohodnuté: 12 měsíců 3 × 4, posledních 12 měsíců se šipkami a swipem, přepínač Série / Objem / Čas / Opakování (výchozí Objem, legenda v tunách), nezávislá na volbě období. Podrobně v `docs/navrhy/F3-07-heatmapa.md`. |
 | F1-15 | Panel se 4 druhy série, nebo cyklus jako dnes s hláškou Vrátit? | Odloženo 28. 9. (cyklus zůstává, uživatel se nikdy neuklikl). Při znovuotevření panel jako v Hevy, vysvětlivky druhů rozhodnout (F3-21). Podrobně v `docs/navrhy/F1-15-druh-serie.md`. |
 | F6-01 | Jak testovat nativní části v PR? Testovací APK pro každý PR, nebo jen pro PR, které mění nativní obal? | Jen PR s nativní změnou dostane testovací APK; ostatní PR dál testovací webová verze `pr-N`. |
-| F6-01 | Přejít na nativní appku hned, nebo nejdřív souběžně s PWA? | Souběžně týden, data převést zálohou až po vyzkoušení; PWA dál vydávat z `main`. |
 | F6-04 | Jak ukázat měření ze Samsung Health v Těle? | Stejně jako ruční, s malou ikonou zdroje (nová ikona v sadě `IC`, náhled podle F3-20). |
-| F2-04 | Podle čeho appka pozná šablonu na řadě? | Nejdéle necvičená šablona ve vybraném fitku (nepotřebuje nová data); ruční přeskočení zatím ne. |
-| F3-04, F3-05 | Radar dělat? (UX audit 27. 9. 2026 doporučuje ne.) | Odložit: partie ukazuje postava a pruhy; karty s rozdíly řeší F3-27. |
-| F3-04 | Osy radaru podle sérií, nebo přepínač série ↔ objem? | Pracovní série, sekundární partie × 0,5 |
-| F3-04 | 6 hlavních partií, nebo jemnější dělení? | 6 partií |
 | F5-02 | Počítat do týdenního cíle všechna fitka? Co když cíl změním v průběhu? | Všechna fitka; změna cíle platí od aktuálního týdne, starší týdny se hodnotí podle cíle, který tehdy platil (nebo zjednodušeně podle aktuálního). |
-| F5-03 | Které milníky a kolik jich? Ukazovat zamčené odznaky? | Začít s 10–15 odznaky; zamčené ukazovat šedě i s tím, kolik zbývá. |
 | F5-09 | Po kolika dnech je partie „zanedbaná“? | 7 dní u hlavních skupin, jde vypnout. |

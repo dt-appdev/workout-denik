@@ -261,7 +261,7 @@
     return { svg, exSvg, NAMES };
   })();
   const MKEYS = Object.keys(MUSCLE_MAP.NAMES);
-  /* 6 skupin partií (F3-01, použije i radar F3-04): barva --g-<skupina> v css/app.css */
+  /* 6 skupin partií (F3-01): barva --g-<skupina> v css/app.css */
   const MGRP = { chest: "Hrudník", back: "Záda", sh: "Ramena", arms: "Paže", legs: "Nohy", core: "Břicho" };
   const MGRP_OF = {
     neck: "back",
@@ -1948,7 +1948,6 @@
      a kontrola velkého skoku zůstávají podle minula.
      Rozsah: u cviku pole prog ([min, max] = zapnuto, "off" = vypnuto, bez pole = podle nastavení), jinak
      S.cfg.progAll (výchozí vypnuto) s rozsahem S.cfg.progMin–progMax. Jen typy PROG_KINDS.
-     F5-01 (kolik chybí na rekord) má nápovědu přidat do stejného řádku (progLine).
      progInfo(d, e) vrací {sets: [{set, kg}], reps, up}: set = pořadí pracovní série, up = přidání nad
      nejtěžší váhu. Předvyplnění v rozdělaném tréninku vždy přes draftHints(d, e) (✓, krokovač, karta), ne
      rovnou exHints (sloupec Minule a setJump dál z exHints(...).p). Rozsah opakování je i v nadpisu sloupce
@@ -4468,7 +4467,7 @@
      Skrytí platí pro všechna fitka šablony.
      Skrytá šablona zůstává v záloze, tréninky z ní (tplId) se nemění a pořád blokuje stejný název ve stejném
      fitku (tplClash, F2-08; hláška řekne, že je skrytá). Funkce tplVisible (neskryté šablony), tplHidden.
-     Až vznikne F2-04 (šablona na řadě), musí vybírat jen z tplVisible(). Později sloučit s archivací (F2-06). */
+     Později sloučit s archivací (F2-06). */
   let tplHid = false; // ukázané skryté šablony (klepnutí na „Skryté šablony (N)“)
   const tplVisible = () => tplSorted().filter(([, t]) => !t.hidden);
   const tplHidden = () => tplSorted().filter(([, t]) => t.hidden);
@@ -5550,7 +5549,7 @@
        textu, klikatelnost nese ikona grafu vedle. Přečas pauzy (.rest-in.over) je v barvě textu pruhu.
        Smazat / Zahodit se od hlavní akce liší tvarem a místem (obrys pod čarou, F2-12), odstín zůstává.
      - Jedna hlavní akce: v rozdělaném tréninku bez hotové série je plné Přidat cvik a Dokončit trénink
-       jen obrys, od první ✓ naopak (anyDone ve vEditor). Úvodní obrazovku řeší F2-04.
+       jen obrys, od první ✓ naopak (anyDone ve vEditor).
      - Řádek série: odznak druhu, políčka kg / opak., RIR/RPE a ✓ mají stejnou výšku --row-h (36 px) z :root,
        celý řádek --tap (44 px). ✓ je 50 × 36 px. Nový prvek v řádku série = výška --row-h.
      - Dotyková plocha aspoň --tap (44 px): ikonová tlačítka .iconbtn rozměrem (nemají rámeček), čipy,
@@ -8282,7 +8281,7 @@
 
   /* ---------- STATISTIKY (F3-13) ----------
      Statistiky (F3-13): route stats, vStats vykreslí přepínač částí STATS_PARTS nad filtrem fitek a jednu
-     část: statsOver (Přehled), statsMus (Partie, sem radar F3-04), statsEx (Cviky). Otevřená část S.statsPart
+     část: statsOver (Přehled), statsMus (Partie), statsEx (Cviky). Otevřená část S.statsPart
      (Local statsPart, výchozí over, akce statsPart posune nahoru). Fitko S.statsGym a období S.statsRange
      jsou společné pro všechny části. Nová sekce Statistik patří do jedné z částí, ne pod ně. */
   const RANGES = [
@@ -8630,7 +8629,7 @@
     </section>`;
     return h;
   }
-  // Partie: období, postava a pruhy podle partií (později radar F3-04)
+  // Partie: období, postava a pruhy podle partií
   function statsMus({ range, s }) {
     let h = `<section class="sec cont">${rangeSeg("statsRange", range)}</section>`;
     const mv = Object.entries(s.mus).sort((a, b) => b[1] - a[1]);
