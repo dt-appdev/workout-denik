@@ -1,7 +1,7 @@
 /* Test 2 (F0-17): záloha tam a zpět. Appka s daty (zkušební tréninky, vlastní trénink, měření, fotka) se
    zazálohuje do souboru. Pak se (a) v téže appce přidá trénink navíc a obnoví se „Nahradit vše“, (b) záloha
-   se obnoví do úplně čisté appky (nový telefon) včetně opětovného otevření appky a (c) do ní se ještě jednou
-   „Sloučí“. Po každém kroku se nová záloha musí rovnat původní (kromě času vytvoření), fotka také. */
+   se obnoví do úplně čisté appky (nový telefon) včetně opětovného otevření appky. Po každém kroku se nová záloha
+   musí rovnat původní (kromě času vytvoření), fotka také. Všechny druhy dat a Sloučit testuje zaloha-plna.js. */
 const P = require("./pomocne.js");
 
 module.exports = {
@@ -48,12 +48,7 @@ module.exports = {
       "záloha po obnově do čisté appky a restartu se rovná původní",
     );
 
-    // (c) sloučení téže zálohy do appky, která už vše má, nic nemění
-    const toastC = await P.importBackup(fresh, first.text, "merge");
-    check.ok(toastC && /Nic nechybělo/.test(toastC), "sloučení téže zálohy nemá nic doplnit: " + toastC);
-    const merged = await P.exportBackup(fresh);
-    check.eq(P.withoutTime(merged.data), original, "záloha po sloučení se rovná původní");
-    fresh.errors.length && check.ok(false, "chyby v appce (b, c): " + fresh.errors.join(" | "));
+    fresh.errors.length && check.ok(false, "chyby v appce (b): " + fresh.errors.join(" | "));
     await fresh.close();
   },
 };

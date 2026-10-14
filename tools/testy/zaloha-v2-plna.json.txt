@@ -1,0 +1,323 @@
+{
+  "app": "workout-denik",
+  "version": 2,
+  "exported": "2026-10-01T18:00:00.000Z",
+  "includes": {
+    "photos": true
+  },
+  "cfg": {
+    "gyms": [
+      {
+        "id": "g-domov",
+        "name": "Fitko u domu",
+        "col": 4,
+        "archived": false
+      },
+      {
+        "id": "g-stare",
+        "name": "Staré fitko",
+        "col": 7,
+        "archived": true
+      }
+    ],
+    "defaultGymId": "g-domov",
+    "restOn": false,
+    "restSec": 150,
+    "restSs": 210,
+    "restWarm": 90,
+    "restAlert": "both",
+    "restOver": false,
+    "restNotify": false,
+    "screenOn": true,
+    "screenDim": false,
+    "recCelEx": false,
+    "recCelW": false,
+    "recSnd": "fanfara",
+    "stagOn": false,
+    "stagN": 3,
+    "stepper": false,
+    "warmPct": 50,
+    "progAll": true,
+    "progMin": 6,
+    "progMax": 10,
+    "progSets": "first",
+    "effort": "rir",
+    "coach": true,
+    "height": 182
+  },
+  "templates": {
+    "t-push": {
+      "name": "Push A",
+      "order": 0,
+      "gyms": [
+        "g-domov"
+      ],
+      "items": [
+        {
+          "exId": "bench-press-barbell",
+          "note": "Lokty 45°",
+          "sets": [
+            {
+              "t": "w",
+              "kg": 40,
+              "reps": 10,
+              "sec": 0,
+              "km": 0
+            },
+            {
+              "t": "n",
+              "kg": 80,
+              "reps": 8,
+              "sec": 0,
+              "km": 0
+            }
+          ]
+        },
+        {
+          "exId": "c-moje-tlaky",
+          "ss": "s-1",
+          "sets": [
+            {
+              "t": "n",
+              "kg": 16,
+              "reps": 12,
+              "sec": 0,
+              "km": 0
+            }
+          ]
+        },
+        {
+          "exId": "lateral-raise-dumbbell",
+          "ss": "s-1",
+          "sets": [
+            {
+              "t": "n",
+              "kg": 8,
+              "reps": 15,
+              "sec": 0,
+              "km": 0
+            }
+          ]
+        }
+      ]
+    },
+    "t-stara": {
+      "name": "Stará šablona",
+      "order": 1,
+      "gyms": [],
+      "hidden": true,
+      "items": [
+        {
+          "exId": "plank",
+          "sets": [
+            {
+              "t": "n",
+              "kg": 0,
+              "reps": 0,
+              "sec": 60,
+              "km": 0
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "plan": {
+    "2099-01-15": {
+      "tplId": "t-push",
+      "gymId": "g-domov"
+    }
+  },
+  "months": {
+    "2026-09": {
+      "w-push": {
+        "title": "Push A",
+        "start": 1789056000000,
+        "end": 1789060200000,
+        "gymId": "g-domov",
+        "tplId": "t-push",
+        "feel": 7,
+        "energy": 6,
+        "sleep": 8,
+        "pain": {
+          "where": "pravé rameno",
+          "level": 3
+        },
+        "note": "Těžké, ale dobré",
+        "ex": [
+          {
+            "exId": "bench-press-barbell",
+            "note": "Lokty 45°",
+            "sets": [
+              {
+                "t": "w",
+                "kg": 40,
+                "reps": 10,
+                "at": 1789056300000
+              },
+              {
+                "t": "n",
+                "kg": 80,
+                "reps": 8,
+                "rpe": 8,
+                "at": 1789056600000
+              },
+              {
+                "t": "f",
+                "kg": 80,
+                "reps": 6,
+                "rpe": 10,
+                "rpeEst": 9,
+                "at": 1789056900000
+              },
+              {
+                "t": "d",
+                "kg": 60,
+                "reps": 10,
+                "at": 1789057020000
+              }
+            ]
+          },
+          {
+            "exId": "c-moje-tlaky",
+            "ss": "s-1",
+            "sets": [
+              {
+                "t": "n",
+                "kg": 16,
+                "reps": 12,
+                "rpe": 7.5
+              }
+            ]
+          },
+          {
+            "exId": "lateral-raise-dumbbell",
+            "ss": "s-1",
+            "sets": [
+              {
+                "t": "n",
+                "kg": 8,
+                "reps": 15
+              }
+            ]
+          },
+          {
+            "exId": "plank",
+            "sets": [
+              {
+                "t": "n",
+                "kg": 0,
+                "reps": 0,
+                "sec": 75
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "2026-08": {
+      "w-stare": {
+        "title": "Ve starém fitku",
+        "start": 1786550400000,
+        "end": 1786554000000,
+        "gymId": "g-stare",
+        "ex": [
+          {
+            "exId": "leg-extension-machine",
+            "sets": [
+              {
+                "t": "n",
+                "kg": 45,
+                "reps": 10
+              }
+            ]
+          }
+        ]
+      },
+      "w-znovu": {
+        "title": "Push A",
+        "start": 1787241600000,
+        "end": 1787245200000,
+        "gymId": "g-domov",
+        "againOf": "w-stare",
+        "ex": [
+          {
+            "exId": "bench-press-barbell",
+            "sets": [
+              {
+                "t": "n",
+                "kg": 77.5,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "body": {
+    "b-1": {
+      "date": 1785564000000,
+      "weight": 82.4,
+      "fat": 18.2,
+      "muscle": 41.5,
+      "note": "ráno nalačno"
+    },
+    "b-2": {
+      "date": 1788242400000,
+      "weight": 81.6,
+      "waist": 86
+    }
+  },
+  "exercises": {
+    "c-moje-tlaky": {
+      "name": "Moje tlaky",
+      "cz": "Tlaky s jednoručkami vsedě",
+      "equip": "dumbbell",
+      "kind": "wr",
+      "pri": [
+        "delts"
+      ],
+      "sec": [
+        "triceps"
+      ],
+      "custom": true,
+      "gymDep": true,
+      "machine": {
+        "g-domov": "lavice 4"
+      },
+      "rest": 90,
+      "prog": [
+        10,
+        15
+      ],
+      "desc": "Vlastní cvik pro test",
+      "url": "https://example.com/cvik"
+    },
+    "bench-press-barbell": {
+      "machine": {
+        "g-domov": "stojany 5"
+      },
+      "rest": 180,
+      "desc": "Můj vlastní popis"
+    },
+    "leg-extension-machine": {
+      "archived": true,
+      "prog": "off"
+    }
+  },
+  "exDb": 2,
+  "photos": {
+    "ph-test-1": {
+      "exId": "bench-press-barbell",
+      "gymId": "g-domov",
+      "at": 1789057200000,
+      "first": true,
+      "w": 80,
+      "h": 60,
+      "mime": "image/jpeg",
+      "size": 874,
+      "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAA8AFADASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAEG/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/EABcBAQEBAQAAAAAAAAAAAAAAAAUEBgf/xAAXEQEBAQEAAAAAAAAAAAAAAAADAAIB/9oADAMBAAIRAxEAPwDLACTxdVVIAvPEaqQBeeIxUgC48RipUBeeIxUoAx54t6qQBeeI1UgC88RipFBceIxUgC88RipQBjzxb1UgC88RqpFRVx4jFSALzxGKkAXniMVKAMeebfLuCi48xi7gC88xi7gC48Ri77AVeeY1d3//2Q=="
+    }
+  }
+}

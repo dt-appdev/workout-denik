@@ -259,6 +259,30 @@ function withoutTime(data) {
   return copy;
 }
 
+/* Je očekávaný obsah celý ve skutečném? Objekty: každý klíč z očekávaného musí být i ve skutečném se stejnou
+   hodnotou (navíc smí mít skutečný další klíče, např. výchozí hodnoty doplněné appkou); pole: stejná délka a prvky.
+   Vrací seznam rozdílů „cesta: očekáváno … je …“ (prázdný = v pořádku). */
+function missingIn(expected, actual, where) {
+  where = where || "";
+  if (expected && typeof expected === "object") {
+    if (!actual || typeof actual !== "object" || Array.isArray(expected) !== Array.isArray(actual)) {
+      return [`${where}: očekáváno ${JSON.stringify(expected).slice(0, 80)}, je ${JSON.stringify(actual)}`];
+    }
+    if (Array.isArray(expected) && expected.length !== actual.length) {
+      return [`${where}: očekáváno ${expected.length} prvků, je ${actual.length}`];
+    }
+    const out = [];
+    for (const key of Object.keys(expected)) {
+      out.push(...missingIn(expected[key], actual[key], where + "." + key));
+    }
+    return out;
+  }
+  if (expected !== actual) {
+    return [`${where}: očekáváno ${JSON.stringify(expected)}, je ${JSON.stringify(actual)}`];
+  }
+  return [];
+}
+
 // počet tréninků v zálohách (všechny měsíce)
 function countWorkouts(data) {
   return Object.values(data.months).reduce((sum, month) => sum + Object.keys(month).length, 0);
@@ -279,4 +303,5 @@ module.exports = {
   importBackup,
   withoutTime,
   countWorkouts,
+  missingIn,
 };

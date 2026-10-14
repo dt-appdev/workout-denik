@@ -71,7 +71,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `stara-zaloha.js`, `pomocne.js`, vymyšlená stará záloha `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
@@ -270,7 +270,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 
 Automatické testy (F0-17) jsou v `tools/testy/` a v každém PR je pouští úloha „testy" v GitHub Actions
 (Playwright se instaluje jen tam, v repu není `package.json`; appka sama zůstává bez npm). Testují kouřový průchod
-appkou (včetně 360 px s písmem Největší), zálohu tam a zpět a načtení starší zálohy. Před PR je spusť lokálně:
+appkou (včetně 360 px s písmem Největší), zálohu tam a zpět (i se všemi druhy dat a Sloučit) a načtení starších
+záloh (z doby artefaktu a verze 1). Před PR je spusť lokálně:
 
 ```
 NODE_PATH=$(npm root -g) node tools/testy/spust.js [část názvu testu]
@@ -278,7 +279,8 @@ NODE_PATH=$(npm root -g) node tools/testy/spust.js [část názvu testu]
 
 (Chromium: proměnná `CHROMIUM` = cesta k prohlížeči.) Testy ovládají appku jen přes `data-act` a třídy, ne přes
 texty. Změna `data-act`, struktury panelu nebo formátu zálohy proto vyžaduje úpravu testu v téže úloze. Nová úloha,
-která mění zálohu, data nebo hlavní obrazovky, přidá ke svému PR příslušný test. Testy nevidí Android WebView ani
+která mění zálohu, data nebo hlavní obrazovky, přidá ke svému PR příslušný test; nové pole v datech patří
+do `zaloha-v2-plna.json.txt`. Testy nevidí Android WebView ani
 nativní prostředí, to se zkouší ručně. Ostatní kontroly zůstávají ruční (telefon, náhled).
 
 Appku ručně lokálně: statický server z kořene repa, např. `python3 -m http.server`, a otevřít
