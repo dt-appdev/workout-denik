@@ -4,6 +4,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek na začáte
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 14. 10. 2026 | – | Plán: nová odložená úloha F3-48 Design manuál (rozdělená na kroky A a B, diskuse v `docs/navrhy/F3-48-design-manual.md`). |
 | 14. 10. 2026 | F3-46 | Výběr cviků: místo písmene „i“ šipka › uvnitř karty cviku. Informace o cviku: šipka ← místo × (vrací do výběru, zaškrtnuté cviky zůstanou), patička Upravit / Stránka cviku, nové dlaždice 2 × 2 s jednotkami (Tréninků, Naposledy a dvě podle druhu cviku), bez rekordů; cvik vázaný na fitko podle fitka tréninku (štítek) nebo šablony (čipy). Data beze změny. Ověřeno v Chromiu (Playwright: oba motivy, 5 druhů cviků, šablona se 2 fitky, Největší písmo na 360 px, `tools/mezery.js`). |
 | 14. 10. 2026 | F3-47 | Zbylé ruční mezery: karty historie cviku a fitka s okrajem 14 px, v kartách (Partie, souhrn, Tělo, Procvičené partie) prvky po 8 px, sloupce stránek a panelů (souhrn tréninku, formulář cviku, Pro coache, prohlížení fotky, Naplánovat) 10 px, prázdný graf na střed; zbylých 25 ručních `style="…px"` v `js/app.js` nahrazeno třídami, kontrola hlídá i `padding`. Data beze změny. Ověřeno v Chromiu (Playwright: 18 snímků pixelově shodných s odsouhlaseným náhledem, `tools/mezery.js` jinde beze změny). |
 | 14. 10. 2026 | – | Plán: nová úloha F3-47 (zbylé ruční mezery mimo karty, 25 míst v `js/app.js` a svislé hodnoty mimo stupnici v `css/app.css`), v Etapě 0 za F3-44. |
