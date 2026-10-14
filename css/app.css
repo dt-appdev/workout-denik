@@ -136,7 +136,7 @@ img {
   /* Svislé mezery mezi bloky stránky (F3-43), jiné hodnoty mezi bloky nepoužívat:
      --gap-in = uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu),
      --gap-out = mezi skupinami (sekce → sekce, samostatné velké tlačítko od okolí),
-     --gap-list = karty a řádky seznamu pod sebou.
+     --gap-list = karty a řádky seznamu pod sebou, i prvky uvnitř karty (F3-44).
      Uvnitř panelu (F3-44) stejně: bloky --gap-in, nová skupina --gap-out; --gap-lbl = popisek nad políčkem
      nebo čipy (label.f, .lbl-f) → obsah. Drobný popis pod názvem 2 px je typografie, ne mezera mezi bloky. */
   --gap-in: 10px;
@@ -453,6 +453,10 @@ body:has(#rest:not([hidden])) .wrap {
 .mb-in {
   margin-bottom: var(--gap-in);
 }
+/* nová skupina pod předchozím blokem: tlačítka dole na stránce, Pro coache (F3-44 krok B) */
+.mt-out {
+  margin-top: var(--gap-out);
+}
 .mb-list {
   margin-bottom: var(--gap-list);
 }
@@ -487,9 +491,14 @@ body:has(#rest:not([hidden])) .wrap {
   flex-direction: column;
   gap: var(--gap-in);
 }
-/* seznam karet nebo řádků pod sebou (F3-43) */
-.stack.list {
+/* seznam karet nebo řádků pod sebou (F3-43), prvky uvnitř karty pod sebou (F3-44) */
+.stack.list,
+.stack.inner {
   gap: var(--gap-list);
+}
+/* popisek nad přepínačem, políčkem nebo čipy a obsah pod ním (F3-44) */
+.stack.tight {
+  gap: var(--gap-lbl);
 }
 .row {
   display: flex;
@@ -1175,7 +1184,7 @@ select.inp {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 12px 8px 6px 14px;
+  padding: var(--gap-in) 8px 8px 14px; /* F3-44: nahoře 10 (název má vlastní výšku řádku), k řádkům pod ním 8 */
 }
 /* F1-11: ikona statistik a ••• vedle sebe bez mezery */
 .exc-h .iconbtn + .iconbtn {
@@ -1795,7 +1804,7 @@ tr.done .okb {
   font-weight: 600;
 }
 .exc-f {
-  padding: 6px 14px 12px;
+  padding: 8px 14px 14px; /* F3-44: od spodku karty stejně jako od boků (14) */
   display: flex;
   gap: 8px;
 }
@@ -2739,7 +2748,7 @@ tr.done .okb {
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin-top: 9px;
+  margin-top: 8px;
 }
 .gal-dots i {
   width: 7px;
