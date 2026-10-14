@@ -25,6 +25,7 @@
     "restSec": 150,
     "restSs": 210,
     "restWarm": 90,
+    "stwPre": 8,
     "restAlert": "both",
     "restOver": false,
     "restNotify": false,

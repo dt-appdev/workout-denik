@@ -1560,6 +1560,43 @@ tr.done .effb {
   justify-content: center;
   color: var(--ink-3);
 }
+/* tlačítko stopek za políčky série na čas (F1-24): velikost jako ✓, ■ za běhu v hlavní barvě jako pásek */
+.sets .c-stw {
+  width: calc(50px + 16px); /* tlačítko 50 px + padding */
+}
+.sets td.c-stw {
+  height: var(--tap);
+  position: relative;
+}
+.stwb {
+  width: 50px;
+  height: var(--row-h);
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  padding: 0;
+}
+.stwb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.stwb svg {
+  width: 18px;
+  height: 18px;
+}
+.stwb.run {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.stwb:disabled {
+  opacity: 0.4;
+}
 .okb svg {
   width: 18px;
   height: 18px;

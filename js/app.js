@@ -37,6 +37,8 @@
   const WARM_PCT = { def: 60, min: 10, max: 90, step: 10 };
   // délka pauzy v sekundách (F1-09): rozsah a krok posuvníků v Nastavení a ve formuláři cviku
   const REST_RANGE = { min: 30, max: 300, step: 30 };
+  // odpočet před startem stopek u série na čas (F1-24): rozsah v s a výchozí hodnota
+  const STW_PRE = { min: 0, max: 15, def: 5 };
   // návrh progrese (F4-01): meze rozsahu opakování a výchozí rozsah
   const PROG_REPS = { min: 1, max: 100, defMin: 8, defMax: 12 };
   // upozornění na stagnaci (F4-06): po kolika trénincích bez zlepšení (volba v Nastavení), výchozí
@@ -183,6 +185,9 @@
       <path d="M6.8 10.2h.01M10.3 10.2h.01M13.7 10.2h.01M17.2 10.2h.01M8 14h8"/>
     </svg>`,
     play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></svg>',
+    // zastavit stopky (F1-24)
+    stop:
+      '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg>',
     // zpět na aktuální měsíc (kalendář)
     today: '<svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9"/></svg>',
     // fotka nastavená jako první
@@ -1090,6 +1095,7 @@
       restSec: 120,
       restSs: 180,
       restWarm: 60,
+      stwPre: 5,
       restAlert: "both",
       restOver: true,
       restNotify: true,
@@ -1325,6 +1331,7 @@
         restSec: 120,
         restSs: 180,
         restWarm: 60,
+        stwPre: 5,
         restAlert: "both",
         restOver: true,
         restNotify: true,
@@ -1350,6 +1357,7 @@
     c.restSec = restNorm(c.restSec) || 120;
     c.restSs = restNorm(c.restSs) || 180;
     c.restWarm = restNorm(c.restWarm) || 60;
+    c.stwPre = stwNorm(c.stwPre);
     const pct = Math.round(+c.warmPct / WARM_PCT.step) * WARM_PCT.step;
     c.warmPct = pct >= WARM_PCT.min && pct <= WARM_PCT.max ? pct : WARM_PCT.def;
     if (!progValid([c.progMin, c.progMax])) {
@@ -2168,6 +2176,9 @@
     const e = d.ex[i];
     const s = e.sets[j];
     const kind = kindOf(e.exId);
+    if (d === S.active) {
+      stwCancel(); // odškrtnutí ukončí stopky bez zápisu (F1-24)
+    }
     if (s.done) {
       s.done = false;
       delete s.at;
@@ -5153,6 +5164,7 @@
     S.selGym = curGym();
     S.active = null;
     saveActive();
+    stwCancel();
     restStop();
   }
   function defaultTitle() {
@@ -5989,12 +6001,15 @@
     const thLabel = (f) => FLD[f].lab + (f === "reps" && repsRange ? " " + repsRange : "");
     // poslední sloupec je políčko (šablona, úprava tréninku bez RIR/RPE): okraj vpravo řeší .end-in (F3-36)
     const endIn = mode !== "active" && !eff;
+    // série na čas v rozdělaném tréninku mají za políčky tlačítko stopek (F1-24)
+    const stwCol = mode === "active" && flds.includes("sec");
     h += `<table class="sets${endIn ? " end-in" : ""}">
       <thead>
         <tr>
           <th class="c-type">Série</th>
           ${mode !== "template" && PREV_COL ? '<th class="c-prev">Minule</th>' : ""}
           ${flds.map((f) => `<th class="c-in">${thLabel(f)}</th>`).join("")}
+          ${stwCol ? '<th class="c-stw" aria-hidden="true"></th>' : ""}
           ${eff ? `<th class="c-eff">${EFF_NAME[effMode()]}</th>` : ""}
           ${mode === "active" ? '<th class="c-ok" aria-label="Hotovo">' + icon("check") + "</th>" : ""}
         </tr>
@@ -6056,6 +6071,9 @@
           ${last ? delBtn : ""}
         </td>`;
       });
+      if (stwCol) {
+        h += stwCell(i, j, s);
+      }
       if (eff) {
         h += effCell(e, i, j, s, mode !== "active" ? delBtn : "");
       }
@@ -10808,6 +10826,27 @@
         ],
       ],
     },
+    stw: {
+      title: "Stopky u série na čas",
+      items: () => [
+        [
+          "Stopky",
+          "U série na čas (plank, vis, běh) klepni na tlačítko vedle políčka Čas. Po odpočtu před startem " +
+            "se počítá čas od nuly. V cíli zazní pípnutí a čas se zapíše do políčka. Dřívější Stop zapíše " +
+            "naměřený čas. Sérii pak odškrtneš sám jako vždy.",
+        ],
+        [
+          "Cíl",
+          "Cíl je šedá hodnota Čas z minula (nebo ze šablony). Bez ní stopky počítají jen nahoru, " +
+            "dokud neklepneš na Stop. Deset sekund před cílem pípnou ještě dvakrát.",
+        ],
+        [
+          "Odpočet před startem",
+          "Čas na zaujetí polohy, 0 až 15 s. Poslední tři sekundy pípají, start je delší tón. Zvuk " +
+            "a vibrace se řídí volbou Na konci pauzy. 0 = stopky se spustí hned.",
+        ],
+      ],
+    },
     bw: {
       title: "Tělo",
       items: () => [
@@ -11191,6 +11230,7 @@
         progSettings() +
         effortSettings() +
         restSettings() +
+        stwSettings() +
         bodySettings() +
         coachSettings(),
     },
@@ -13359,6 +13399,7 @@
   }
   // sec = délka pauzy (výchozí časovač, po pracovní supersérii S.cfg.restSs)
   function restStart(sec) {
+    stwCancel(); // pruh je jen jeden, pauza ruší stopky (F1-24)
     audioUnlock(); // klepnutí = povolení zvuku na později
     S.restTotal = sec || S.cfg.restSec || 120;
     S.restEnd = Date.now() + S.restTotal * 1000;
@@ -13378,6 +13419,10 @@
   }
   function renderRest() {
     const el = document.getElementById("rest");
+    if (S.stw && S.active) {
+      stwRender(); // stopky mají v pruhu přednost (F1-24)
+      return;
+    }
     if (!S.restEnd || !S.active) {
       el.hidden = true;
       return;
@@ -13471,6 +13516,284 @@
     restTick(); // po návratu hned správný čas, staré oznámení pryč
   });
 
+  /* ---------- STOPKY U SÉRIE NA ČAS (F1-24) ----------
+     U sérií druhů se sloupcem Čas (KIND time, timew, dist; isTimed) je v rozdělaném tréninku za políčky
+     tlačítko ▶ (stwCell, akce stwGo). Klepnutí: odpočet před startem (S.cfg.stwPre, 0–15 s, výchozí 5,
+     Nastavení → Trénink → Stopky u série na čas), pak se čas počítá od nuly nahoru. Cíl je šedá hodnota
+     Čas z minula nebo ze šablony (draftHints); bez ní se jen počítá nahoru. V cíli pípne (beep, jako
+     konec pauzy), stopky se samy zastaví a do políčka se zapíše cílový čas; dřívější Stop (stwStop)
+     zapíše naměřené celé sekundy. Sérii neodškrtávají, to zůstává na uživateli (pak se spustí pauza).
+     Podoba i chování jsou jako u pauzy (F1-04): stejný pruh #rest (stwRender), čas se počítá z uloženého
+     okamžiku (S.stw.t0 / runAt, Local "stw"), takže přežije uspání appky i zavření. Pruh je jen jeden:
+     start stopek ukončí pauzu (stwGo), pauza i odškrtnutí série stopky bez zápisu (stwCancel).
+     Zvuky (stwCue, volba Na konci pauzy): při odpočtu startu krátké pípnutí na 3, 2, 1, delší tón na
+     startu, dvojité pípnutí STW_WARN s před cílem, v cíli beep(). Pípnutí, která by přišla pozdě (appka
+     byla na pozadí), se přeskočí. Displej drží Wake Lock jako u pauzy (volba screenOn), ztmavení jen
+     při pauze.
+     Stav S.stw: { i, j, exId, ref, pre, goal, t0, runAt, fl }; ref je objekt série (po zavření appky se
+     série najde podle i, j a exId), runAt prázdné = běží odpočet startu, fl = už zahrané signály.
+     Stopky ukončí konec tréninku (activeEnd) i smazání série (stwSet sérii nenajde). Názvy začínají
+     stw, protože sw je tah doleva u série (F2-03). */
+  // (STW_PRE je nahoře u ostatních rozsahů, protože cfgNorm běží už při startu)
+  const STW_WARN = 10; // s před cílem, kdy stopky ještě dvakrát pípnou
+  const STW_MAX_AGE = 2 * 3600 * 1000; // starší rozběhnuté stopky po obnově appky zahodit
+  // odpočet před startem: celé sekundy v rozsahu, jinak výchozí
+  function stwNorm(v) {
+    const n = Math.round(+v);
+    return v !== "" && v != null && n >= STW_PRE.min && n <= STW_PRE.max ? n : STW_PRE.def;
+  }
+  const stwPreTxt = (sec) => (sec ? fmtClock(sec) : "Vypnuto");
+  // posuvník v Nastavení → Trénink
+  function stwSettings() {
+    const sec = stwNorm(S.cfg.stwPre);
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>Stopky u série na čas</h2>
+        ${helpBtn("stw")}
+      </div>
+      <div class="card stack">
+        <div class="rest-sl">
+          <div class="row">
+            <span class="grow">Odpočet před startem</span>
+            <span class="num" id="stwPreV">${stwPreTxt(sec)}</span>
+          </div>
+          <input type="range" class="range" id="stwPre" min="${STW_PRE.min}" max="${STW_PRE.max}" step="1"
+              value="${sec}" aria-label="Odpočet před startem">
+        </div>
+      </div>
+    </section>`;
+  }
+  {
+    // stopky rozběhnuté před zavřením appky
+    const w = Local.get("stw", null);
+    if (w && w.t0 > 0 && Date.now() - (w.runAt || w.t0) < STW_MAX_AGE) {
+      S.stw = Object.assign({ fl: {} }, w);
+    }
+  }
+  let stwLast = 0; // čas posledního tiku (po delší pauze se pípnutí přeskočí)
+  // buňka s tlačítkem stopek v řádku série
+  function stwCell(i, j, s) {
+    const run = !!S.stw && S.stw.i === i && S.stw.j === j;
+    return `<td class="c-stw">
+      <button class="stwb${run ? " run" : ""}" data-act="stwGo" data-i="${i}" data-j="${j}"
+          aria-label="${run ? "Zastavit stopky" : "Spustit stopky"}"${s.done ? " disabled" : ""}>
+        ${run ? IC.stop : IC.play}
+      </button>
+    </td>`;
+  }
+  // série, na které stopky běží: { e, s }, jinak null (zmizela, je hotová nebo už není na čas)
+  function stwSet() {
+    const d = S.active,
+      w = S.stw;
+    if (!d || !w) return null;
+    if (w.ref) {
+      d.ex.forEach((e, i) => {
+        const j = e.sets.indexOf(w.ref);
+        if (j >= 0) {
+          w.i = i;
+          w.j = j;
+          w.exId = e.exId;
+        }
+      });
+    }
+    const e = d.ex[w.i];
+    const s = e && e.exId === w.exId ? e.sets[w.j] : null;
+    if (!s || (w.ref && s !== w.ref) || s.done || !isTimed(kindOf(e.exId))) return null;
+    w.ref = s;
+    return { e, s };
+  }
+  function stwSave() {
+    const w = S.stw;
+    const keep = w && { i: w.i, j: w.j, exId: w.exId, pre: w.pre, goal: w.goal };
+    Local.set("stw", w ? Object.assign(keep, { t0: w.t0, runAt: w.runAt, fl: w.fl }) : null);
+    wakeSync();
+    renderRest();
+  }
+  // tlačítko v řádku: spustí stopky série, na běžící sérii je zastaví
+  function stwGo(d, i, j) {
+    if (d !== S.active) return;
+    if (S.stw && S.stw.i === i && S.stw.j === j) {
+      stwStop();
+      return;
+    }
+    const e = d.ex[i],
+      s = e.sets[j];
+    if (s.done) return;
+    audioUnlock(); // klepnutí = povolení zvuku na později
+    if (S.restEnd) {
+      restStop();
+    }
+    const hint = draftHints(d, e)[j].h;
+    const now = Date.now();
+    const pre = stwNorm(S.cfg.stwPre);
+    S.stw = {
+      i,
+      j,
+      exId: e.exId,
+      ref: s,
+      pre,
+      goal: hint && hint.sec > 0 ? Math.round(hint.sec) : 0,
+      t0: now,
+      runAt: pre ? null : now,
+      fl: {},
+    };
+    stwLast = now;
+    if (!pre) {
+      stwCue("start");
+    }
+    stwSave();
+    scheduleRender();
+  }
+  // konec stopek: sec (celé sekundy) se zapíše do políčka série, bez sec nic
+  function stwEnd(sec) {
+    const c = stwSet();
+    if (c && sec > 0) {
+      c.s.sec = fmtSec(sec);
+      touchDraft();
+    }
+    S.stw = null;
+    stwSave();
+    scheduleRender();
+  }
+  // Stop / Zrušit: za běhu zapíše naměřený čas, při odpočtu startu nic
+  function stwStop() {
+    const w = S.stw;
+    if (!w) return;
+    stwEnd(w.runAt ? Math.floor((Date.now() - w.runAt) / 1000) : 0);
+  }
+  // stopky skončí beze zápisu (pauza, odškrtnutí série, konec tréninku)
+  function stwCancel() {
+    if (!S.stw) return;
+    S.stw = null;
+    stwSave();
+    scheduleRender();
+  }
+  // signály: tick = krátké pípnutí, warn = dvojité, start = delší tón; podle restAlert (zvuk / vibrace)
+  const STW_CUE = {
+    tick: { tones: [[0, 880, 0.12]], vib: [80] },
+    warn: {
+      tones: [
+        [0, 880, 0.12],
+        [0.25, 880, 0.12],
+      ],
+      vib: [120, 80, 120],
+    },
+    start: { tones: [[0, 1320, 0.45]], vib: [400] },
+  };
+  function stwCue(kind) {
+    const mode = S.cfg.restAlert,
+      cue = STW_CUE[kind];
+    if (mode !== "vib") {
+      try {
+        audioUnlock();
+        cue.tones.forEach(([at, freq, len]) => {
+          const osc = audioCtx.createOscillator(),
+            gain = audioCtx.createGain();
+          osc.frequency.value = freq;
+          gain.gain.value = 0.15;
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + at);
+          osc.stop(audioCtx.currentTime + at + len);
+        });
+      } catch (e) {}
+    }
+    if (mode !== "sound") {
+      try {
+        navigator.vibrate && navigator.vibrate(cue.vib);
+      } catch (e) {}
+    }
+  }
+  // čas na hodinách pruhu: odpočet startu (zbývá) nebo uplynulé sekundy
+  function stwClock(w, now) {
+    return w.runAt ? Math.floor((now - w.runAt) / 1000) : Math.ceil(w.pre - (now - w.t0) / 1000);
+  }
+  // pruh pauzy (#rest) se stopkami: odpočet startu bez pásku, za běhu s cílem pásek roste k cíli
+  function stwRender() {
+    const el = document.getElementById("rest"),
+      w = S.stw,
+      run = !!w.runAt,
+      now = Date.now();
+    const label = !run ? "Start za" : w.goal ? "Výdrž · cíl " + fmtSec(w.goal) : "Výdrž";
+    const barPct = run && w.goal ? Math.min(100, (now - w.runAt) / 10 / w.goal) : 0;
+    el.hidden = false;
+    el.innerHTML = `<div class="rest-in">
+      ${run && w.goal ? `<div class="bar" id="restBar" style="width:${barPct}%"></div>` : ""}
+      <b id="restClock">${fmtClock(stwClock(w, now))}</b>
+      <span class="rest-l"><i>${esc(label)}</i></span>
+      <button data-act="stwStop">${run ? "Stop" : "Zrušit"}</button>
+    </div>`;
+  }
+  /* tik stopek (každých 200 ms): přechod z odpočtu startu na běh, signály, konec v cíli, obnova hodin.
+     Stopky, jejichž série zmizela, se tiše ukončí. */
+  function stwTick() {
+    const w = S.stw;
+    if (!w) return;
+    if (!S.active || !stwSet()) {
+      S.stw = null;
+      stwSave();
+      scheduleRender();
+      return;
+    }
+    const now = Date.now(),
+      stale = now - stwLast > 1500; // appka byla na pozadí: pozdní pípnutí nehrát
+    stwLast = now;
+    if (!w.runAt) {
+      const left = w.pre - (now - w.t0) / 1000;
+      if (left > 0) {
+        const n = Math.ceil(left);
+        if (n <= 3 && !w.fl["p" + n]) {
+          w.fl["p" + n] = 1;
+          if (!stale) {
+            stwCue("tick");
+          }
+        }
+        stwClockShow(w, now);
+        return;
+      }
+      w.runAt = w.t0 + w.pre * 1000;
+      if (!stale) {
+        stwCue("start");
+      }
+      stwSave();
+    }
+    const sec = (now - w.runAt) / 1000;
+    if (w.goal > STW_WARN && sec >= w.goal - STW_WARN && !w.fl.warn) {
+      w.fl.warn = 1;
+      if (!stale && sec < w.goal) {
+        stwCue("warn");
+      }
+    }
+    if (w.goal && sec >= w.goal) {
+      if (sec - w.goal < 10) {
+        beep();
+      } else {
+        toast("Stopky doběhly do cíle");
+      }
+      stwEnd(w.goal);
+      return;
+    }
+    stwClockShow(w, now);
+  }
+  // obnoví hodiny a pásek v pruhu bez překreslení
+  function stwClockShow(w, now) {
+    const clock = document.getElementById("restClock"),
+      bar = document.getElementById("restBar");
+    if (clock) {
+      clock.textContent = fmtClock(stwClock(w, now));
+    }
+    if (bar && w.runAt && w.goal) {
+      bar.style.width = Math.min(100, (now - w.runAt) / 10 / w.goal) + "%";
+    }
+  }
+  setInterval(stwTick, 200);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      stwLast = 0;
+      stwTick(); // po návratu hned správný čas
+    }
+  });
+
   /* ---------- displej během pauzy (F1-02) ----------
      S.cfg.screenOn: během odpočinkové pauzy (i přečasu) v rozdělaném tréninku displej nezhasne
      (Screen Wake Lock, jen když je appka na očích; Chrome zámek při skrytí appky sám pustí,
@@ -13498,7 +13821,7 @@
 
   // pauza v rozdělaném tréninku se zapnutou volbou, appka na očích, baterie v pořádku
   function wakeActive() {
-    return !!(S.cfg.screenOn && S.active && S.restEnd && !document.hidden && !batteryLow());
+    return !!(S.cfg.screenOn && S.active && (S.restEnd || S.stw) && !document.hidden && !batteryLow());
   }
 
   // srovná zámek displeje a ztmavení se stavem appky; volá se při změně pauzy a z restTick
@@ -13513,9 +13836,9 @@
       wakeRelease();
     }
     // ztmavení zůstane i po pojistce, displej pak zhasne podle Androidu
-    if (on && S.cfg.screenDim && idle >= WAKE_DIM) {
-      dimShow();
-    } else if (!on) {
+    if (on && S.restEnd && S.cfg.screenDim && idle >= WAKE_DIM) {
+      dimShow(); // ztmavení jen při pauze, stopky se sledují na displeji (F1-24)
+    } else if (!on || !S.restEnd) {
       dimHide();
     }
     dimUpdate();
@@ -14123,6 +14446,13 @@
       }
       case "done":
         toggleSetDone(d, i, j);
+        break;
+      // stopky u série na čas (F1-24)
+      case "stwGo":
+        stwGo(d, i, j);
+        break;
+      case "stwStop":
+        stwStop();
         break;
       case "kk":
         sheetStepper(i, j, v);
@@ -15836,6 +16166,10 @@
       return;
     } // F1-08: posuvník ukazuje procenta hned, uloží se po puštění (change)
     if (restSliderShow(t) && t.id !== "x-rest") return; // F1-09: délka pauzy hned při tažení
+    if (t.id === "stwPre") {
+      document.getElementById("stwPreV").textContent = stwPreTxt(+t.value);
+      return;
+    } // F1-24: odpočet před startem stopek hned při tažení
     if (isSetCell(t)) {
       cellTyped(t);
     } // F1-23: napsané číslo nahradilo starou hodnotu
@@ -16009,6 +16343,10 @@
       put("config/main", Object.assign({}, S.cfg, { [t.id]: restNorm(t.value) || S.cfg[t.id] }));
       return;
     } // F1-09: posuvníky délky pauzy
+    if (t.id === "stwPre") {
+      put("config/main", Object.assign({}, S.cfg, { stwPre: stwNorm(t.value) }));
+      return;
+    } // F1-24: odpočet před startem stopek
     if (t.id === "phCamIn" || t.id === "phPickIn") {
       photoFiles(t);
       return;
