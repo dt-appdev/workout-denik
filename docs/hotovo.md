@@ -286,8 +286,8 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   Beze změny (už odpovídají): dlaždice čísel (8 px mezi sebou, uvnitř 10 × 12 / 8 × 10), legenda grafu, karty
   uloženého tréninku, mezera mezi tlačítky vedle sebe 8 px (stejná jako mezi dlaždicemi, dotaz uživatele). Stagnace
   zůstává přitažená k řádku Minule, karty v supersérii 6 px. Úloha „kontrola“ odmítá i nový svislý `gap` v px
-  (`row-gap`, `gap` sloupce `.stack`). Zbylé ruční mezery v px mimo karty (asi 40: Statistiky, Tělo, kalendář,
-  panel Plán, online databáze) zůstaly mimo úlohu.
+  (`row-gap`, `gap` sloupce `.stack`). Zbylé ruční mezery v px mimo karty (25 míst: Statistiky, Tělo, historie
+  cviku, panel Plán, online databáze) → F3-47.
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků (dotaz uživatele 13. 10. 2026, jestli mají názvy šablon,
   cviků a tréninků stejné písmo; náhled Dnes / Po změně schválen týž den). Zjištěno: názvy v kartách jsou všude Barlow
   700 `--fs-lg`, jen Historie měla výšku řádku 1,4 místo 1,2. **Zamítnuto:** názvy v kartách polotučně (600), v kartě
