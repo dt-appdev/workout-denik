@@ -11793,8 +11793,9 @@
      Dlaždice: Tréninků, Naposledy a dvě podle druhu cviku (EXI_TILES, nejlepší hodnoty za celou dobu přes
      exMetrics, Celkový čas = součet). Cvik vázaný na fitko se počítá jen z fitka, pro které se vybírá
      (pickGyms): jedno fitko = štítek gymPill nad dlaždicemi, šablona s víc fitky = čipy (pick.infoGym, akce
-     exInfoGym). Ostatní cviky ze všech fitek, bez štítku (jako stránka cviku, F3-31). Řádek Minule a poslední
-     rekordy podle stejného fitka. Ve fitku bez záznamu dlaždice „–“ a věta pod nimi. Štítek nebo čipy patří
+     exInfoGym). Ostatní cviky ze všech fitek, bez štítku (jako stránka cviku, F3-31). Řádek Minule podle
+     stejného fitka, rekordy panel neukazuje (jsou na stránce cviku).
+     Přepnutí čipu panel překreslí na stejném místě (sheetExInfo(id, keep) drží posun). Ve fitku bez záznamu dlaždice „–“ a věta pod nimi. Štítek nebo čipy patří
      ke skupině čísel (.exi-gym: velká mezera nad nimi, k dlaždicím --gap-in). */
   // třetí a čtvrtá dlaždice podle druhu cviku: [typ metriky z exMetrics, popisek]
   const EXI_TILES = {
@@ -11873,18 +11874,16 @@
       .join("");
     return { gym, top: `<div class="chips exi-gym">${chips}</div>` };
   }
-  function sheetExInfo(id) {
+  // keep = překreslení po přepnutí fitka: obsah panelu zůstane posunutý na stejném místě
+  function sheetExInfo(id, keep) {
+    const sb = keep ? document.querySelector(".sheet-b") : null;
+    const st = sb ? sb.scrollTop : 0;
     exEd = null;
     pick.infoId = id;
     const e = exOf(id);
     const all = derive().byEx[id] || [];
     const { gym, top } = exiGym(e);
     const list = gym ? all.filter((x) => x.w.gymId === gym) : all;
-    const R = recs();
-    const rl = (R.byEx[id] || [])
-      .filter((r) => !gym || r.gymId === gym)
-      .slice(-3)
-      .reverse();
     let b =
       `${
         photoGallery(e, id) +
@@ -11918,23 +11917,6 @@
           `${esc(gymName(list[0].w.gymId))})</span>
         </div>`;
       }
-      if (rl.length) {
-        b += `<div class="reclist">
-          ${rl
-            .map(
-              (r) =>
-                `<div class="rec">
-                  <span class="md">${medal([r.type])}</span>
-                  <div class="grow">
-                    ${esc(REC[r.type])}: <b>${esc(recFmt(r.type, r.v, r.set))}</b> ` +
-                `<span class="muted">· ` +
-                `${fmtDate(r.w.start)}</span>
-                  </div>
-                </div>`,
-            )
-            .join("")}
-        </div>`;
-      }
     } else {
       b += '<div class="small muted">S tímto cvikem zatím nemáš žádný záznam.</div>';
     }
@@ -11949,6 +11931,10 @@
       { lv: 2, back: () => renderPicker(true), re: () => sheetExInfo(id), backBtn: true },
     );
     galRestore(document.getElementById("sheetRoot"));
+    const nb = document.querySelector(".sheet-b");
+    if (nb && st) {
+      nb.scrollTop = st;
+    }
   }
   /* ---------- NOVÝ A UPRAVIT CVIK (F3-14, F3-30, F3-40) ----------
      Formulář je samostatná stránka (route "exed") se šipkou ←, ne panel. Otevírá se jen přes exEdOpen,
@@ -14423,7 +14409,7 @@
         break;
       case "exInfoGym":
         pick.infoGym = v;
-        sheetExInfo(pick.infoId);
+        sheetExInfo(pick.infoId, true);
         break;
       case "pickDone": {
         const dd = curDraft();
