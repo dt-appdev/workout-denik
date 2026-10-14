@@ -288,6 +288,32 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   zůstává přitažená k řádku Minule, karty v supersérii 6 px. Úloha „kontrola“ odmítá i nový svislý `gap` v px
   (`row-gap`, `gap` sloupce `.stack`). Zbylé ruční mezery v px mimo karty (25 míst: Statistiky, Tělo, historie
   cviku, panel Plán, online databáze) → F3-47.
+- [x] **F3-47** Zbylé ruční mezery mimo karty (přání uživatele 14. 10. 2026 u F3-44, hotovo týž den).
+  Po F3-44 zůstalo v `js/app.js` 25 ručních `style="…px"` s mezerou a k tomu svislé hodnoty mimo stupnici v `css/app.css`.
+  Svislé (podle stupnice 2 / 4 / 8 / 10 / 22 px na třídy `.mt-in`, `.mt-out`, `.mb-in`, `.mb-lbl`, `.stack.tight` /
+  `.inner` / `.list`): Statistiky → Přehled (přepínač nad grafem `margin-bottom:10px`), Partie (poznámka pod postavou
+  `margin:8px 0 0`), Cviky → seznam a výběr cviků (tlačítko online databáze `margin-top:10px`), historie cviku
+  (`vExHist`: karta `padding:10px 12px`, řádek `margin-top:4px`), online databáze (`renderFp`, `renderFs`: tlačítko
+  Zkusit znovu, popisek pod filtry `margin:2px 0 0`), Tělo (`vBody`: hlavička grafu `margin-bottom:6px`, poznámka
+  `margin-top:6px`), karta fitka v Nastavení (`padding:10px 12px`), panel Plán (`sheetPlan` `gap:12px`), záznam
+  oznámení o pauze (`restPost`), obrázek ke sdílení (`pvChrome` `gap:12px`, `shSheet` `gap:4px`), prázdný graf
+  (`drawCharts` `padding-top:60px`). Vodorovné `gap` v řádcích (`.row`, 6 míst) jen převést na třídu, hodnotu nechat.
+  V `css/app.css` projít svislé `margin` / `padding` / `gap` / `row-gap` komponent mimo karty a panely (např. `.gal-add`
+  2 / 12 px) a sjednotit na stupnici; výjimky odsouhlasené dřív zůstávají (nadpis skupiny ve výběru cviků 14 / 6 px,
+  supersérie 6 px, stagnace −4 px, okraj karty 14 px). Kontrolu v úloze „kontrola“ případně rozšířit i na `padding`.
+  Nejdřív náhled Dnes / Po změně (dotčené obrazovky, oba motivy).
+  **Provedeno** (náhled Dnes / Po změně odsouhlasen 14. 10. 2026 bez připomínek): plán se v části mýlil, Partie,
+  Tělo a souhrn v Přehledu jsou uvnitř karty, kde platí 8 px (F3-44), ne 10. Karty historie cviku a fitka
+  v Nastavení mají okraj karty 14 px (dřív 10 × 12, o 8 px vyšší). Souhrn v Přehledu: nadpis Nejčastější cviky
+  v kartě 8 / 8 (dřív 14 / 8). Partie a Procvičené partie v uloženém tréninku: postava bez okraje nahoře, k pruhu
+  skupin 8, legenda → pruhy 8 (dřív 12). Tělo: hlavička grafu a poznámka pod legendou 8 (dřív 6). Stránka
+  cviku: tlačítka fotek → štítky partií 8 (dřív 12), galerie beze změny (odsouhlaseno u F3-44). Sloupce 12 / 14
+  → 10: souhrn uloženého tréninku, formulář Nový / Upravit cvik, Pro coache, prohlížení fotky, panel Naplánovat
+  (nadpis Ostatní šablony 10 / 10 jako v ostatních panelech, dřív 26 / 20). Online databáze: poznámka o zdroji
+  bez vlastního okraje. Prázdný graf na střed třídou `.chart-empty`. Beze změny vzhledu: 6× zbytečné
+  `style="gap:8px"` u `.row` (řádek má 8 px sám), ostatní ruční styly → třídy (`.mt-in`, `.mb-in`, `.mb-list`,
+  nové `.mt-list` a `.mt-lbl`, `.stack.list` / `.tight`). V `css/app.css` sjednoceny jen mezery mezi bloky,
+  vnitřní okraje ovládacích prvků zůstaly (kompaktnost, F3-23). Úloha „kontrola“ odmítá i `padding` v px.
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků (dotaz uživatele 13. 10. 2026, jestli mají názvy šablon,
   cviků a tréninků stejné písmo; náhled Dnes / Po změně schválen týž den). Zjištěno: názvy v kartách jsou všude Barlow
   700 `--fs-lg`, jen Historie měla výšku řádku 1,4 místo 1,2. **Zamítnuto:** názvy v kartách polotučně (600), v kartě

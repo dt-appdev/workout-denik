@@ -195,8 +195,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   `.mb-lbl`), odstavec v panelu bez `style="margin:0"`. Uvnitř karty prvky pod sebou i vedle sebe 8 px, k okraji
   karty 14 px (karta cviku nahoře 10, název má vlastní výšku řádku). Sloupce místo `style="gap…"` třídami
   `.stack.tight` (popisek → obsah 4 px), `.stack.inner` (v kartě 8), `.stack.list`; tlačítka dole na stránce `.mt-out`
-  (22). Kontrola odmítá i svislý `gap` v px. Před PR se změnou vzhledu změřit `tools/mezery.js` (postup v hlavičce
-  skriptu).
+  (22). Kontrola odmítá i svislý `gap` a `padding` v px (F3-47), karta má okraj jen z `.card`. Před PR se změnou
+  vzhledu změřit `tools/mezery.js` (postup v hlavičce skriptu).
 - Formuláře (F3-23): políčka `.inp` a rozbalovací výběry mají všude stejnou velikost (aspoň 44 px, písmo `--fs-lg`),
   jednotlivě se nezmenšují (zamítnuto: menší výběr fitka v tréninku). Delší formulář v panelu se dělí na sekce
   nadpisem `.subh` (formulář měření: Hmotnost a složení, Obvody).

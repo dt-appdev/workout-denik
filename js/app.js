@@ -5607,7 +5607,15 @@
      - třídy sloupců místo style="gap:…": .stack.tight = popisek nad přepínačem, políčkem nebo čipy → obsah
        (--gap-lbl), .stack.inner = prvky uvnitř karty (8 px), .stack.list = seznam karet nebo řádků (8 px).
        Prvky vedle sebe v kartě (tlačítka, dlaždice čísel) 8 px. Vodorovné mezery jinak mimo pravidlo.
-     Úloha „kontrola“ odmítne nový svislý gap v px (row-gap, gap sloupce .stack) stejně jako margin. */
+     Úloha „kontrola“ odmítne nový svislý gap v px (row-gap, gap sloupce .stack) stejně jako margin.
+     F3-47 (zbylá místa mimo F3-43 a F3-44, náhled odsouhlasen 14. 10. 2026):
+     - karta má vždy okraj .card (14 px), žádný ruční padding (historie cviku, karta fitka v Nastavení),
+     - prvky v kartě mimo sloupec: .mt-list / .mb-list (8 px), řádek pod nadpisem .mt-lbl (4 px); v kartě
+       i postava (.card > .figs bez okraje nahoře), pruh skupin, legenda a nadpis .subh po 8 px,
+     - sloupce stránek a panelů (souhrn tréninku .wsum, formulář cviku .ex-form, Pro coache, prohlížení
+       fotky, panel Naplánovat) --gap-in; nadpis .subh ve sloupci panelu bez vlastního okraje,
+     - .row má gap 8 px sám, style="gap:8px" je zbytečný; prázdný graf na střed třídou .chart-empty,
+     - úloha „kontrola“ odmítá i padding v px ve style="…". */
   /* ---------- TYPOGRAFIE (F3-45) ----------
      Jen v css/app.css a třídy v šablonách (přání uživatele 13. 10. 2026, náhled schválen týž den).
      Jedno písmo pro jednu roli, aby stejné věci vypadaly všude stejně:
@@ -8113,7 +8121,7 @@
         <div class="row"><h3 class="grow">${esc(t.name)}</h3></div>
         <div class="line"><span>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</span></div>
       </button>`;
-    let b = '<div class="stack" style="gap:12px">';
+    let b = '<div class="stack">';
     if (gymsOn().length > 1) {
       b += `<div class="chips" data-ck="planGym">
         ${gymsOn()
@@ -8183,7 +8191,7 @@
         ${tplHead(t.name, p.gymId ? [p.gymId] : [])}
         <p>${esc((t.items || []).map((i) => exName(i.exId)).join(", "))}</p>
       </div>`;
-    const foot = `<div class="stack" style="width:100%;gap:8px">
+    const foot = `<div class="stack list" style="width:100%">
         ${today ? `<button class="btn primary full" data-act="planStart" data-v="${k}">Začít trénink</button>` : ""}
         <button class="btn full" data-act="planChange" data-v="${k}">Změnit šablonu nebo fitko</button>
         <button class="btn full" data-act="planReplan" data-v="${k}">Přeplánovat</button>
@@ -8603,7 +8611,7 @@
     const ps = summarize(wsAll.filter((w) => w.start >= p.a && w.start < p.b));
     h += `<section class="sec">
       <div class="sec-h"><h2>Souhrn · ${esc(p.l)}</h2></div>
-      <div class="seg seg-wide" style="margin-bottom:10px">
+      <div class="seg seg-wide mb-in">
         ${Object.entries(P)
           .map(
             ([k, v]) =>
@@ -8635,7 +8643,7 @@
               hbarList(mv.map(([k, v]) => ({ label: MUSCLE_MAP.NAMES[k], v, sw: mgCol(k) })))
             : '<div class="muted small">V tomto období nic.</div>'
         }
-        <p class="xs muted" style="margin:8px 0 0">Počítá se hlavní partie cviku.</p>
+        <div class="xs muted mt-list">Počítá se hlavní partie cviku.</div>
       </div>
     </section>`;
     return h;
@@ -8883,7 +8891,7 @@
       ${cntHead(rows.length)}
       <input class="inp" id="exSearch" data-f="exSearch" placeholder="Hledat cvik (anglicky i česky)…"
           value="${esc(S.exSearch)}">
-      <div class="row mt-in" style="gap:8px">
+      <div class="row mt-in">
         ${mfChip("stats")}
         <div class="seg" style="margin-left:auto">
           <button data-act="exSort" data-v="last" aria-pressed="${!pct}">Naposledy</button>
@@ -9080,7 +9088,7 @@
     h += `<input class="inp" id="exlQ" data-f="exlQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(S.exlQ)}" autocomplete="off">`;
     // řádek filtrů (F3-41), skryté cviky jako další filtr
-    h += `<div class="row wrap-r mt-in" style="gap:8px">
+    h += `<div class="row wrap-r mt-in">
       ${mfChip("list")}${eqChip("list")}
       ${
         nHid
@@ -9115,7 +9123,7 @@
         `${
           S.exlQ.trim() && !S.exlHid
             ? `<br>
-            <button class="btn sm" data-act="fedbOpen" data-v="list" style="margin-top:10px">
+            <button class="btn sm mt-in" data-act="fedbOpen" data-v="list">
               Hledat „${esc(S.exlQ.trim())}“ online
             </button>`
             : ""
@@ -9406,7 +9414,7 @@
           ${stagList
             .map(
               (x) =>
-                `<div class="row" style="gap:8px;align-items:flex-start">
+                `<div class="row" style="align-items:flex-start">
                   <span class="stag-ico" aria-hidden="true">${IC.stag}</span>
                   <div class="grow">
                     <b>${esc(stagCount(x.n))}</b>
@@ -9518,7 +9526,7 @@
         ? live.lr.ex.slice(0, 1).map((type) => ({ type }))
         : (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
       h +=
-        `<div class="card" style="padding:10px 12px">
+        `<div class="card">
         <div class="row small">
           <b class="grow">
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
@@ -9526,7 +9534,7 @@
           </b>
           ${s.w.gymId ? gymPill(s.w.gymId) : ""}
         </div>
-        <div class="small num" style="margin-top:4px">
+        <div class="small num mt-lbl">
           ${s.e.sets
             .map(
               (st) =>
@@ -10047,8 +10055,8 @@
           ? `<span class="sw" style="background:${gymColor(p.gymId)}"></span>`
           : "";
     foot.innerHTML = `${galDots(ids.length, ids.indexOf(pv.id))}
-      <div class="stack${fig ? " pv-off" : ""}" style="gap:12px"${fig ? ' aria-hidden="true"' : ""}>
-      <div class="row" style="gap:8px">
+      <div class="stack${fig ? " pv-off" : ""}"${fig ? ' aria-hidden="true"' : ""}>
+      <div class="row">
         <button class="btn grow pv-gym" data-act="pvGym" aria-expanded="${pv.gymOpen}">
           ${gymSw}
           <span class="grow">Fitko: ${esc(gymTxt)}</span>${icon("down", pv.gymOpen ? "up" : "")}
@@ -10212,7 +10220,7 @@
           if (el) {
             el.innerHTML = `Online databázi se nepodařilo načíst. Poprvé je potřeba internet, potom
               funguje i offline.<br>
-              <button class="btn sm" data-act="fpRetry" style="margin-top:10px">Zkusit znovu</button>`;
+              <button class="btn sm mt-in" data-act="fpRetry">Zkusit znovu</button>`;
           }
         });
       return;
@@ -10536,7 +10544,7 @@
       const unit = f[2] ? " " + f[2] : "";
       const dAvg = avg.length > 1 ? avg[avg.length - 1].y - avg[0].y : 0;
       h += `<div class="card mt-in">
-        <div class="row" style="align-items:flex-end;margin-bottom:6px">
+        <div class="row mb-list" style="align-items:flex-end">
           <div class="grow">
             <div class="xs muted" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">
               ${esc(f[1])}
@@ -10583,7 +10591,7 @@
           <span><i style="background:var(--ink-3);height:7px;width:7px;border-radius:50%"></i>Jednotlivá
             měření</span>
         </div>
-        <div class="xs muted" style="margin-top:6px">
+        <div class="xs muted mt-list">
           ${pts.length} ${plural(pts.length, "den s měřením", "dny s měřením", "dnů s měřením")} v
           období${all.length > pts.length ? " z " + all.length + " měření celkem" : ""}
         </div>
@@ -11264,7 +11272,7 @@
     const n = counts[g.id] || 0;
     const def = S.cfg.defaultGymId === g.id ? " · výchozí" : "";
     return `<div class="card row gym-c${grip ? " dnd-it" : ""}" role="button" tabindex="0" data-act="editGym"
-        data-v="${g.id}" style="padding:10px 12px">
+        data-v="${g.id}">
         <span class="sw" style="width:12px;height:12px;border-radius:50%;background:${gymColor(g.id)}"></span>
         <div class="grow">
           <div class="row-n">${esc(g.name)}</div>
@@ -11676,7 +11684,7 @@
         `${
           pick.q.trim()
             ? `<br>
-            <button class="btn sm" data-act="fedbOpen" data-v="picker" style="margin-top:10px">
+            <button class="btn sm mt-in" data-act="fedbOpen" data-v="picker">
               Hledat „${esc(pick.q.trim())}“ online
             </button>`
             : ""
@@ -11733,7 +11741,7 @@
     const n = pickerRows().length;
     return `<input class="inp" id="pickQ" data-f="pickQ" placeholder="Hledat cvik (anglicky i česky)…"
         value="${esc(pick.q)}" autocomplete="off">
-    <div class="row wrap-r" style="gap:8px">
+    <div class="row wrap-r">
       ${mfChip("picker")}${eqChip("picker")}
       <button class="chip" data-act="pickHist" aria-pressed="${pick.hist}">Jen cviky z historie</button>
     </div>
@@ -12446,9 +12454,9 @@
     const b = `<input class="inp" id="fsQ" data-f="fsQ"
         placeholder="Název anglicky i česky, např. bench press, dřep…" value="${esc(fs.q)}"
         autocomplete="off">
-    <div class="row wrap-r" id="fsBar" style="gap:8px"></div>
+    <div class="row wrap-r" id="fsBar"></div>
     <div class="stack list" id="fsList"></div>
-    <p class="xs muted" style="margin:2px 0 0">
+    <p class="xs muted">
       Zdroj: databáze free-exercise-db (volné dílo). Český název, partie a typ zápisu jsou návrh, před
       uložením je zkontroluj.
     </p>`;
@@ -12473,7 +12481,7 @@
             el.innerHTML = `<div class="empty">
               Databázi cviků se nepodařilo načíst. Poprvé je potřeba internet, potom funguje i
               offline.<br>
-              <button class="btn sm" data-act="fsRetry" style="margin-top:10px">Zkusit znovu</button>
+              <button class="btn sm mt-in" data-act="fsRetry">Zkusit znovu</button>
             </div>`;
           }
         });
@@ -13209,12 +13217,12 @@
     const a = await restLogRead();
     openSheet(
       "Záznam oznámení",
-      `<div class="xs muted" style="margin-bottom:8px">
+      `<div class="xs muted mb-list">
         Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
       </div>
       ${
         a.length
-          ? `<div class="stack" style="gap:4px">
+          ? `<div class="stack tight">
             ${a
               .map(
                 (x) =>
@@ -13697,7 +13705,7 @@
       } else {
         pts = sp.series.flatMap((s) => s.pts);
         if (!pts.length) {
-          el.innerHTML = `<div class="muted small" style="padding-top:60px;text-align:center">
+          el.innerHTML = `<div class="muted small chart-empty">
             V tomto období žádná data.
           </div>`;
           return;
@@ -16612,7 +16620,7 @@
     const nAdd = p.add.length,
       nUpd = p.upd.length;
     b += `<div class="subh">Co se stane</div>
-    <div class="stack" style="gap:4px">
+    <div class="stack tight">
       <div class="frow"><span class="grow">Nová měření</span><b class="num">${fmtInt(nAdd)}</b></div>
       <div class="frow">
         <span class="grow">Přepíše ruční měření</span><b class="num">${fmtInt(nUpd)}</b>
