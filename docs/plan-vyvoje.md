@@ -258,14 +258,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-44** Mezery uvnitř karet a panelů
 - [x] **F3-45** Jednotná typografie karet, seznamů a popisků
 - [x] **F3-47** Zbylé ruční mezery mimo karty
-- [ ] **F3-46** Tlačítko „i“ ve výběru cviků jako ikona (přání uživatele 13. 10. 2026 u F3-45, uživatel ho chce
-  přepracovat): tlačítko vedle cviku ve výběru cviků (`.infob`, akce `exInfo`, sekce výběru cviků) je písmeno „i“
-  v úzkém písmu, ne SVG ikona, což porušuje pravidlo F3-20 (žádné znaky písma jako ikona). Návrh: ikona ze sady `IC`
-  ve stylu ostatních (nová kresba nebo existující „info“, jedna kresba = jeden význam), případně přepracovat celé
-  tlačítko (velikost, umístění, co otevírá). Patří sem i panel, který tlačítko otevírá (Informace o cviku,
-  `sheetExInfo`): v patičce má tři tlačítka vedle sebe a různě široká (Zpět na výběr / Upravit / Stránka cviku), což
-  porušuje pravidlo F3-23 (nejvýš dvě, stejně široká; zjištěno 14. 10. 2026 u F3-44). Nejdřív náhled ikon (dnes /
-  návrh, světlý i tmavý motiv).
+- [x] **F3-46** Šipka u cviku ve výběru a panel Informace o cviku
 
 
 ### Fáze 4 – Chytré funkce

@@ -160,7 +160,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   zůstávají u ovládání.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět"): každý stisk = jeden krok `navBack()`, šipky ← v appce ho volají.
   Nový panel přes `openSheet(…, noanim, nav)`, nová podstránka (route) se musí doplnit do `navBack`, `navDepth`
-  a `go`; postup v úvodním komentáři sekce.
+  a `go`; postup v úvodním komentáři sekce. Panel nad jiným panelem (F3-46) má místo × šipku ← vlevo
+  (`openSheet` volba `backBtn`), která vrací o úroveň.
 - Písmo (F3-11): velikost jen přes proměnné `--fs-*` ze stupnice v `:root` v `css/app.css`, nikdy `font-size`
   v px (ani v `style=` v JS). Nová obrazovka se musí vejít i při Velikost písma „Největší“ (`--fs-k` 1,3) na šířku
   360 px: rozměry podle textu v `em`, ne pevné px; přepínač `.seg` s víc volbami pod nadpis (`.seg-wide`), ne vedle

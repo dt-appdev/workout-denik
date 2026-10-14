@@ -2278,6 +2278,11 @@ tr.done .okb {
   padding: 12px 10px 8px 16px;
   border-bottom: 1px solid var(--line);
 }
+/* panel nad jiným panelem: šipka ← vlevo místo × (F3-46) */
+.sheet-h.bk {
+  padding-left: 4px;
+  gap: 2px;
+}
 .sheet-h h2 {
   margin: 0;
   flex: 1;
@@ -2309,6 +2314,27 @@ tr.done .okb {
 .sheet-b > .desc,
 .sheet-b > .kpis {
   margin: calc(var(--gap-out) - var(--gap-in)) 0 0;
+}
+/* štítek fitka nebo čipy nad dlaždicemi informací o cviku (F3-46): patří ke skupině čísel, velká mezera nad nimi */
+.sheet-b > .exi-gym {
+  display: flex;
+  margin-top: calc(var(--gap-out) - var(--gap-in));
+}
+.sheet-b > .chips.exi-gym {
+  margin-top: calc((34px - var(--tap)) / 2 + var(--gap-out) - var(--gap-in));
+}
+.sheet-b > .exi-gym + .kpis {
+  margin-top: 0;
+}
+/* dlaždice informací o cviku 2 × 2 (F3-46): hodnoty s jednotkou se 4 v řadě nevejdou */
+.kpis.exi {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.kpis.exi .kpi {
+  padding: 8px 10px;
+}
+.kpis.exi .kpi b {
+  font-size: var(--fs-xl);
 }
 .sheet-b > .chips,
 .sheet-b > .row,
@@ -2465,28 +2491,49 @@ tr.done .okb {
   border-color: var(--accent);
   color: var(--accent-ink);
 }
+/* karta cviku ve výběru (F3-46): klepnutí na kartu cvik zaškrtne, šipka › vpravo v kartě otevře Informace
+   o cviku; rámeček má celá karta, vybraný cvik ho má v barvě --accent */
 .pickrow {
   display: flex;
-  gap: 6px;
   align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }
-.pickrow .pick {
+.pickrow:has(.pick[aria-pressed="true"]) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.pickrow .pick,
+.pickrow .pick[aria-pressed="true"] {
   flex: 1;
   min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .infob {
   flex: none;
-  width: 44px;
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  border-radius: 10px;
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: var(--fs-xl);
+  width: var(--tap);
+  border: 0;
+  background: transparent;
+  border-radius: 0 10px 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--ink-2);
 }
 .infob:active {
   background: var(--surface-2);
+}
+.infob svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .pick .chk svg {
   width: 14px;
