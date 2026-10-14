@@ -7,3 +7,4 @@ tools/fedb/*.tsv
 fonts/
 icons/
 docs/navrhy/**/*.png
+tools/testy/node_modules/

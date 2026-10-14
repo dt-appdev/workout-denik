@@ -1,0 +1,61 @@
+{
+  "app": "zelezny-denik",
+  "version": 1,
+  "exported": "2025-11-02T18:30:00.000Z",
+  "cfg": {
+    "gyms": [
+      {"id": "g-stare", "name": "Staré fitko", "col": 2}
+    ],
+    "defaultGymId": "g-stare",
+    "restSec": 90
+  },
+  "templates": {
+    "t-push": {
+      "name": "Push",
+      "items": [
+        {"exId": "bench-press-barbell", "sets": [{"t": "n", "kg": 60, "reps": 8}, {"t": "n", "kg": 60, "reps": 8}]},
+        {"exId": "moje-ramena", "sets": [{"t": "n", "kg": 10, "reps": 12}]}
+      ]
+    }
+  },
+  "months": {
+    "2025-09": {
+      "w-1": {
+        "title": "Push",
+        "start": 1757575800000,
+        "end": 1757579400000,
+        "gymId": "g-stare",
+        "ex": [
+          {"exId": "bench-press-barbell", "sets": [{"t": "w", "kg": 30, "reps": 10}, {"t": "n", "kg": 60, "reps": 8}]},
+          {"exId": "moje-ramena", "sets": [{"t": "n", "kg": 10, "reps": 12}, {"t": "n", "kg": 10, "reps": 11}]}
+        ]
+      }
+    },
+    "2025-10": {
+      "w-2": {
+        "title": "Push",
+        "start": 1760254200000,
+        "end": 1760257800000,
+        "gymId": "g-stare",
+        "ex": [
+          {"exId": "bench-press-barbell", "sets": [{"t": "n", "kg": 62.5, "reps": 8}, {"t": "n", "kg": 62.5, "reps": 7}]}
+        ]
+      }
+    }
+  },
+  "body": {
+    "b-1": {"date": 1757575800000, "weight": 82.4},
+    "b-2": {"date": 1760254200000, "weight": 81.6, "note": "ráno"}
+  },
+  "exercises": {
+    "bench-press-barbell": {"name": "Bench Press (Barbell)", "pri": ["chest"], "sec": ["delt_f", "triceps"]},
+    "moje-ramena": {
+      "name": "Moje ramena",
+      "equip": "dumbbell",
+      "kind": "wr",
+      "pri": ["delt_f"],
+      "sec": ["delt_s", "triceps"],
+      "custom": true
+    }
+  }
+}

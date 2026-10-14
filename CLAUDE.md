@@ -21,7 +21,8 @@ v `docs/hotovo.md`, log v `docs/log.md`.
   změně popis a pole pro komentář. Komentáře si přečti, zapracuj a implementuj až po pokynu. Když uživatel žádá jen
   kontrolu („ověř, jestli…“), odpověz zjištěním a změnu navrhni jen u skutečné nekonzistence.
 - Jen řešení zdarma, žádné placené služby, API ani knihovny.
-- Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí. Nasazuje
+- Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí (jediná výjimka: Playwright pro testy v `tools/testy`,
+  instaluje se jen v úloze „testy" a lokálně při vývoji, F0-17). Nasazuje
   GitHub Actions (`.github/workflows/nasazeni.yml`, F0-04): `main` = vydaná verze
   v kořeni webu, každý otevřený PR = testovací verze v `…/workout-denik-test/pr-N/`
   (web samostatného repa `workout-denik-test`, aby šla v Androidu nainstalovat
@@ -70,12 +71,13 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
-| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08). |
+| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08) a úloha „testy" (F0-17). |
 | `.github/sestav-web.sh` | Sestaví web: `vydana` = `main`, `testovaci` = otevřené PR do `pr-N/` + rozcestník; zapíše `js/verze.js`. |
 | `.github/komentare.sh` | Komentář s odkazem na testovací verzi v každém nasazeném PR. |
 | `manifest.webmanifest` | Název, ikony a barvy pro instalaci PWA. |
@@ -266,9 +268,23 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 
 ## Testování
 
-Žádné automatické testy. Lokálně stačí statický server z kořene repa, např.
-`python3 -m http.server` a otevřít `http://localhost:8000/`. Service worker
-funguje jen na `localhost` nebo přes HTTPS. Pro kontrolu v prohlížeči lze
+Automatické testy (F0-17) jsou v `tools/testy/` a v každém PR je pouští úloha „testy" v GitHub Actions
+(Playwright se instaluje jen tam, v repu není `package.json`; appka sama zůstává bez npm). Testují kouřový průchod
+appkou (včetně 360 px s písmem Největší), zálohu tam a zpět (i se všemi druhy dat a Sloučit) a načtení starších
+záloh (z doby artefaktu a verze 1). Před PR je spusť lokálně:
+
+```
+NODE_PATH=$(npm root -g) node tools/testy/spust.js [část názvu testu]
+```
+
+(Chromium: proměnná `CHROMIUM` = cesta k prohlížeči.) Testy ovládají appku jen přes `data-act` a třídy, ne přes
+texty. Změna `data-act`, struktury panelu nebo formátu zálohy proto vyžaduje úpravu testu v téže úloze. Nová úloha,
+která mění zálohu, data nebo hlavní obrazovky, přidá ke svému PR příslušný test; nové pole v datech patří
+do `zaloha-v2-plna.json.txt`. Testy nevidí Android WebView ani
+nativní prostředí, to se zkouší ručně. Ostatní kontroly zůstávají ruční (telefon, náhled).
+
+Appku ručně lokálně: statický server z kořene repa, např. `python3 -m http.server`, a otevřít
+`http://localhost:8000/`. Service worker funguje jen na `localhost` nebo přes HTTPS. Pro kontrolu v prohlížeči lze
 použít Playwright s předinstalovaným Chromiem (bez instalace do repa).
 
 Lokálně má `js/verze.js` verzi „lokal", která se nemění, takže service worker

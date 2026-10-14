@@ -1,5 +1,5 @@
 /* Měření svislých mezer mezi bloky stránky (F3-43) a panelu (F3-44). Spouští se lokálně před PR se změnou
-   vzhledu, v GitHubu ne (Playwright by byl npm závislost). Pravidlo: 10 px uvnitř skupiny, 22 px mezi
+   vzhledu, v GitHubu ne (tam běží jen tools/testy, F0-17). Pravidlo: 10 px uvnitř skupiny, 22 px mezi
    skupinami, 8 px mezi kartami a řádky seznamu (--gap-in, --gap-out, --gap-list v css/app.css). V panelu
    stejně, popisek nad políčkem nebo čipy 4 px (--gap-lbl).
 

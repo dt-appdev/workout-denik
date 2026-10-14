@@ -1,2 +1,4 @@
 # Zálohy dat nikdy nepatří do repa (data zůstávají jen v telefonu).
 *.json
+# Playwright pro automatické testy (F0-17) se instaluje jen lokálně nebo v GitHub Actions.
+node_modules/

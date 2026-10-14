@@ -67,6 +67,22 @@ jobs:
       - name: Obsah webu
         run: find _site _test -maxdepth 2 -not -path '*/fonts/*' | sort
 
+  # F0-17: automatické testy (tools/testy): kouřový test, záloha tam a zpět, starší formát zálohy. Playwright se
+  # instaluje jen sem (bez package.json v repu, pevná verze), prohlížeč je Chrome předinstalovaný na běžci.
+  # Kód z PR se tu spouští bez přístupu k tajným údajům (událost pull_request, jen čtení repa).
+  testy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Nainstalovat Playwright (jen pro testy)
+        run: npm install --no-save --no-audit --no-fund --prefix tools/testy playwright@1.56.1
+      - name: Spustit testy
+        run: node tools/testy/spust.js
+
   vydana:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
