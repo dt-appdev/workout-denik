@@ -13544,8 +13544,8 @@
      byla na pozadí), se přeskočí. Displej drží Wake Lock jako u pauzy (volba screenOn), ztmavení jen
      při pauze.
      Volba S.cfg.stwView (Pruh / Celá obrazovka, výchozí Pruh): v Pruhu stopky běží v pruhu pauzy, na Celé
-     obrazovce v černé vrstvě stwFullShow (velký čas, popisek, cvik a série, velké tlačítko Stop, pásek cíle
-     u spodního okraje) hned od odpočtu startu. Klepnutí mimo tlačítko nic nedělá, Zpět v Androidu = Stop /
+     obrazovce v černé vrstvě stwFullShow (velký čas, popisek, cvik a série, tlačítko Stop standardní
+     velikosti, pásek cíle u spodního okraje) hned od odpočtu startu. Klepnutí mimo tlačítko nic nedělá, Zpět v Androidu = Stop /
      Zrušit (navBack), displej drží Wake Lock vždy (ne jen s volbou screenOn).
      Stav S.stw: { i, j, exId, ref, pre, goal, t0, runAt, fl }; ref je objekt série (po zavření appky se
      série najde podle i, j a exId), runAt prázdné = běží odpočet startu, fl = už zahrané signály.
@@ -13763,7 +13763,7 @@
       <button data-act="stwStop">${run ? "Stop" : "Zrušit"}</button>
     </div>`;
   }
-  // vrstva přes celou obrazovku (volba Celá obrazovka): čas, popisek, cvik a série, velké tlačítko Stop
+  // vrstva přes celou obrazovku (volba Celá obrazovka): čas, popisek, cvik a série, tlačítko Stop
   function stwFullShow(w, label, barPct, now) {
     const c = stwSet();
     if (!c) return;

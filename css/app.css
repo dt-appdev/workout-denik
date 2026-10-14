@@ -1940,7 +1940,7 @@ tr.done .okb {
 .rest-in button:last-child::after {
   right: -8px;
 }
-/* stopky přes celou obrazovku (F1-24): černá vrstva, jasný čas, velké tlačítko Stop dole s okrajem jako ostatní */
+/* stopky přes celou obrazovku (F1-24): černá vrstva, jasný čas, tlačítko Stop dole standardní velikosti */
 .stwf {
   position: fixed;
   inset: 0;
@@ -1989,8 +1989,6 @@ tr.done .okb {
   right: 24px;
   width: auto;
   bottom: calc(28px + env(safe-area-inset-bottom, 0px));
-  min-height: 3.6em;
-  font-size: var(--fs-xl);
 }
 /* tlačítko Zrušit na černé vrstvě: obrys místo bílé výplně */
 .stwf .btn:not(.primary) {
