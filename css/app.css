@@ -1035,6 +1035,15 @@ select.inp {
 .tpl.tap:active {
   background: var(--surface-2);
 }
+/* F3-49: karta tréninku v historii cviku, klepnutí otevře stránku tréninku */
+.exh-w {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+.exh-w:active {
+  background: var(--surface-2);
+}
 /* F2-06: karta fitka v Nastavení → Fitka, klepnutí otevře panel fitka */
 .gym-c {
   cursor: pointer;
