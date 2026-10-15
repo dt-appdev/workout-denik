@@ -188,6 +188,11 @@
     // zastavit stopky (F1-24)
     stop:
       '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/></svg>',
+    // pauza mezi sériemi (F2-14): ciferník s knoflíkem stopek; stopky u série na čas mají play
+    rest: `<svg viewBox="0 0 24 24">
+      <circle cx="12" cy="13.5" r="7.5"/>
+      <path d="M12 9.5v4l2.6 2.6M10 3h4M12 3v3"/>
+    </svg>`,
     // zpět na aktuální měsíc (kalendář)
     today: '<svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9"/></svg>',
     // fotka nastavená jako první
@@ -4310,6 +4315,17 @@
       render.restoreY = null;
       render.toEx = false;
     }
+    // F2-14: nově otevřená stránka posunutá na sekci s prvkem render.toSel (formulář cviku → pauza)
+    if (render.toSel) {
+      const el = document.querySelector(render.toSel);
+      render.toSel = null;
+      if (el) {
+        const sec = el.closest("section") || el;
+        const top = document.querySelector("#app .top");
+        const bar = top ? top.getBoundingClientRect().height : 0;
+        window.scrollTo(0, sec.getBoundingClientRect().top + window.scrollY - bar);
+      }
+    }
     // F1-11: návrat do rozdělaného tréninku z jiné záložky = na naposledy změněný cvik
     if (render.toEx && (S.route !== "train" || S.active)) {
       render.toEx = false;
@@ -5863,6 +5879,7 @@
         data-g="${esc(d.gymId)}">
       <span class="gd-ic" aria-hidden="true">${icon("gymDep")}</span>
       <span class="t">Stroj: ${esc(txt)}</span>
+      ${excGo}
     </button>`;
   }
   // panel s úpravou nastavení stroje
@@ -5982,6 +5999,7 @@
       </div>`;
     // pod názvem: nastavení stroje (F1-07), poznámka, Minule (F1-19), návrh progrese (F4-01), stagnace (F4-06)
     h += machLine(d, e, i);
+    h += restLine(d, e, i);
     if (e.note || e.showNote) {
       h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
           placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
@@ -5996,6 +6014,7 @@
       h += `<button class="exc-stag" data-act="openEx" data-v="${esc(e.exId)}" data-p="stats">
         <span class="stag-ico" aria-hidden="true">${IC.stag}</span>
         <span>${esc(stagCount(stag.n))} ${esc(stagSince(stag))}</span>
+        ${excGo}
       </button>`;
     }
     // rozsah opakování (F4-01) za nadpisem sloupce Opak. (F3-22), bez místa se zalomí pod něj
@@ -13116,6 +13135,68 @@
     return items;
   }
 
+  /* ---------- PAUZA CVIKU V ÚPRAVĚ ŠABLONY (F2-14) ----------
+     V úpravě šablony a uloženého tréninku má karta cviku pod názvem (pod řádkem Stroj) řádek s ikonou hodin
+     (IC.rest, slovo „Pauza“ nahrazuje) a délkou pauzy po pracovní sérii a jejím zdrojem: „2:00 · výchozí“
+     (Výchozí časovač z Nastavení), „3:00 · vlastní“ (F1-09) nebo „3:00 · po supersérii“ (cvik v supersérii,
+     F4-05: pauza cviku se tam nepoužije, po kole platí Časovač po pracovní supersérii). S vypnutým Časovačem
+     pauzy „vypnutá“. Délku a zdroj počítá restSrc stejně jako restAfter (F1-22). V rozdělaném tréninku
+     se řádek neukazuje (rozhodnutí uživatele 15. 10. 2026: tam až s úpravou pauzy, F1-21).
+     Klepnutí (akce restInfo) otevře krátký panel restInfoSheet: nahoře „Pauza po pracovní sérii: 3:00“, pod tím
+     šedě zdroj („vlastní pauza cviku“, „výchozí pauza“, u supersérie a vypnutého časovače vlastní texty), a tlačítko
+     Upravit cvik (restInfoEx → formulář cviku přes exEdOpen, otevřený posunutý na sekci Během tréninku přes
+     render.toSel; vypínač Vlastní pauza se sám nezapíná; Zpět i Uložit vrací do úpravy s panelem znovu
+     otevřeným přes nav.re, takže ukazuje novou délku). Tlačítko do Nastavení v panelu není: odchod na záložku
+     by zavřel rozepsanou úpravu, proto jen cesta v textu.
+     Klikací řádek pod názvem cviku, který něco otevírá (pauza, Stroj F1-07, stagnace F4-06), má vpravo šipku
+     › (excGo, třída .exc-go). Řádky, které rozbalují (Minule) nebo rovnou mění série (návrh progrese), šipku
+     nemají. Pauza v šabloně (přednost šablona → cvik → výchozí) přibude jako F1-21 do stejného panelu. */
+  // šipka › na konci klikacího řádku pod názvem cviku, který otevírá panel nebo stránku
+  const excGo = `<span class="exc-go">${icon("next")}</span>`;
+  // délka pauzy po pracovní sérii cviku i v d a její zdroj: def / own / ss / off
+  function restSrc(d, i) {
+    if (S.cfg.restOn === false) return { src: "off", sec: 0 };
+    if (ssRun(d.ex, i)) return { src: "ss", sec: S.cfg.restSs };
+    const own = restNorm(exOf(d.ex[i].exId).rest);
+    return own ? { src: "own", sec: own } : { src: "def", sec: S.cfg.restSec };
+  }
+  const REST_SRC = { def: "výchozí", own: "vlastní", ss: "po supersérii" };
+  // řádek s pauzou v kartě cviku (jen úprava šablony a uloženého tréninku): ikona hodin, délka a zdroj
+  function restLine(d, e, i) {
+    if (d.mode === "active") return "";
+    const r = restSrc(d, i);
+    const txt = r.src === "off" ? "vypnutá" : `${fmtClock(r.sec)} · ${REST_SRC[r.src]}`;
+    return `<button class="exc-rest" data-act="restInfo" data-i="${i}">
+      ${icon("rest")}
+      <span class="t">${esc(txt)}</span>
+      ${excGo}
+    </button>`;
+  }
+  // panel s vysvětlením, odkud pauza cviku je; po návratu z formuláře cviku se otevře znovu s novou délkou
+  function restInfoSheet(d, i, noanim) {
+    if (!d || !d.ex[i]) return;
+    const e = d.ex[i];
+    const r = restSrc(d, i);
+    const len = `<b class="num">${fmtClock(r.sec)}</b>`;
+    // první řádek délka, druhý odkud je (texty podle přání uživatele 15. 10. 2026)
+    const [head, src] = {
+      def: [`Pauza po pracovní sérii: ${len}`, "výchozí pauza"],
+      own: [`Pauza po pracovní sérii: ${len}`, "vlastní pauza cviku"],
+      ss: [`Pauza po kole supersérie: ${len}`, "časovač po pracovní supersérii"],
+      off: ["Pauza vypnutá", "časovač pauzy je vypnutý v Nastavení"],
+    }[r.src];
+    openSheet(
+      "Pauza – " + exName(e.exId),
+      `<div class="stack tight">
+        <p>${head}</p>
+        <p class="muted">${esc(src)}</p>
+      </div>`,
+      `<button class="btn primary grow" data-act="restInfoEx" data-v="${esc(e.exId)}">Upravit cvik</button>`,
+      noanim,
+      { re: () => restInfoSheet(curDraft(), i, true) },
+    );
+  }
+
   /* Nastavení → Trénink → Odpočinek mezi sériemi */
   function restSettings() {
     const c = S.cfg,
@@ -14646,6 +14727,14 @@
       case "gdTip":
         toast(GD_TIP);
         break;
+      // pauza cviku v úpravě šablony (F2-14): panel a z něj formulář cviku
+      case "restInfo":
+        restInfoSheet(d, i);
+        break;
+      case "restInfoEx":
+        exEdOpen(v, "detail");
+        render.toSel = "#x-rest-on"; // formulář rovnou u sekce Během tréninku (vypínač Vlastní pauza)
+        break;
       // nastavení stroje podle fitka (F1-07)
       case "machEdit":
         machSheet(v, t.dataset.g);
@@ -14715,7 +14804,7 @@
             </button>
             <div class="bzone"></div>
             <button class="btn block danger" data-act="exRemove" data-i="${i}">
-              Odebrat cvik z tréninku
+              Odebrat cvik ${d.mode === "template" ? "ze šablony" : "z tréninku"}
             </button>
           </div>`,
         );

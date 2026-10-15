@@ -155,7 +155,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   přes ⋯ vpravo nahoře (jako karta cviku), žádná tlačítka v kartě. Štítek fitka vpravo vedle názvu jako v Historii.
   Název karty Barlow tučně `--fs-lg`; úzké písmo (`--display`) jen nadpisy stránek, sekcí a velká čísla.
 - Karta cviku (F3-22, `vExCard`): v hlavičce žádné textové štítky, stav cviku jen ikona za názvem
-  (`nameWithIcons`, `gdIcon`). Nový údaj o cviku do karty jako ikonu nebo do tabulky.
+  (`nameWithIcons`, `gdIcon`). Nový údaj o cviku do karty jako ikonu nebo do tabulky. Klikací řádek pod názvem, který otevírá panel nebo stránku,
+  má vpravo šipku › (`excGo`, F2-14); řádek, který jen rozbaluje nebo rovnou mění série, ji nemá.
 - Nápovědy (F3-21, sekce „NÁPOVĚDY V NADPISU SEKCE“): pod volbou žádný vysvětlující text, jen stav nebo varování.
   Vysvětlení do panelu sekce (`helpBtn(klíč)` v nadpisu, texty v `HELP`). Nová volba = nová položka v `HELP`.
   V krátkých panelech (`openSheet`) tlačítko není, text nejvýš jedna věta. Texty, které říkají, co se stane teď,

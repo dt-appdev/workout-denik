@@ -1311,14 +1311,49 @@ select.inp {
   width: 100%;
   cursor: pointer;
 }
+/* pauza cviku v úpravě šablony (F2-14): stejný řádek jako Stroj, ikona hodin */
+.exc-rest {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  margin: 0 14px 8px;
+  width: calc(100% - 28px);
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.exc-rest::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+.exc-rest .t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* šipka › vpravo u řádku pod názvem cviku, který otevírá panel nebo stránku (F2-14) */
+.exc-go {
+  display: inline-flex;
+  flex: none;
+  margin-left: auto;
+  color: var(--ink-3);
+}
 /* stagnace (F4-06): řádek pod „Minule“ */
 .exc-stag {
   all: unset;
   display: flex;
   align-items: center;
   gap: 8px;
+  box-sizing: border-box;
+  width: calc(100% - 28px);
   margin: -4px 14px 8px;
-  padding: 0 10px; /* ikona pod ikonou návrhu progrese (F4-01) */
+  padding: 0 0 0 10px; /* ikona pod ikonou návrhu progrese (F4-01), šipka › u pravého okraje (F2-14) */
   font-size: var(--fs-sm);
   color: var(--ink-2);
   cursor: pointer;
