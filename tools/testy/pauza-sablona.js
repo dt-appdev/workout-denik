@@ -1,5 +1,5 @@
 /* Test 6 (F2-14): pauza cviku v úpravě šablony. Řádek s pauzou ukazuje výchozí pauzu, po nastavení vlastní
-   pauzy ve formuláři cviku (z panelu řádku) „vlastní u cviku“ a u cviků v supersérii „po supersérii“.
+   pauzy ve formuláři cviku (z panelu řádku) „vlastní“ a u cviků v supersérii „po supersérii“.
    V rozdělaném tréninku řádek není. Nabídka cviku v šabloně odebírá „ze šablony“. */
 const P = require("./pomocne.js");
 
@@ -21,7 +21,7 @@ async function run({ browser, url, check }) {
   await app.settle();
   check.eq(
     await lines(page),
-    ["Pauza 2:00 · výchozí", "Pauza 2:00 · výchozí", "Pauza 2:00 · výchozí"],
+    ["2:00 · výchozí", "2:00 · výchozí", "2:00 · výchozí"],
     "každý cvik má řádek s výchozí pauzou",
   );
 
@@ -32,6 +32,13 @@ async function run({ browser, url, check }) {
   await page.click('.sheet [data-act="restInfoEx"]');
   await app.settle();
   check.ok(await page.$("#x-rest-on"), "otevřel se formulář cviku");
+  check.ok(
+    await page.$eval("#x-rest-on", (el) => {
+      const r = el.closest("section").getBoundingClientRect();
+      return r.top < innerHeight && r.bottom > 0 && scrollY > 0;
+    }),
+    "formulář je posunutý na sekci s pauzou",
+  );
   await page.$eval("#x-rest-on", (el) => {
     el.checked = true;
     el.dispatchEvent(new Event("change", { bubbles: true }));
@@ -46,14 +53,16 @@ async function run({ browser, url, check }) {
   await page.click("#ex-save");
   await app.settle();
   check.ok(
-    await page.$eval(".sheet .sheet-b", (el) => /3:00, vlastní pauza cviku/.test(el.textContent)),
+    await page.$eval(".sheet .sheet-b", (el) =>
+      /Pauza po pracovní sérii: 3:00\s*vlastní pauza cviku/.test(el.textContent),
+    ),
     "po uložení se vrátil panel pauzy s novou délkou",
   );
   await app.act("closeSheet");
   await app.settle();
   check.eq(
     (await lines(page))[0],
-    "Pauza 3:00 · vlastní u cviku",
+    "3:00 · vlastní",
     "po uložení cviku se vrátila úprava šablony s vlastní pauzou",
   );
 
@@ -68,7 +77,7 @@ async function run({ browser, url, check }) {
   await app.settle();
   check.eq(
     (await lines(page)).slice(1),
-    ["Pauza 3:00 · po supersérii", "Pauza 3:00 · po supersérii"],
+    ["3:00 · po supersérii", "3:00 · po supersérii"],
     "cviky v supersérii mají pauzu po supersérii",
   );
 
