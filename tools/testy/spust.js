@@ -5,7 +5,7 @@
    jinak Chromium od Playwrightu. Server si skript spustí sám, appka běží z kořene repa (lokální verze, DEV).
    Testy: kourovy.js (kouřový test), zaloha.js (záloha tam a zpět z dat zadaných v appce), zaloha-plna.js
    (plná záloha: všechny druhy dat, druhé kolo, Sloučit), stara-zaloha.js (starší formáty zálohy),
-   stopky.js (stopky u série na čas, F1-24).
+   stopky.js (stopky u série na čas, F1-24), pauza-sablona.js (pauza cviku v úpravě šablony, F2-14).
    Každý test dostane čistý profil prohlížeče a dá se spustit i samostatně (část názvu v argumentu).
    Skončí kódem 1, když některá kontrola selže. Žádný z testů nezapisuje do repa. */
 const P = require("./pomocne.js");
@@ -16,6 +16,7 @@ const TESTS = [
   require("./zaloha-plna.js"),
   require("./stara-zaloha.js"),
   require("./stopky.js"),
+  require("./pauza-sablona.js"),
 ];
 
 (async () => {

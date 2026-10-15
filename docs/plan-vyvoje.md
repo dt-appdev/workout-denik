@@ -190,7 +190,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-16** Pruh pauzy nezakrývá obsah
 - [x] **F1-18** Větší dotykové plochy v tréninku
 - [x] **F1-19** Minule jako text u cviku místo sloupce
-- [ ] **F1-21** Pauza cviku v šabloně (odloženo 12. 10. 2026 u F1-09; nápad, rozhodnout později): v úpravě šablony v nabídce cviku (⋯) položka „Pauza: …“, která otevře krátký panel se stejným vypínačem Vlastní pauza a posuvníkem jako formulář Upravit cvik (náhled panelu z F1-09, tam ukázaný v nabídce cviku v tréninku). Platí jen pro cvik v té šabloně, přednost šablona → cvik (F1-09, `rest` u cviku) → Výchozí časovač. Přenos do tréninku ze šablony (přes `exEntryFor`, nové pole cviku v tréninku, kopírování přes Cvičit znovu a Uložit jako šablonu jako `ssOf` / `noteOf`). Rozhodnout: má jít pauzu změnit i v nabídce cviku v rozdělaném tréninku, a mění pak šablonu (Aktualizovat šablonu), nebo jen ten trénink? Délku vybírá `restAfter` přes `exRest`; platí jen po pracovních sériích, po zahřívací vždy Časovač po zahřívací sérii (F1-22).
+- [ ] **F1-21** Pauza cviku v šabloně (odloženo 12. 10. 2026 u F1-09; nápad, rozhodnout později): v úpravě šablony v nabídce cviku (⋯) položka „Pauza: …“, která otevře krátký panel se stejným vypínačem Vlastní pauza a posuvníkem jako formulář Upravit cvik (náhled panelu z F1-09, tam ukázaný v nabídce cviku v tréninku). Platí jen pro cvik v té šabloně, přednost šablona → cvik (F1-09, `rest` u cviku) → Výchozí časovač. Přenos do tréninku ze šablony (přes `exEntryFor`, nové pole cviku v tréninku, kopírování přes Cvičit znovu a Uložit jako šablonu jako `ssOf` / `noteOf`). Rozhodnout: má jít pauzu změnit i v nabídce cviku v rozdělaném tréninku, a mění pak šablonu (Aktualizovat šablonu), nebo jen ten trénink? Délku vybírá `restAfter` přes `exRest`; platí jen po pracovních sériích, po zahřívací vždy Časovač po zahřívací sérii (F1-22). Od F2-14 ukazuje úprava šablony u cviku řádek s pauzou a zdrojem (`restLine`, `restSrc`) a panel `restInfoSheet`: F1-21 do panelu přidá vypínač a posuvník pauzy v šabloně a do `restSrc` zdroj „v šabloně“. Přání uživatele 15. 10. 2026: pauzu úsporně ukázat i v rozdělaném tréninku, ale jen až půjde upravit (stejný panel).
 - [x] **F1-22** Pauza po zahřívací sérii
 - [x] **F1-23** Rychlé přepisování čísel v sériích
 - [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
@@ -211,6 +211,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F2-11** Předvyplnění ze šablony a z historie místo z minula
 - [x] **F2-12** Skrýt nepoužívanou šablonu
 - [x] **F2-13** Karta šablony: klepnutí = Začít, ⋯ = možnosti
+- [x] **F2-14** Pauza cviku v úpravě šablony
 
 ### Fáze 3 – Statistiky a vzhled
 
