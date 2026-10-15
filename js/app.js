@@ -9248,7 +9248,7 @@
     return `<div class="kpi"><b>${fmtVol(vol)}</b><span>Objem</span></div>`;
   }
 
-  /* ---------- STRÁNKA CVIKU (F0-05, F3-31, F3-28) ----------
+  /* ---------- STRÁNKA CVIKU (F0-05, F3-31, F3-28, F3-49) ----------
      Route exd (vExDetail), záložky Popis | Statistiky | Historie (S.exPart "info" | "stats" | "hist"),
      bez počtu záznamů v názvu. openEx volí záložku podle toho, odkud se přišlo (data-p ji vynutí): ze záložky
      Cviky Statistiky, když má cvik záznam, jinak Popis.
@@ -9256,6 +9256,10 @@
      Poslední rekordy, ten opakoval kartu rekordů a medaile v historii); Bez zlepšení a Osobní rekordy
      ukazují jen fitka podle filtru fitek. Historie (vExHist): filtr fitek
      a tréninky se sériemi (25, pak Starší), štítek fitka přes gymPill na každé kartě.
+     Klepnutí na kartu historie (F3-49) otevře stránku tréninku (openWorkout, odtud Upravit), karta
+     rozdělaného tréninku vrací do tréninku. Zpět ze stránky tréninku vede na stejný cvik, záložku, filtr
+     fitka a místo: navFrame si u stránky cviku pamatuje S.exDetail, S.exPart, S.detailGym a S.exHistLimit
+     (f.exd), protože ze stránky tréninku jde otevřít jiný cvik.
      Filtr fitek (exGymChips) jen u cviku vázaného na fitko cvičeného ve 2 a víc fitkách, výběr S.detailGym
      je společný pro Statistiky i Historii; první čip je na Statistikách „Všechna (zvlášť)“ (čára za každé
      fitko), na Historii „Všechna“.
@@ -9566,8 +9570,12 @@
       const imp = s.w.live
         ? live.lr.ex.slice(0, 1).map((type) => ({ type }))
         : (R.byEx[id] || []).filter((r) => r.w.id === s.w.id);
+      // klepnutí na kartu (F3-49): uložený trénink = jeho stránka, rozdělaný = návrat do tréninku
+      const open = s.w.live
+        ? 'data-act="tab" data-v="train"'
+        : `data-act="openW" data-v="${esc(s.w.id)}" data-m="${s.w.mk}"`;
       h +=
-        `<div class="card">
+        `<button class="card exh-w" ${open}>
         <div class="row small">
           <b class="grow">
             ${fmtDay(s.w.start)} ${new Date(s.w.start).getFullYear()}` +
@@ -9587,7 +9595,7 @@
             )
             .join(" · ")}
         </div>
-      </div>`;
+      </button>`;
     }
     if (sel.length > (S.exHistLimit || 25)) {
       h += '<button class="btn block" data-act="exHistMore">Starší</button>';
@@ -16650,6 +16658,10 @@
     if (S.route === "wd") {
       f.wd = S.wDetail; // stránka tréninku (F3-19): který trénink
     }
+    if (S.route === "exd") {
+      // stránka cviku (F3-49): který cvik, záložka, fitko a počet tréninků v Historii
+      f.exd = { id: S.exDetail, part: S.exPart, gym: S.detailGym, lim: S.exHistLimit };
+    }
     return f;
   }
   // úprava tréninku/šablony má neuložené změny
@@ -16746,6 +16758,13 @@
       }
       if (f.wd) {
         S.wDetail = f.wd; // zpět na předchozí trénink (porovnání, F3-19)
+      }
+      if (f.exd) {
+        // zpět na předchozí cvik (F3-49)
+        S.exDetail = f.exd.id;
+        S.exPart = f.exd.part;
+        S.detailGym = f.exd.gym;
+        S.exHistLimit = f.exd.lim;
       }
       go(f.route);
       render.restoreY = f.y;

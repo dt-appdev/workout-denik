@@ -343,6 +343,15 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   záznamu „–“ a věta „V tomto fitku zatím bez záznamu.“. Dlaždice 2 × 2 s jednotkami (připomínka po prvním vyzkoušení; 4 v řadě se s jednotkami na 360 px nevejdou, náhled 4). Počet sérií a poslední rekordy z panelu zmizely (rekordy jsou na stránce cviku). Přepnutí čipu fitka drží posun panelu. Mezery: štítek a čipy patří
   k číslům (22 px nad, 10 px k dlaždicím; v prvním náhledu obráceně, opraveno podle komentáře). Popis v úvodním
   komentáři sekce „INFORMACE O CVIKU (F3-46)“ v `js/app.js`.
+- **F3-49** Z historie cviku na stránku tréninku (přání uživatele 15. 10. 2026: oprava starých hodnot cviku vedla
+  přes Historii a hledání tréninku podle data, zdlouhavé a s rizikem úpravy jiného dne). **Rozhodnuto:** klepnutí
+  na kartu v záložce Historie na stránce cviku otevře stránku tréninku (jako v hlavní Historii, pravidlo F2-13),
+  úprava přes její Upravit; ne rovnou úprava tréninku (omylem klepnutí při posouvání, jiné chování než Historie)
+  ani úprava jednoho cviku v panelu (druhý editor). Bez posunu na kartu cviku, bez šipky › (vzhled beze změny).
+  Karta rozdělaného tréninku („probíhá“) vrací do tréninku. **Provedeno:** karta je tlačítko `.exh-w`
+  (`openW`), oprava Zpět: `navFrame` si u stránky cviku pamatuje cvik, záložku, filtr fitka a počet tréninků
+  (`f.exd`); předtím by Zpět po otevření jiného cviku ze stránky tréninku skončilo na špatném cviku. Test
+  `tools/testy/historie-cviku.js`. Popis v úvodním komentáři sekce „STRÁNKA CVIKU“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 
