@@ -1,6 +1,8 @@
-/* Test 6 (F2-14): pauza cviku v úpravě šablony. Řádek s pauzou ukazuje výchozí pauzu, po nastavení vlastní
+/* Test 6 (F2-14, F1-21): pauza cviku v úpravě šablony. Řádek s pauzou ukazuje výchozí pauzu, po nastavení vlastní
    pauzy ve formuláři cviku (z panelu řádku) „vlastní“ a u cviků v supersérii „po supersérii“.
-   V rozdělaném tréninku řádek není. Nabídka cviku v šabloně odebírá „ze šablony“. */
+   V rozdělaném tréninku řádek není. Nabídka cviku v šabloně odebírá „ze šablony“.
+   F1-21: vypínač a posuvník v panelu nastaví pauzu v šabloně („v šabloně“), po ✓ pracovní série v tréninku
+   ze šablony běží tato pauza a Aktualizovat šablonu ji zachová. */
 const P = require("./pomocne.js");
 
 const LINES = "#app .exc-rest";
@@ -81,6 +83,41 @@ async function run({ browser, url, check }) {
     "cviky v supersérii mají pauzu po supersérii",
   );
 
+  // F1-21: pauza v šabloně – zapnutí převezme platnou pauzu (vlastní 3:00), posuvník ji změní na 4:00
+  const setInput = (sel, prop, val) =>
+    page.$eval(
+      sel,
+      (el, [prop, val]) => {
+        el[prop] = val;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      },
+      [prop, val],
+    );
+  await page.click(`${LINES}[data-i="0"]`);
+  await app.settle();
+  check.ok(
+    await page.$eval("#t-rest-on", (el) => !el.checked && !!el.closest(".sheet").querySelector(".rest-sl.off")),
+    "panel má vypnutý vypínač pauzy v šabloně a zešedlý posuvník",
+  );
+  await setInput("#t-rest-on", "checked", true);
+  await app.settle();
+  check.eq((await lines(page))[0], "3:00 · v šabloně", "zapnutá pauza v šabloně převzala platnou pauzu");
+  await setInput("#t-rest", "value", 240);
+  await app.settle();
+  check.eq((await lines(page))[0], "4:00 · v šabloně", "posuvník změnil pauzu v šabloně");
+  check.ok(
+    await page.$eval(".sheet .sheet-b", (el) => /4:00\s*vlastní pauza v této šabloně/.test(el.textContent)),
+    "panel ukazuje pauzu v šabloně",
+  );
+  await app.act("closeSheet");
+  await app.settle();
+  await page.click(`${LINES}[data-i="1"]`);
+  await app.settle();
+  check.ok(!(await page.$("#t-rest-on")), "u cviku v supersérii panel vypínač nemá");
+  await app.act("closeSheet");
+  await app.settle();
+
   // uložit šablonu a začít podle ní trénink: v tréninku řádek s pauzou není
   await app.act("saveTpl");
   await app.settle();
@@ -89,6 +126,33 @@ async function run({ browser, url, check }) {
   await app.settle();
   check.ok(await page.$("#app .exc"), "trénink ze šablony běží");
   check.eq((await page.$$(LINES)).length, 0, "v rozdělaném tréninku řádek s pauzou není");
+
+  // ✓ pracovní série prvního cviku: pauza ze šablony (4:00), ne vlastní pauza cviku (3:00)
+  await page.click('#app [data-act="done"][data-i="0"][data-j="0"]');
+  await app.settle();
+  if (await page.$(".sheet .kk-b")) {
+    for (let n = 0; n < 5; n++) await page.click('.sheet .kk-b[data-kf="reps"][data-kk="1"]');
+    for (let n = 0; n < 3; n++) await page.click('.sheet .kk-b[data-kf="kg"][data-kk="1"]');
+    await page.click('.sheet [data-act="kkDone"]');
+    await app.settle();
+  }
+  await app.act("closeSheet");
+  await app.settle();
+  check.ok(
+    /^(4:00|3:5\d)$/.test(await page.$eval("#restClock", (el) => el.textContent.trim()).catch(() => "")),
+    "po ✓ běží pauza ze šablony 4:00",
+  );
+
+  // dokončit s Aktualizovat šablonu: pauza v šabloně zůstane
+  await page.click('#app [data-act="finish"]');
+  await app.settle();
+  await page.$eval("#updTpl", (el) => (el.checked = true));
+  await app.act("finishOk");
+  await app.settle(800);
+  await app.act("tab", "train");
+  await app.act("editTpl", tplId);
+  await app.settle();
+  check.eq((await lines(page))[0], "4:00 · v šabloně", "Aktualizovat šablonu pauzu v šabloně zachovalo");
   check.eq(app.errors, [], "žádné chyby v konzoli");
   await app.close();
 }

@@ -58,6 +58,7 @@
         {
           "exId": "bench-press-barbell",
           "note": "Lokty 45°",
+          "rest": 180,
           "sets": [
             {
               "t": "w",
