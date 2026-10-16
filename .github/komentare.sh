@@ -34,7 +34,7 @@ for f in "$DIR"/pr-*/js/verze.js; do
   upsert "$n" "**Testovací verze tohoto PR:** ${TEST_URL%/}/pr-$n/
 
 Otevři odkaz v Chromu v telefonu. V Nastavení → Verze aplikace musí být kód změny \`$(jq -r .commit <<<"$b")\` (nasazeno $kdy).
-Testovací verze má vlastní data, oddělená od vydané verze. Skutečná data si do ní zkopíruješ v Nastavení → Verze aplikace → Zkopírovat data z vydané verze.
+Testovací verze má vlastní data, oddělená od vydané verze; appka hlídá, aby se dat vydané verze nedotkla (F0-18). Skutečná data si do ní zkopíruješ v Nastavení → Verze aplikace → Zkopírovat data z vydané verze.
 Jako samostatnou appku (oranžová ikona TEST) ji nainstaluješ přes menu Chromu ⋮ → Přidat na plochu → Instalovat.
 
 Po každé další změně v PR se testovací verze sama aktualizuje (trvá to 1–3 minuty)."

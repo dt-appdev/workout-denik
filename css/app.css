@@ -2710,6 +2710,21 @@ tr.done .okb {
   padding: 4px 12px;
   white-space: nowrap;
 }
+/* pojistka dat vydané verze (F0-18): červený pruh nahoře v testovací verzi,
+   když kód PR sáhl na data vydané verze */
+.guard-stop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 90;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+  background: var(--fail-bg);
+  color: var(--fail);
+  border-bottom: 2px solid var(--fail);
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
 .toast {
   position: fixed;
   left: 50%;

@@ -46,6 +46,10 @@ jobs:
             echo "::error::Kód přímo v HTML (viz řádky výše) pravidla zabezpečení zablokují, použij posluchač."
             exit 1
           fi
+      # F0-18: testovací verze PR je na stejné doméně jako vydaná, přímý zápis do úložiště mimo Local / Idb
+      # by mohl přepsat skutečná data; schválená místa jsou ve skriptu
+      - name: Kontrola přístupu k úložišti
+        run: bash .github/kontrola-uloziste.sh
       # F3-43: svislé mezery mezi bloky jen přes proměnné a třídy z css/app.css (--gap-in, --gap-out,
       # --gap-list, .mt-in, .mt-out, .mb-in, .sec.cont …), ne ručně v px; hlídá jen řádky přidané v tomto PR.
       # F3-44: i svislý gap (row-gap, gap sloupce .stack → .stack.list / .inner / .tight); vodorovný gap řádku ne

@@ -71,14 +71,15 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
-| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08) a úloha „testy" (F0-17). |
+| `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08, a přímého přístupu k úložišti, F0-18) a úloha „testy" (F0-17). |
 | `.github/sestav-web.sh` | Sestaví web: `vydana` = `main`, `testovaci` = otevřené PR do `pr-N/` + rozcestník; zapíše `js/verze.js`. |
+| `.github/kontrola-uloziste.sh` | Kontrola přímého přístupu k úložišti mimo schválená místa (F0-18), spouští ji úloha „kontrola“. |
 | `.github/komentare.sh` | Komentář s odkazem na testovací verzi v každém nasazeném PR. |
 | `manifest.webmanifest` | Název, ikony a barvy pro instalaci PWA. |
 | `icons/` | Ikony appky (PNG 192/512, maskable 512, apple-touch, SVG). `icons/test/` = oranžové ikony TEST pro testovací verze. |
@@ -234,6 +235,10 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   F2-06) jen tam, kde už je vybrané (úprava tréninku, šablony). Filtry Historie a Statistik přes `gymsFilter()`.
 - Štítek fitka u tréninku jen přes `gymPill` (trénink bez fitka štítek nemá, smazané fitko „Smazané fitko“, F3-24).
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
+- Úložiště jen přes `Local` / `Idb` / `Store`, nikdy přímo `localStorage.setItem`, `indexedDB.open` apod.
+  (F0-18, sekce POJISTKA DAT VYDANÉ VERZE): testovací verze PR je na stejné doméně jako vydaná a mohla by
+  přepsat skutečná data. Hlídá to úloha „kontrola“ (`.github/kontrola-uloziste.sh`, schválená místa)
+  a v testovací verzi pojistka.
 - Nová volba nastavení patří do existující skupiny (`SET_PAGES`), nová sekce Statistik do jedné z částí
   (`STATS_PARTS`), nový údaj na obrázek ke sdílení do `shrData` a oba jazyky do `SHR_TXT`.
 - Nová obrazovka (route) se neukládá do `Local` `route`, pokud po restartu nedává smysl (jako `exed`).

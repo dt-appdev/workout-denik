@@ -18,10 +18,11 @@ const TYPES = {
   ".ttf": "font/ttf",
 };
 
-// statický server z kořene repa na volném portu (appka běží v kořeni, jako při lokálním vývoji)
+/* statický server z kořene repa na volném portu (appka běží v kořeni, jako při lokálním vývoji);
+   adresa /pr-N/… vede taky do kořene: appka tam běží jako testovací verze PR N na stejné doméně (F0-18) */
 function startServer() {
   const server = http.createServer((req, res) => {
-    const rel = decodeURIComponent(req.url.split("?")[0]);
+    const rel = decodeURIComponent(req.url.split("?")[0]).replace(/^\/pr-\d+\//, "/");
     const file = path.join(ROOT, rel.endsWith("/") ? rel + "index.html" : rel);
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404);
@@ -94,8 +95,9 @@ async function openApp(browser, url, opts) {
       () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
     );
   };
-  app.goto = async () => {
-    await page.goto(url);
+  // to = jiná adresa na stejné doméně (testovací verze …/pr-N/, F0-18), jinak appka z url
+  app.goto = async (to) => {
+    await page.goto(to || url);
     await page.waitForSelector("#app .top, #app .sec, #app .tabs", { timeout: 15000 }).catch(() => {});
     await app.settle(800);
   };
