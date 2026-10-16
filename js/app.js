@@ -2228,7 +2228,7 @@
       } else if (S.cfg.restOn === false) {
         restStop();
       } else {
-        restStart(restAfter(e, s, rest));
+        restStart(restAfter(d, i, s, rest));
       }
     }
     const lr = liveRecords(d, i);
@@ -4465,6 +4465,9 @@
       if (!t || typeof t !== "object") continue;
       const gyms = Array.isArray(t.gyms) ? t.gyms.filter((g) => typeof g === "string") : [];
       out[id] = Object.assign({}, t, { gyms: [...new Set(gyms)] });
+      if (Array.isArray(t.items)) {
+        out[id].items = t.items.map(tplRestClean); // F1-21: pauza cviku v šabloně jen jako platná délka
+      }
     }
     return out;
   }
@@ -4582,16 +4585,22 @@
   // tlačítko Uložit šablonu vypadá neaktivní (šedé) při shodě názvu nebo prázdném názvu; klepnout na něj jde
   // dál (hláška a posun k názvu), jinak by u dlouhé šablony nebylo vidět proč
   const tplSaveOff = (d) => !tplClean(d.title) || !!tplNameProblem(d);
-  // cviky a série šablony z uloženého tréninku (i supersérie)
-  function tplItemsOf(w) {
-    return (w.ex || []).map((e) =>
-      Object.assign({ exId: e.exId, sets: e.sets.map(tplSet) }, ssOf(e), noteOf(e)),
+  // cviky a série šablony z uloženého tréninku (i supersérie); src = šablona, ze které se převezmou pauzy
+  // cviků (F1-21, tplItemRest)
+  function tplItemsOf(w, src) {
+    return (w.ex || []).map((e, i) =>
+      Object.assign(
+        { exId: e.exId, sets: e.sets.map(tplSet) },
+        ssOf(e),
+        noteOf(e),
+        restOf(tplItemRest(src, w.ex, i)),
+      ),
     );
   }
   // nová šablona z uloženého tréninku (Uložit jako šablonu v souhrnu)
   function tplFromWorkout(w, name, gyms) {
     const items = Object.assign({}, S.templates);
-    items[uid("t")] = { name, order: tplNextOrder(items), gyms, items: tplItemsOf(w) };
+    items[uid("t")] = { name, order: tplNextOrder(items), gyms, items: tplItemsOf(w, S.templates[w.tplId]) };
     put("config/templates", { items });
     closeSheet();
     toast("Šablona „" + name + "“ vytvořena");
@@ -13071,11 +13080,12 @@
      restWarm, mezi cviky kola bez pauzy (o tom rozhoduje ssRest). Posuvník je v Nastavení → Odpočinek mezi
      sériemi jako první. Délku vybírá restAfter, volá ho toggleSetDone. Zamítnuto dřív jako F1-17
      (10. 10. 2026), obnoveno 13. 10. 2026. */
-  // délka pauzy po odškrtnuté sérii s cviku e; rest = výsledek ssRest ("ss" = po kole pracovní supersérie)
-  function restAfter(e, s, rest) {
+  // délka pauzy po odškrtnuté sérii s cviku i v d; rest = výsledek ssRest ("ss" = po kole pracovní supersérie);
+  // po pracovní sérii pauza cviku v šabloně tréninku (F1-21), jinak pauza cviku (F1-09) nebo Výchozí časovač
+  function restAfter(d, i, s, rest) {
     if (rest === "ss") return S.cfg.restSs;
     if (s.t === "w") return S.cfg.restWarm;
-    return exRest(e.exId);
+    return tplRest(d, i) || exRest(d.ex[i].exId);
   }
 
   /* ---------- PAUZA PODLE CVIKU (F1-09) ----------
@@ -13101,20 +13111,21 @@
   }
   // délka pauzy po pracovní sérii cviku: vlastní pauza cviku, jinak Výchozí časovač
   const exRest = (exId) => restNorm(exOf(exId).rest) || S.cfg.restSec;
-  // posuvník délky pauzy: id = id posuvníku (hodnota se ukazuje v id + "V"), label = popisek, sec = délka
-  function restSlider(id, label, sec, off) {
+  // posuvník délky pauzy: id = id posuvníku (hodnota se ukazuje v id + "V"), label = popisek, sec = délka,
+  // attrs = atributy navíc pro posuvník (např. data-i)
+  function restSlider(id, label, sec, off, attrs) {
     return `<div class="rest-sl${off ? " dep off" : ""}"${off ? " inert" : ""}>
       <div class="row">
         <span class="grow">${esc(label)}</span>
         <span class="num" id="${id}V">${fmtClock(sec)}</span>
       </div>
       <input type="range" class="range" id="${id}" min="${REST_RANGE.min}" max="${REST_RANGE.max}"
-          step="${REST_RANGE.step}" value="${sec}" aria-label="${esc(label)}">
+          step="${REST_RANGE.step}" value="${sec}" aria-label="${esc(label)}"${attrs || ""}>
     </div>`;
   }
   // při tažení posuvníku hned ukázat délku (true = byl to posuvník pauzy)
   function restSliderShow(t) {
-    if (!["restWarm", "restSec", "restSs", "x-rest"].includes(t.id)) return false;
+    if (!["restWarm", "restSec", "restSs", "x-rest", "t-rest"].includes(t.id)) return false;
     document.getElementById(t.id + "V").textContent = fmtClock(+t.value);
     return true;
   }
@@ -13158,17 +13169,19 @@
      by zavřel rozepsanou úpravu, proto jen cesta v textu.
      Klikací řádek pod názvem cviku, který něco otevírá (pauza, Stroj F1-07, stagnace F4-06), má vpravo šipku
      › (excGo, třída .exc-go). Řádky, které rozbalují (Minule) nebo rovnou mění série (návrh progrese), šipku
-     nemají. Pauza v šabloně (přednost šablona → cvik → výchozí) přibude jako F1-21 do stejného panelu. */
+     nemají. Pauza v šabloně (přednost šablona → cvik → výchozí) je ve stejném panelu, sekce F1-21. */
   // šipka › na konci klikacího řádku pod názvem cviku, který otevírá panel nebo stránku
   const excGo = `<span class="exc-go">${icon("next")}</span>`;
-  // délka pauzy po pracovní sérii cviku i v d a její zdroj: def / own / ss / off
+  // délka pauzy po pracovní sérii cviku i v d a její zdroj: def / own / tpl (F1-21) / ss / off
   function restSrc(d, i) {
     if (S.cfg.restOn === false) return { src: "off", sec: 0 };
     if (ssRun(d.ex, i)) return { src: "ss", sec: S.cfg.restSs };
+    const tpl = tplRest(d, i);
+    if (tpl) return { src: "tpl", sec: tpl };
     const own = restNorm(exOf(d.ex[i].exId).rest);
     return own ? { src: "own", sec: own } : { src: "def", sec: S.cfg.restSec };
   }
-  const REST_SRC = { def: "výchozí", own: "vlastní", ss: "po supersérii" };
+  const REST_SRC = { def: "výchozí", own: "vlastní", tpl: "v šabloně", ss: "po supersérii" };
   // řádek s pauzou v kartě cviku (jen úprava šablony a uloženého tréninku): ikona hodin, délka a zdroj
   function restLine(d, e, i) {
     if (d.mode === "active") return "";
@@ -13190,19 +13203,100 @@
     const [head, src] = {
       def: [`Pauza po pracovní sérii: ${len}`, "výchozí pauza"],
       own: [`Pauza po pracovní sérii: ${len}`, "vlastní pauza cviku"],
+      tpl: [`Pauza po pracovní sérii: ${len}`, "vlastní pauza v této šabloně"],
       ss: [`Pauza po kole supersérie: ${len}`, "časovač po pracovní supersérii"],
       off: ["Pauza vypnutá", "časovač pauzy je vypnutý v Nastavení"],
     }[r.src];
+    // F1-21: v úpravě šablony vypínač a posuvník pauzy v šabloně (ne u cviku v supersérii); Upravit cvik pak
+    // jen obrysové, hlavní ovládání je v panelu
+    const ctl = tplRestCtl(d, i);
     openSheet(
       "Pauza – " + exName(e.exId),
       `<div class="stack tight">
         <p>${head}</p>
         <p class="muted">${esc(src)}</p>
-      </div>`,
-      `<button class="btn primary grow" data-act="restInfoEx" data-v="${esc(e.exId)}">Upravit cvik</button>`,
+      </div>
+      ${ctl}`,
+      `<button class="btn${ctl ? "" : " primary"} grow" data-act="restInfoEx" data-v="${esc(e.exId)}">` +
+        "Upravit cvik</button>",
       noanim,
       { re: () => restInfoSheet(curDraft(), i, true) },
     );
+  }
+
+  /* ---------- PAUZA CVIKU V ŠABLONĚ (F1-21) ----------
+     Cvik v šabloně může mít vlastní délku pauzy po pracovní sérii, jen pro tu šablonu (např. dřep 3:00 v silovém
+     dni, 1:30 v objemovém). Uložená je u cviku v šabloně (config/templates, items[].rest, sekundy, REST_RANGE);
+     bez ní pole chybí (starší šablony a zálohy beze změny, tplNorm neplatnou hodnotu zahodí přes tplRestClean).
+     Přednost: pauza v šabloně → vlastní pauza cviku (F1-09) → Výchozí časovač. Po zahřívací sérii vždy Časovač
+     po zahřívací sérii (F1-22), po kole supersérie Časovač po pracovní supersérii (F4-05), o tom rozhoduje
+     restAfter. Nastavuje se jen v úpravě šablony: panel řádku pauzy (restInfoSheet, F2-14) má vypínač Vlastní
+     pauza v této šabloně (t-rest-on) a posuvník (t-rest); vypnutý posuvník zešedne a ukazuje pauzu, která platí
+     bez šablony. Změna jde do konceptu (d.ex[i].rest), uloží se s Uložit šablonu. U cviku v supersérii panel
+     vypínač nemá (hodnota by se nepoužila).
+     Rozdělaný trénink si pauzu nekopíruje: tplRest ji čte vždy z aktuální šablony tréninku (d.tplId), takže
+     úprava šablony platí hned, i pro Cvičit znovu (vazba na šablonu zůstává, F2-01), plánovaný trénink (F4-07)
+     i uprostřed tréninku. Trénink bez šablony (nebo se smazanou šablonou) pauzu ze šablony nemá. Stejný cvik
+     víckrát v šabloně: n-tý výskyt v tréninku = n-tý výskyt v šabloně (tplItemRest). Do uloženého tréninku se
+     nic neukládá; v jeho úpravě řádek pauzy ukáže „v šabloně“ jen pro informaci. Šablona z tréninku (Uložit
+     jako šablonu, Aktualizovat šablonu, přepsání při shodě názvu) převezme pauzy přes tplItemsOf(w, src).
+     V rozdělaném tréninku se pauza neukazuje ani neupravuje (rozhodnutí uživatele 16. 10. 2026). */
+  // pauza cviku pro Object.assign (prázdný objekt = bez pauzy v šabloně), jako noteOf
+  const restOf = (e) => {
+    const rest = e ? restNorm(e.rest) : null;
+    return rest ? { rest } : {};
+  };
+  // cvik šablony: pauza jen jako platná délka (načtení dat a obnova zálohy)
+  function tplRestClean(it) {
+    if (!it || typeof it !== "object" || !("rest" in it)) return it;
+    const out = Object.assign({}, it);
+    delete out.rest;
+    return Object.assign(out, restOf(it));
+  }
+  // cvik šablony t odpovídající cviku i ze seznamu list (n-tý výskyt stejného cviku) a jeho pauza jako {rest}
+  function tplItemRest(t, list, i) {
+    if (!t || !Array.isArray(t.items) || !list[i]) return null;
+    const exId = list[i].exId;
+    const nth = list.slice(0, i).filter((e) => e.exId === exId).length;
+    return t.items.filter((it) => it && it.exId === exId)[nth] || null;
+  }
+  // pauza cviku i v šabloně: v úpravě šablony z konceptu, jinak z aktuální šablony tréninku; bez ní null
+  function tplRest(d, i) {
+    if (!d || !d.ex[i]) return null;
+    if (d.mode === "template") return restNorm(d.ex[i].rest);
+    const t = d.tplId && S.templates[d.tplId];
+    return restOf(tplItemRest(t, d.ex, i)).rest || null;
+  }
+  // vypínač a posuvník v panelu pauzy (jen úprava šablony, ne cvik v supersérii)
+  function tplRestCtl(d, i) {
+    if (d.mode !== "template" || ssRun(d.ex, i)) return "";
+    const on = !!tplRest(d, i);
+    const sec = on ? tplRest(d, i) : exRest(d.ex[i].exId);
+    return `<div class="stack mt-out">
+      <label class="switch">
+        <input type="checkbox" id="t-rest-on" data-i="${i}" ${on ? "checked" : ""}>
+        <span>Vlastní pauza v této šabloně</span>
+      </label>
+      ${restSlider("t-rest", "Pauza po pracovní sérii", sec, !on, ` data-i="${i}"`)}
+    </div>`;
+  }
+  // změna vypínače nebo posuvníku v panelu: zapnutí převezme pauzu, která teď platí; panel se překreslí
+  function tplRestChange(t) {
+    const d = curDraft();
+    const i = +t.dataset.i;
+    if (!d || d.mode !== "template" || !d.ex[i]) return;
+    const e = d.ex[i];
+    if (t.id === "t-rest-on") {
+      if (t.checked) {
+        e.rest = exRest(e.exId);
+      } else {
+        delete e.rest;
+      }
+    } else {
+      e.rest = restNorm(t.value) || exRest(e.exId);
+    }
+    scheduleRender();
+    restInfoSheet(d, i, true);
   }
 
   /* Nastavení → Trénink → Odpočinek mezi sériemi */
@@ -14584,6 +14678,7 @@
             k: uid("e"),
             exId: it.exId,
             ...ssOf(it),
+            ...restOf(it),
             note: it.note || "",
             sets: (it.sets || []).map(newSetFrom),
           })),
@@ -15435,7 +15530,7 @@
         saveWorkout(id, w, null);
         if (upd && upd.checked) {
           const items = Object.assign({}, S.templates);
-          items[d.tplId] = Object.assign({}, items[d.tplId], { items: tplItemsOf({ ex }) });
+          items[d.tplId] = Object.assign({}, items[d.tplId], { items: tplItemsOf({ ex }, items[d.tplId]) });
           put("config/templates", { items });
         }
         activeEnd();
@@ -15560,6 +15655,7 @@
               exId: e.exId,
               ...ssOf(e),
               ...noteOf(e),
+              ...restOf(e),
               sets: e.sets.map((s) => ({
                 t: s.t,
                 kg: num(s.kg) || 0,
@@ -15797,7 +15893,10 @@
         if (!tplAsk || !S.templates[tplAsk.id]) break;
         const items = Object.assign({}, S.templates);
         // jen cviky a série, název, fitka a pořadí šablony zůstanou (jako Aktualizovat šablonu)
-        items[tplAsk.id] = Object.assign({}, items[tplAsk.id], { items: tplItemsOf(tplAsk.w) });
+        // pauzy cviků (F1-21) zůstanou z přepisované šablony
+        items[tplAsk.id] = Object.assign({}, items[tplAsk.id], {
+          items: tplItemsOf(tplAsk.w, items[tplAsk.id]),
+        });
         put("config/templates", { items });
         closeSheet();
         toast("Šablona „" + items[tplAsk.id].name + "“ přepsána");
@@ -16339,7 +16438,7 @@
       document.getElementById("warmPctV").textContent = t.value + " %";
       return;
     } // F1-08: posuvník ukazuje procenta hned, uloží se po puštění (change)
-    if (restSliderShow(t) && t.id !== "x-rest") return; // F1-09: délka pauzy hned při tažení
+    if (restSliderShow(t) && t.id !== "x-rest") return; // F1-09, F1-21: délka pauzy hned při tažení
     if (t.id === "stwPre") {
       document.getElementById("stwPreV").textContent = stwPreTxt(+t.value);
       return;
@@ -16558,6 +16657,10 @@
       scheduleRender(); // vypnutý vypínač = posuvník zešedne a ukáže Výchozí časovač (F1-09)
       return;
     }
+    if (t.id === "t-rest-on" || t.id === "t-rest") {
+      tplRestChange(t);
+      return;
+    } // F1-21: pauza cviku v šabloně
     if (!f || !d) return;
     if (f === "gymId") {
       d.gymId = t.value;
