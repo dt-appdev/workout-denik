@@ -29,6 +29,9 @@ module.exports = {
     const app = await P.openApp(browser, url);
     const toastA = await P.importBackup(app, text, "replace");
     check.ok(toastA && /Data nahrazena/.test(toastA), "obnova plné zálohy skončila hláškou: " + toastA);
+    // restart až po zápisu cache (0,8 s): start z cache se všemi druhy dat (pád při startu kvůli pauze
+    // v šabloně odhalil test F0-18)
+    await app.settle(1500);
     await app.goto();
     const first = await P.exportBackup(app);
     for (const part of ["cfg", "templates", "plan", "months", "body", "photos"]) {

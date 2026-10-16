@@ -746,12 +746,100 @@
   function idbOpenExisting(name) {
     return new Promise((res, rej) => {
       const rq = indexedDB.open(name);
-      rq.onupgradeneeded = () => rq.transaction.abort();
+      rq.onupgradeneeded = () => {
+        try {
+          rq.transaction.abort();
+        } catch (e) {} // už zrušila pojistka F0-18
+      };
       rq.onsuccess = () => res(rq.result);
       rq.onerror = () => rej(rq.error || new Error("Databáze neexistuje."));
       rq.onblocked = () => rej(new Error("blocked"));
     });
   }
+
+  /* ---------- POJISTKA DAT VYDANÉ VERZE (F0-18) ----------
+     Testovací verze PR běží na stejné doméně jako vydaná verze, prohlížeč je tedy nijak neodděluje: oddělení
+     dat je jen jiný název databáze a jiný prefix v localStorage (Idb.NAME, Local.P). Tahle pojistka hlídá,
+     aby chyba v kódu PR nepřepsala skutečná data v telefonu. Běží jen v testovací verzi (TEST_PR):
+       - databáze vydané verze (MAIN_DB) jde otevřít jen ke čtení: zápisová transakce, smazání databáze
+         a změna její verze (upgrade) se odmítnou; neexistující databázi otevření nezaloží,
+       - localStorage: zápis a mazání klíčů vydané verze (MAIN_P) a localStorage.clear() se odmítnou,
+       - při startu kontrola, že Idb.NAME a Local.P nejsou ty vydané verze.
+     Zabraná pojistka (guardStop) vyhodí chybu, zastaví ukládání (Store.backend = null) a ukáže červený pruh
+     nahoře (.guard-stop), dokud se appka nezavře. Vydané verzi se nemění nic.
+     Číst data vydané verze smí jen copyFromMain (Nastavení → O aplikaci). Úloha „kontrola“ v GitHub Actions
+     navíc odmítne přímé indexedDB.open / deleteDatabase / zápis do localStorage mimo Local, Idb a schválené
+     funkce (seznam v .github/workflows/nasazeni.yml); test tools/testy/oddeleni-dat.js ověří, že průchod
+     testovací verzí data vydané verze nezmění. */
+  function guardStop(what) {
+    try {
+      Store.backend = null; // nic dalšího neukládat (jako copyFromMain při kopírování)
+    } catch (e) {} // Store ještě není (kontrola při startu)
+    if (!document.querySelector(".guard-stop")) {
+      const bar = document.createElement("div");
+      bar.className = "guard-stop";
+      bar.setAttribute("role", "alert");
+      bar.textContent =
+        "Testovací verze se pokusila zapsat do dat vydané verze (" +
+        what +
+        "). Zápis se odmítl a ukládání se zastavilo. Zavři appku a nahlas chybu v PR.";
+      document.body.appendChild(bar);
+    }
+    return new Error("Pojistka dat vydané verze (F0-18): " + what);
+  }
+  function guardInstall() {
+    const isMainKey = (key) => String(key).startsWith(MAIN_P);
+    const setItem = Storage.prototype.setItem,
+      removeItem = Storage.prototype.removeItem,
+      clear = Storage.prototype.clear;
+    Storage.prototype.setItem = function (key, value) {
+      if (this === window.localStorage && isMainKey(key)) throw guardStop("localStorage " + key);
+      return setItem.call(this, key, value);
+    };
+    Storage.prototype.removeItem = function (key) {
+      if (this === window.localStorage && isMainKey(key)) throw guardStop("localStorage " + key);
+      return removeItem.call(this, key);
+    };
+    Storage.prototype.clear = function () {
+      if (this === window.localStorage) throw guardStop("localStorage.clear");
+      return clear.call(this);
+    };
+    if (!window.indexedDB) return;
+    const open = IDBFactory.prototype.open,
+      deleteDatabase = IDBFactory.prototype.deleteDatabase,
+      transaction = IDBDatabase.prototype.transaction;
+    IDBFactory.prototype.open = function (name, version) {
+      const rq = version === undefined ? open.call(this, name) : open.call(this, name, version);
+      if (name === MAIN_DB) {
+        // neexistující databáze (oldVersion 0) se jen nezaloží, změna verze existující je chyba
+        rq.addEventListener("upgradeneeded", (ev) => {
+          try {
+            rq.transaction.abort();
+          } catch (e) {}
+          if (ev.oldVersion > 0) {
+            guardStop("změna databáze " + MAIN_DB);
+          }
+        });
+      }
+      return rq;
+    };
+    IDBFactory.prototype.deleteDatabase = function (name) {
+      if (name === MAIN_DB) throw guardStop("smazání databáze " + MAIN_DB);
+      return deleteDatabase.call(this, name);
+    };
+    IDBDatabase.prototype.transaction = function (stores, mode, options) {
+      if (this.name === MAIN_DB && mode && mode !== "readonly") throw guardStop("zápis do " + MAIN_DB);
+      return transaction.apply(this, arguments);
+    };
+  }
+  function guardInit() {
+    if (!TEST_PR) return;
+    guardInstall();
+    if (Idb.NAME === MAIN_DB || Local.P === MAIN_P) {
+      throw guardStop("testovací verze používá úložiště vydané verze");
+    }
+  }
+  guardInit();
 
   // backend pro Store: dokumenty v úložišti docs databáze IndexedDB
   function IndexedDbBackend() {
@@ -13241,11 +13329,12 @@
      nic neukládá; v jeho úpravě řádek pauzy ukáže „v šabloně“ jen pro informaci. Šablona z tréninku (Uložit
      jako šablonu, Aktualizovat šablonu, přepsání při shodě názvu) převezme pauzy přes tplItemsOf(w, src).
      V rozdělaném tréninku se pauza neukazuje ani neupravuje (rozhodnutí uživatele 16. 10. 2026). */
-  // pauza cviku pro Object.assign (prázdný objekt = bez pauzy v šabloně), jako noteOf
-  const restOf = (e) => {
+  // pauza cviku pro Object.assign (prázdný objekt = bez pauzy v šabloně), jako noteOf; function, ne const:
+  // volá ji i načtení cache při startu (tplNorm → tplRestClean) dřív, než by se const téhle sekce vytvořila
+  function restOf(e) {
     const rest = e ? restNorm(e.rest) : null;
     return rest ? { rest } : {};
-  };
+  }
   // cvik šablony: pauza jen jako platná délka (načtení dat a obnova zálohy)
   function tplRestClean(it) {
     if (!it || typeof it !== "object" || !("rest" in it)) return it;

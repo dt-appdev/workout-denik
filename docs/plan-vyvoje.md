@@ -167,6 +167,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-15** Čitelný soubor zálohy
 - [ ] **F0-16** Hromadné a hromadné selektivní mazání záznamů (tréninků, měření) (přání uživatele 13. 10. 2026, **odloženo 14. 10. 2026**: pro jednoho uživatele malý přínos, nevratné mazání): dnes jde smazat jen jeden trénink nebo jedno měření. Rozhodnout: kde (Historie, Tělo, Nastavení → Data a záloha), jak vybírat (zaškrtávání v seznamu, filtr podle období, fitka, u měření podle zdroje: ruční / import ze Samsung Health F4-13 s `shId`), potvrzení s počtem a bod obnovy před smazáním (jako před obnovou ze zálohy).
 - [x] **F0-17** Automatické testy (kouřový test, záloha tam a zpět, starší formát zálohy)
+- [x] **F0-18** Pojistka dat vydané verze v testovacích verzích
 
 ### Fáze 1 – Ovládání při tréninku
 
