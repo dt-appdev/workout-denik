@@ -2954,7 +2954,7 @@ tr.done .okb {
 }
 .gal-pin {
   position: absolute;
-  right: 8px;
+  left: 8px;
   top: 8px;
   display: inline-flex;
   align-items: center;
@@ -2981,11 +2981,16 @@ tr.done .okb {
 .gal-dots i.on {
   background: var(--ink);
 }
-.gal-add {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 var(--gap-list);
+/* přidat fotku: ikona vpravo nahoře v kartě Popis, nic neposouvá (F3-51) */
+.card.exinfo {
+  position: relative;
+}
+.card.exinfo > .gal-addb {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  background: var(--surface);
 }
 /* náhledy fotek (přidání, výběr z online databáze) */
 .thumbs {

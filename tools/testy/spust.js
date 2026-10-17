@@ -9,7 +9,8 @@
    historie-cviku.js (z historie cviku na stránku tréninku a zpět, F3-49), oddeleni-dat.js (testovací verze
    na /pr-99/ nezmění data vydané verze, F0-18), cisla-formulare.js (přepisování čísel ve formulářích, F1-25),
    progrese-vypinac.js (hlavní vypínač návrhu progrese, F4-15),
-   sane.js (cvik Vzdálenost se zátěží, F4-16), online-cviky.js (přidání cviku z online databáze, F3-50).
+   sane.js (cvik Vzdálenost se zátěží, F4-16), online-cviky.js (přidání cviku z online databáze, F3-50),
+   pridat-fotku.js (přidání fotky ikonou v rohu karty cviku, F3-51).
    Každý test dostane čistý profil prohlížeče a dá se spustit i samostatně (část názvu v argumentu).
    Skončí kódem 1, když některá kontrola selže. Žádný z testů nezapisuje do repa. */
 const P = require("./pomocne.js");
@@ -27,6 +28,7 @@ const TESTS = [
   require("./progrese-vypinac.js"),
   require("./sane.js"),
   require("./online-cviky.js"),
+  require("./pridat-fotku.js"),
 ];
 
 (async () => {
