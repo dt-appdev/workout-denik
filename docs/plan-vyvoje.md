@@ -286,6 +286,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F4-12** Kopírovat pro coache (osobní, skrytá funkce)
 - [x] **F4-13** Import měření ze Samsung Health
 - [x] **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží
+- [x] **F4-15** Hlavní vypínač návrhu progrese
 
 
 ### Fáze 5 – Motivace
