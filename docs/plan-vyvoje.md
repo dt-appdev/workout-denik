@@ -286,6 +286,8 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F4-12** Kopírovat pro coache (osobní, skrytá funkce)
 - [x] **F4-13** Import měření ze Samsung Health
 - [x] **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží
+- [ ] **F4-15** Typ cviku Vzdálenost se zátěží (přání uživatele 17. 10. 2026, **rozpracováno**): tlačení a tažení saní, políčka m a kg (série „20m×90kg“), aby šla zapsat i nedotlačená dráha. Dohodnuto: obdobně jako Opakování a váha (max. zátěž, nejlepší série kg × m, práce cviku kg·m, nejdelší vzdálenost; bez odh. 1RM), práce se nepočítá do objemu tréninku, jen metry (jiné jednotky až s případným přepínáním jednotek), bez času, zlatá medaile za max. zátěž a nejlepší sérii. Do výchozí databáze Tlačení saní a Tažení saní, saně z hledání cviků na nový typ. Starší trénink saní (1 opak.) si uživatel opraví ručně. Před implementací náhled Dnes / Po změně.
+- [ ] **F4-16** Návrh progrese u cviku Vzdálenost se zátěží (vzniklo u F4-15 17. 10. 2026, odloženo): obdoba double progression (F4-01) pro saně: dokud není ve všech pracovních sériích dotlačená celá dráha, váha zůstává, pak návrh +krok kg. Otevřené: odkud brát cílovou vzdálenost, když se dráha liší podle fitka (nastavení stroje je volný text; návrh: nejdelší zapsaná vzdálenost v daném fitku). Navazuje na F4-15.
 
 
 ### Fáze 5 – Motivace
