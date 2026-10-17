@@ -48,9 +48,11 @@ module.exports = {
     check.eq((await state(page, "progMin")).value, "", "klepnutí: rozsah od prázdný");
     await page.keyboard.type("5");
     await page.keyboard.press("Enter");
+    await app.settle(); // psaní uložilo rozsah a appka překreslí stránku (kurzor zůstane v políčku)
     check.eq(await focused(page), "progMax", "Enter z rozsahu od přešel na do");
     check.eq(await state(page, "progMax"), { value: "", placeholder: "10" }, "rozsah do po Enteru šedě");
     await page.keyboard.press("Enter");
+    await app.settle();
     check.ok((await focused(page)) !== "progMax", "Enter na rozsahu do schoval klávesnici");
     check.eq((await state(page, "progMax")).value, "10", "rozsah do bez psaní vrácený");
     check.eq((await state(page, "progMin")).value, "5", "rozsah od přepsaný");

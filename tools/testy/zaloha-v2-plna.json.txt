@@ -39,6 +39,7 @@
     "stagN": 3,
     "stepper": false,
     "warmPct": 50,
+    "progOn": true,
     "progAll": true,
     "progMin": 6,
     "progMax": 10,

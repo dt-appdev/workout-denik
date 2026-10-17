@@ -1202,6 +1202,11 @@
       stagN: STAG_DEF,
       stepper: true,
       warmPct: WARM_PCT.def,
+      progOn: true, // F4-15
+      progAll: false,
+      progMin: PROG_REPS.defMin,
+      progMax: PROG_REPS.defMax,
+      progSets: "all",
     },
     exLib: exLoad({}),
     exV: 0,
@@ -1439,6 +1444,7 @@
         stagN: STAG_DEF,
         stepper: true,
         warmPct: WARM_PCT.def,
+        progOn: true, // hlavní vypínač návrhu progrese (F4-15)
         progAll: false,
         progMin: PROG_REPS.defMin,
         progMax: PROG_REPS.defMax,
@@ -1460,6 +1466,7 @@
       c.progMin = PROG_REPS.defMin;
       c.progMax = PROG_REPS.defMax;
     }
+    c.progOn = c.progOn !== false; // F4-15: starší data = zapnuto
     c.stagN = STAG_N.includes(+c.stagN) ? +c.stagN : STAG_DEF;
     c.height = +c.height >= 100 && +c.height <= 250 ? Math.round(+c.height) : null;
     c.effort = c.effort === "rir" || c.effort === "rpe" ? c.effort : "off"; // RIR/RPE (F4-04)
@@ -2090,7 +2097,11 @@
      progInfo(d, e) vrací {sets: [{set, kg}], reps, up}: set = pořadí pracovní série, up = přidání nad
      nejtěžší váhu. Předvyplnění v rozdělaném tréninku vždy přes draftHints(d, e) (✓, krokovač, karta), ne
      rovnou exHints (sloupec Minule a setJump dál z exHints(...).p). Rozsah opakování je i v nadpisu sloupce
-     Opak. (repsRange, F3-22). Vysvětlení jen v progSettings, ve formuláři cviku jen volba. */
+     Opak. (repsRange, F3-22). Vysvětlení jen v progSettings, ve formuláři cviku jen volba.
+     Hlavní vypínač S.cfg.progOn (F4-15, výchozí zapnuto, i u starších dat): vypnuto = návrh nikde,
+     ani u cviku s vlastním rozsahem; zbytek karty v Nastavení a volba v Upravit cvik zešednou (depAttr:
+     .dep.off + inert, F3-23). S vypnutým U všech cviků zešedne jen Výchozí rozsah (Přidat váhu platí
+     i pro cviky zapnuté u cviku). */
   const PROG_KINDS = { wr: true, bwplus: true, assist: true };
   // platný rozsah opakování [min, max]
   function progValid(range) {
@@ -2101,7 +2112,7 @@
   }
   // rozsah opakování cviku pro návrh progrese [min, max], nebo null (návrh u cviku není)
   function progRange(exId) {
-    if (!PROG_KINDS[kindOf(exId)]) return null;
+    if (!PROG_KINDS[kindOf(exId)] || !S.cfg.progOn) return null;
     const prog = exOf(exId).prog;
     if (prog === "off") return null;
     if (progValid(prog)) return prog;
@@ -3363,8 +3374,15 @@
   }
 
   /* Nastavení → Trénink → Návrh progrese (F4-01) */
+  // závislá volba (F3-23): s vypnutým vypínačem zešedne a nejde ovládat; cls = další třídy
+  const depAttr = (on, cls) => `class="${cls ? cls + " " : ""}dep${on ? "" : " off"}"${on ? "" : " inert"}`;
   function progSettings() {
+    const master = S.cfg.progOn;
     const on = !!S.cfg.progAll;
+    const sets = [
+      ["all", "Všem sériím"],
+      ["first", "Postupně od 1. série"],
+    ];
     return `<section class="sec">
       <div class="sec-h">
         <h2>Návrh progrese</h2>
@@ -3372,27 +3390,32 @@
       </div>
       <div class="card stack">
         <label class="switch">
-          <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
-          <span>U všech cviků</span>
+          <input type="checkbox" data-act="progOn" ${master ? "checked" : ""}>
+          <span>Navrhovat progresi</span>
         </label>
-        <div class="row">
-          <span class="grow">Výchozí rozsah opakování</span>
-          ${progRangeInputs("progMin", "progMax", [S.cfg.progMin, S.cfg.progMax], "prog")}
-        </div>
-        <span class="fmsg" id="prog-msg"></span>
-        <div class="stack tight">
-          <span>Přidat váhu</span>
-          <div class="seg seg-wide">
-            ${[
-              ["all", "Všem sériím"],
-              ["first", "Postupně od 1. série"],
-            ]
-              .map(
-                ([k, l]) =>
-                  `<button data-act="progSets" data-v="${k}" aria-pressed="${S.cfg.progSets === k}">${l}` +
-                  `</button>`,
-              )
-              .join("")}
+        <div ${depAttr(master, "stack")}>
+          <label class="switch">
+            <input type="checkbox" data-act="progAll" ${on ? "checked" : ""}>
+            <span>U všech cviků</span>
+          </label>
+          <div ${depAttr(on, "stack")}>
+            <div class="row">
+              <span class="grow">Výchozí rozsah opakování</span>
+              ${progRangeInputs("progMin", "progMax", [S.cfg.progMin, S.cfg.progMax], "prog")}
+            </div>
+            <span class="fmsg" id="prog-msg"></span>
+          </div>
+          <div class="stack tight">
+            <span>Přidat váhu</span>
+            <div class="seg seg-wide">
+              ${sets
+                .map(
+                  ([k, l]) =>
+                    `<button data-act="progSets" data-v="${k}" aria-pressed="${S.cfg.progSets === k}">${l}` +
+                    `</button>`,
+                )
+                .join("")}
+            </div>
           </div>
         </div>
       </div>
@@ -11022,6 +11045,11 @@
             "vypnout.",
         ],
         [
+          "Navrhovat progresi",
+          "Hlavní vypínač. Vypnuto = návrh se neukáže u žádného cviku, ani u cviků, kde je zapnutý " +
+            "v Upravit cvik. Nastavení cviků zůstane uložené a po zapnutí platí zase.",
+        ],
+        [
           "Výchozí rozsah opakování",
           "Horní hranice = kdy navrhnout víc váhy. Dolní hranice = od kolika opakování začít s novou váhou.",
         ],
@@ -11448,7 +11476,8 @@
         [
           "Návrh progrese",
           "Podle nastavení = jak je v Nastavení → Trénink → Návrh progrese. Zapnuto, vlastní rozsah = návrh " +
-            "u tohoto cviku vždy, s vlastním rozsahem opakování. Vypnuto = u tohoto cviku nikdy.",
+            "u tohoto cviku vždy, s vlastním rozsahem opakování. Vypnuto = u tohoto cviku nikdy. Když je " +
+            "v Nastavení vypnuté Navrhovat progresi, návrh není u žádného cviku a volba je šedá.",
         ],
       ],
     },
@@ -12410,13 +12439,15 @@
   const progModeOf = (prog) => (prog === "off" ? "off" : progValid(prog) ? "on" : "def");
   function exEdProg(f) {
     const cfgRange = [S.cfg.progMin, S.cfg.progMax];
+    const cfgOn = S.cfg.progOn && S.cfg.progAll;
     const modes = {
-      def: "Podle nastavení (" + (S.cfg.progAll ? "zapnuto, " + progStr(cfgRange) : "vypnuto") + ")",
+      def: "Podle nastavení (" + (cfgOn ? "zapnuto, " + progStr(cfgRange) : "vypnuto") + ")",
       on: "Zapnuto, vlastní rozsah",
       off: "Vypnuto",
     };
+    // s vypnutým návrhem v Nastavení volba zešedne (F4-15), uložená hodnota zůstává
     return (
-      `<div class="stack tight">
+      `<div ${depAttr(S.cfg.progOn, "stack tight")}>
       <label class="f">
         Návrh progrese
         <select class="inp" id="x-prog">
@@ -16383,6 +16414,9 @@
         break;
       case "progAll":
         put("config/main", Object.assign({}, S.cfg, { progAll: t.checked }));
+        break;
+      case "progOn":
+        put("config/main", Object.assign({}, S.cfg, { progOn: t.checked })); // F4-15
         break;
       case "progSets":
         put("config/main", Object.assign({}, S.cfg, { progSets: v === "first" ? "first" : "all" }));
