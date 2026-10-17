@@ -374,6 +374,18 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   série s časem, při stejné váze delší čas), takže vyšší váha je zlepšení pro stagnaci i nový rekord Max. zátěž
   (zlatý, počítá se zpětně). Progres ve Statistikách → Cviky (`progMetric`) bere u `timew` max. zátěž místo výdrže.
   Tabulka Osobní rekordy ukazuje sérii přes `setStr`. Zkušební data: navíjení závaží na tyč stagnuje 4 tréninky.
+- [x] **F4-16** Typ cviku Vzdálenost se zátěží (přání uživatele 17. 10. 2026; **hotovo 17. 10. 2026**): tlačení saní
+  nešlo zapsat (typ s váhou neměl vzdálenost, Vzdálenost a čas neměl váhu). Dočasné řešení 1 opak. × kg nestačilo, protože
+  nedotlačená dráha nebyla vidět. Nový typ `distw` s políčky m (celé metry, `s.m`) a kg, série „20m×90kg“ (`setStr`).
+  Obdobně jako Opakování a váha: rekordy max. zátěž (při stejné váze delší vzdálenost) a nejlepší série (`bestW`, nejvíc
+  kg × m) zlaté, práce cviku (`work`, kg × m) a nejdelší vzdálenost (`maxM`) stříbrné, bez odhadu 1RM; grafy cviku Max
+  zátěž, Práce série, Práce tréninku, Nejdelší, dlaždice Práce kg·m; v souhrnu Nejlepší a Práce s porovnáním; progres
+  ve Statistikách podle max. zátěže. Práce se nepočítá do objemu tréninku. Předvyplnění, krokovač (krok 1 / 5 / 10 m),
+  velký skok, text pro coache a obrázek ke sdílení s metry. Do výchozí databáze Tlačení saní (`sled-push`) a Tažení saní
+  (`sled-drag`), vázané na fitko (délka dráhy do nastavení stroje); saně ve free-exercise-db (tlačení, tažení,
+  v postroji, pozpátku, v medvědí chůzi, chůze pozpátku s rukama nad hlavou) na nový typ (`tools/fedb/build.py`),
+  Sprint s prowlerem zůstává Vzdálenost a čas. Podle náhledu Dnes / Po změně bez připomínek. Návrh progrese odložen
+  do F4-17. Nový test `tools/testy/sane.js`, saně v `zaloha-v2-plna.json.txt`.
 
 ## Zrušené úlohy
 
@@ -408,6 +420,7 @@ Zrušeno 14. 10. 2026 při kritickém zhodnocení plánu. U každé důvod a pů
 | F3-44 | Krok B: tlačítka + Série / + Zahřívací ke spodku karty? Supersérie? Okraj karty nahoře? | Rozhodnuto 14. 10. 2026 (náhled, 2 verze): pod tlačítky 14 px jako po stranách (10 px zamítnuto, boky na 10 ne kvůli F3-36), okraj nahoře 10 (název má vlastní výšku řádku), karty v supersérii 6 px, stagnace přitažená. Mezera mezi tlačítky vedle sebe = mezi dlaždicemi (8 px, už dnes stejná). |
 | F3-44 | Stupnice mezer uvnitř komponent: 2 / 8 / 10 / 22, nebo 4 / 8 / 12 / 22? Popisek nad políčkem? Nadpis skupiny ve výběru cviků? | Rozhodnuto 14. 10. 2026 (náhledy): 2 / 8 / 10 / 22, popisek → políčko nebo čipy 4 px (2 px zamítnuto), nadpis `.subh` v panelu 10 / 10, nadpis skupiny ve výběru cviků beze změny (14 / 6), vodorovné mezery mimo úlohu, karty v kroku B. |
 | F3-43 | Které mezery sjednotit? Nadpis sekce pod filtry? Karty seznamu? Vnitřek karet a panelů? | Rozhodnuto 13. 10. 2026 (náhled): jen svislé mezery bloků stránky, 10 px uvnitř skupiny, 22 px mezi skupinami; nadpis sekce i hned pod filtry 22 px; karty a řádky seznamu pod sebou všude 8 px (ne 6 ani 10), měsíc v Historii jako nadpis skupiny; kontrola jen `margin` v px (ne `padding`, `gap`); vnitřek karet a panelů samostatná úloha F3-44. |
+| F4-16 | Jak zapsat saně (váha a vzdálenost)? Jednotky, čas, objem, rekordy, cviky? | Rozhodnuto 17. 10. 2026: nový typ Vzdálenost se zátěží (m a kg) obdobně jako Opakování a váha; jen metry (jiné jednotky až s přepínáním jednotek), bez času, práce kg × m jen u cviku, ne v objemu tréninku; zlatá max. zátěž a nejlepší série; Tlačení a Tažení saní do výchozí databáze; starší zápis saní si uživatel opraví ručně; návrh progrese později (F4-17). |
 | F4-14 | Co je u cviku na čas se zátěží zlepšení? | Rozhodnuto 13. 10. 2026: vyšší max. zátěž (při stejné váze delší čas) nebo delší výdrž, ne čas × váha; platí pro stagnaci, rekordy (nový rekord Max. zátěž, zpětně) i progres ve Statistikách → Cviky; bez náhledu, snímek v PR. |
 | F3-42 | Které grafy u cviku? Jak je vybírat? Nový rekord? | Rozhodnuto 13. 10. 2026 (náhled): Opakování celkem u všech cviků s opakováním; čipy v řadě jako v Těle (ne dva řádky ani rozbalovací výběr); bez nových rekordů; Max zátěž u cviku na čas se zátěží; žádná pátá dlaždice, ale Objem u cviku na čas nahrazen dlaždicí Čas. |
 | F3-41 | Jak zjednodušit filtr partií? Kde řazení a tlačítka? Podle které partie filtrovat? | Rozhodnuto 13. 10. 2026 (náhled, 4 verze): čipy Partie ▾ / Vybavení ▾ s panelem, ve výběru i Jen cviky z historie v řádku filtrů; počet cviků místo nadpisu Seznam s ovládáním vpravo; filtr ve všech hlavních partiích; stejné na všech třech místech (Cviky, výběr cviků, Statistiky). Oprava online databáze s klávesnicí ve stejném PR. |

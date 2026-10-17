@@ -64,6 +64,9 @@ def kind(x, e):
         return "time"
     if re.search(r"farmer|yoke walk|rickshaw carry", n):
         return "timew"
+    # saně (F4-16): vzdálenost se zátěží
+    if re.search(r"^sled push$|^sled drag|sled drags$|^backward drag$|^sled overhead backward walk$", n):
+        return "distw"
     if "assisted" in n:
         return "assist"
     if n.startswith("weighted") and e in ("bodyweight", "other"):
