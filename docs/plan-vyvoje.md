@@ -287,6 +287,8 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F4-13** Import měření ze Samsung Health
 - [x] **F4-14** Oprava: Bez zlepšení u cviku na čas se zátěží
 - [x] **F4-15** Hlavní vypínač návrhu progrese
+- [x] **F4-16** Typ cviku Vzdálenost se zátěží
+- [ ] **F4-17** Návrh progrese u cviku Vzdálenost se zátěží (vzniklo u F4-16 17. 10. 2026, odloženo): obdoba double progression (F4-01) pro saně: dokud není ve všech pracovních sériích dotlačená celá dráha, váha zůstává, pak návrh +krok kg. Otevřené: odkud brát cílovou vzdálenost, když se dráha liší podle fitka (nastavení stroje je volný text; návrh: nejdelší zapsaná vzdálenost v daném fitku). Navazuje na F4-16.
 
 
 ### Fáze 5 – Motivace

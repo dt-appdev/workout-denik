@@ -1503,7 +1503,7 @@
     return d2(d.getHours()) + ":" + d2(d.getMinutes());
   };
 
-  /* ---------- TYPY CVIKŮ ----------
+  /* ---------- TYPY CVIKŮ (F4-16) ----------
      Určují, co se u série zapisuje a jak se počítá zátěž.
      wr     opakování × váha          zátěž = váha
      bw     vlastní váha              zátěž = tělesná hmotnost
@@ -1512,9 +1512,16 @@
      time   na čas                    bez objemu, rekord nejdelší výdrž
      timew  na čas se zátěží          bez objemu, rekordy nejdelší výdrž a max. zátěž (F4-14)
      dist   vzdálenost a čas          rekordy vzdálenost, čas a tempo
+     distw  vzdálenost se zátěží      zátěž = váha, bez objemu (práce kg × m jen u cviku, F4-16)
      Pořadí políček f (F3-39): opakování / čas před váhou, stejně jako text série „12×40kg“ (setStr). Platí
      pro tabulku sérií (trénink, úprava tréninku, šablona), krokovač i Enter na klávesnici. Data se ukládají
-     podle názvu políčka, pořadí na ně nemá vliv. */
+     podle názvu políčka, pořadí na ně nemá vliv.
+     Vzdálenost se zátěží (F4-16, saně): políčka m (celé metry, s.m) a kg, série „20m×90kg“, aby šla zapsat
+     i nedotlačená dráha. Obdobně jako opakování a váha: rekordy max. zátěž, nejlepší série (nejvíc kg × m),
+     práce cviku (kg × m) a nejdelší vzdálenost, bez odhadu 1RM; grafy cviku Max zátěž, Práce série, Práce
+     tréninku, Nejdelší; v souhrnu tréninku Nejlepší a Práce. Práce se nepočítá do objemu tréninku (setVol 0),
+     kg × m a kg × opakování nejdou sčítat. Návrh progrese (PROG_KINDS) zatím ne (F4-17), stopky taky ne.
+     Délka dráhy podle fitka patří do nastavení stroje (cvik vázaný na fitko). */
   const KIND = {
     wr: { l: "Opakování a váha", f: ["reps", "kg"], ex: "Bench press, bicepsový zdvih" },
     bw: { l: "Vlastní váha", f: ["reps"], ex: "Shyby, kliky, sedy-lehy" },
@@ -1523,8 +1530,9 @@
     time: { l: "Na čas", f: ["sec"], ex: "Plank, výdrž, vis" },
     timew: { l: "Na čas se zátěží", f: ["sec", "kg"], ex: "Plank se zátěží, farmářská chůze" },
     dist: { l: "Vzdálenost a čas", f: ["km", "sec"], ex: "Běh, veslovací trenažér" },
+    distw: { l: "Vzdálenost se zátěží", f: ["m", "kg"], ex: "Tlačení a tažení saní" },
   };
-  const KIND_ORDER = ["wr", "bw", "bwplus", "assist", "time", "timew", "dist"];
+  const KIND_ORDER = ["wr", "bw", "bwplus", "assist", "time", "timew", "dist", "distw"];
   const FLD = {
     kg: { lab: "kg", mode: "decimal" },
     plus: { lab: "+kg", mode: "decimal" },
@@ -1532,6 +1540,7 @@
     reps: { lab: "Opak.", mode: "numeric" },
     sec: { lab: "Čas", mode: "numeric" },
     km: { lab: "km", mode: "decimal" },
+    m: { lab: "m", mode: "numeric" },
   };
   const kindOf = (id) => {
     const e = S.exLib[id];
@@ -1559,7 +1568,7 @@
   }
   function setLoad(kind, s, t) {
     const kg = +s.kg || 0;
-    if (kind === "wr" || kind === "timew") return kg;
+    if (kind === "wr" || kind === "timew" || kind === "distw") return kg;
     if (kind === "bw") return bodyWeightAt(t);
     if (kind === "bwplus") return bodyWeightAt(t) + kg;
     if (kind === "assist") return Math.max(0, bodyWeightAt(t) - kg);
@@ -1590,6 +1599,7 @@
     if (kind === "time") return fmtSec(s.sec || 0);
     if (kind === "timew") return fmtSec(s.sec || 0) + (s.kg ? "×" + fmtKg(s.kg) + "kg" : "");
     if (kind === "dist") return (s.km ? fmtKg(s.km) + " km · " : "") + fmtSec(s.sec || 0);
+    if (kind === "distw") return (s.m || 0) + "m" + (s.kg ? "×" + fmtKg(s.kg) + "kg" : "");
     if (kind === "bw") return (s.reps || 0) + "×";
     if (kind === "bwplus") return (s.reps || 0) + (s.kg ? "×+" + fmtKg(s.kg) + "kg" : "×");
     if (kind === "assist") return (s.reps || 0) + (s.kg ? "×−" + fmtKg(s.kg) + "kg" : "×");
@@ -1604,7 +1614,7 @@
      Pravidla:  dec = počet desetinných míst (0 = jen celé číslo), min/max = rozsah,
                 unit = jednotka do nápovědy,
                 time = čas (45, 1:30, 1:02:30; čárka a tečka se při psaní mění na dvojtečku).
-     Pravidla NUM_RULES: kg, reps, sec, km, min, body, pct, kcal, bw, height (F3-33).
+     Pravidla NUM_RULES: kg, reps, sec, km, m (metry, F4-16), min, body, pct, kcal, bw, height (F3-33).
      Při vykreslení dostane políčko třídu numCls(pravidlo, hodnota). Znaky filtruje numInput (globální
      posluchač input; číslici navíc podle numFits nepřijme, „,5“ → „0,5“), jednotnou podobu po opuštění
      políčka a při ✓ dá numNormalize (čas „85“ → „1:25“, „1:5“ → „1:05“, „82.5“ → „82,5“). Před uložením
@@ -1616,6 +1626,7 @@
     reps: { lab: "Opakování", dec: 0, max: 999 },
     sec: { lab: "Čas", time: true, max: 86399 },
     km: { lab: "Vzdálenost", dec: 2, max: 999, unit: "km" },
+    m: { lab: "Vzdálenost", dec: 0, max: 9999, unit: "m" },
     min: { lab: "Délka", dec: 0, max: 1439, unit: "min" },
     body: { lab: "Hodnota", dec: 2, max: 999 },
     pct: { lab: "Hodnota", dec: 2, max: 100, unit: "%" },
@@ -1754,6 +1765,7 @@
     if (hasReps(kind) && !(num(s.reps) > 0)) return { f: "reps", msg: "Zadej počet opakování." };
     if (isTimed(kind) && !(parseSec(s.sec) > 0)) return { f: "sec", msg: "Zadej čas (např. 45 nebo 1:30)." };
     if (kind === "dist" && !(num(s.km) > 0)) return { f: "km", msg: "Zadej vzdálenost." };
+    if (kind === "distw" && !(num(s.m) > 0)) return { f: "m", msg: "Zadej vzdálenost." };
     return null;
   }
   // první problém v tréninku nebo šabloně: {e, j, f, msg}; onlyDone =
@@ -1828,7 +1840,8 @@
     return D;
   }
   /* souhrn jednoho cviku v tréninku w: hodnoty pracovních sérií (objem, max, odh. 1RM, čas, vzdálenost…);
-     setVol = největší objem jedné série, totReps = opakování celkem (F3-42), maxKg i u cviku na čas se zátěží */
+     setVol = největší objem jedné série, totReps = opakování celkem (F3-42), maxKg i u cviku na čas se zátěží;
+     u vzdálenosti se zátěží (F4-16) maxM, work (práce kg × m v tréninku) a setWork (největší práce série) */
   function exSum(w, e) {
     const kind = kindOf(e.exId);
     let vol = 0,
@@ -1843,7 +1856,10 @@
       totSec = 0,
       maxKm = 0,
       totKm = 0,
-      speed = 0;
+      speed = 0,
+      maxM = 0,
+      work = 0,
+      setWork = 0;
     for (const s of e.sets) {
       if (!isWork(s.t)) continue;
       nWork++;
@@ -1877,6 +1893,21 @@
           maxKg = Math.max(maxKg, setLoad(kind, s, w.start));
         }
       }
+      // vzdálenost se zátěží (F4-16): práce = kg × m
+      if (kind === "distw") {
+        const meters = +s.m || 0;
+        const L = setLoad(kind, s, w.start);
+        if (meters > maxM) {
+          maxM = meters;
+        }
+        if (meters > 0 && L > maxKg) {
+          maxKg = L;
+        }
+        work += L * meters;
+        if (L * meters > setWork) {
+          setWork = L * meters;
+        }
+      }
       if (kind === "dist") {
         const km = +s.km || 0,
           sec = +s.sec || 0;
@@ -1907,6 +1938,9 @@
       maxKm,
       totKm,
       speed,
+      maxM,
+      work,
+      setWork,
     };
   }
   // fitko, ve kterém se cvik porovnává: u cviku vázaného na fitko gymId, jinak null (všechna fitka)
@@ -1958,7 +1992,7 @@
      cviku a jen v rozdělaném tréninku. V rozdělaném tréninku se předvyplnění bere vždy přes draftHints (návrh
      progrese, F4-01). */
   const setGrp = (t) => (t === "w" ? "w" : "n");
-  const HINT_F = ["kg", "reps", "sec", "km"];
+  const HINT_F = ["kg", "reps", "sec", "km", "m"];
   // ke každé sérii cviku e: p = odpovídající série z minula (sloupec Minule), h = šedé předvyplnění
   function exHints(e, last) {
     const prev = { w: [], n: [] };
@@ -2022,6 +2056,7 @@
     if (!h) return "–";
     if (f === "sec") return h.sec ? fmtSec(h.sec) : "";
     if (f === "km") return String(h.km || "");
+    if (f === "m") return String(h.m || "");
     if (f === "reps") return String(h.reps || "");
     return h.kg ? fmtKg(h.kg).replace(/\s/g, "") : "";
   }
@@ -2182,7 +2217,7 @@
      Při ✓ v rozdělaném tréninku porovná hodnoty série se sérií z minula (sloupec Minule), a když
      minulá hodnota chybí, s nejvyšší hodnotou cviku v historii (vázaný cvik jen v tomto fitku).
      U úplně nového cviku se neporovnává nic. Ptá se jen při nárůstu (pokles bývá záměrný):
-     kg víc než 1,5× a aspoň o 20 kg, opakování víc než 2× a aspoň o 10, čas a km víc než 2×.
+     kg víc než 1,5× a aspoň o 20 kg, opakování víc než 2× a aspoň o 10, čas, km a metry víc než 2×.
      Potvrzení platí pro sérii, dokud se v ní nezmění hodnota (s.jumpOk, do uloženého tréninku
      se nedostane).
      Hranice v JUMP, výpočet setJump, dotaz sheetJump. */
@@ -2191,11 +2226,12 @@
     reps: { x: 2, add: 10 },
     sec: { x: 2, add: 0 },
     km: { x: 2, add: 0 },
+    m: { x: 2, add: 0 },
   };
   // nejvyšší kg, opakování, čas a km cviku v historii (vázaný cvik jen v daném fitku)
   function exMaxes(exId, gymId) {
     const gym = exCtxGym(exId, gymId);
-    const out = { kg: 0, reps: 0, sec: 0, km: 0 };
+    const out = { kg: 0, reps: 0, sec: 0, km: 0, m: 0 };
     for (const x of derive().byEx[exId] || []) {
       if (gym && x.w.gymId !== gym) continue;
       for (const s of x.e.sets) {
@@ -2235,6 +2271,7 @@
     if (f === "reps") return fmtInt(v) + " opak.";
     if (f === "sec") return fmtSec(v);
     if (f === "km") return fmtKg(v) + " km";
+    if (f === "m") return fmtInt(v) + " m";
     const sign = f === "plus" ? "+" : f === "minus" ? "−" : "";
     return sign + fmtKg(v) + " kg";
   }
@@ -2268,6 +2305,9 @@
       }
       if (!s.km && hint.km) {
         s.km = numStr(hint.km);
+      }
+      if (!s.m && hint.m) {
+        s.m = String(hint.m);
       }
     }
     for (const f of kFields(kindOf(e.exId))) {
@@ -2349,7 +2389,7 @@
      série nad, F1-13), jinak u cviku vázaného na fitko hodnota z posledního tréninku v jiném fitku (kkOther,
      jen start pro každé políčko zvlášť, ✓ ji nepřevezme; panel ji ukáže místo „bez záznamu z minula“),
      jinak 0.
-     Krok u kg (i +kg a −kg), času a km se mění jedním tlačítkem dokola (STEPS) a pamatuje se
+     Krok u kg (i +kg a −kg), času, km a metrů (F4-16) se mění jedním tlačítkem dokola (STEPS) a pamatuje se
      v Local "kkStep" pro každý cvik (cvik vázaný na fitko zvlášť pro každé fitko). Opakování po 1.
      „Napsat“ zavře panel a otevře klávesnici v políčku. Klávesnicí se pak píše do všech políček té série
      (kg i opakování, bez krokovače), dokud uživatel sérii neopustí (klepne jinam, na tlačítko nebo na ✓).
@@ -2365,9 +2405,10 @@
     kg: [0.5, 1, 1.25, 2, 2.5, 5, 10],
     sec: [1, 5, 30],
     km: [0.1, 0.5, 1],
+    m: [1, 5, 10],
   };
-  const STEP_DEF = { kg: 2.5, sec: 5, km: 0.1 };
-  const STEP_UNIT = { kg: " kg", sec: " s", km: " km" };
+  const STEP_DEF = { kg: 2.5, sec: 5, km: 0.1, m: 5 };
+  const STEP_UNIT = { kg: " kg", sec: " s", km: " km", m: " m" };
   const KK_REPEAT_DELAY = 450; // ms: podržení tlačítka − / +, než se hodnota začne měnit sama
   const KK_REPEAT_EVERY = 90; // ms: další krok při podržení
   let kk = null; // otevřený krokovač: {i, j, f} (cvik, série, pole, na které se klepnulo)
@@ -3105,6 +3146,7 @@
     if (kind === "time") return sec + " s";
     if (kind === "timew") return sec + " s" + (kg ? "×" + coachN(kg) + "kg" : "");
     if (kind === "dist") return (+s.km ? coachN(s.km) + " km " : "") + sec + " s";
+    if (kind === "distw") return coachN(+s.m || 0) + "m" + (kg ? "×" + coachN(kg) + "kg" : "");
     if (kind === "bw") return reps + "×BW";
     if (kind === "bwplus") return reps + "×" + (kg ? "BW+" + coachN(kg) + "kg" : "BW");
     if (kind === "assist") return reps + "×" + (kg ? "A-" + coachN(kg) + "kg" : "BW");
@@ -3420,7 +3462,10 @@
      zlepšení cviku, rekord má r.main), best a cnt (počet tréninků v kontextu, pro liveRecords).
      Počty i oslava berou rekordy vždy přes wRecs(w).
      Cvik na čas se zátěží (F4-14) má kromě výdrže i max. zátěž: nejvyšší váha ze série s časem, při stejné
-     váze delší čas. Platí i pro stagnaci (F4-06), která bere stejné ukazatele. */
+     váze delší čas. Platí i pro stagnaci (F4-06), která bere stejné ukazatele.
+     Vzdálenost se zátěží (F4-16) obdobně jako opakování a váha: maxKg (při stejné váze delší vzdálenost),
+     bestW (nejlepší série = nejvíc kg × m, velký typ), work (práce cviku v tréninku, kg × m) a maxM (nejdelší
+     vzdálenost), obojí malé. Odhad 1RM nemá. */
   const REC = {
     maxKg: "Max. zátěž",
     e1rm: "Odh. 1RM",
@@ -3432,6 +3477,9 @@
     maxKm: "Nejdelší vzdálenost",
     totKm: "Vzdálenost v tréninku",
     speed: "Nejvyšší tempo",
+    bestW: "Nejlepší série",
+    work: "Práce cviku",
+    maxM: "Nejdelší vzdálenost",
   };
   // název rekordu malými písmeny do věty
   const recLow = (t) => (t === "e1rm" ? "odh. 1RM" : REC[t].toLowerCase());
@@ -3446,6 +3494,9 @@
     "maxKm",
     "totKm",
     "speed",
+    "bestW",
+    "work",
+    "maxM",
   ];
   const EPS = 1e-6;
   const REC_FROM = 3; // rekord a zlepšení až od 3. tréninku cviku v kontextu (F3-25)
@@ -3457,6 +3508,9 @@
   // hodnota rekordu jako text („82,5 kg“, „5×100kg“ jako setStr, „1:30“, „5 km“…)
   function recFmt(type, v, set) {
     if (type === "reps") return fmtInt(v) + " opak.";
+    if (type === "bestW" && set) return setStr("distw", set);
+    if (type === "work") return fmtInt(v) + " kg·m";
+    if (type === "maxM") return fmtInt(v) + " m";
     if (type === "bestSet" && set) return set.reps + "×" + fmtKg(set.load != null ? set.load : set.kg) + "kg";
     if (type === "e1rm") return fmtKg(Math.round(v * 10) / 10) + " kg";
     if (type === "vol") return fmtInt(v) + " kg";
@@ -3472,6 +3526,7 @@
     let vol = 0,
       totSec = 0,
       totKm = 0,
+      totWork = 0,
       any = false;
     sets.forEach((s, j) => {
       if (!isWork(s.t)) return;
@@ -3516,6 +3571,25 @@
           m.maxKg = { v: L, set: Object.assign({}, s, { load: L }), j };
         }
       }
+      // vzdálenost se zátěží (F4-16): max. zátěž (při stejné váze delší vzdálenost), nejlepší série kg × m
+      if (kind === "distw") {
+        const meters = +s.m || 0;
+        if (meters <= 0) return;
+        any = true;
+        const L = setLoad(kind, s, t);
+        totWork += L * meters;
+        if (!m.maxM || meters > m.maxM.v + EPS) {
+          m.maxM = { v: meters, set: s, j };
+        }
+        const heavier = m.maxKg && L > m.maxKg.v + EPS;
+        const longer = m.maxKg && Math.abs(L - m.maxKg.v) < EPS && meters > m.maxKg.set.m;
+        if (L > 0 && (!m.maxKg || heavier || longer)) {
+          m.maxKg = { v: L, set: Object.assign({}, s, { load: L }), j };
+        }
+        if (L > 0 && (!m.bestW || L * meters > m.bestW.v + EPS)) {
+          m.bestW = { v: L * meters, set: Object.assign({}, s, { load: L }), j };
+        }
+      }
       if (kind === "dist") {
         const km = +s.km || 0,
           sec = +s.sec || 0;
@@ -3539,6 +3613,9 @@
     }
     if (totKm > 0) {
       m.totKm = { v: totKm };
+    }
+    if (totWork > 0) {
+      m.work = { v: totWork };
     }
     return any ? m : null;
   }
@@ -3627,6 +3704,7 @@
       reps: num(s.reps) || 0,
       sec: parseSec(s.sec) || 0,
       km: num(s.km) || 0,
+      m: num(s.m) || 0,
     });
     const done = e.sets.map((s) => (s.done ? conv(s) : { t: "w" }));
     const extra = [];
@@ -3826,7 +3904,7 @@
      celebrate(R, podtitul, auto): element .cel v body, stav celEl (navBack a navDepth s ní počítají). V
      tréninku ji spouští celExercise po odškrtnutí (exDone, liveRecords), po uložení wRecs. Zvuky celTone,
      žádné soubory. Medaile sama nezmizí. */
-  const REC_BIG = { maxKg: 1, e1rm: 1, reps: 1, maxSec: 1, maxKm: 1, speed: 1 };
+  const REC_BIG = { maxKg: 1, e1rm: 1, reps: 1, maxSec: 1, maxKm: 1, speed: 1, bestW: 1 };
   /* malá medaile rekordu (F3-20): zlatá za velký rekord (REC_BIG), stříbrná za malý. U víc rekordů
      najednou (počet, nadpis) zlatá, když je mezi nimi aspoň jeden velký, stejně jako medaile v oslavě. */
   const recGold = (types) => types.some((t) => REC_BIG[t]);
@@ -4981,7 +5059,7 @@
   };
   // série do šablony z uloženého tréninku (i čas a vzdálenost)
   function tplSet(s) {
-    return { t: s.t, kg: s.kg || 0, reps: s.reps || 0, sec: s.sec || 0, km: s.km || 0 };
+    return { t: s.t, kg: s.kg || 0, reps: s.reps || 0, sec: s.sec || 0, km: s.km || 0, m: s.m || 0 };
   }
   function newSetFrom(s) {
     return {
@@ -4990,6 +5068,7 @@
       reps: s && s.reps ? String(s.reps) : "",
       sec: s && s.sec ? (typeof s.sec === "string" ? s.sec : fmtSec(s.sec)) : "",
       km: s && s.km ? numStr(s.km) : "",
+      m: s && s.m ? String(s.m) : "",
       done: false,
     };
   }
@@ -6167,8 +6246,8 @@
         ? draftHints(d, e)
         : exHints(e, last);
     const useStepper = kkOn(d);
-    const fval = (s, f) =>
-      f === "sec" ? s.sec || "" : f === "km" ? s.km || "" : f === "reps" ? s.reps || "" : s.kg || "";
+    // hodnota políčka série (kg, +kg a −kg jsou v s.kg)
+    const fval = (s, f) => s[setRule(f)] || "";
     e.sets.forEach((s, j) => {
       const lbl = s.t === "w" ? "W" : s.t === "d" ? "D" : s.t === "f" ? "F" : String(++wn);
       const p = hints[j].p,
@@ -6281,6 +6360,14 @@
             any = true;
           }
         }
+        // vzdálenost se zátěží (F4-16): metry
+        if (kind === "distw") {
+          const meters = num(s.m);
+          if (isFinite(meters) && meters > 0) {
+            o.m = Math.round(meters);
+            any = true;
+          }
+        }
         if (!any) continue;
         const rpe = effSave(s); // RIR/RPE (F4-04)
         if (rpe) {
@@ -6341,6 +6428,7 @@
           reps: s.reps ? String(s.reps) : "",
           sec: s.sec ? fmtSec(s.sec) : "",
           km: s.km ? numStr(s.km) : "",
+          m: s.m ? String(s.m) : "",
           done: true,
           rpe: s.rpe,
           rpeEst: s.rpeEst,
@@ -6481,6 +6569,7 @@
     if (kind === "time") return sec > 0 ? [sec] : null;
     if (kind === "timew") return sec > 0 ? [kg, sec] : null;
     if (kind === "dist") return km > 0 ? [km, -sec] : null;
+    if (kind === "distw") return +s.m > 0 ? [kg, +s.m] : null;
     if (reps <= 0) return null;
     if (kind === "bw") return [reps];
     if (kind === "assist") return [-kg, reps];
@@ -6504,8 +6593,17 @@
     }
     return b;
   }
-  // součet cviku: objem (kg), u cviků na čas celkový čas, u vzdálenosti km
+  // součet cviku: objem (kg), u cviků na čas celkový čas, u vzdálenosti km, u vzdálenosti se zátěží práce
   function exTotal(kind, sets, t) {
+    if (kind === "distw") {
+      let work = 0;
+      for (const s of sets) {
+        if (isWork(s.t)) {
+          work += setLoad(kind, s, t) * (+s.m || 0);
+        }
+      }
+      return { v: work, lab: "Práce", fmt: (x) => fmtInt(x) + " kg·m" };
+    }
     let v = 0;
     for (const s of sets) {
       if (isWork(s.t)) {
@@ -6895,6 +6993,9 @@
         maxKm: "Longest distance",
         totKm: "Distance",
         speed: "Top speed",
+        bestW: "Best set",
+        work: "Exercise work",
+        maxM: "Longest distance",
       },
     },
   };
@@ -6980,6 +7081,7 @@
     if (kind === "time") return fmtSec(s.sec || 0);
     if (kind === "timew") return (s.kg ? kg(s.kg) + " · " : "") + fmtSec(s.sec || 0);
     if (kind === "dist") return (s.km ? shrNum(s.km, en, 2) + " km · " : "") + fmtSec(s.sec || 0);
+    if (kind === "distw") return shrNum(s.m || 0, en) + " m" + (s.kg ? " · " + kg(s.kg) : "");
     if (kind === "bw") return (s.reps || 0) + " " + X.reps;
     if (kind === "bwplus") return (s.kg ? "+" + kg(s.kg) + " × " : "") + (s.reps || 0);
     if (kind === "assist") return (s.kg ? "−" + kg(s.kg) + " × " : "") + (s.reps || 0);
@@ -6997,6 +7099,9 @@
     if (type === "maxSec" || type === "totSec") return fmtSec(v);
     if (type === "maxKm" || type === "totKm") return shrNum(v, en, 2) + " km";
     if (type === "speed") return shrNum(v, en, 1) + " km/h";
+    if (type === "bestW" && set) return shrSetStr("distw", set, en);
+    if (type === "work") return shrNum(v, en) + " kg·m";
+    if (type === "maxM") return shrNum(v, en) + " m";
     return shrNum(v, en, 2) + " kg";
   }
   function shrData(w, en) {
@@ -8901,7 +9006,8 @@
      (medián) víc než PROG_HI_REPS opakování, max. zátěž (odhad 1RM je tam nepřesný); vlastní váha nejvíc
      opakování v sérii (aby zlepšení nedělala tělesná hmotnost, jako stagnace F4-06); se zátěží a s dopomocí
      odh. 1RM včetně tělesné hmotnosti (jako graf na stránce cviku); na čas nejdelší výdrž, na čas se zátěží
-     max. zátěž (F4-14, jinak by přidaná váha při stejné výdrži vyšla jako 0 %); vzdálenost tempo
+     max. zátěž (F4-14, jinak by přidaná váha při stejné výdrži vyšla jako 0 %), vzdálenost se zátěží taky
+     max. zátěž (F4-16); vzdálenost tempo
      (km/h, jako rekordy). Funkci může převzít i F3-28 (výchozí graf stránky cviku).
      Změna (progOf): nejlepší hodnota z prvních PROG_EDGE tréninků v období proti nejlepší z posledních
      PROG_EDGE, jen když je v období aspoň PROG_MIN tréninků s cvikem rozložených aspoň na PROG_SPAN dní, jinak
@@ -8932,7 +9038,7 @@
   function progMetric(exId, ss) {
     const kind = kindOf(exId);
     const kg = (v) => fmtKg(Math.round(v * 10) / 10);
-    if (kind === "timew") {
+    if (kind === "timew" || kind === "distw") {
       return { key: "maxKg", l: "max. zátěž", fmt: kg, fmtD: (d) => kg(d) + " kg" };
     }
     if (kind === "time") {
@@ -9329,12 +9435,23 @@
      - s opakováním: Odh. 1RM, Max zátěž, Objem série (největší opakování × zátěž jedné série), Objem tréninku,
        Opakování celkem (součet opakování pracovních sérií), Max opak.,
      - na čas: Nejdelší výdrž, Čas celkem, u cviku na čas se zátěží navíc Max zátěž,
-     - vzdálenost: Nejdelší, Vzdálenost, Tempo.
-     Hodnoty počítá exSum (setVol, totReps, maxKg i pro timew), nic se neukládá, stará data fungují hned.
+     - vzdálenost: Nejdelší, Vzdálenost, Tempo,
+     - vzdálenost se zátěží (F4-16): Max zátěž, Práce série (největší kg × m jedné série), Práce tréninku, Nejdelší.
+     Hodnoty počítá exSum (setVol, totReps, maxKg i pro timew, work a setWork pro distw), nic se neukládá, stará
+     data fungují hned.
      Max zátěž u cviku na čas je jen graf, ne osobní rekord. Dlaždice nahoře: u cviku na čas nebo vzdálenost
-     je místo Objemu (vždy 0 kg) Čas celkem za období (exTile3). Nový graf = nová položka v exCharts. */
+     je místo Objemu (vždy 0 kg) Čas celkem za období, u vzdálenosti se zátěží Práce v kg·m (exTile3). Nový graf =
+     nová položka v exCharts. */
   // grafy cviku: klíč → [název čipu, hodnota z exSum, jednotka]
   function exCharts(kind) {
+    if (kind === "distw") {
+      return {
+        max: ["Max zátěž", "maxKg", " kg"],
+        swork: ["Práce série", "setWork", " kg·m"],
+        work: ["Práce tréninku", "work", " kg·m"],
+        m: ["Nejdelší", "maxM", " m"],
+      };
+    }
     if (kind === "dist") {
       return {
         km: ["Nejdelší", "maxKm", " km"],
@@ -9358,8 +9475,13 @@
       reps: ["Max opak.", "maxReps", "×"],
     };
   }
-  // třetí dlaždice souhrnu za období: Objem, u cviku na čas nebo vzdálenost Čas celkem (sel = výskyty cviku)
+  // třetí dlaždice souhrnu za období: Objem, u cviku na čas nebo vzdálenost Čas celkem, u vzdálenosti se zátěží
+  // Práce v kg·m (sel = výskyty cviku)
   function exTile3(kind, sel) {
+    if (kind === "distw") {
+      const work = sel.reduce((a, s) => a + s.work, 0);
+      return `<div class="kpi"><b>${fmtInt(work)}</b><span>Práce kg·m</span></div>`;
+    }
     if (isTimed(kind)) {
       const sec = sel.reduce((a, s) => a + s.totSec, 0);
       return `<div class="kpi"><b>${fmtSec(sec)}</b><span>Čas</span></div>`;
@@ -9554,7 +9676,7 @@
                 : S.detailMetric === "vol" || S.detailMetric === "svol"
                   ? "vol"
                   : "",
-            whole: S.detailMetric === "reps" || S.detailMetric === "treps",
+            whole: ["reps", "treps", "work", "swork", "m"].includes(S.detailMetric),
             series,
           },
           200,
@@ -9637,7 +9759,9 @@
                 ? setStr(kindOf(id), r.set) + " · "
                 : t === "bestSet"
                   ? fmtInt(r.v) + " kg · "
-                  : "";
+                  : t === "bestW"
+                    ? fmtInt(r.v) + " kg·m · "
+                    : "";
             return `<div class="rg-r">
               <span class="rg-l">${REC[t]}</span>
               <b>${esc(recFmt(t, r.v, r.set))}</b>
@@ -9750,6 +9874,7 @@
         reps: num(s.reps) || 0,
         sec: parseSec(s.sec) || 0,
         km: num(s.km) || 0,
+        m: num(s.m) || 0,
       });
     const entries = d.ex
       .filter((x) => x.exId === id)
@@ -11065,7 +11190,8 @@
           "Co se porovnává",
           "Opakování a váha: odhad 1RM, když obvykle děláš víc než 10 opakování, tak max. zátěž (odhad je tam " +
             "nepřesný). Vlastní váha: nejvíc opakování v sérii. Se zátěží a s dopomocí: odhad 1RM včetně " +
-            "tělesné hmotnosti. Na čas: nejdelší výdrž, se zátěží max. zátěž. Vzdálenost: tempo v km/h.",
+            "tělesné hmotnosti. Na čas: nejdelší výdrž, se zátěží max. zátěž. Vzdálenost: tempo v km/h. " +
+            "Vzdálenost se zátěží: max. zátěž.",
         ],
         [
           "Největší zlepšení a řazení Zlepšení",
@@ -11294,6 +11420,12 @@
             " U tohoto typu se zátěž počítá z tvé tělesné hmotnosti (" +
             fmtKg(bodyWeightAt(Date.now())) +
             " kg).";
+        }
+        // vzdálenost se zátěží (F4-16): nejlepší série je zlatá, práce = kg × metry
+        if (kind === "distw") {
+          text +=
+            " U saní a podobných cviků je zlatá i nejlepší série (nejvíc kg × metry v jedné sérii). Práce cviku " +
+            "= součet kg × metry pracovních sérií v tréninku, do objemu tréninku se nepočítá.";
         }
         return [["Jak se počítají", text]];
       },
@@ -12031,6 +12163,10 @@
     dist: [
       ["maxKm", "Nejdelší vzdálenost"],
       ["speed", "Nejvyšší tempo"],
+    ],
+    distw: [
+      ["maxKg", "Max. zátěž"],
+      ["bestW", "Nejlepší série"],
     ],
   };
   // hodnota dlaždice s jednotkou jako u rekordů (recFmt: „45 kg“, „12×20kg“, „1:30“…), odh. 1RM na celá kg
@@ -15783,6 +15919,7 @@
                 reps: num(s.reps) || 0,
                 sec: parseSec(s.sec) || 0,
                 km: num(s.km) || 0,
+                m: num(s.m) || 0,
               })),
             })),
           ),
@@ -16623,7 +16760,7 @@
     if (d && t.dataset.i !== undefined) {
       edMark(d, d.ex[i]);
     } // F1-11: psaní v kartě cviku
-    if (f === "kg" || f === "reps" || f === "sec" || f === "km") {
+    if (f === "kg" || f === "reps" || f === "sec" || f === "km" || f === "m") {
       const set = d.ex[i].sets[j];
       set[f] = t.value;
       delete set.jumpOk; // změněná hodnota = znovu zkontrolovat velký skok
@@ -16727,7 +16864,7 @@
       if (norm !== t.value) {
         t.value = norm;
         t.numLast = norm;
-        if (d && (f === "kg" || f === "reps" || f === "sec" || f === "km")) {
+        if (d && (f === "kg" || f === "reps" || f === "sec" || f === "km" || f === "m")) {
           d.ex[+t.dataset.i].sets[+t.dataset.j][f] = norm;
           touchDraft();
         }
@@ -18453,6 +18590,36 @@
         [
           { t: "n", kg: 30, sec: 40 },
           { t: "n", kg: 30, sec: 35 },
+        ],
+      ],
+    },
+    {
+      exId: "sled-push",
+      note:
+        "vzdálenost se zátěží (F4-16): série „20m×90kg“, nedotlačené série 14 m a 12 m, stránka cviku → " +
+        "Statistiky čipy Max zátěž, Práce série, Práce tréninku, Nejdelší, dlaždice Práce kg·m, rekordy",
+      sets: [
+        null,
+        [
+          { t: "n", kg: 60, m: 20 },
+          { t: "n", kg: 60, m: 20 },
+        ],
+        [
+          { t: "n", kg: 70, m: 20 },
+          { t: "n", kg: 70, m: 20 },
+          { t: "n", kg: 70, m: 16 },
+        ],
+        [
+          { t: "n", kg: 80, m: 20 },
+          { t: "n", kg: 80, m: 20 },
+          { t: "n", kg: 80, m: 20 },
+        ],
+        null,
+        [
+          { t: "w", kg: 40, m: 20 },
+          { t: "n", kg: 90, m: 20 },
+          { t: "n", kg: 90, m: 14 },
+          { t: "n", kg: 90, m: 12 },
         ],
       ],
     },
