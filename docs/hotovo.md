@@ -370,6 +370,15 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   na stejný cvik. (5) Místo rámečku podnadpis stránky „z online databáze“ (jako „Kopie cviku · podle: …“);
   výzvu ke kontrole partií a typu zápisu má panel hledání. Data beze změny. Test `tools/testy/online-cviky.js`.
   Popis v úvodních komentářích sekcí „FOTKY Z DATABÁZE PŘES CELOU OBRAZOVKU (F3-50)“ a „INFORMACE O CVIKU“.
+- **F3-51** Přidat fotku ikonou v rohu karty cviku (přání uživatele 17. 10. 2026, náhled schválen). Dřív: v kartě
+  Popis na stránce cviku pod galerií řádek tří tlačítek Vyfotit / Z galerie / Z online databáze. **Zvažováno:**
+  přesun do Upravit cvik zamítnut (formulář se Zahodit změny, fotka se ukládá hned; u stroje víc klepnutí).
+  **Rozhodnuto a provedeno:** ikona fotoaparátu s pluskem (`IC.photoAdd`, varianta A) v rámečku malého tlačítka
+  vpravo nahoře v kartě, na všech snímcích galerie stejně; klepnutí otevře panel Přidat fotku s volbami
+  Fotoaparát / Galerie / Online databáze (pod sebou, panel se po volbě zavře). Štítek „První“ na fotce je kvůli
+  ikoně vlevo nahoře. Ikona bez pluska (`IC.camera`, varianta B) schválená a uložená do zásoby, zatím
+  nepoužitá. Data beze změny. Test `tools/testy/pridat-fotku.js`. Popis v komentáři „PŘIDAT FOTKU IKONOU
+  V ROHU KARTY (F3-51)“ v sekci „FOTKY U CVIKU (F2-05)“ v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 

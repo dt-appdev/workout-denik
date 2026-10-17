@@ -207,6 +207,17 @@
           d="M13.5 4.5h6v6M19.5 4.5L11 13M17.5 14v4.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V8
             A1.5 1.5 0 016 6.5h4.5"/>
     </svg>`,
+    // přidat fotku: fotoaparát s pluskem (F3-51)
+    photoAdd: `<svg viewBox="0 0 24 24">
+      <path d="M20 12.5V17a2 2 0 01-2 2H6a2 2 0 01-2-2V8.5a2 2 0 012-2h2.2l1.5-2H13"/>
+      <circle cx="12" cy="12.8" r="3.3"/>
+      <path d="M19 2.5v6M16 5.5h6"/>
+    </svg>`,
+    // fotoaparát bez pluska: schválený 17. 10. 2026 u F3-51, zatím nepoužitý (do zásoby pro význam „fotka“)
+    camera: `<svg viewBox="0 0 24 24">
+      <path d="M4 8.5a2 2 0 012-2h2.2l1.5-2h4.6l1.5 2H18a2 2 0 012 2V17a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>
+      <circle cx="12" cy="12.8" r="3.3"/>
+    </svg>`,
   };
   // ikona s třídou .ic: v textu a tlačítkách, velikost podle písma (F3-20)
   const icon = (name, cls) =>
@@ -9541,7 +9552,7 @@
       // popis
       h +=
         `<div class="card exinfo">
-        ${photoGallery(ex, id)}${photoAddRow(id)}${exTags(ex)}` +
+        ${photoAddBtn(id)}${photoGallery(ex, id)}${exTags(ex)}` +
         `${
           ex.desc
             ? `<p class="desc">${esc(ex.desc)}</p>`
@@ -10072,14 +10083,26 @@
       ${galDots(list.length + 1, cur)}
     </div>`;
   }
-  // tlačítka pro přidání fotek na stránce cviku (Vyfotit = rovnou fotoaparát)
-  function photoAddRow(exId) {
+  /* PŘIDAT FOTKU IKONOU V ROHU KARTY (F3-51): na stránce cviku místo řádku tlačítek Vyfotit / Z galerie /
+     Z online databáze ikona fotoaparátu s pluskem (IC.photoAdd) vpravo nahoře v kartě Popis, na všech
+     snímcích galerie stejně. Klepnutí otevře panel Přidat fotku (sheetPhotoAdd): Fotoaparát (rovnou
+     fotoaparát), Galerie, Online databáze. Fotoaparát a Galerie jsou popisky políček phCamIn / phPickIn
+     (výběr souboru musí začít přímo klepnutím), panel se zavře až po klepnutí (akce phAddPick). Štítek
+     „První“ na fotce je proto vlevo nahoře (.gal-pin). */
+  function photoAddBtn(exId) {
     if (!S.photosOn) return "";
-    return `<div class="gal-add">
-      <label class="btn sm" for="phCamIn">Vyfotit</label>
-      <label class="btn sm" for="phPickIn">Z galerie</label>
-      <button class="btn sm" data-act="phFedb" data-v="${esc(exId)}">Z online databáze</button>
-    </div>`;
+    return `<button class="btn sm ico gal-addb" data-act="phAddMenu" data-v="${esc(exId)}"
+        aria-label="Přidat fotku">${IC.photoAdd}</button>`;
+  }
+  function sheetPhotoAdd(exId) {
+    openSheet(
+      "Přidat fotku",
+      `<div class="stack">
+        <label class="btn block" for="phCamIn" data-act="phAddPick">Fotoaparát</label>
+        <label class="btn block" for="phPickIn" data-act="phAddPick">Galerie</label>
+        <button class="btn block" data-act="phFedb" data-v="${esc(exId)}">Online databáze</button>
+      </div>`,
+    );
   }
   /* políčka pro výběr souboru jsou mimo #app: překreslení stránky, zatímco je otevřený fotoaparát
      nebo galerie, by je jinak nahradilo a vybraná fotka by se ztratila */
@@ -15741,6 +15764,13 @@
         break;
       case "pvDelOk":
         pvDelOk();
+        break;
+      case "phAddMenu":
+        sheetPhotoAdd(v);
+        break;
+      case "phAddPick":
+        // popisek otevře výběr souboru až po této obsluze, panel se proto zavře hned potom (F3-51)
+        setTimeout(closeSheet, 0);
         break;
       case "phFedb":
         fedbPhotos(v);

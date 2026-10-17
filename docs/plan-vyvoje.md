@@ -269,6 +269,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] ~~**F3-48** Design manuál~~ – zrušeno 14. 10. 2026.
 - [x] **F3-49** Z historie cviku na stránku tréninku
 - [x] **F3-50** Přidání cviku z online databáze: šipka, fotky, hlášky
+- [x] **F3-51** Přidat fotku ikonou v rohu karty cviku
 
 
 ### Fáze 4 – Chytré funkce
