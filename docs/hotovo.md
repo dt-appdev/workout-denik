@@ -355,6 +355,21 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   (`openW`), oprava Zpět: `navFrame` si u stránky cviku pamatuje cvik, záložku, filtr fitka a počet tréninků
   (`f.exd`); předtím by Zpět po otevření jiného cviku ze stránky tréninku skončilo na špatném cviku. Test
   `tools/testy/historie-cviku.js`. Popis v úvodním komentáři sekce „STRÁNKA CVIKU“ v `js/app.js`.
+- **F3-50** Přidání cviku z online databáze: šipka, fotky, hlášky (připomínky uživatele 17. 10. 2026 k F0-03,
+  náhled schválen). Dřív: u cviku, který už mám, textové tlačítko Otevřít / Vybrat; ve formuláři Nový cvik žlutý
+  rámeček „Předvyplněno…“ a fotky v kartě Název nad políčky; fotky nešly zvětšit; stejný cvik hlášen až třikrát.
+  **Rozhodnuto a provedeno:** (1) u cviku, který už mám, šipka › jako ve výběru cviků (`.infob`, akce `fsHave`):
+  ze záložky Cviky a z hledání ve formuláři stránka cviku, z výběru cviků do tréninku Informace o cviku nad
+  hledáním (`pick.infoFs`, Zpět vrací hledání). Zkratka Vybrat zrušena, klepnutí na řádek dál předvyplní nový
+  cvik (podobný cvik s jiným názvem jde založit). (2) Fotky ve vlastní sekci „Fotky z databáze“ pod Názvem,
+  větší náhledy, vysvětlení v nápovědě (?) (`HELP.exFxPh`). (3) Klepnutí na fotku ji zvětší přes celou obrazovku
+  (formulář i panel Fotky z online databáze na stránce cviku), kroužek v rohu vybírá rovnou (dotyková plocha
+  44 px přes `::after`), pod zvětšenou fotkou Vybrat k uložení / Zrušit výběr; Zpět v telefonu zavře jen fotku.
+  Každý cvik v free-exercise-db má přesně 2 fotky (3 žádnou, pak sekce není). (4) Jeden cvik = jedna hláška:
+  „Podobný cvik už máš“ pod anglickým názvem jen bez shody názvu, hláška u českého názvu se schová, když ukazuje
+  na stejný cvik. (5) Místo rámečku podnadpis stránky „z online databáze“ (jako „Kopie cviku · podle: …“);
+  výzvu ke kontrole partií a typu zápisu má panel hledání. Data beze změny. Test `tools/testy/online-cviky.js`.
+  Popis v úvodních komentářích sekcí „FOTKY Z DATABÁZE PŘES CELOU OBRAZOVKU (F3-50)“ a „INFORMACE O CVIKU“.
 
 ## Fáze 4 – Chytré funkce
 
