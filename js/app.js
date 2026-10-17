@@ -3361,10 +3361,10 @@
     const f = dataF ? ` data-f="${dataF}"` : "";
     return `<span class="prog-rng">
       <input class="inp${numCls("reps", range[0])}" id="${idMin}" data-num="reps"${f}
-          inputmode="numeric" value="${esc(range[0])}" aria-label="Opakování od">
+          inputmode="numeric" enterkeyhint="next" value="${esc(range[0])}" aria-label="Opakování od">
       <span>–</span>
       <input class="inp${numCls("reps", range[1])}" id="${idMax}" data-num="reps"${f}
-          inputmode="numeric" value="${esc(range[1])}" aria-label="Opakování do">
+          inputmode="numeric" enterkeyhint="done" value="${esc(range[1])}" aria-label="Opakování do">
     </span>`;
   }
   // rozsah z textů políček od – do: {range}, nebo {msg} s důvodem, proč neplatí
@@ -5844,7 +5844,7 @@
         <label class="f">
           Délka (min)
           <input class="inp${numCls("min", durMin)}" inputmode="numeric" id="ed-dur" data-num="min"
-              data-f="dur" value="${durMin}" style="width:90px">
+              enterkeyhint="done" data-f="dur" value="${durMin}" style="width:90px">
         </label>`;
       }
       h += "</div>";
@@ -10784,8 +10784,9 @@
     </label>`;
     // nadpisy sekcí formuláře před prvním údajem skupiny (F3-23)
     const groups = { weight: "Hmotnost a složení", waist: "Obvody" };
-    for (const [k, l, u] of BODY_F) {
+    BODY_F.forEach(([k, l, u], n) => {
       const rule = bodyRule(u);
+      const enter = n < BODY_F.length - 1 ? "next" : "done"; // F1-25: Enter do dalšího čísla
       const val = v[k] != null ? numStr(v[k]).replace(".", ",") : "";
       if (groups[k]) {
         b += `<div class="subh">${groups[k]}</div>`;
@@ -10793,9 +10794,9 @@
       b += `<label class="frow">
         <span class="grow">${esc(l)}${u ? " (" + esc(u) + ")" : ""}</span>
         <input class="inp${numCls(rule, val)}" id="b-${k}" inputmode="decimal" data-num="${rule}"
-            data-lab="${esc(l)}" value="${esc(val)}">
+            enterkeyhint="${enter}" data-lab="${esc(l)}" value="${esc(val)}">
       </label>`;
-    }
+    });
     b += `<label class="f">Poznámka<input class="inp" id="b-note" value="${esc(v.note || "")}"></label>`;
     openSheet(
       id ? "Upravit měření" : "Nové měření",
@@ -11503,12 +11504,12 @@
         <label class="frow">
           <span class="grow">Hmotnost (kg)</span>
           <input class="inp${numCls("bw", S.cfg.bodyWeight || 80)}" id="bwInp" data-f="bodyWeight"
-              data-num="bw" inputmode="decimal" value="${esc(S.cfg.bodyWeight || 80)}">
+              data-num="bw" inputmode="decimal" enterkeyhint="next" value="${esc(S.cfg.bodyWeight || 80)}">
         </label>
         <label class="frow">
           <span class="grow">Výška (cm)</span>
           <input class="inp${numCls("height", height)}" id="heightInp" data-f="height" data-num="height"
-              inputmode="numeric" value="${esc(height)}">
+              inputmode="numeric" enterkeyhint="done" value="${esc(height)}">
         </label>
       </div>
     </section>`;
@@ -16408,8 +16409,8 @@
   });
   /* F1-11: Enter (✓ na klávesnici) v jednořádkovém textovém poli (hledání, názvy, poznámka u měření) schová
      klávesnici, napsaný text zůstane. Od F3-33 i v číselných políčkách mimo sérii (hmotnost a výška
-     v Nastavení, formulář měření, délka tréninku, rozsah opakování). Políčka série (.cell) řeší setEnter,
-     datum a čas beze změny. */
+     v Nastavení, formulář měření, délka tréninku, rozsah opakování), od F1-25 tam Enter přechází na další
+     číselné políčko (numEnter). Políčka série (.cell) řeší setEnter, datum a čas beze změny. */
   // karta jako tlačítko (div role="button" kvůli ⋯ uvnitř, F2-13): Enter a mezerník = klepnutí
   document.addEventListener("keydown", (ev) => {
     const t = ev.target;
@@ -16421,6 +16422,7 @@
   document.addEventListener("keydown", (ev) => {
     const t = ev.target;
     if (ev.key !== "Enter" || t.tagName !== "INPUT" || t.classList.contains("cell")) return;
+    if (t.dataset.num) return; // číselná políčka řeší numEnter (F1-25)
     if (!["text", "search", "url", "email"].includes(t.type)) return;
     ev.preventDefault();
     t.blur();
@@ -16488,7 +16490,6 @@
     }
     return null;
   }
-  const isSetCell = (t) => t && t.tagName === "INPUT" && t.classList.contains("cell") && !!t.dataset.num;
   // klepnutí do políčka: stará hodnota šedě, políčko prázdné (data beze změny)
   function cellClear(input) {
     if (input.readOnly || input.value === "" || input.classList.contains("bad")) return;
@@ -16512,15 +16513,45 @@
     cellTyped(input);
   }
   document.addEventListener("focusin", (ev) => {
-    if (isSetCell(ev.target) && !cellKeep) {
+    if (isNumField(ev.target) && !cellKeep) {
       cellClear(ev.target);
     }
   });
   document.addEventListener("focusout", (ev) => {
-    if (isSetCell(ev.target)) {
+    if (isNumField(ev.target)) {
       cellRestore(ev.target);
     }
   });
+  /* ---------- PŘEPISOVÁNÍ ČÍSEL VE FORMULÁŘÍCH (F1-25) ----------
+     Číselná políčka mimo série (Nastavení → Tělo: hmotnost a výška, rozsah opakování návrhu progrese
+     v Nastavení i v Upravit cvik, formulář měření těla, Délka v úpravě tréninku) se chovají jako políčka
+     série (F1-23): klepnutí políčko zprázdní a starou hodnotu ukáže šedě (cellClear), odchod bez psaní
+     ji vrátí (cellRestore), napsané číslo ji nahradí (cellTyped). Platí pro každé políčko s data-num
+     (isNumField), takže nové číselné políčko se tak chová samo.
+     Enter (numEnter) přejde na další číselné políčko ve stejné kartě nebo panelu (numNext), v posledním
+     schová klávesnici. Textová políčka (poznámka u měření) se přeskakují. Políčko proto v HTML dostává
+     enterkeyhint next (další číslo v kartě je) / done (poslední). Políčka série (.cell) dál řeší setEnter. */
+  const isNumField = (t) => t && t.tagName === "INPUT" && !!t.dataset.num;
+  // další číselné políčko (ne série) ve stejné kartě nebo panelu, jinak null
+  function numNext(input) {
+    const box = input.closest(".card, .sheet-b");
+    if (!box) return null;
+    const all = [...box.querySelectorAll("input[data-num]:not(.cell)")];
+    const rest = all.slice(all.indexOf(input) + 1);
+    return rest.find((x) => !x.readOnly && !x.disabled && !x.closest("[inert]")) || null;
+  }
+  function numEnter(ev) {
+    const t = ev.target;
+    if (ev.key !== "Enter" || !isNumField(t) || t.classList.contains("cell")) return;
+    ev.preventDefault();
+    const next = numNext(t);
+    if (next) {
+      next.focus();
+      return;
+    }
+    t.blur();
+  }
+  document.addEventListener("keydown", numEnter);
   document.addEventListener("input", (ev) => {
     const t = ev.target;
     if (t.id === "warmPct") {
@@ -16532,9 +16563,9 @@
       document.getElementById("stwPreV").textContent = stwPreTxt(+t.value);
       return;
     } // F1-24: odpočet před startem stopek hned při tažení
-    if (isSetCell(t)) {
+    if (isNumField(t)) {
       cellTyped(t);
-    } // F1-23: napsané číslo nahradilo starou hodnotu
+    } // F1-23, F1-25: napsané číslo nahradilo starou hodnotu
     if (t.dataset && t.dataset.num) {
       numInput(t);
     } // F1-10: jen povolené znaky, červený rámeček

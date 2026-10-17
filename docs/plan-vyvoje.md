@@ -196,6 +196,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-23** Rychlé přepisování čísel v sériích
 - [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
 - [x] **F1-24** Stopky u série na čas
+- [x] **F1-25** Přepisování čísel ve formulářích
 
 ### Fáze 2 – Šablony a historie
 
