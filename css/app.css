@@ -2757,6 +2757,10 @@ tr.done .okb {
 .dep.off {
   opacity: 0.5;
 }
+/* vnořená závislá volba (F4-15): šedá jen jednou, ne dvakrát slabší */
+.dep.off .dep.off {
+  opacity: 1;
+}
 .switch input {
   width: 20px;
   height: 20px;
