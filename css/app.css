@@ -3050,6 +3050,24 @@ tr.done .okb {
   stroke-width: 2.6;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
 }
+/* náhled z online databáze (F3-50): obrázek zvětší, kroužek vybere; plocha kroužku 44 px neviditelným okrajem
+   (dolů a doleva, nahoru a doprava jen k okraji náhledu) */
+.thumbs .th-v {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.thumbs button.ck {
+  padding: 0;
+}
+.thumbs button.ck::after {
+  content: "";
+  position: absolute;
+  inset: -8px -8px -16px -16px;
+}
 .thumbs .th.sel .ck {
   background: var(--accent);
   border-color: var(--accent);
@@ -3512,10 +3530,6 @@ textarea.inp {
   color: var(--good);
   font-weight: 600;
   margin-top: 2px;
-}
-.pickrow .fshave {
-  flex: none;
-  padding: 0 10px;
 }
 
 /* ---------- souhrn tréninku (F3-03) ---------- */

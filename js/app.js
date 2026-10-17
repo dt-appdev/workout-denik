@@ -10129,6 +10129,10 @@
       if (el.dataset.gal) {
         galPos[el.dataset.gal] = i;
       }
+      if (el.dataset.pvx && pvx && i !== pvx.k) {
+        pvx.k = i; // F3-50: zvětšená fotka z online databáze
+        fxViewerChrome();
+      }
       if (el.dataset.pv && pv) {
         const id = el.children[i] && el.children[i].dataset.id;
         if (id && id !== pv.id) {
@@ -10327,7 +10331,7 @@
       <div class="pv-f" id="pvFoot"></div>
     </div>`;
     document.body.style.overflow = "hidden";
-    sheetNav = { lv: pv.from === "info" ? 3 : 1, back: pvClose, re: renderViewer };
+    sheetNav = { lv: pv.from === "info" ? exiLv() + 1 : 1, back: pvClose, re: renderViewer };
     galScrollTo(root.querySelector(".pv-track"), ids.indexOf(pv.id));
     pvChrome();
   }
@@ -10392,7 +10396,7 @@
       `<button class="btn grow" data-act="pvDelNo">Zrušit</button>
       <button class="btn primary grow" data-act="pvDelOk">Smazat</button>`,
       false,
-      { lv: (pv.from === "info" ? 3 : 1) + 1, back: renderViewer, re: renderViewer },
+      { lv: (pv.from === "info" ? exiLv() + 1 : 1) + 1, back: renderViewer, re: renderViewer },
     );
   }
   // smaže zobrazenou fotku a ukáže tu, která byla za ní (poslední → ta před ní)
@@ -10460,7 +10464,7 @@
     const d = pvDrag;
     pvDrag = null;
     if (!d || !d.on) return;
-    if (d.dy > PV_CLOSE_DY && pv) {
+    if (d.dy > PV_CLOSE_DY && (pv || pvx)) {
       navBack();
       return;
     }
@@ -10470,6 +10474,99 @@
   }
   document.addEventListener("touchend", pvDragEnd);
   document.addEventListener("touchcancel", pvDragEnd);
+
+  /* ---------- FOTKY Z DATABÁZE PŘES CELOU OBRAZOVKU (F3-50) ----------
+     Náhledy fotek z free-exercise-db (formulář Nový cvik, sekce Fotky z databáze; panel Fotky z online
+     databáze na stránce cviku) jdou zvětšit: klepnutí na fotku ji otevře přes celou obrazovku (stejný vzhled
+     .pv jako uložené fotky, posun prstem na druhou fotku, tah dolů nebo Zpět zavře), kroužek v rohu náhledu
+     fotku rovnou vybere. Pod zvětšenou fotkou Vybrat k uložení / Zrušit výběr. Výběr je pořád stejný seznam:
+     exEd.fxPh (formulář), fp.sel (panel). Náhledy fxThumbs (akce fxView a výběr act), stav
+     pvx = {x, k, from ("form" / "fp"), lv}, vykreslení renderFxViewer / fxViewerChrome, zavření
+     fxViewerClose (vrátí formulář nebo panel). */
+  let pvx = null;
+  // dva náhledy vedle sebe: obrázek = zvětšit, kroužek = vybrat; saved(k) = fotka už je u cviku (jen zvětšit)
+  function fxThumbs(x, sel, act, saved) {
+    return `<div class="thumbs big">
+      ${[0, 1]
+        .map((k) => {
+          const isSaved = !!(saved && saved(k)),
+            on = sel.includes(k);
+          return `<div class="th${on ? " sel" : ""}${isSaved ? " saved" : ""}">
+            <button type="button" class="th-v" data-act="fxView" data-v="${k}"
+                aria-label="Zvětšit fotku ${k + 1}">
+              <img crossorigin="anonymous" src="${esc(fedbSrc(x, k))}" alt="">
+            </button>
+            ${
+              isSaved
+                ? '<span class="gal-tag">Už uložená</span>'
+                : `<button type="button" class="ck" data-act="${act}" data-v="${k}" aria-pressed="${on}"
+                    aria-label="Vybrat fotku ${k + 1}">${on ? IC.check : ""}</button>`
+            }
+          </div>`;
+        })
+        .join("")}
+    </div>`;
+  }
+  // seznam vybraných fotek pro otevřenou zvětšenou fotku
+  const fxViewerSel = () => (pvx.from === "fp" ? fp.sel : exEd.fxPh);
+  function openFxViewer(k, from) {
+    const x = from === "fp" ? fp && fp.x : exEd && exEd.fx;
+    if (!x) return;
+    pvx = { x, k, from, lv: from === "fp" ? (sheetNav ? sheetNav.lv : 1) + 1 : 1 };
+    renderFxViewer();
+  }
+  function renderFxViewer() {
+    kkEnd();
+    const root = document.getElementById("sheetRoot");
+    root.innerHTML = `<div class="pv" role="dialog" aria-modal="true" aria-label="Fotky z databáze">
+      <div class="pv-h">
+        <button class="iconbtn" data-act="pvBack" aria-label="Zpět">${IC.back}</button>
+        <b id="pvCount"></b>
+        <span class="pv-name">${esc(pvx.x.n)}</span>
+      </div>
+      <div class="gal-track pv-track" data-pvx="1">
+        ${[0, 1]
+          .map(
+            (k) =>
+              `<div class="pv-s"><img crossorigin="anonymous" src="${esc(fedbSrc(pvx.x, k))}" alt=""></div>`,
+          )
+          .join("")}
+      </div>
+      <div class="pv-f" id="pvFoot"></div>
+    </div>`;
+    document.body.style.overflow = "hidden";
+    sheetNav = { lv: pvx.lv, back: fxViewerClose, re: renderFxViewer };
+    galScrollTo(root.querySelector(".pv-track"), pvx.k);
+    fxViewerChrome();
+  }
+  // počet, tečky a tlačítko výběru pod zvětšenou fotkou
+  function fxViewerChrome() {
+    const cnt = document.getElementById("pvCount"),
+      foot = document.getElementById("pvFoot");
+    if (!pvx || !cnt || !foot) return;
+    cnt.textContent = `Fotka ${pvx.k + 1} / 2`;
+    const saved = pvx.from === "fp" && fedbSaved(fp.exId, pvx.x, pvx.k),
+      on = fxViewerSel().includes(pvx.k);
+    let btn = `<button class="btn primary block" data-act="fxSel">Vybrat k uložení</button>`;
+    if (saved) {
+      btn = '<div class="small muted">Fotka už je u cviku uložená.</div>';
+    } else if (on) {
+      btn = '<button class="btn block" data-act="fxSel">Zrušit výběr</button>';
+    }
+    foot.innerHTML = `${galDots(2, pvx.k)}
+      <div class="stack">${btn}</div>`;
+  }
+  // zavřít zvětšenou fotku: zpět do panelu Fotky z online databáze, nebo do formuláře (s novým výběrem)
+  function fxViewerClose() {
+    const v = pvx;
+    pvx = null;
+    if (v && v.from === "fp" && fp) {
+      renderFp(true);
+      return;
+    }
+    closeSheet();
+    scheduleRender();
+  }
 
   /* fotky z online databáze free-exercise-db: u cviku se shodou rovnou jeho fotky, jinak hledání;
      stáhnou se jen vybrané (přes <img> s CORS a canvas, bez fetch, v CSP stačí img-src) */
@@ -10544,22 +10641,9 @@
       n = fp.sel.length;
     const b = `<p class="small">
         Fotky cviku <b>${esc(x.n)}</b>${x.cz ? ` (${esc(x.cz)})` : ""} z databáze free-exercise-db
-        (volné dílo). Klepnutím vyber, které uložit do telefonu.
+        (volné dílo). Klepnutím fotku zvětšíš, kroužkem ji vybereš k uložení do telefonu.
       </p>
-      <div class="thumbs big">
-        ${[0, 1]
-          .map((k) => {
-            const saved = fedbSaved(fp.exId, x, k),
-              on = fp.sel.includes(k);
-            return `<button type="button" class="th${on ? " sel" : ""}${saved ? " saved" : ""}"
-                data-act="fpSel" data-v="${k}" aria-pressed="${on}"${saved ? " disabled" : ""}>
-              <img crossorigin="anonymous" src="${esc(fedbSrc(x, k))}" alt="">
-              <span class="ck">${on ? IC.check : ""}</span>
-              ${saved ? '<span class="gal-tag">Už uložená</span>' : ""}
-            </button>`;
-          })
-          .join("")}
-      </div>
+      ${fxThumbs(x, fp.sel, "fpSel", (k) => fedbSaved(fp.exId, x, k))}
       <div class="lbl-f">Fitko</div>
       ${phGymChips("fpGym", fp.gym)}
       <label class="switch">
@@ -11431,6 +11515,21 @@
       },
     },
     // formulář Nový / Upravit cvik (F3-40)
+    exFxPh: {
+      title: "Fotky z databáze",
+      items: () => [
+        [
+          "Výběr fotek",
+          "Klepnutím na fotku ji zvětšíš přes celou obrazovku, kroužkem v rohu (nebo tlačítkem pod " +
+            "zvětšenou fotkou) ji vybereš k uložení.",
+        ],
+        [
+          "Uložení",
+          "Vybrané fotky se po uložení cviku stáhnou do telefonu a uloží k němu jako fotky bez fitka. " +
+            "Nevybrané se nestáhnou. Stažení potřebuje internet, uložené fotky pak fungují i offline.",
+        ],
+      ],
+    },
     exParts: {
       title: "Partie",
       items: () => [
@@ -12123,7 +12222,8 @@
     }
   }
   /* ---------- INFORMACE O CVIKU (F3-46) ----------
-     Panel nad výběrem cviků (sheetExInfo, akce exInfo = šipka › v kartě cviku). Výběr i hledání zůstanou
+     Panel nad výběrem cviků (sheetExInfo, akce exInfo = šipka › v kartě cviku; F3-50 i šipka › u cviku, který
+     už mám, v hledání v online databázi, pak pick.infoFs a Zpět vrací do hledání). Výběr i hledání zůstanou
      zachované: šipka ← v hlavičce (openSheet nav.backBtn, akce sheetBack) i Zpět vrací do výběru, × panel nemá.
      Patička: Upravit | Stránka cviku (hlavní).
      Dlaždice: Tréninků, Naposledy a dvě podle druhu cviku (EXI_TILES, nejlepší hodnoty za celou dobu přes
@@ -12213,6 +12313,8 @@
       .join("");
     return { gym, top: `<div class="chips exi-gym">${chips}</div>` };
   }
+  // hloubka panelu: nad výběrem cviků 2, nad hledáním v online databázi z výběru 3 (pick.infoFs, F3-50)
+  const exiLv = () => (pick.infoFs ? 3 : 2);
   // keep = překreslení po přepnutí fitka: obsah panelu zůstane posunutý na stejném místě
   function sheetExInfo(id, keep) {
     const sb = keep ? document.querySelector(".sheet-b") : null;
@@ -12267,7 +12369,12 @@
         Stránka cviku
       </button>`,
       true,
-      { lv: 2, back: () => renderPicker(true), re: () => sheetExInfo(id), backBtn: true },
+      {
+        lv: exiLv(),
+        back: pick.infoFs ? () => renderFs() : () => renderPicker(true),
+        re: () => sheetExInfo(id),
+        backBtn: true,
+      },
     );
     galRestore(document.getElementById("sheetRoot"));
     const nb = document.querySelector(".sheet-b");
@@ -12501,24 +12608,11 @@
   // výběr fotek z online databáze ve formuláři Nový cvik (F2-05); nic není předvybrané
   function exEdPhotos(fx) {
     return `<div class="stack tight">
-      <div class="f lbl-f">Fotky z databáze · klepnutím vyber, které uložit</div>
-      <div class="thumbs">
-        ${[0, 1]
-          .map((k) => {
-            const on = exEd.fxPh.includes(k);
-            return `<button type="button" class="th${on ? " sel" : ""}" data-act="xPh" data-v="${k}"
-                aria-pressed="${on}">
-              <img crossorigin="anonymous" src="${esc(fedbSrc(fx, k))}" alt="">
-              <span class="ck">${on ? IC.check : ""}</span>
-            </button>`;
-          })
-          .join("")}
-      </div>
-      <div class="xs muted">
-        Vybrané se po uložení cviku stáhnou a uloží k němu jako fotky bez fitka. Nevybrané se nestáhnou.
-      </div>
+      <div class="lbl-f">Klepnutím zvětšíš, kroužkem vybereš k uložení</div>
+      ${fxThumbs(fx, exEd.fxPh, "xPh")}
     </div>`;
   }
+
   /* ---------- JEDINEČNÉ NÁZVY CVIKŮ (F3-17) ----------
      Anglický (hlavní) název nesmí mít dva cviky, český název jen upozorní (výchozí databáze má dva různé cviky
      se stejným českým názvem). Porovnává se bez velkých písmen, diakritiky a mezer (exKey), i se skrytými cviky.
@@ -12526,7 +12620,9 @@
      Shoda exClash(pole, hodnota, vlastníId), zákaz uložení exNameBlock. Hlášky exNameMsgs / exNameMark hned
      při psaní (#x-name-msg, #x-cz-msg; #ex-save dostane .btn.off), český název jen .fmsg.warn. Odkaz
      exClashOpen otevře stránku cviku a Zpět vrátí formulář (navFrame formuláře je v f.exEd, vrací ho
-     exEdLeave). Každé nové místo, které vytváří nebo přejmenovává cvik, má názvy hlídat stejně. */
+     exEdLeave). Každé nové místo, které vytváří nebo přejmenovává cvik, má názvy hlídat stejně.
+     F3-50: jeden cvik = jedna hláška. Cvik z online databáze s podobným cvikem (fedbHave) bez shody názvu má
+     pod anglickým názvem „Podobný cvik už máš“; hláška u českého názvu se schová, když ukazuje na stejný cvik. */
   const exKey = (s) => fold(s).replace(/\s+/g, "");
   // jiný cvik se stejným názvem v poli field ("name" / "cz"), jinak null
   function exClash(field, value, selfId) {
@@ -12561,12 +12657,18 @@
     const block = exNameBlock();
     const sameName = block || exClash("name", f.name, exEd.id);
     const sameCz = exClash("cz", f.cz, exEd.id);
+    // F3-50: jeden cvik = jedna hláška; podobný cvik z online databáze (fedbHave) jen bez shody názvu
+    const like = !sameName && exEd.fx && !exEd.id ? fedbHave(exEd.fx) : null;
+    let name = "";
+    if (sameName) {
+      name = exClashMsg(sameName, block ? "Cvik s tímto názvem už máš:" : "Stejný název má i cvik:");
+    } else if (like) {
+      name = exClashMsg(like, "Podobný cvik už máš:");
+    }
     return {
       block,
-      name: sameName
-        ? exClashMsg(sameName, block ? "Cvik s tímto názvem už máš:" : "Stejný název má i cvik:")
-        : "",
-      cz: sameCz ? exClashMsg(sameCz, "Stejný český název má i cvik:") : "",
+      name,
+      cz: sameCz && sameCz !== (sameName || like) ? exClashMsg(sameCz, "Stejný český název má i cvik:") : "",
     };
   }
   // hned při psaní: červený anglický název a šedé Uložit cvik, u českého názvu jen upozornění
@@ -12602,12 +12704,19 @@
     const id = exEd.id,
       f = exEd.f,
       e = id ? S.exLib[id] || {} : {};
-    const fx = exEd.fx,
-      have = fx && fedbHave(fx);
+    const fx = id ? null : exEd.fx;
     const names = exNameMsgs(); // F3-17: shoda názvu s jiným cvikem
+    let sub = "";
+    if (id) {
+      sub = e.name || "";
+    } else if (exEd.copyOf) {
+      sub = "podle: " + exOf(exEd.copyOf).name;
+    } else if (fx) {
+      sub = "z online databáze"; // F3-50: místo informačního rámečku
+    }
     let h = topbar(
       id ? "Upravit cvik" : exEd.copyOf ? "Kopie cviku" : "Nový cvik",
-      id ? e.name || "" : exEd.copyOf ? "podle: " + exOf(exEd.copyOf).name : "",
+      sub,
       `<button class="iconbtn" data-act="exEdBack" aria-label="Zpět">${IC.back}</button>`,
     );
     // F3-40: sekce s nadpisem a kartou; Předvyplnit z online databáze = zeměkoule v nadpisu Název
@@ -12616,16 +12725,7 @@
     h += exEdSec(
       "Název",
       fedbBtn,
-      `${
-        fx && !id
-          ? `<div class="banner" style="margin-top:0">
-              Předvyplněno z databáze free-exercise-db. Zkontroluj hlavně partie a typ zápisu, český
-              název je jen návrh.` +
-            `${have ? `<br><b>Podobný cvik už máš: ${esc(exOf(have).cz || exOf(have).name)}</b>` : ""}
-            </div>`
-          : ""
-      }${fx && !id && !fx.ni ? exEdPhotos(fx) : ""}
-      <label class="f">
+      `<label class="f">
         Anglický název
         <input class="inp${names.block ? " bad" : ""}" id="x-name" value="${esc(f.name)}">
         <span class="fmsg${names.block ? "" : " warn"}" id="x-name-msg">${names.name}</span>
@@ -12636,6 +12736,9 @@
         <span class="fmsg warn" id="x-cz-msg">${names.cz}</span>
       </label>`,
     );
+    if (fx && !fx.ni) {
+      h += exEdSec("Fotky z databáze", helpBtn("exFxPh"), exEdPhotos(fx));
+    }
     h += exEdSec("Partie", helpBtn("exParts"), exEdMuscles(f));
     h += exEdSec(
       "Zápis",
@@ -12793,6 +12896,7 @@
      src:"fedb:<id>". Fotky se ve výsledcích jen ukazují (online); uložit k cviku jdou jen ty, které
      uživatel vybere (formulář Nový cvik, stránka cviku → Z online databáze, sekce „FOTKY U CVIKU“).
      Načtení fedbLoad (js/fedb.js není ve FILES v sw.js), stav hledání fs, vykreslení renderFs / refreshFs.
+     F3-50: cvik, který už mám (fedbHave), má vpravo šipku › (akce fsHave), řádek dál předvyplní nový cvik.
      Předvyplnění přes exEdOpen(null, from, fx). Náhledy fotek z FEDB_IMG, nic se neukládá. Změna českých
      názvů nebo shod: upravit TSV v tools/fedb/ a spustit python3 tools/fedb/build.py. */
   let fs = null,
@@ -12985,9 +13089,8 @@
         `</div></button>` +
         `${
           he
-            ? `<button class="btn sm fshave" data-act="fsHave" data-v="${esc(have)}">
-              ${fs.from === "picker" ? "Vybrat" : "Otevřít"}
-            </button>`
+            ? `<button class="infob" data-act="fsHave" data-v="${esc(have)}"
+                aria-label="Můj cvik ${esc(he.name)}">${IC.next}</button>`
             : ""
         }` +
         `</div>`;
@@ -15256,6 +15359,7 @@
         break;
       case "exInfo":
         galReset();
+        pick.infoFs = false;
         sheetExInfo(v);
         break;
       case "exInfoGym":
@@ -15337,19 +15441,12 @@
         break;
       }
       case "fsHave":
-        if (fs.from === "picker") {
-          if (pick.mode === "replace") {
-            pick.sel = [v];
-          } else if (!pick.sel.includes(v)) {
-            pick.sel.push(v);
-          }
-          if (S.route === "exed") {
-            // hledání z formuláře Nový cvik: místo nového cviku ten, který už mám
-            exEdLeave(() => renderPicker());
-          } else {
-            renderPicker();
-          }
-          toast("Vybráno: " + exOf(v).name);
+        // šipka › u cviku, který už mám (F3-50): z výběru cviků Informace o cviku nad hledáním,
+        // jinak (záložka Cviky, hledání z formuláře Nový cvik) stránka cviku, Zpět vrátí hledání
+        if (fs.from === "picker" && !fs.form) {
+          galReset();
+          pick.infoFs = true;
+          sheetExInfo(v);
           break;
         }
         {
@@ -15587,6 +15684,20 @@
           sel.push(k);
         }
         scheduleRender();
+        break;
+      }
+      case "fxView":
+        openFxViewer(+v, t.closest("#sheetRoot") ? "fp" : "form");
+        break;
+      case "fxSel": {
+        if (!pvx) break;
+        const sel = fxViewerSel();
+        if (sel.includes(pvx.k)) {
+          sel.splice(sel.indexOf(pvx.k), 1);
+        } else {
+          sel.push(pvx.k);
+        }
+        fxViewerChrome();
         break;
       }
       case "phView":
