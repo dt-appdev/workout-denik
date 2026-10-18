@@ -423,6 +423,22 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   Sprint s prowlerem zůstává Vzdálenost a čas. Podle náhledu Dnes / Po změně bez připomínek. Návrh progrese odložen
   do F4-17. Nový test `tools/testy/sane.js`, saně v `zaloha-v2-plna.json.txt`.
 
+- [x] **F4-18** Export WD-LOG v2 pro coache za období, čas u ručního měření (zadání uživatele 18. 10. 2026; **hotovo
+  18. 10. 2026**): denní WD-LOG v1 (jeden trénink, tlačítko Kopírovat pro coache na stránce tréninku) a týdenní plná
+  JSON záloha pro coache nahrazeny jedním textovým exportem WD-LOG v2 za období. Nastavení → Data a záloha → Pro coache
+  (jen se zapnutou funkcí z F4-12) → panel Export pro coache: čipy Dnes / 7 dní (dnešek a 6 dní před ním) / Tento
+  týden / Minulý týden (po–ne) nastaví Od a Do, ruční změna data čipy odznačí (čip Vlastní podle náhledu zbytečný),
+  volba se pamatuje; souhrn a náhled textu; Kopírovat a Sdílet soubor `wd-log-OD_DO.md` (u jednoho dne jedno datum;
+  kde Chrome soubor .md sdílet nedovolí, sdílí se jako .txt, kde sdílení nejde, stáhne se). Text skládá nový soubor
+  `js/wdlog.js` (čisté funkce, unit testy v Node): tréninky a měření jako samostatné části, Bolest vždy („ne“ = 0,
+  „–“ = nevyplněno), série jako v appce „10×55kg RIR 2“ (zadání chtělo „55×10“ bez jednotky, uživatel ponechal
+  F3-38), RIR = 10 − RPE, „F (odhad RIR 2)“, „ + D …“, čas telefonu, nové cviky (poprvé v celé historii), z v1
+  odstraněny Plán, Navíc, Vynecháno, měření v bloku tréninku a poznámka ke cviku (po prvním exportu: většinou
+  poznámka převzatá ze šablony, coach ji nepotřebuje); cvik jen „cz (name)“, bez ID v hranatých závorkách
+  (přání uživatele po prvním exportu). Formulář měření má políčko Čas (výchozí aktuální
+  čas, dřív pevně 08:00; stará měření s 08:00 beze změny), seznam měření v Těle ukazuje čas. Oprava: úprava měření
+  přepsala čas na 08:00 a smazala ostatní pole (`shId` z importu ze Samsung Health), teď zůstanou. Plná záloha beze
+  změny. Nový test `tools/testy/wdlog.js`. Navazuje F4-19 (zdroj měření).
 ## Zrušené úlohy
 
 Zrušeno 14. 10. 2026 při kritickém zhodnocení plánu. U každé důvod a původní popis. Znovu nenavrhovat bez nové informace.
@@ -450,6 +466,7 @@ Zrušeno 14. 10. 2026 při kritickém zhodnocení plánu. U každé důvod a pů
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F4-18 | Jak zapsat sérii, chybějící bolest, čísla měření, čas, kde je export? | Rozhodnuto 18. 10. 2026: série jako v appce „10×55kg“ (ne „55×10“ ze zadání), saně „20m×40kg“, drop set s RIR jen vyplněným; bez vyplněné bolesti „Bolest: –“ (ne „ne“); měření s jedním desetinným místem, série bez nul; čas telefonu (ne pevně Europe/Prague); export v Nastavení → Data a záloha, tlačítko na stránce tréninku zrušeno; 7 dní = dnešek a 6 dní před ním; období se pamatuje; poznámka měření se vypisuje; víc záznamů bolesti appka neukládá. Náhled: čas ve formuláři samostatným řádkem (varianta A), čip Vlastní zrušen. |
 | F6-01 | Přejít na nativní appku hned, nebo nejdřív souběžně s PWA? | Rozhodnuto 14. 10. 2026: žádné dvě živé kopie dat. Nativní appka nejdřív jen se zkušebními daty, pak jeden den přechodu zálohou a PWA ukáže pruh „Data jsou v nativní appce“. |
 | F2-04, F3-04, F3-05, F5-03 | Šablona na řadě, radar, milníky? | Rozhodnuto 14. 10. 2026: zrušeno (sekce Zrušené úlohy). |
 | F0-11 | Kdy rozdělit `js/app.js`? | Rozhodnuto 14. 10. 2026: místo hranice 18 000 řádků podmínky – hotové testy (F0-17), žádný otevřený PR a skutečný spouštěč (přetahování větví, nativní část). |

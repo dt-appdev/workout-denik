@@ -11,7 +11,7 @@
    progrese-vypinac.js (hlavní vypínač návrhu progrese, F4-15),
    sane.js (cvik Vzdálenost se zátěží, F4-16), online-cviky.js (přidání cviku z online databáze, F3-50),
    pridat-fotku.js (přidání fotky ikonou v rohu karty cviku, F3-51), poznamka.js (poznámka ke cviku v panelu,
-   F3-52).
+   F3-52), wdlog.js (export WD-LOG v2 pro coache a čas u měření, F4-18; unit testy js/wdlog.js běží v Node).
    Každý test dostane čistý profil prohlížeče a dá se spustit i samostatně (část názvu v argumentu).
    Skončí kódem 1, když některá kontrola selže. Žádný z testů nezapisuje do repa. */
 const P = require("./pomocne.js");
@@ -31,6 +31,7 @@ const TESTS = [
   require("./online-cviky.js"),
   require("./pridat-fotku.js"),
   require("./poznamka.js"),
+  require("./wdlog.js"),
 ];
 
 (async () => {

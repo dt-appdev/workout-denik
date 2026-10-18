@@ -1814,6 +1814,13 @@ tr.done .okb {
   height: 24px;
   margin: -6px 0 -2px;
 }
+/* Export pro coache (F4-18): náhled textu WD-LOG v2 v panelu */
+.inp.cx-txt {
+  font-family: ui-monospace, monospace;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
 /* Kopírovat pro coache (F4-12): část v okně Dokončit a v Upravit trénink */
 .coach {
   display: flex;

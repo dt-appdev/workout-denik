@@ -1610,7 +1610,7 @@
   /* zápis jedné série textem */
   /* série jako text (F3-38): opakování × váha s jednotkou, bez mezer („12×20kg“, „8×+10kg“, „8×−20kg“,
      „1:00×20kg“), aby se váha nepletla s opakováním. Stejný tvar mají rekordy (recFmt), návrh progrese
-     a text pro coache (coachVal). Obrázek ke sdílení má vlastní formát (shrSetStr). */
+     a text pro coache (WDLOG v js/wdlog.js, F4-18). Obrázek ke sdílení má vlastní formát (shrSetStr). */
   function setStr(kind, s) {
     if (kind === "time") return fmtSec(s.sec || 0);
     if (kind === "timew") return fmtSec(s.sec || 0) + (s.kg ? "×" + fmtKg(s.kg) + "kg" : "");
@@ -2896,8 +2896,8 @@
   }
 
   /* ---------- KOPÍROVAT PRO COACHE (F4-12) ----------
-     Osobní funkce vlastníka appky: textový souhrn tréninku pro AI coache (formát WD-LOG v1). Skrytá, dokud se
-     nezapne: Nastavení → O aplikaci, 7× rychle klepnout na kartu Verze aplikace (verTap) zapne S.cfg.coach
+     Osobní funkce vlastníka appky: údaje tréninku pro AI coache a jejich export (WD-LOG v2, F4-18).
+     Skrytá, dokud se nezapne: Nastavení → O aplikaci, 7× rychle klepnout na kartu Verze aplikace (verTap) zapne S.cfg.coach
      (výchozí false, coachOn). Vypíná se v Nastavení → Trénink → Pro coache (coachSettings, HELP.coach). Bez
      zapnutí appka nic z této sekce neukazuje. Uložená data zůstanou i po vypnutí.
      - Na konci tréninku (okno Dokončit, finishAsk) a v Upravit trénink (vEditor) je část „Pro coache“
@@ -2910,14 +2910,8 @@
      - Odhad u série do selhání: RIR/RPE zadané před přepnutím druhu série na F (cycType) se při zapnuté funkci
        přesune do s.rpeEst (RPE jako s.rpe, F4-04) a ukáže se pod 0 v tabulce (effCell) a na stránce tréninku.
        Přepnutí z F na jiný druh odhad maže. Nové a kopírované série ho nepřenášejí.
-     - Stránka tréninku má tlačítko Kopírovat pro coache (coachCopy): coachText(w) do schránky, když to
-       prohlížeč nedovolí, panel s textem k ručnímu zkopírování.
-     Pravidla textu (coachText): čas telefonu, cviky v pořadí provedení (první odškrtnutá série, s.at), název
-     „cz (name) [exId]“, čísla s tečkou, série „10×60kg“ (F3-38, jako setStr) + RIR/RPE jako v appce (effTxt:
-     „RIR 2“), zahřívací za „W “ oddělené „ | “, F = „8×70kg F (odhad RIR 2)“, drop set „ + D …“ u předchozí
-     série, 10×BW / 10×BW+5kg / 10×A-10kg, časové „60 s“, „60 s×20kg“. Plán ze šablony u cviku se nevypisuje (přání uživatele
-     7. 10. 2026), Vynecháno a Navíc jen u tréninku ze šablony (prázdné „–“). Nevyplněné údaje se nevypisují.
-     Text je vždy česky. */
+     - Text pro coache je export WD-LOG v2 za období (F4-18, sekce EXPORT PRO COACHE a js/wdlog.js),
+       nahradil WD-LOG v1 jednoho tréninku a tlačítko Kopírovat pro coache na stránce tréninku. */
   const coachOn = () => S.cfg.coach === true;
   // posuvníky: popisek, rozsah, výchozí poloha nevyplněného posuvníku, text hodnoty
   const COACH_SL = {
@@ -3130,187 +3124,143 @@
     return est == null ? "" : "odhad " + effTxt({ rpe: est });
   }
 
-  /* text pro coache */
-  const COACH_DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
-  // číslo s desetinnou tečkou (čárka v textu odděluje série)
-  const coachN = (v) => String(Math.round((+v || 0) * 100) / 100);
-  const coachDay = (t) => {
-    const x = new Date(t);
-    return x.getFullYear() + "-" + d2(x.getMonth() + 1) + "-" + d2(x.getDate());
-  };
-  const coachTime = (t) => {
-    const x = new Date(t);
-    return d2(x.getHours()) + ":" + d2(x.getMinutes());
-  };
+  // český název cviku (výběr cviku u bolesti)
   const coachCz = (id) => {
     const e = S.exLib[id];
     return (e && (e.cz || e.name)) || id;
   };
-  // „Český název (English name) [exId]“
-  function coachExName(id) {
-    const e = S.exLib[id] || {};
-    const cz = e.cz || "";
-    const en = e.name || "";
-    const name = cz && en && cz !== en ? cz + " (" + en + ")" : cz || en || id;
-    return name + " [" + id + "]";
+
+  /* ---------- EXPORT PRO COACHE (F4-18) ----------
+     Text WD-LOG v2 za zvolené období pro AI coache (nahradil WD-LOG v1 jednoho tréninku z F4-12). Nastavení →
+     Data a záloha → Pro coache (cxSettings, jen se zapnutou funkcí coachOn, F4-12) otevře panel Export pro
+     coache (cxOpen). Text skládá WDLOG.text v js/wdlog.js, pravidla textu jsou tam.
+     - Čipy Dnes / 7 dní (dnešek a 6 dní před ním) / Tento týden / Minulý týden (po–ne, CX_PER) nastaví Od
+       a Do (WDLOG.period). Ruční změna data (cxDate) čipy odznačí, žádný čip „Vlastní“ není. Volba se pamatuje
+       v Local cxPer (klíč čipu, ručně zvolené období jako {from, to}).
+     - Pod daty souhrn (tréninky, měření, nové cviky) a náhled textu ke kontrole; obnoví se bez překreslení
+       (cxRefresh).
+     - Kopírovat (cxCopy): text do schránky, když to prohlížeč nedovolí, text v náhledu se označí. Sdílet
+       (cxShare): soubor wd-log-OD_DO.md přes sdílení Androidu; Chrome soubor .md sdílet nemusí povolit, pak
+       se sdílí jako .txt, a kde sdílení souborů nejde vůbec, soubor .md se stáhne.
+     - Data: všechny uložené tréninky (derive().all, kvůli novým cvikům), měření S.body, cviky S.exLib (typ přes
+       kindOf), fitka gymName, šablona jen existující. Rozdělaný trénink se neexportuje. */
+  const CX_PER = [
+    ["today", "Dnes"],
+    ["7d", "7 dní"],
+    ["week", "Tento týden"],
+    ["lastweek", "Minulý týden"],
+  ];
+  let cx = null; // otevřený panel: { per (klíč čipu, "" = ručně zvolené období), from, to, text }
+  function cxSettings() {
+    if (!coachOn()) return "";
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>Pro coache</h2>
+        ${helpBtn("coachExp")}
+      </div>
+      <div class="card stack">
+        <button class="btn" data-act="cxOpen">Exportovat pro coache</button>
+      </div>
+    </section>`;
   }
-  // hodnota série bez druhu a RIR
-  function coachVal(kind, s) {
-    const kg = +s.kg || 0;
-    const reps = +s.reps || 0;
-    const sec = Math.round(+s.sec || 0);
-    if (kind === "time") return sec + " s";
-    if (kind === "timew") return sec + " s" + (kg ? "×" + coachN(kg) + "kg" : "");
-    if (kind === "dist") return (+s.km ? coachN(s.km) + " km " : "") + sec + " s";
-    if (kind === "distw") return coachN(+s.m || 0) + "m" + (kg ? "×" + coachN(kg) + "kg" : "");
-    if (kind === "bw") return reps + "×BW";
-    if (kind === "bwplus") return reps + "×" + (kg ? "BW+" + coachN(kg) + "kg" : "BW");
-    if (kind === "assist") return reps + "×" + (kg ? "A-" + coachN(kg) + "kg" : "BW");
-    return reps + "×" + coachN(kg) + "kg"; // jako setStr (F3-38): opakování × váha s jednotkou
+  const cxPreset = (k) => Object.assign({ per: k }, WDLOG.period(k, Date.now()));
+  // data pro WDLOG.text
+  function cxData() {
+    return {
+      workouts: derive().all,
+      body: Object.values(S.body || {}),
+      from: cx.from,
+      to: cx.to,
+      now: Date.now(),
+      ex: (id) => (S.exLib[id] ? Object.assign({}, S.exLib[id], { kind: kindOf(id) }) : null),
+      gymName: (id) => gymName(id),
+      tplName: (id) => (S.templates[id] && S.templates[id].name) || "",
+      muscle: (k) => MUSCLE_MAP.NAMES[k] || k,
+      equip: (k) => EQUIP[k] || "",
+    };
   }
-  function coachSetTxt(kind, s) {
-    let x = coachVal(kind, s);
-    if (s.t === "f") {
-      x += " F";
-      const est = effNum(s.rpeEst);
-      if (est != null) {
-        x += " (odhad " + effTxt({ rpe: est }) + ")";
-      }
-    } else if (s.t !== "w" && effTxt(s)) {
-      x += " " + effTxt(s);
+  function cxOpen() {
+    const saved = lsGet("cxPer", "7d");
+    if (saved && saved.from && saved.to) {
+      cx = { per: "", from: saved.from, to: saved.to };
+    } else {
+      cx = cxPreset(CX_PER.some(([k]) => k === saved) ? saved : "7d");
     }
-    return x;
-  }
-  // série na jednom řádku: „W 40 kg×10 | 60 kg×10 RIR 3, 60 kg×8 F + D 50 kg×6“
-  function coachSets(kind, sets) {
-    const warm = [];
-    const work = [];
-    for (const s of sets) {
-      const x = coachSetTxt(kind, s);
-      if (s.t === "w") {
-        warm.push(x);
-      } else if (s.t === "d" && work.length) {
-        work[work.length - 1] += " + D " + x;
-      } else {
-        work.push((s.t === "d" ? "D " : "") + x);
-      }
-    }
-    const parts = [];
-    if (warm.length) {
-      parts.push("W " + warm.join(", "));
-    }
-    if (work.length) {
-      parts.push(work.join(", "));
-    }
-    return parts.join(" | ");
-  }
-  function coachText(w) {
-    const L = ["WD-LOG v1"];
-    const end = w.end || w.start;
-    L.push(
-      `Datum: ${coachDay(w.start)} (${COACH_DAYS[new Date(w.start).getDay()]}) ` +
-        `${coachTime(w.start)}–${coachTime(end)} · ${Math.round((end - w.start) / 60000)} min`,
+    const chips = CX_PER.map(
+      ([k, l]) =>
+        `<button class="chip" data-act="cxPer" data-v="${k}" aria-pressed="${cx.per === k}">${l}</button>`,
+    ).join("");
+    openSheet(
+      "Export pro coache",
+      `<div class="chips fwrap" id="cx-chips">${chips}</div>
+      <div class="stack tight mt-in">
+        <label class="frow">
+          <span class="grow">Od</span>
+          <input class="inp" type="date" id="cx-from" value="${cx.from}">
+        </label>
+        <label class="frow">
+          <span class="grow">Do</span>
+          <input class="inp" type="date" id="cx-to" value="${cx.to}">
+        </label>
+      </div>
+      <div class="small muted mt-in" id="cx-sum"></div>
+      <textarea class="inp cx-txt mt-in" id="cx-txt" rows="14" readonly aria-label="Text pro coache"></textarea>`,
+      `<button class="btn grow" data-act="cxCopy">Kopírovat</button>
+      <button class="btn primary grow" data-act="cxShare">Sdílet</button>`,
+      false,
+      { re: cxOpen },
     );
-    if (w.gymId) {
-      L.push("Fitko: " + gymName(w.gymId));
-    }
-    const tpl = w.tplId && S.templates[w.tplId];
-    if (tpl) {
-      L.push("Šablona: " + tpl.name);
-    }
-    // měření ze stejného dne (poslední toho dne)
-    const day = coachDay(w.start);
-    const body = Object.values(S.body || {})
-      .filter((b) => b && b.date && coachDay(b.date) === day)
-      .sort((a, b) => a.date - b.date)
-      .pop();
-    if (body) {
-      const m = [];
-      if (+body.weight > 0) {
-        m.push((+body.weight).toFixed(1) + " kg");
-      }
-      if (+body.fat > 0) {
-        m.push("tuk " + (+body.fat).toFixed(1) + " %");
-      }
-      if (+body.muscle > 0) {
-        m.push("svaly " + (+body.muscle).toFixed(1) + " %");
-      }
-      if (m.length) {
-        L.push("Měření: " + m.join(" · "));
-      }
-    }
-    const feel = [];
-    for (const [k, l] of [
-      ["feel", "Pocit"],
-      ["energy", "Energie"],
-      ["sleep", "Spánek"],
-    ]) {
-      const value = coachGet(w, k);
-      if (value != null) {
-        feel.push(l + " " + COACH_SL[k].txt(value));
-      }
-    }
-    if (feel.length) {
-      L.push(feel.join(" · "));
-    }
-    const pain = coachPain(w);
-    if (pain && pain.level === 0) {
-      L.push("Bolest: ne"); // intenzita 0 = bez bolesti, místo ani cvik se nevypisují
-    } else if (pain) {
-      const p = [pain.where, pain.level != null ? pain.level + "/10" : ""].filter(Boolean).join(" ");
-      L.push("Bolest: " + p + (pain.exId ? " – " + coachCz(pain.exId) : ""));
-    }
-    L.push("---");
-    // cviky v pořadí provedení (první odškrtnutá série), bez časů v pořadí seznamu
-    const list = (w.ex || []).map((e, i) => {
-      const times = e.sets.map((s) => +s.at).filter((x) => x > 0);
-      return { e, i, t: times.length ? Math.min(...times) : Infinity };
-    });
-    list.sort((a, b) => (a.t === b.t ? a.i - b.i : a.t - b.t));
-    const tplLeft = tpl ? (tpl.items || []).slice() : null;
-    const extra = [];
-    list.forEach(({ e }, n) => {
-      const kind = kindOf(e.exId);
-      const head = n + 1 + ". " + coachExName(e.exId);
-      if (tplLeft) {
-        const at = tplLeft.findIndex((it) => it.exId === e.exId);
-        if (at < 0) {
-          extra.push(coachExName(e.exId));
-        } else {
-          tplLeft.splice(at, 1); // plán ze šablony se nevypisuje (jen Vynecháno a Navíc)
-        }
-      }
-      L.push(head);
-      L.push("   " + coachSets(kind, e.sets));
-      if (e.note) {
-        L.push("   Pozn.: " + e.note.replace(/\s*\n\s*/g, " "));
-      }
-    });
-    const tail = [];
-    if (tplLeft) {
-      tail.push(
-        "Vynecháno: " + (tplLeft.length ? tplLeft.map((it) => coachExName(it.exId)).join("; ") : "–"),
-      );
-      tail.push("Navíc: " + (extra.length ? extra.join("; ") : "–"));
-    }
-    if (w.note) {
-      tail.push("Poznámka: " + String(w.note).replace(/\s*\n\s*/g, " "));
-    }
-    if (tail.length) {
-      L.push("---", ...tail);
-    }
-    return L.join("\n");
+    cxRefresh();
   }
-  // zkopíruje text do schránky; když to prohlížeč nedovolí, ukáže text k ručnímu zkopírování
-  function coachCopy(w) {
-    const text = coachText(w);
+  // obnoví čipy, data, souhrn a náhled textu v otevřeném panelu
+  function cxRefresh() {
+    if (!cx) return;
+    const o = cxData();
+    cx.text = WDLOG.text(o);
+    const n = WDLOG.counts(o);
+    const parts = [
+      n.w + " " + plural(n.w, "trénink", "tréninky", "tréninků"),
+      n.b + " " + plural(n.b, "měření", "měření", "měření"),
+    ];
+    if (n.fresh) {
+      parts.push(n.fresh + " " + plural(n.fresh, "nový cvik", "nové cviky", "nových cviků"));
+    }
+    const el = (id) => document.getElementById(id);
+    if (!el("cx-txt")) return;
+    el("cx-from").value = cx.from;
+    el("cx-to").value = cx.to;
+    el("cx-sum").textContent = parts.join(" · ");
+    el("cx-txt").value = cx.text;
+    for (const b of document.querySelectorAll('#cx-chips [data-act="cxPer"]')) {
+      b.setAttribute("aria-pressed", String(b.dataset.v === cx.per));
+    }
+  }
+  function cxPer(k) {
+    cx = cxPreset(k);
+    lsSet("cxPer", k);
+    cxRefresh();
+  }
+  // ručně změněné datum Od nebo Do: čipy se odznačí, prázdné datum vrátí původní hodnotu
+  function cxDate() {
+    const a = document.getElementById("cx-from").value;
+    const b = document.getElementById("cx-to").value;
+    if (a && b) {
+      cx = { per: "", from: a <= b ? a : b, to: a <= b ? b : a };
+      lsSet("cxPer", { from: cx.from, to: cx.to });
+    }
+    cxRefresh();
+  }
+  function cxCopy() {
+    const text = cx.text;
     const n = [...text].length;
-    const manual = () =>
-      openSheet(
-        "Text pro coache",
-        `<textarea class="inp" rows="14" readonly style="font-family:monospace">${esc(text)}</textarea>`,
-        '<button class="btn grow" data-act="closeSheet">Zavřít</button>',
-      );
+    const manual = () => {
+      const t = document.getElementById("cx-txt");
+      if (t) {
+        t.focus();
+        t.select();
+      }
+      toast("Text je označený, zkopíruj ho ručně.");
+    };
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
       manual();
       return;
@@ -3321,6 +3271,26 @@
         () => toast(`Zkopírováno pro coache (${fmtInt(n)} ${plural(n, "znak", "znaky", "znaků")})`),
         manual,
       );
+  }
+  async function cxShare() {
+    const name = WDLOG.fileName(cx.from, cx.to);
+    const can = (f) => !!(navigator.canShare && navigator.canShare({ files: [f] }));
+    let file = new File([cx.text], name, { type: "text/markdown" });
+    if (!can(file)) {
+      file = new File([cx.text], name.replace(/\.md$/, ".txt"), { type: "text/plain" });
+    }
+    if (!can(file)) {
+      await LocalDownloads.save({ filename: name, data: cx.text, type: "text/markdown" });
+      toast("Sdílení tady nejde, soubor " + name + " se stáhl.");
+      return;
+    }
+    try {
+      await navigator.share({ files: [file] });
+    } catch (e) {
+      if (!e || e.name !== "AbortError") {
+        toast("Sdílení se nepovedlo (" + ((e && e.name) || "chyba") + ")");
+      }
+    }
   }
 
   /* ---------- ZAHŘÍVACÍ SÉRIE Z MINULA (F1-08) ----------
@@ -6897,13 +6867,6 @@
       <button class="btn block" data-act="wToTpl" data-v="${esc(w.id)}" data-m="${w.mk}">
         Uložit jako šablonu
       </button>
-      ${
-        coachOn()
-          ? `<button class="btn block" data-act="coachCopy" data-v="${esc(w.id)}" data-m="${w.mk}">
-            Kopírovat pro coache
-          </button>`
-          : ""
-      }
     </div>`;
     return h;
   }
@@ -11044,7 +11007,7 @@
     for (const i of items.slice(0, S.bodyLimit || 30)) {
       h += `<button class="hw" data-act="editBody" data-v="${i.id}">
         <div class="row">
-          <b class="grow">${fmtDate(i.date)}</b>
+          <b class="grow">${fmtDate(i.date)} · ${fmtTime(i.date)}</b>
           ${i.note ? `<span class="pill">${esc(i.note)}</span>` : ""}
         </div>
         <div class="line num">
@@ -11071,6 +11034,10 @@
     let b = `<label class="frow">
       <span class="grow">Datum</span>
       <input class="inp" type="date" id="b-date" value="${toDateInput(v.date)}">
+    </label>
+    <label class="frow">
+      <span class="grow">Čas</span>
+      <input class="inp" type="time" id="b-time" value="${toTimeInput(v.date)}">
     </label>`;
     // nadpisy sekcí formuláře před prvním údajem skupiny (F3-23)
     const groups = { weight: "Hmotnost a složení", waist: "Obvody" };
@@ -11503,9 +11470,8 @@
       items: () => [
         [
           "Co to dělá",
-          "Stránka tréninku má tlačítko Kopírovat pro coache. Zkopíruje do schránky krátký text o tréninku " +
-            "(formát WD-LOG v1), který vložíš AI coachovi: čas, fitko, šablona, měření ze stejného dne, cviky " +
-            "v pořadí, jak jsi je cvičil, série s RIR/RPE a porovnání se šablonou.",
+          "Zapíšeš k tréninku údaje pro AI coache a v Nastavení → Data a záloha je pak vyexportuješ za zvolené " +
+            "období (Export pro coache, formát WD-LOG v2).",
         ],
         [
           "Konec tréninku",
@@ -11522,6 +11488,27 @@
           "Vypnutí",
           "Vypnutím se funkce schová, zapsané údaje zůstanou. Znovu ji zapneš 7 rychlými klepnutími na kartu " +
             "Verze aplikace v Nastavení → O aplikaci.",
+        ],
+      ],
+    },
+    coachExp: {
+      title: "Export pro coache",
+      items: () => [
+        [
+          "Co to dělá",
+          "Složí text WD-LOG v2 pro AI coache: tréninky v období (čas, fitko, šablona, pocit, bolest, cviky " +
+            "v pořadí, jak jsi je cvičil, série s RIR), pak všechna měření z období a cviky, které jsi v období " +
+            "dělal poprvé. Před odesláním si text přečti v náhledu.",
+        ],
+        [
+          "Období",
+          "Dnes, 7 dní (dnešek a 6 dní před ním), Tento týden a Minulý týden (pondělí až neděle). Když datum " +
+            "Od nebo Do změníš ručně, platí tvoje období. Obě data se počítají celá.",
+        ],
+        [
+          "Kopírovat a Sdílet",
+          "Kopírovat dá text do schránky. Sdílet pošle soubor wd-log-OD_DO.md (u jednoho dne jen jedno datum), " +
+            "např. do chatu s coachem nebo do Souborů. Kde sdílení souborů nejde, soubor se stáhne.",
         ],
       ],
     },
@@ -11690,7 +11677,12 @@
     },
     { id: "rec", name: "Rekordy a pokrok", icon: "medal", body: () => recSettings() + stagSettings() },
     { id: "look", name: "Vzhled", icon: "theme", body: () => themeSettings() },
-    { id: "data", name: "Data a záloha", icon: "backup", body: () => backupSettings() + shSettings() },
+    {
+      id: "data",
+      name: "Data a záloha",
+      icon: "backup",
+      body: () => backupSettings() + shSettings() + cxSettings(),
+    },
     {
       id: "about",
       name: "O aplikaci",
@@ -16465,15 +16457,25 @@
         break;
       case "saveBody": {
         if (BODY_F.some(([k]) => inputProblem("b-" + k))) break;
-        const o = {
-          date: new Date(document.getElementById("b-date").value + "T08:00").getTime() || Date.now(),
-        };
+        // F4-18: skutečný čas měření (prázdný čas = původní, u nového měření teď); úprava zachová ostatní
+        // pole měření (shId z importu ze Samsung Health, F4-13) a beze změny data a času i čas na sekundy
+        const old = v ? S.body[v] : null;
+        const day = document.getElementById("b-date").value;
+        const hm = document.getElementById("b-time").value || toTimeInput(old ? old.date : Date.now());
+        const o = Object.assign({}, old);
+        if (old && day === toDateInput(old.date) && hm === toTimeInput(old.date)) {
+          o.date = old.date;
+        } else {
+          o.date = new Date(day + "T" + hm).getTime() || Date.now();
+        }
         for (const [k] of BODY_F) {
+          delete o[k];
           const n = num(document.getElementById("b-" + k).value);
           if (isFinite(n)) {
             o[k] = n;
           }
         }
+        delete o.note;
         // prázdné BMI dostane předvyplněnou hodnotu z hmotnosti a výšky (F3-33)
         const autoBmi = num(document.getElementById("b-bmi").dataset.auto);
         if (!isFinite(o.bmi) && isFinite(autoBmi)) {
@@ -16483,7 +16485,7 @@
         if (note) {
           o.note = note;
         }
-        if (Object.keys(o).length < 2) {
+        if (!o.note && !BODY_F.some(([k]) => k in o)) {
           toast("Vyplň aspoň jednu hodnotu.");
           break;
         }
@@ -16638,8 +16640,17 @@
         t.setAttribute("aria-expanded", String(!box.classList.contains("fold")));
         break;
       }
-      case "coachCopy":
-        coachCopy(Object.assign({ id: v, mk: t.dataset.m }, S.months[t.dataset.m][v]));
+      case "cxOpen": // F4-18: Export pro coache
+        cxOpen();
+        break;
+      case "cxPer":
+        cxPer(v);
+        break;
+      case "cxCopy":
+        cxCopy();
+        break;
+      case "cxShare":
+        cxShare();
         break;
       case "screenOn":
       case "screenDim":
@@ -17063,6 +17074,10 @@
     }
     if (t.id === "impFile") {
       readImport(t);
+      return;
+    }
+    if (t.id === "cx-from" || t.id === "cx-to") {
+      cxDate(); // F4-18
       return;
     }
     if (t.id === "shFileIn") {

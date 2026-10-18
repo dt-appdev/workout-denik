@@ -27,6 +27,7 @@ const FILES = [
   "js/cviky.js",
   "js/pwa.js",
   "js/verze.js",
+  "js/wdlog.js",
   "fonts/fonts.css",
   "fonts/barlow-400-latin.woff2",
   "fonts/barlow-400-latin-ext.woff2",
