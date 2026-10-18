@@ -1372,16 +1372,48 @@ select.inp {
   display: inline-flex;
   flex: none;
 }
+/* poznámka ke cviku (F3-52): řádek jen pro čtení, výška podle textu, klepnutí = panel s úpravou */
 .exc-note {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  position: relative;
   margin: 0 14px 8px;
   width: calc(100% - 28px);
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  border-radius: 8px;
-  padding: 7px 9px;
-  font-size: var(--fs-md);
-  min-height: 36px;
-  resize: vertical;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--ink);
+  cursor: pointer;
+}
+/* dotyková plocha: neviditelný okraj do poloviny mezery k sousedům (F3-23) */
+.exc-note::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+.exc-note .exc-go {
+  align-self: center;
+}
+.exc-note .nt-ic,
+.note-v .nt-ic {
+  display: inline-flex;
+  flex: none;
+  color: var(--ink-2);
+}
+.exc-note .t,
+.note-v .t {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* uložený trénink: poznámka s ikonou jen ke čtení */
+.note-v {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
 }
 .sets {
   width: 100%;
@@ -1534,8 +1566,7 @@ select.inp {
   outline: none;
 }
 /* F1-11: textové pole při psaní zvýrazní vlastní okraj (rámeček kolem by přečníval pod lištu a přes okraj) */
-.inp:focus-visible,
-.exc-note:focus-visible {
+.inp:focus-visible {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
   outline: none;
