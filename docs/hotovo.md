@@ -379,6 +379,17 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   ikoně vlevo nahoře. Ikona bez pluska (`IC.camera`, varianta B) schválená a uložená do zásoby, zatím
   nepoužitá. Data beze změny. Test `tools/testy/pridat-fotku.js`. Popis v komentáři „PŘIDAT FOTKU IKONOU
   V ROHU KARTY (F3-51)“ v sekci „FOTKY U CVIKU (F2-05)“ v `js/app.js`.
+- **F3-52** Poznámka ke cviku v kartě jen pro čtení, úprava v panelu (přání uživatele 18. 10. 2026, náhled schválen).
+  Dřív: poznámka (F2-10) byla v kartě cviku políčko pro psaní s pevnou výškou jednoho řádku, delší text se posouval
+  uvnitř; Přidat poznámku v nabídce ⋯ jen ukázalo prázdné políčko. **Rozhodnuto a provedeno:** v tréninku, šabloně
+  i úpravě uloženého tréninku řádek jen pro čtení jako řádek Stroj (bez rámečku, `--fs-sm`, ale v barvě textu):
+  vlevo nová ikona poznámky (`IC.note`, list s přehnutým rohem, varianta A; zamítnuty blok s tužkou a bublina, která
+  se čte jako zprávy), celý text s odřádkováním (výška podle textu, bez limitu délky), vpravo šipka ›. Klepnutí
+  otevře panel „Poznámka – cvik“ (políčko na 3 řádky, Smazat jen u existující, Uložit; zavření bez Uložit změny
+  zahodí), z nabídky ⋯ rovnou s klávesnicí. Prázdná poznámka řádek nemá. Stejná ikona i u poznámky v detailu
+  uloženého tréninku. Data a záloha beze změny. Konflikt s odloženým F1-20 (zmenšení řádků po první sérii):
+  řádek jde později zkrátit. Test `tools/testy/poznamka.js`. Popis v sekci „POZNÁMKA KE CVIKU V KARTĚ (F3-52)“
+  v `js/app.js`.
 
 ## Fáze 4 – Chytré funkce
 

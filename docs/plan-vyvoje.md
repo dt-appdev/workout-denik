@@ -270,6 +270,7 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F3-49** Z historie cviku na stránku tréninku
 - [x] **F3-50** Přidání cviku z online databáze: šipka, fotky, hlášky
 - [x] **F3-51** Přidat fotku ikonou v rohu karty cviku
+- [x] **F3-52** Poznámka ke cviku v kartě jen pro čtení, úprava v panelu
 
 
 ### Fáze 4 – Chytré funkce

@@ -151,6 +151,11 @@
       <rect x="9.5" y="12.5" width="12" height="9" rx="2"/>
       <path d="M12.3 12.5V10a3.2 3.2 0 016.4 0v2.5"/>
     </svg>`,
+    // poznámka ke cviku (F3-52): list s přehnutým rohem a dvěma řádky textu
+    note: `<svg viewBox="0 0 24 24">
+      <path d="M14 3.5H6.5a2 2 0 00-2 2v13a2 2 0 002 2h11a2 2 0 002-2V9z"/>
+      <path d="M14 3.5V9h5.5M8 13h8M8 16.5h5"/>
+    </svg>`,
     // návrh progrese (F4-01): šipka stoupající nahoru
     prog: '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
     // stagnace (F4-06): vodorovná čára s tečkami = plochý průběh, bez posunu
@@ -6056,6 +6061,39 @@
       Minule: ${parts.join(" · ")}
     </button>`;
   }
+  /* ---------- POZNÁMKA KE CVIKU V KARTĚ (F3-52) ----------
+     Poznámka ke cviku (F2-10, e.note) se v kartě cviku v tréninku, šabloně i úpravě uloženého tréninku
+     ukazuje jako řádek jen pro čtení (noteLine): vlevo ikona IC.note, za ní celý text včetně odřádkování
+     (výška podle textu, nic se neusekává), vpravo šipka ›. Prázdná poznámka řádek nemá. Klepnutí na řádek
+     (noteEdit) otevře panel bez klávesnice, Přidat / Upravit poznámku v nabídce ⋯ (exNote) s klávesnicí.
+     Panel (noteSheet): „Poznámka – cvik“, políčko na 3 řádky, Smazat (jen u existující poznámky) a Uložit;
+     uložený text se ořízne, prázdný poznámku smaže. Zavření bez Uložit změny zahodí. V uloženém tréninku
+     (detail z Historie) stejná ikona před textem poznámky (noteView). Data beze změny. */
+  // řádek s poznámkou pod názvem cviku v kartě (klepnutí = panel s úpravou)
+  function noteLine(e, i) {
+    if (!e.note) return "";
+    return `<button class="exc-note" data-act="noteEdit" data-i="${i}">
+      <span class="nt-ic" aria-hidden="true">${icon("note")}</span>
+      <span class="t">${esc(e.note)}</span>
+      ${excGo}
+    </button>`;
+  }
+  // poznámka s ikonou jen ke čtení (uložený trénink)
+  const noteView = (note) =>
+    `<div class="note-v xs muted"><span class="nt-ic" aria-hidden="true">${icon("note")}</span>` +
+    `<span class="t">${esc(note)}</span></div>`;
+  // panel s úpravou poznámky cviku i v rozdělaném tréninku / šabloně d
+  function noteSheet(d, i) {
+    const e = d && d.ex[i];
+    if (!e) return;
+    openSheet(
+      "Poznámka – " + exName(e.exId),
+      `<textarea class="inp" id="note-txt" rows="3"
+          placeholder="Např. lopatky stažené, pomalu dolů">${esc(e.note || "")}</textarea>`,
+      (e.note ? `<button class="btn danger grow" data-act="noteDel" data-i="${i}">Smazat</button>` : "") +
+        `<button class="btn primary grow" data-act="noteSave" data-i="${i}">Uložit</button>`,
+    );
+  }
   /* ---------- NASTAVENÍ STROJE PODLE FITKA (F1-07) ----------
      Volný text (sedačka, opěrka, úchop…) u cviku vázaného na fitko, zvlášť pro každé fitko. Uložený u cviku
      v config/exercises jako machine: {idFitka: "text"} (bez nastavení pole chybí, staré zálohy fungují,
@@ -6210,10 +6248,7 @@
     // pod názvem: nastavení stroje (F1-07), poznámka, Minule (F1-19), návrh progrese (F4-01), stagnace (F4-06)
     h += machLine(d, e, i);
     h += restLine(d, e, i);
-    if (e.note || e.showNote) {
-      h += `<textarea class="exc-note" id="note-${e.k}" data-f="note" data-i="${i}" rows="1"
-          placeholder="Poznámka ke cviku">${esc(e.note || "")}</textarea>`;
-    }
+    h += noteLine(e, i);
     if (mode !== "template") {
       h += prevLine(d, e, last);
       h += progLine(d, e, i);
@@ -6907,7 +6942,7 @@
           `</button>${er.length ? " " + recCount(er) : ""}
         </div>
         ${cz ? `<div class="cz">${esc(cz)}</div>` : ""}
-        ${e.note ? `<div class="xs muted">${esc(e.note)}</div>` : ""}
+        ${e.note ? noteView(e.note) : ""}
         <div class="dset">
           ${(() => {
             const k = kindOf(e.exId);
@@ -15268,7 +15303,7 @@
           exName(e.exId),
           `<div class="stack">
             <button class="btn block" data-act="exNote" data-i="${i}">
-              ${e.note || e.showNote ? "Upravit poznámku" : "Přidat poznámku"}
+              ${e.note ? "Upravit poznámku" : "Přidat poznámku"}
             </button>
             ${
               machCan(d, e)
@@ -15296,15 +15331,31 @@
         );
         break;
       }
+      // F3-52: poznámka ke cviku jen v panelu; z nabídky ⋯ rovnou s klávesnicí, z řádku v kartě bez ní
       case "exNote":
-        d.ex[i].showNote = true;
-        closeSheet();
-        scheduleRender();
+      case "noteEdit":
+        noteSheet(d, i);
+        if (act === "noteEdit") break;
         setTimeout(() => {
-          const n = document.getElementById("note-" + d.ex[i].k);
-          n && n.focus();
+          const txt = document.getElementById("note-txt");
+          txt && txt.focus();
         }, 60);
         break;
+      case "noteSave":
+      case "noteDel": {
+        const txt = document.getElementById("note-txt");
+        const note = act === "noteSave" && txt ? txt.value.trim() : "";
+        closeSheet();
+        if (!d || !d.ex[i]) break;
+        if (note) {
+          d.ex[i].note = note;
+        } else {
+          delete d.ex[i].note;
+        }
+        touchDraft();
+        scheduleRender();
+        break;
+      }
       case "exOrder":
         sheetExOrder();
         break;
@@ -16907,11 +16958,6 @@
       delete set.jumpOk; // změněná hodnota = znovu zkontrolovat velký skok
       touchDraft();
       hintsRefresh(d, i); // F1-13: série pod ní můžou brát předvyplnění z této
-      return;
-    }
-    if (f === "note") {
-      d.ex[i].note = t.value;
-      touchDraft();
       return;
     }
     // Pro coache (F4-12)
