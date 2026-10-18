@@ -292,6 +292,14 @@ Předpoklad: F0-02 (svalové partie).
 - [x] **F4-15** Hlavní vypínač návrhu progrese
 - [x] **F4-16** Typ cviku Vzdálenost se zátěží
 - [ ] **F4-17** Návrh progrese u cviku Vzdálenost se zátěží (vzniklo u F4-16 17. 10. 2026, odloženo): obdoba double progression (F4-01) pro saně: dokud není ve všech pracovních sériích dotlačená celá dráha, váha zůstává, pak návrh +krok kg. Otevřené: odkud brát cílovou vzdálenost, když se dráha liší podle fitka (nastavení stroje je volný text; návrh: nejdelší zapsaná vzdálenost v daném fitku). Navazuje na F4-16.
+- [x] **F4-18** Export WD-LOG v2 pro coache za období, čas u ručního měření
+- [ ] **F4-19** Zdroj měření ze Samsung Health (vzniklo u F4-18 18. 10. 2026, bez priority): u importovaného měření
+  uložit, odkud je (hodinky Galaxy Watch, telefon = nejspíš ruční zadání v Samsung Health, Hevy). Ověřeno na exportu
+  uživatele: sloupec `deviceuuid` v `com.samsung.health.weight.*.csv` odpovídá řádku v
+  `com.samsung.health.device_profile.*.csv` (`name`, `model`, `device_group` 360003 = hodinky, 360001 = telefon),
+  `pkg_name` rozliší jen Samsung Health a Hevy. Import (F4-13) dnes čte jen soubor vážení, musel by brát oba soubory
+  najednou (výběr více souborů, ne složky) a ukládat nové pole u měření. Otevřené: kde zdroj ukázat (seznam měření
+  v Těle, ikona podle F6-04 Otevřené otázky), jestli ho vypisovat do exportu pro coache (F4-18 ho záměrně nevypisuje).
 
 
 ### Fáze 5 – Motivace

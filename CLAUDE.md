@@ -70,8 +70,9 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/app.js` | Celá appka: datová vrstva, stav, vykreslování, akce, záloha. |
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
+| `js/wdlog.js` | Text WD-LOG v2 pro coache za období (F4-18): čisté funkce bez úložiště, používá ho `js/app.js`, testuje `tools/testy/wdlog.js` přímo v Node. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
@@ -225,11 +226,12 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   `s.atEnd` a čas dostane až při uložení (F1-14). Každé odškrtnutí nebo zrušení ✓ `atEnd` maže.
 - RIR/RPE série (F4-04) je vždy RPE v `s.rpe` (i při volbě RIR), text přes `effTxt` / `effVal`, série do selhání
   má vždy 10 (`effOf`). Nové a kopírované série ho nepřenášejí (předvyplnění, šablony, Cvičit znovu).
-- Kopírování pro coache (F4-12) je skryté (`coachOn()`), bez zapnutí se nic z něj neukazuje. Nový údaj tréninku nebo
-  série, který má coach vidět, doplnit do `coachText`. Odhad před selháním `s.rpeEst` se do nových sérií nepřenáší.
+- Kopírování pro coache (F4-12) je skryté (`coachOn()`), bez zapnutí se nic z něj neukazuje. Nový údaj tréninku,
+  série nebo měření, který má coach vidět, doplnit do exportu WD-LOG v2 (`WDLOG.text` v `js/wdlog.js`, F4-18)
+  a jeho testu. Odhad před selháním `s.rpeEst` se do nových sérií nepřenáší.
 - Série jako text vždy přes `setStr` („12×20kg“: opakování × váha s jednotkou, bez mezer, F3-38), stejný tvar rekordy,
-  návrh progrese a text pro coache. Nový výpis série nikdy „kg × opak.“ ani bez jednotky. Políčka série ve stejném
-  pořadí (opakování / čas před váhou, `KIND` f, F3-39).
+  návrh progrese a text pro coache (`WDLOG`, čísla s tečkou). Nový výpis série nikdy „kg × opak.“ ani bez jednotky.
+  Políčka série ve stejném pořadí (opakování / čas před váhou, `KIND` f, F3-39).
 - Akce, které mění pracovní série bez hodnot (+ Série, smazání, změna druhu), volají `progTouch`.
 - Výběr fitka (čipy, rozbalovací výběr) jen z aktivních fitek `gymsOn()` / `gymOn(id)`; archivované fitko (`g.archived`,
   F2-06) jen tam, kde už je vybrané (úprava tréninku, šablony). Filtry Historie a Statistik přes `gymsFilter()`.
