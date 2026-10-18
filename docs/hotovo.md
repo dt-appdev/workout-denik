@@ -433,7 +433,8 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   `js/wdlog.js` (čisté funkce, unit testy v Node): tréninky a měření jako samostatné části, Bolest vždy („ne“ = 0,
   „–“ = nevyplněno), série jako v appce „10×55kg RIR 2“ (zadání chtělo „55×10“ bez jednotky, uživatel ponechal
   F3-38), RIR = 10 − RPE, „F (odhad RIR 2)“, „ + D …“, čas telefonu, nové cviky (poprvé v celé historii), z v1
-  odstraněny Plán, Navíc, Vynecháno a měření v bloku tréninku. Formulář měření má políčko Čas (výchozí aktuální
+  odstraněny Plán, Navíc, Vynecháno, měření v bloku tréninku a poznámka ke cviku (po prvním exportu: většinou
+  poznámka převzatá ze šablony, coach ji nepotřebuje). Formulář měření má políčko Čas (výchozí aktuální
   čas, dřív pevně 08:00; stará měření s 08:00 beze změny), seznam měření v Těle ukazuje čas. Oprava: úprava měření
   přepsala čas na 08:00 a smazala ostatní pole (`shId` z importu ze Samsung Health), teď zůstanou. Plná záloha beze
   změny. Nový test `tools/testy/wdlog.js`. Navazuje F4-19 (zdroj měření).

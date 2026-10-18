@@ -9,7 +9,8 @@
      „Žádné tréninky ani měření.“,
    - trénink „## datum den · od–do (N min) · fitko · šablona“ (šablona jen u tréninku ze šablony, která ještě
      existuje), Pocit / Energie / Spánek jen vyplněné, Bolest vždy („ne“ = intenzita 0, „–“ = nevyplněno),
-     Pozn.:, cviky v pořadí provedení (první odškrtnutá série s.at) „cz (name) [exId]“,
+     Pozn.:, cviky v pořadí provedení (první odškrtnutá série s.at) „cz (name) [exId]“, poznámka ke cviku
+     (e.note, většinou převzatá ze šablony) se nevypisuje (přání uživatele 18. 10. 2026),
    - série jako v appce (setStr, F3-38): opakování × váha s jednotkou („10×55kg“), čísla s tečkou bez
      zbytečných nul, zahřívací „W …“ a „ | “, pracovní „RIR R“ (R = 10 − s.rpe, jen vyplněné), F „F (odhad
      RIR R)“ z s.rpeEst, drop set „ + D …“ u předchozí série (RIR jen vyplněné),
@@ -190,9 +191,6 @@ const WDLOG = (() => {
       const kind = (o.ex(e.exId) || {}).kind || "wr";
       L.push(n + 1 + ". " + exName(o, e.exId));
       L.push("   " + sets(kind, e.sets));
-      if (e.note && String(e.note).trim()) {
-        L.push("   Pozn.: " + oneLine(e.note));
-      }
     });
     return L.join("\n");
   }

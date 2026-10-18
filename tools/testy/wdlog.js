@@ -227,7 +227,6 @@ function unit(check) {
       "Pozn.: fitko plné, pořadí přeházené",
       "1. Hack dřep na stroji (Hack Squat (Machine)) [hack]",
       "   W 10×30kg | 10×55kg RIR 2",
-      "   Pozn.: 1. série s jinou opěrkou",
       "2. Tlačení saní (Sled Push) [sled]",
       "   20m×40kg",
       "3. Crunch [same]",
