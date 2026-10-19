@@ -2902,11 +2902,11 @@
      zapnutí appka nic z této sekce neukazuje. Uložená data zůstanou i po vypnutí.
      - Na konci tréninku (okno Dokončit, finishAsk) a v Upravit trénink (vEditor) je část „Pro coache“
        (coachPart, otevřená, hlavičkou jde sbalit): posuvníky Pocit 1–10, Energie 1–10, Spánek 0–12 h (po 1 h) a
-       bolest (místo textem, intenzita posuvníkem 0–10, 0 = bez bolesti = „Bolest: ne“, cvik z tréninku),
-       poznámka k tréninku. Posuvník
+       bolest (místo textem, intenzita posuvníkem 0–10, 0 = bez bolesti = „Bolest: ne“, cvik z tréninku).
+       Poznámka k tréninku sem od F1-26 nepatří (obecný údaj tréninku, sekce POZNÁMKA K TRÉNINKU). Posuvník
        začíná nevyplněný (šedý, „–“), hodnotu dostane až posunutím nebo klepnutím (coachSlide), křížek ji
        smaže (coachClr). Změny jen v draftu bez překreslení; při uložení coachApply zapíše do tréninku pole
-       feel, energy, sleep, pain {where, level, exId} a note. Nevyplněné pole v tréninku není.
+       feel, energy, sleep a pain {where, level, exId}. Nevyplněné pole v tréninku není.
      - Odhad u série do selhání: RIR/RPE zadané před přepnutím druhu série na F (cycType) se při zapnuté funkci
        přesune do s.rpeEst (RPE jako s.rpe, F4-04) a ukáže se pod 0 v tabulce (effCell) a na stránce tréninku.
        Přepnutí z F na jiný druh odhad maže. Nové a kopírované série ho nepřenášejí.
@@ -2979,12 +2979,6 @@
     } else {
       delete w.pain;
     }
-    const note = String(d.note || "").trim();
-    if (note) {
-      w.note = note;
-    } else {
-      delete w.note;
-    }
   }
   // krátký přehled vyplněného (hlavička sbalené části)
   function coachSum(d) {
@@ -3049,10 +3043,6 @@
           ${coachSlider(d, "pain")}
           <select class="inp" data-f="coachEx" aria-label="Cvik, u kterého bolí">${opts}</select>
         </div>
-        <label class="f">
-          Poznámka k tréninku
-          <textarea class="inp" rows="2" data-f="wNote">${esc(d.note || "")}</textarea>
-        </label>
       </div>
     </div>`;
   }
@@ -5462,7 +5452,11 @@
         </label>
       </div>
       <div class="small muted" id="fin-info">${finInfo(d, end, lastAt)}</div>
-    </div>`;
+      <label class="f">
+        Poznámka k tréninku
+        <textarea class="inp" rows="2" data-f="wNote">${esc(d.note || "")}</textarea>
+      </label>
+    </div>`; // poznámka k tréninku (F1-26)
     b += coachPart(d); // Pro coache (F4-12)
     // Dokončit a začít nový (F2-09): co začne po uložení
     if (runNext) {
@@ -5837,8 +5831,9 @@
      Jen v css/app.css a třídy v šablonách (přání uživatele 13. 10. 2026, náhled schválen týž den).
      Jedno písmo pro jednu roli, aby stejné věci vypadaly všude stejně:
      - Název v kartě (šablona .tpl h3, cvik v tréninku .exc-h h3, trénink v Historii .hw h3, cvik v uloženém
-       tréninku .wex-n): Barlow 700, --fs-lg, výška řádku 1,2, barva textu. 600 uživatel zamítl: v kartě cviku
-       by se název nelišil od čísel sérií (.cell je také --fs-lg a 600).
+       tréninku .wex-n, nadpis karty na stránce tréninku .sumh, F1-26): Barlow 700, --fs-lg, výška řádku 1,2,
+       barva textu. 600 uživatel zamítl: v kartě cviku by se název nelišil od čísel sérií (.cell je také --fs-lg
+       a 600).
      - Název v řádku seznamu (Cviky .exrow .n, výběr cviků, fitka, řazení cviků a šablon): 600 (.row-n).
      - Popisek nad políčkem nebo čipy (Název, Barva, Fitko, Kde dnes cvičíš): label.f / .lbl-f, drobné velké písmo.
      - Nadpis VELKÝMI písmeny v úzkém písmu (.sec-h h2, měsíc .mhead, skupina ve výběru cviků .pick-sec):
@@ -5897,9 +5892,19 @@
     }
     // F2-08: shoda názvu šablony s jinou šablonou ve stejném fitku (hned při psaní, tplNameMark)
     const clash = mode === "template" ? tplNameProblem(d) : "";
-    h += `<div class="ed-head">
-      <input class="ed-title${clash ? " bad" : ""}" id="ed-title" data-f="title" value="${esc(d.title)}"
-          aria-label="Název" placeholder="Název">`;
+    const titleInp = `<input class="ed-title${clash ? " bad" : ""}" id="ed-title" data-f="title"
+        value="${esc(d.title)}" aria-label="Název" placeholder="Název">`;
+    h += '<div class="ed-head">';
+    if (mode === "template") {
+      h += titleInp;
+    } else {
+      // F1-26: ⋯ s poznámkou k tréninku vpravo od názvu, zapsaná poznámka pod ním
+      h += `<div class="ed-trow">
+        ${titleInp}
+        <button class="iconbtn" data-act="wMenu" aria-label="Možnosti tréninku">${IC.more}</button>
+      </div>`;
+      h += wNoteLine(d);
+    }
     if (mode === "template") {
       h += `<span class="fmsg" id="ed-title-msg">${esc(clash)}</span>`;
     }
@@ -6063,6 +6068,69 @@
       (e.note ? `<button class="btn danger grow" data-act="noteDel" data-i="${i}">Smazat</button>` : "") +
         `<button class="btn primary grow" data-act="noteSave" data-i="${i}">Uložit</button>`,
     );
+  }
+  /* ---------- POZNÁMKA K TRÉNINKU (F1-26) ----------
+     Poznámka k celému tréninku (w.note, v draftu d.note), obecný údaj tréninku jako název nebo fitko, bez vazby
+     na funkci Pro coache (text pro coache ji jen čte jako „Pozn.:“, F4-18). Stejný princip jako poznámka ke cviku
+     (F3-52): karta s názvem tréninku (ed-head) v rozdělaném tréninku i v Upravit trénink má vpravo ⋯ (wMenu,
+     panel s názvem tréninku a jedinou položkou Přidat / Upravit poznámku, wNote, s klávesnicí). Zapsaná poznámka
+     je pod názvem jako řádek jen ke čtení (wNoteLine: ikona IC.note, celý text, šipka ›), klepnutí na něj
+     (wNoteEdit) otevře panel bez klávesnice. Panel (wNoteSheet): políčko na 3 řádky, Smazat (jen u existující
+     poznámky) a Uložit; text se ořízne, prázdný poznámku smaže, zavření bez Uložit změny zahodí. Šablona ⋯ ani
+     poznámku tréninku nemá (poznámka k šabloně je samostatná úloha F2-15).
+     V okně Dokončit (finishAsk) políčko Poznámka k tréninku v kartě se Začátkem a Koncem, předvyplněné z draftu
+     (data-f="wNote", psaní mění d.note bez překreslení). Do tréninku ji při uložení zapíše wNoteApply (Dokončit
+     i Uložit v Upravit trénink). Na stránce tréninku (wSummary) vlastní karta wNoteCard za Procvičenými
+     partiemi; trénink bez poznámky kartu nemá. Cvičit znovu ani Uložit jako šablonu ji nepřenášejí.
+     Data beze změny (w.note existovalo od F4-12). */
+  // řádek s poznámkou pod názvem tréninku (klepnutí = panel s úpravou)
+  function wNoteLine(d) {
+    if (!d.note || !d.note.trim()) return "";
+    return `<button class="exc-note wnote-l" data-act="wNoteEdit">
+      <span class="nt-ic" aria-hidden="true">${icon("note")}</span>
+      <span class="t">${esc(d.note.trim())}</span>
+      ${excGo}
+    </button>`;
+  }
+  // nabídka ⋯ karty tréninku
+  function wMenu(d) {
+    openSheet(
+      d.title.trim() || "Trénink",
+      `<div class="stack">
+        <button class="btn block" data-act="wNote">
+          ${d.note && d.note.trim() ? "Upravit poznámku" : "Přidat poznámku"}
+        </button>
+      </div>`,
+    );
+  }
+  // panel s úpravou poznámky k tréninku
+  function wNoteSheet(d) {
+    const note = (d.note || "").trim();
+    openSheet(
+      "Poznámka k tréninku",
+      `<textarea class="inp" id="wnote-txt" rows="3"
+          placeholder="Např. plné fitko, začal jsem nohama">${esc(note)}</textarea>`,
+      (note ? `<button class="btn danger grow" data-act="wNoteDel">Smazat</button>` : "") +
+        `<button class="btn primary grow" data-act="wNoteSave">Uložit</button>`,
+    );
+  }
+  // zapíše poznámku z draftu do ukládaného tréninku (oříznutá, prázdná = pole se neukládá)
+  function wNoteApply(w, d) {
+    const note = String(d.note || "").trim();
+    if (note) {
+      w.note = note;
+    } else {
+      delete w.note;
+    }
+  }
+  // karta s poznámkou na stránce tréninku
+  function wNoteCard(w) {
+    const note = String(w.note || "").trim();
+    if (!note) return "";
+    return `<div class="card">
+      <h3 class="sumh">Poznámka k tréninku</h3>
+      <div class="wnote-t">${esc(note)}</div>
+    </div>`;
   }
   /* ---------- NASTAVENÍ STROJE PODLE FITKA (F1-07) ----------
      Volný text (sedačka, opěrka, úchop…) u cviku vázaného na fitko, zvlášť pro každé fitko. Uložený u cviku
@@ -6890,6 +6958,7 @@
         : '<div class="small muted">Tentokrát bez nového rekordu.</div>';
     }
     b += sumMuscles(w);
+    b += wNoteCard(w); // poznámka k tréninku (F1-26)
     const seen = {};
     const cards = []; // karta každého cviku, supersérie (F4-05) je obalí rámečkem
     (w.ex || []).forEach((e, i) => {
@@ -15323,6 +15392,37 @@
         );
         break;
       }
+      // F1-26: poznámka k tréninku přes ⋯ karty tréninku; z nabídky s klávesnicí, z řádku bez ní
+      case "wMenu":
+        if (d) {
+          wMenu(d);
+        }
+        break;
+      case "wNote":
+      case "wNoteEdit":
+        if (!d) break;
+        wNoteSheet(d);
+        if (act === "wNoteEdit") break;
+        setTimeout(() => {
+          const txt = document.getElementById("wnote-txt");
+          txt && txt.focus();
+        }, 60);
+        break;
+      case "wNoteSave":
+      case "wNoteDel": {
+        const txt = document.getElementById("wnote-txt");
+        const note = act === "wNoteSave" && txt ? txt.value.trim() : "";
+        closeSheet();
+        if (!d) break;
+        if (note) {
+          d.note = note;
+        } else {
+          delete d.note;
+        }
+        touchDraft();
+        scheduleRender();
+        break;
+      }
       // F3-52: poznámka ke cviku jen v panelu; z nabídky ⋯ rovnou s klávesnicí, z řádku v kartě bez ní
       case "exNote":
       case "noteEdit":
@@ -15966,6 +16066,7 @@
         if (typeof d.again === "string") {
           w.againOf = d.again;
         }
+        wNoteApply(w, d); // poznámka k tréninku (F1-26)
         coachApply(w, d); // Pro coache (F4-12)
         const id = uid("w");
         saveWorkout(id, w, null);
@@ -16031,6 +16132,7 @@
           ex,
         });
         delete w.endOrig; // původní délka se už nepamatuje (starší záznamy ji ještě mohou mít)
+        wNoteApply(w, d); // poznámka k tréninku (F1-26)
         coachApply(w, d); // Pro coache (F4-12)
         saveWorkout(d.id, w, d.mk);
         S.editDraft = null;

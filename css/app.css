@@ -1146,6 +1146,21 @@ select.inp {
   letter-spacing: 0.01em;
   color: var(--ink);
 }
+/* F1-26: název tréninku s ⋯ vpravo (iconbtn bez rámečku, okraj kvůli ploše nezvětší kartu ani mezery)
+   a řádek poznámky k tréninku pod ním (jako poznámka ke cviku, ale bez okrajů karty cviku) */
+.ed-trow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ed-trow .iconbtn {
+  flex: none;
+  margin: -6px -6px -6px 0;
+}
+.ed-head .wnote-l {
+  margin: 0;
+  width: 100%;
+}
 .ed-meta {
   display: flex;
   gap: 14px;
@@ -3639,11 +3654,17 @@ textarea.inp {
   width: 1.4em;
   height: 1.4em;
 }
+/* nadpis karty na stránce tréninku: písmo názvu v kartě jako název cviku (F3-45, sjednoceno v F1-26) */
 .sumh {
   margin: 0 0 6px;
-  font-family: var(--display);
-  font-size: var(--fs-xl);
+  font-size: var(--fs-lg);
   font-weight: 700;
+  line-height: 1.2;
+}
+/* text poznámky k tréninku v její kartě (F1-26): celý text včetně odřádkování */
+.wnote-t {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .mbars {
   display: flex;
