@@ -235,10 +235,9 @@ function unit(check) {
       "   15×30kg",
       "",
       "## Měření",
-      "2026-10-21 st 18:55 · 77.4 kg · tuk 18.1 % · svaly 44.0 % · " +
-        "zdroj: Galaxy Watch9 (hmotnost zadaná ručně)",
+      "2026-10-21 st 18:55 · 77.4 kg · tuk 18.1 % · svaly 44.0 % · zdroj: Watch9",
       "2026-10-24 so 08:05 · pas 89.5 · paže 38.5 · stehno 60.0 cm",
-      "2026-10-25 ne 07:50 · 76.2 kg · zdroj: ručně v deníku · Pozn.: nová váha",
+      "2026-10-25 ne 07:50 · 76.2 kg · zdroj: ručně · Pozn.: nová váha",
       "",
       "## Nové cviky",
       "- Shyby (Pull Up) · vlastní váha · primární: široký sval zádový · sekundární: – · gymDep: ne",
@@ -276,6 +275,20 @@ function unit(check) {
         "",
       ],
       "text zdroje měření",
+    );
+    // krátký zdroj do exportu (přání uživatele 19. 10. 2026)
+    check.eq(
+      [
+        W.srcShort({ src: "app" }),
+        W.srcShort({ src: "sh" }),
+        W.srcShort({ src: "watch", srcName: "Galaxy Watch4" }),
+        W.srcShort({ src: "watch" }),
+        W.srcShort({ src: "dev", srcName: "Body Scale" }),
+        W.srcShort({ src: "ext", srcName: "Hevy" }),
+        W.srcShort({}),
+      ],
+      ["ručně", "ručně (SH)", "Watch4", "hodinky", "Body Scale", "Hevy", ""],
+      "krátký zdroj měření",
     );
 
     // jeden den: hlavička s jedním datem, trénink jen z toho dne

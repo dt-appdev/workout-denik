@@ -16,7 +16,8 @@
      RIR R)“ z s.rpeEst, drop set „ + D …“ u předchozí série (RIR jen vyplněné),
    - ## Měření: jeden řádek na měření, hodnoty měření s jedním desetinným místem, obvody s „cm“ jen na
      konci; hmotnost tuku, kosterní sval v kg, voda, BMI a bazální metabolismus se nevypisují; známý zdroj
-     měření (F4-19, WDLOG.srcTxt) jako „· zdroj: …“ před poznámkou, měření bez zdroje bez dovětku,
+     měření (F4-19) krátce (WDLOG.srcShort, přání uživatele 19. 10. 2026: dlouhý text se u každého měření
+     opakuje) jako „· zdroj: …“ před poznámkou, měření bez zdroje bez dovětku,
    - ## Nové cviky: cviky z období, které žádný starší trénink neobsahuje. */
 const WDLOG = (() => {
   const DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
@@ -230,9 +231,17 @@ const WDLOG = (() => {
     if (b.src === "ext") return name || "jiná aplikace";
     return "";
   }
+  // krátký zdroj pro export (ručně, ručně (SH), Watch9, název zařízení nebo aplikace), neznámý = ""
+  function srcShort(b) {
+    const name = String(b.srcName || "").trim();
+    if (b.src === "app") return "ručně";
+    if (b.src === "sh") return "ručně (SH)";
+    if (b.src === "watch") return name.replace(/^Galaxy\s+/i, "") || "hodinky";
+    return srcTxt(b);
+  }
   function bodyLine(b) {
     let x = `${day(b.date)} ${dayName(b.date)} ${time(b.date)} · ${bodyVals(b)}`;
-    const src = srcTxt(b);
+    const src = srcShort(b);
     if (src) {
       x += " · zdroj: " + src;
     }
@@ -312,7 +321,7 @@ const WDLOG = (() => {
     return L.join("\n");
   }
 
-  return { period, range, fileName, num, num1, setTxt, sets, srcTxt, bodyLine, counts, text };
+  return { period, range, fileName, num, num1, setTxt, sets, srcTxt, srcShort, bodyLine, counts, text };
 })();
 if (typeof module !== "undefined") {
   module.exports = WDLOG;

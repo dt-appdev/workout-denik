@@ -237,7 +237,7 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   F2-06) jen tam, kde už je vybrané (úprava tréninku, šablony). Filtry Historie a Statistik přes `gymsFilter()`.
 - Štítek fitka u tréninku jen přes `gymPill` (trénink bez fitka štítek nemá, smazané fitko „Smazané fitko“, F3-24).
 - Každé místo, které vytváří měření, nastaví zdroj `src` (a `srcName`, F4-19, sekce IMPORT MĚŘENÍ ZE SAMSUNG HEALTH),
-  text zdroje jen přes `WDLOG.srcTxt`.
+  text zdroje jen přes `WDLOG.srcTxt` (v exportu pro coache krátce `WDLOG.srcShort`).
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Úložiště jen přes `Local` / `Idb` / `Store`, nikdy přímo `localStorage.setItem`, `indexedDB.open` apod.
   (F0-18, sekce POJISTKA DAT VYDANÉ VERZE): testovací verze PR je na stejné doméně jako vydaná a mohla by
