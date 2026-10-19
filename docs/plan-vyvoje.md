@@ -195,12 +195,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-22** Pauza po zahřívací sérii
 - [x] **F1-23** Rychlé přepisování čísel v sériích
 - [ ] **F1-20** Kompaktní karta cviku po první sérii (nápad 11. 10. 2026 u F1-07, odloženo, dokud karta neruší): dokud cvik nemá hotovou sérii, jsou pod názvem vidět všechny řádky (stroj, poznámka, Minule, návrh, stagnace); po první ✓ zůstane Minule a stroj s poznámkou se zmenší na jeden řádek, který jde rozbalit (jako Minule). Nejdřív náhled. Zamítnuto místo toho: tlačítko (i) s kartou všech informací (víc klepnutí mezi sériemi, připomínky by se přehlédly, třetí cesta k informacím o cviku vedle názvu a grafu).
-- [ ] **F1-26** Poznámka k tréninku už během tréninku (přání uživatele 18. 10. 2026 u F4-18): poznámku k tréninku
-  (`w.note`, export pro coache „Pozn.:“) jde dnes zapsat jen v okně Dokončit trénink a v Upravit trénink, a jen se
-  zapnutou funkcí Pro coache (je v části Pro coache, `coachPart`). Cíl: zapsat a upravit ji kdykoli v rozdělaném
-  tréninku, např. hned, když se něco stane (plné fitko, změna pořadí). Rozhodnout: kde (pole nad cviky / pod nimi,
-  nebo panel přes ⋯ jako poznámka ke cviku F3-52), jestli i bez zapnuté funkce Pro coache, a aby okno Dokončit
-  ukázalo už zapsaný text. Nejdřív náhled.
+- [x] **F1-26** Poznámka k tréninku už během tréninku
 - [x] **F1-24** Stopky u série na čas
 - [x] **F1-25** Přepisování čísel ve formulářích
 
@@ -220,6 +215,12 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F2-12** Skrýt nepoužívanou šablonu
 - [x] **F2-13** Karta šablony: klepnutí = Začít, ⋯ = možnosti
 - [x] **F2-14** Pauza cviku v úpravě šablony
+- [ ] **F2-15** Poznámka k šabloně (přání uživatele 19. 10. 2026 u F1-26): obecná poznámka k celé šabloně (např.
+  „deload týden“, „kruhově“), dnes má šablona jen poznámky ke cvikům. Návrh: v úpravě šablony ⋯ v kartě s názvem
+  jako u tréninku (F1-26). V tréninku ze šablony se ukáže jen jako pokyn ke čtení, do poznámky tréninku (`w.note`)
+  se nekopíruje, aby se v textu pro coache neopakovala v každém tréninku (stejně jako poznámky ke cvikům ze šablony,
+  F4-18). Rozhodnout: kde ji v tréninku ukázat, co s ní Uložit jako šablonu a Aktualizovat šablonu. Nové nepovinné
+  pole šablony (zálohy zpětně kompatibilní). Nejdřív náhled.
 
 ### Fáze 3 – Statistiky a vzhled
 
