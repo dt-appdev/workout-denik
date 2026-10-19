@@ -440,6 +440,25 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   čas, dřív pevně 08:00; stará měření s 08:00 beze změny), seznam měření v Těle ukazuje čas. Oprava: úprava měření
   přepsala čas na 08:00 a smazala ostatní pole (`shId` z importu ze Samsung Health), teď zůstanou. Plná záloha beze
   změny. Nový test `tools/testy/wdlog.js`. Navazuje F4-19 (zdroj měření).
+
+- [x] **F4-19** Zdroj měření ze Samsung Health (vzniklo u F4-18 18. 10. 2026; **hotovo 19. 10. 2026**): u měření se
+  ukládá, odkud je, a vypisuje se do exportu pro coache. Nová nepovinná pole měření `src` (druh) a `srcName` (název),
+  formát zálohy beze změny: `app` = ručně v deníku (každé nové měření z formuláře), `sh` = ručně v Samsung Health,
+  `watch` = hodinky, `dev` = jiné zařízení (budoucí váha spárovaná se Samsung Health), `ext` = jiná aplikace (Hevy,
+  aplikace váhy). Pravidlo podle exportu uživatele (19. 10. 2026): `pkg_name` jiný než Samsung Health = jiná
+  aplikace; jinak `deviceuuid` → `device_group` z `com.samsung.health.device_profile.*.csv`: 360001 telefon = ručně
+  v Samsung Health, 360003 hodinky, ostatní = zařízení. Samotné `deviceuuid` nestačí (Hevy zapisuje s `deviceuuid`
+  telefonu). Health Connect se v exportu neukazuje, aplikaci určuje `pkg_name`. Hodinky Galaxy Watch hmotnost
+  neměří (zadává se do nich ručně), měří jen složení těla, proto u nich export píše „Galaxy Watch9 (hmotnost zadaná
+  ručně)“; model se zapisuje, protože Watch4 a Watch9 jsou různé generace snímačů. Zařízení se pamatují jen v
+  telefonu (`Local` `shDev`, do zálohy nejdou), název z `name` (u „My Device“ `model`), ne z `fixed_name` (obsahuje
+  jméno uživatele). Vybrat soubor bere i oba soubory najednou; neznámé zařízení ukáže v panelu importu počet a
+  Vybrat profil zařízení, import jde i bez něj (měření zůstanou bez zdroje). Opakovaný import doplní zdroj už
+  importovaným měřením (řádek „Doplní zdroj měření“), ruční měření přepsané Samsungem dostane zdroj Samsungu. Měření
+  z doby před F4-19 bez `shId` zdroj nemají (nic se nedomýšlí, nebylo jisté, jestli všechna vznikla ručně). Formulář
+  měření ukazuje řádek Zdroj (jen ke čtení), export pro coache „· zdroj: …“ před poznámkou (`WDLOG.srcTxt`). Ikona
+  zdroje v seznamu Těla zatím ne (až s F6-04 a náhledem). Nový test `tools/testy/zdroj-mereni.js`, zdroj ve
+  `zaloha-v2-plna.json.txt` a v testu `wdlog.js`.
 ## Zrušené úlohy
 
 Zrušeno 14. 10. 2026 při kritickém zhodnocení plánu. U každé důvod a původní popis. Znovu nenavrhovat bez nové informace.
@@ -467,6 +486,7 @@ Zrušeno 14. 10. 2026 při kritickém zhodnocení plánu. U každé důvod a pů
 
 | Úloha | Otázka | Rozhodnutí |
 |---|---|---|
+| F4-19 | Jak poznat zdroj, kam ho zapsat, co se starými měřeními? | Rozhodnuto 19. 10. 2026 (výchozí volby návrhu): `pkg_name` + skupina zařízení z profilu zařízení (ne jen `deviceuuid`); tabulka zařízení jen v telefonu, určený zdroj u měření i v záloze; export „· zdroj: …“ s modelem hodinek a „hmotnost zadaná ručně“; v appce jen řádek ve formuláři měření; opakovaný import zdroj doplní; ruční měření přepsané Samsungem má zdroj Samsungu; stará měření bez `shId` bez zdroje. |
 | F4-18 | Jak zapsat sérii, chybějící bolest, čísla měření, čas, kde je export? | Rozhodnuto 18. 10. 2026: série jako v appce „10×55kg“ (ne „55×10“ ze zadání), saně „20m×40kg“, drop set s RIR jen vyplněným; bez vyplněné bolesti „Bolest: –“ (ne „ne“); měření s jedním desetinným místem, série bez nul; čas telefonu (ne pevně Europe/Prague); export v Nastavení → Data a záloha, tlačítko na stránce tréninku zrušeno; 7 dní = dnešek a 6 dní před ním; období se pamatuje; poznámka měření se vypisuje; víc záznamů bolesti appka neukládá. Náhled: čas ve formuláři samostatným řádkem (varianta A), čip Vlastní zrušen. |
 | F6-01 | Přejít na nativní appku hned, nebo nejdřív souběžně s PWA? | Rozhodnuto 14. 10. 2026: žádné dvě živé kopie dat. Nativní appka nejdřív jen se zkušebními daty, pak jeden den přechodu zálohou a PWA ukáže pruh „Data jsou v nativní appce“. |
 | F2-04, F3-04, F3-05, F5-03 | Šablona na řadě, radar, milníky? | Rozhodnuto 14. 10. 2026: zrušeno (sekce Zrušené úlohy). |

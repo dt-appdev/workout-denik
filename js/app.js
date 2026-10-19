@@ -11108,6 +11108,11 @@
       <span class="grow">Čas</span>
       <input class="inp" type="time" id="b-time" value="${toTimeInput(v.date)}">
     </label>`;
+    // zdroj měření (F4-19), jen ke čtení; měření bez zdroje řádek nemá
+    const src = WDLOG.srcTxt(v);
+    if (src) {
+      b += `<div class="frow"><span class="grow">Zdroj</span><span>${esc(src)}</span></div>`;
+    }
     // nadpisy sekcí formuláře před prvním údajem skupiny (F3-23)
     const groups = { weight: "Hmotnost a složení", waist: "Obvody" };
     BODY_F.forEach(([k, l, u], n) => {
@@ -11466,7 +11471,9 @@
         ],
         [
           "Vybrat soubor",
-          "Ve složce samsunghealth_… klepni na soubor, který začíná com.samsung.health.weight a končí .csv.",
+          "Ve složce samsunghealth_… klepni na soubor, který začíná com.samsung.health.weight a končí .csv. " +
+            "Aby appka poznala, odkud měření je (hodinky, ručně, jiná aplikace), podrž prstem a označ i soubor " +
+            "com.samsung.health.device_profile. Stačí jednou, zařízení si appka pamatuje (do zálohy nejdou).",
         ],
         [
           "Zdroje",
@@ -16591,6 +16598,9 @@
           toast("Vyplň aspoň jednu hodnotu.");
           break;
         }
+        if (!old) {
+          o.src = "app"; // F4-19: nové měření zapsané v deníku
+        }
         const items = Object.assign({}, S.body);
         items[v || uid("b")] = o;
         put("body/all", { items });
@@ -17182,8 +17192,8 @@
       cxDate(); // F4-18
       return;
     }
-    if (t.id === "shFileIn") {
-      shRead(t); // F4-13
+    if (t.id === "shFileIn" || t.id === "shDevIn") {
+      shRead(t); // F4-13, profil zařízení F4-19
       return;
     }
     if (f === "coachEx" && d) {
@@ -17704,7 +17714,24 @@
        nejvýš jednou, nejbližší hmotnost); co Samsung nemá (obvody, poznámka, BMI), zůstane,
      - ostatní řádky = nová měření (víc vážení za den se nechá, graf dělá denní průměr),
      - BMI chybí-li v souboru: z hmotnosti a výšky z Nastavení, jinak z výšky v souboru (bmiOf, F3-33),
-     - před zápisem bod obnovy (BK_REASON sh), bez něj jen po potvrzení, stejně jako obnova ze zálohy. */
+     - před zápisem bod obnovy (BK_REASON sh), bez něj jen po potvrzení, stejně jako obnova ze zálohy.
+     ZDROJ MĚŘENÍ (F4-19): u měření b.src (druh) a b.srcName (název), text přes WDLOG.srcTxt (formulář měření,
+     export pro coache). Druhy: app = ručně v deníku (nové měření z formuláře, saveBody), sh = ručně v Samsung
+     Health, watch = hodinky (hmotnost do nich uživatel zadává ručně, měří jen složení těla), dev = jiné zařízení
+     (např. budoucí váha spárovaná se Samsung Health), ext = jiná aplikace (Hevy, aplikace váhy). Měření
+     z doby před F4-19 zdroj nemají (nic se nedomýšlí).
+     - shSrcOf: pkg_name jiný než Samsung Health = ext; jinak podle zařízení z deviceuuid: skupina 360001
+       (telefon) = sh, 360003 (hodinky) = watch, ostatní = dev. Samotné deviceuuid nestačí: Hevy zapisuje
+       s deviceuuid telefonu (ověřeno na exportu uživatele 19. 10. 2026). Health Connect se v exportu
+       neukazuje, aplikace se pozná podle pkg_name.
+     - zařízení (deviceuuid → skupina a název) z com.samsung.health.device_profile.*.csv (shDevParse) se
+       pamatují jen v telefonu (Local shDev), do zálohy nejdou. Název = name, u „My Device“ model; fixed_name
+       (obsahuje jméno uživatele) se nebere.
+     - Vybrat soubor bere jeden i oba soubory najednou. Když v souboru vážení je zařízení, které appka nezná,
+       panel ukáže počet měření z neznámých zařízení a Vybrat profil zařízení (shDevIn). Import jde i bez
+       něj, taková měření zůstanou bez zdroje.
+     - opakovaný import doplní zdroj měřením, která už v appce jsou a zdroj nemají (nic jiného nemění),
+       ruční měření přepsané údaji ze Samsungu dostane zdroj ze Samsungu. */
   const SH_COLS = [
     ["weight", "weight", 1],
     ["body_fat", "fat", 1],
@@ -17717,14 +17744,53 @@
     ["vfa_level", "visceral", 1],
   ];
   const SH_TOL = 0.1;
+  const SH_PKG = "com.sec.android.app.shealth";
   // názvy známých zdrojů (pkg_name), ostatní se ukazují technickým názvem
   const SH_SRC = {
-    "com.sec.android.app.shealth": "Samsung Health",
+    [SH_PKG]: "Samsung Health",
     "com.hevy": "Hevy",
   };
   const SH_SRC_OFF = ["com.hevy"]; // zdroje ve výchozím stavu vypnuté
   const SH_FILE = /^com\.samsung\.health\.weight\.(\d+)\.csv$/;
+  const SH_PHONE = 360001,
+    SH_WATCH = 360003; // device_group v profilu zařízení (F4-19)
   let shData = null; // načtený soubor: { rows, fileAt }
+
+  /* zdroj řádku Samsungu (F4-19) jako { src, srcName? }; null = neznámé zařízení (chybí profil zařízení) */
+  function shSrcOf(r, devs) {
+    if (r.src === "?") return null;
+    if (r.src !== SH_PKG) return { src: "ext", srcName: SH_SRC[r.src] || r.src };
+    const dev = devs[r.dev];
+    if (!dev) return null;
+    if (dev.g === SH_PHONE) return { src: "sh" };
+    if (dev.g === SH_WATCH) return { src: "watch", srcName: dev.n };
+    return { src: "dev", srcName: dev.n };
+  }
+
+  /* obsah souboru com.samsung.health.device_profile…csv na { deviceuuid: { g: skupina, n: název } };
+     null = není to profil zařízení */
+  function shDevParse(text) {
+    const lines = csvRows(String(text).replace(/^\uFEFF/, ""));
+    if (lines.length < 2 || !/^com\.samsung\.health\.device_profile$/.test((lines[0][0] || "").trim())) {
+      return null;
+    }
+    const head = lines[1].map((h) => h.trim());
+    const col = (name) => head.indexOf(name);
+    const iDev = col("deviceuuid"),
+      iGroup = col("device_group"),
+      iName = col("name"),
+      iModel = col("model");
+    if (iDev < 0 || iGroup < 0) return null;
+    const out = {};
+    for (const cells of lines.slice(2)) {
+      const id = (cells[iDev] || "").trim();
+      if (!id) continue;
+      const name = iName >= 0 ? (cells[iName] || "").trim() : "";
+      const model = iModel >= 0 ? (cells[iModel] || "").trim() : "";
+      out[id] = { g: +cells[iGroup] || 0, n: name && name !== "My Device" ? name : model };
+    }
+    return out;
+  }
 
   // je zdroj zaškrtnutý (zapamatovaná volba, jinak výchozí)
   function shSrcOn(pkg) {
@@ -17741,7 +17807,7 @@
       </div>
       <div class="card stack">
         <label class="btn" for="shFileIn">Vybrat soubor</label>
-        <input type="file" id="shFileIn" hidden>
+        <input type="file" id="shFileIn" multiple hidden>
       </div>
     </section>`;
   }
@@ -17788,7 +17854,8 @@
   }
 
   /* obsah souboru com.samsung.health.weight…csv na měření
-     { shId, src, date, height, vals: { weight, fat, … } }; null = není to soubor s měřením */
+     { shId, src (pkg_name), dev (deviceuuid, F4-19), date, height, vals: { weight, fat, … } };
+     null = není to soubor s měřením */
   function shParse(text) {
     const lines = csvRows(String(text).replace(/^﻿/, ""));
     if (lines.length < 2 || !/^com\.samsung\.health\.weight$/.test((lines[0][0] || "").trim())) return null;
@@ -17797,6 +17864,7 @@
     const iTime = col("start_time"),
       iId = col("datauuid"),
       iSrc = col("pkg_name"),
+      iDev = col("deviceuuid"),
       iHeight = col("height");
     if (iTime < 0 || col("weight") < 0) return null;
     const out = [];
@@ -17817,6 +17885,7 @@
       out.push({
         shId: (iId >= 0 && cells[iId].trim()) || "sh" + date + "-" + (vals.weight || ""),
         src: (iSrc >= 0 && cells[iSrc].trim()) || "?",
+        dev: (iDev >= 0 && (cells[iDev] || "").trim()) || "",
         date,
         height: iHeight >= 0 ? num(cells[iHeight]) : NaN,
         vals,
@@ -17825,57 +17894,101 @@
     return out;
   }
 
-  // vybraný soubor: přečte měření a otevře panel importu
+  /* vybrané soubory (vážení, profil zařízení nebo oba, F4-19): profil zařízení si appka zapamatuje,
+     vážení otevře panel importu; samotný profil při otevřeném panelu jen přepočítá souhrn */
   async function shRead(inp) {
-    const file = inp.files && inp.files[0];
+    const files = Array.from(inp.files || []);
     inp.value = "";
-    if (!file) return;
-    let rows = null;
-    try {
-      rows = shParse(await file.text());
-    } catch (e) {
-      rows = null;
+    if (!files.length) return;
+    let rows = null,
+      fileAt = "",
+      devs = null,
+      bad = 0;
+    for (const file of files) {
+      let text = "";
+      try {
+        text = await file.text();
+      } catch (e) {
+        bad++;
+        continue;
+      }
+      const found = shParse(text);
+      if (found) {
+        const m = SH_FILE.exec(file.name);
+        rows = found;
+        fileAt = m ? m[1] : "";
+        continue;
+      }
+      const d = shDevParse(text);
+      if (d) {
+        devs = Object.assign(devs || {}, d);
+      } else {
+        bad++;
+      }
     }
-    if (!rows) {
+    if (devs) {
+      lsSet("shDev", Object.assign({}, lsGet("shDev", {}), devs));
+    }
+    if (!rows && !devs) {
       toast("Tohle není soubor s měřením ze Samsung Health (com.samsung.health.weight….csv).");
       return;
     }
-    if (!rows.length) {
+    if (rows && !rows.length) {
       toast("Soubor neobsahuje žádné měření.");
       return;
     }
-    const m = SH_FILE.exec(file.name);
-    shData = { rows, fileAt: m ? m[1] : "" };
-    shSheet();
+    if (rows) {
+      shData = { rows, fileAt };
+      shSheet();
+    } else if (shData) {
+      shSheet(true);
+    } else {
+      const n = Object.keys(devs).length;
+      toast("Profil zařízení uložen: " + n + " " + plural(n, "zařízení", "zařízení", "zařízení"));
+    }
+    if (bad) {
+      toast("Některý soubor není ze Samsung Health, vynechán.");
+    }
   }
 
   // stejný den v místním čase
   const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
 
-  /* co import udělá se zaškrtnutými zdroji: { add: [řádky], upd: [[id, řádek]], skip, off };
-     shody s ručním měřením viz úvodní komentář sekce */
+  /* co import udělá se zaškrtnutými zdroji: { add: [řádky], upd: [[id, řádek]], src: [[id, zdroj]], skip,
+     off, unknown }; shody s ručním měřením a doplnění zdroje (src, F4-19) viz úvodní komentář sekce,
+     unknown = měření z neznámých zařízení */
   function shPlan() {
-    const have = new Set(),
+    const have = new Map(),
       manual = [];
     for (const [id, b] of Object.entries(S.body)) {
       if (b.shId) {
-        have.add(b.shId);
+        have.set(b.shId, id);
       } else if (isFinite(+b.weight)) {
         manual.push({ id, b });
       }
     }
+    const devs = lsGet("shDev", {});
     const used = new Set();
-    const plan = { add: [], upd: [], skip: 0, off: 0 };
+    const plan = { add: [], upd: [], src: [], skip: 0, off: 0, unknown: 0 };
     for (const r of shData.rows) {
       if (!shSrcOn(r.src)) {
         plan.off++;
         continue;
       }
+      const from = shSrcOf(r, devs);
+      if (!from) {
+        plan.unknown++;
+      }
       if (have.has(r.shId)) {
-        plan.skip++;
+        const id = have.get(r.shId);
+        if (from && S.body[id] && !S.body[id].src) {
+          plan.src.push([id, from]);
+        } else {
+          plan.skip++;
+        }
         continue;
       }
-      have.add(r.shId);
+      have.set(r.shId, "");
       let best = null;
       if (r.vals.weight) {
         for (const x of manual) {
@@ -17922,17 +18035,37 @@
     }
     const p = shPlan();
     const nAdd = p.add.length,
-      nUpd = p.upd.length;
+      nUpd = p.upd.length,
+      nSrc = p.src.length;
     b += `<div class="subh">Co se stane</div>
     <div class="stack tight">
       <div class="frow"><span class="grow">Nová měření</span><b class="num">${fmtInt(nAdd)}</b></div>
       <div class="frow">
         <span class="grow">Přepíše ruční měření</span><b class="num">${fmtInt(nUpd)}</b>
       </div>
+      ${
+        nSrc
+          ? `<div class="frow">
+            <span class="grow">Doplní zdroj měření</span><b class="num">${fmtInt(nSrc)}</b>
+          </div>`
+          : ""
+      }
       <div class="frow"><span class="grow">Už v appce</span><b class="num">${fmtInt(p.skip)}</b></div>
       <div class="frow"><span class="grow">Vynechané zdroje</span><b class="num">${fmtInt(p.off)}</b></div>
     </div>`;
-    if (pointsApi && nAdd + nUpd) {
+    // F4-19: měření z neznámých zařízení → profil zařízení
+    if (p.unknown) {
+      b += `<div class="subh">Zdroj měření</div>
+      <div class="stack tight">
+        <div class="frow">
+          <span class="grow">Neznámé zařízení</span><b class="num">${fmtInt(p.unknown)}</b>
+        </div>
+        <label class="btn" for="shDevIn">Vybrat profil zařízení</label>
+        <input type="file" id="shDevIn" hidden>
+      </div>
+      <div class="xs muted">Soubor com.samsung.health.device_profile ze stejné složky.</div>`;
+    }
+    if (pointsApi && nAdd + nUpd + nSrc) {
       b += `<div class="xs muted">
         Před importem se automaticky vytvoří bod obnovy, takže jde krok vrátit.
       </div>`;
@@ -17941,7 +18074,9 @@
       "Import ze Samsung Health",
       b,
       `<button class="btn grow" data-act="closeSheet">Zrušit</button>
-      <button class="btn primary grow" data-act="shGo" ${nAdd + nUpd ? "" : "disabled"}>Importovat</button>`,
+      <button class="btn primary grow" data-act="shGo" ${nAdd + nUpd + nSrc ? "" : "disabled"}>
+        Importovat
+      </button>`,
       noanim,
     );
   }
@@ -17954,9 +18089,12 @@
     shSheet(true);
   }
 
-  // údaje řádku Samsungu do měření (BMI z výšky, když ho soubor nemá)
+  // údaje řádku Samsungu do měření (BMI z výšky, když ho soubor nemá; zdroj F4-19, neznámý = bez zdroje)
   function shVals(r, keep) {
     const o = Object.assign({}, keep, r.vals, { date: r.date, shId: r.shId });
+    delete o.src;
+    delete o.srcName;
+    Object.assign(o, shSrcOf(r, lsGet("shDev", {})));
     if (!isFinite(o.bmi) && o.weight) {
       const cm = S.cfg.height || (r.height >= 100 && r.height <= 250 ? r.height : 0);
       if (cm) {
@@ -17992,6 +18130,9 @@
     for (const r of p.add) {
       items[uid("b")] = shVals(r, {});
     }
+    for (const [id, from] of p.src) {
+      items[id] = Object.assign({}, items[id], from); // F4-19: jen doplní zdroj
+    }
     put("body/all", { items });
     shData = null;
     closeSheet();
@@ -18000,7 +18141,8 @@
         p.add.length +
         " " +
         plural(p.add.length, "nové měření", "nová měření", "nových měření") +
-        (p.upd.length ? ", přepsáno " + p.upd.length : ""),
+        (p.upd.length ? ", přepsáno " + p.upd.length : "") +
+        (p.src.length ? ", zdroj doplněn " + p.src.length : ""),
     );
   }
 

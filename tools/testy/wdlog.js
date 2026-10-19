@@ -190,9 +190,11 @@ function unit(check) {
       ex: [{ exId: "pull", sets: [] }],
     };
     const body = [
-      { date: at("2026-10-25T07:50"), weight: 76.2, note: "nová váha" },
+      { date: at("2026-10-25T07:50"), weight: 76.2, note: "nová váha", src: "app" },
       {
         date: at("2026-10-21T18:55"),
+        src: "watch",
+        srcName: "Galaxy Watch9",
         weight: 77.4,
         fat: 18.1,
         muscle: 44,
@@ -233,9 +235,10 @@ function unit(check) {
       "   15×30kg",
       "",
       "## Měření",
-      "2026-10-21 st 18:55 · 77.4 kg · tuk 18.1 % · svaly 44.0 %",
+      "2026-10-21 st 18:55 · 77.4 kg · tuk 18.1 % · svaly 44.0 % · " +
+        "zdroj: Galaxy Watch9 (hmotnost zadaná ručně)",
       "2026-10-24 so 08:05 · pas 89.5 · paže 38.5 · stehno 60.0 cm",
-      "2026-10-25 ne 07:50 · 76.2 kg · Pozn.: nová váha",
+      "2026-10-25 ne 07:50 · 76.2 kg · zdroj: ručně v deníku · Pozn.: nová váha",
       "",
       "## Nové cviky",
       "- Shyby (Pull Up) · vlastní váha · primární: široký sval zádový · sekundární: – · gymDep: ne",
@@ -250,6 +253,29 @@ function unit(check) {
       W.counts(data({ workouts: [w1, old, w2, w3], body, from: "2026-10-19", to: "2026-10-25" })),
       { w: 3, b: 3, fresh: 3 },
       "počty pro souhrn v panelu",
+    );
+
+    // zdroj měření (F4-19): všechny druhy, neznámý bez textu
+    check.eq(
+      [
+        W.srcTxt({ src: "sh", weight: 80 }),
+        W.srcTxt({ src: "watch", srcName: "Galaxy Watch4", fat: 18 }),
+        W.srcTxt({ src: "watch", weight: 80 }),
+        W.srcTxt({ src: "dev", srcName: "Body Scale" }),
+        W.srcTxt({ src: "ext", srcName: "Hevy" }),
+        W.srcTxt({ src: "ext" }),
+        W.srcTxt({ weight: 80 }),
+      ],
+      [
+        "ručně v Samsung Health",
+        "Galaxy Watch4",
+        "hodinky (hmotnost zadaná ručně)",
+        "Body Scale",
+        "Hevy",
+        "jiná aplikace",
+        "",
+      ],
+      "text zdroje měření",
     );
 
     // jeden den: hlavička s jedním datem, trénink jen z toho dne
@@ -370,11 +396,15 @@ module.exports = {
     const items = Object.values(backup.data.body);
     const added = items.find((b) => b.weight === 79.1);
     const expectAt = await page.evaluate(() => new Date("2026-10-10T18:37").getTime());
-    check.eq(added && [added.date, added.note], [expectAt, "váha InBody"], "nové měření s časem a poznámkou");
+    check.eq(
+      added && [added.date, added.note, added.src],
+      [expectAt, "váha InBody", "app"],
+      "nové měření s časem, poznámkou a zdrojem ručně v deníku (F4-19)",
+    );
     const edited = backup.data.body["b-sh"] || {};
     check.eq(
-      [edited.date, edited.weight, edited.shId],
-      [Date.parse("2026-09-30T16:13:44Z"), 80.4, "sh-uuid-1"],
+      [edited.date, edited.weight, edited.shId, edited.src],
+      [Date.parse("2026-09-30T16:13:44Z"), 80.4, "sh-uuid-1", undefined],
       "úprava měření zachová čas a shId",
     );
     check.ok(/10\. 10\. 2026 · 18:37/.test(listed), "seznam měření bez času");

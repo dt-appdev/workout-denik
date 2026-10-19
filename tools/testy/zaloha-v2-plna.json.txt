@@ -280,12 +280,16 @@
       "weight": 82.4,
       "fat": 18.2,
       "muscle": 41.5,
-      "note": "ráno nalačno"
+      "note": "ráno nalačno",
+      "shId": "sh-uuid-1",
+      "src": "watch",
+      "srcName": "Galaxy Watch9"
     },
     "b-2": {
       "date": 1788242400000,
       "weight": 81.6,
-      "waist": 86
+      "waist": 86,
+      "src": "app"
     }
   },
   "exercises": {
