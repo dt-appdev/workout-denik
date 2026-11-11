@@ -195,6 +195,8 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   prstu (`:active` i třída `.prs`; tlačítko ztmavne a nepatrně se zmenší, karta jen ztmavne). Rychlé klepnutí drží stisk
   aspoň 160 ms a akci o zbytek odloží (`pressRun`), bez vibrace. Nový prvek s vlastní třídou doplnit do `PRESS_SEL`
   i do CSS sekce; zmenšení jen `transform`, nikdy změna rozměru. Akce reagující už na dotyk (krokovač) bez odkladu.
+  Tlačítko s vlastní barvou pozadí potřebuje vlastní pravidlo stisku (test `stisk.js` takové na hlavních obrazovkách
+  ohlásí). Zaškrtávátko `.switch`: stisk má celý řádek, políčko se zmenší se šedým podkladem.
 - Mezery (F3-43, sekce „SVISLÉ MEZERY“): svislé mezery mezi bloky stránky jen z proměnných v `:root`: `--gap-in` 10 px
   uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu), `--gap-out` 22 px mezi skupinami
   (sekce, nadpis sekce i pod filtry, samostatné velké tlačítko), `--gap-list` 8 px karty a řádky seznamu pod sebou

@@ -4300,7 +4300,9 @@ textarea.inp {
    bez zmenšení. Zmenšení je jen kresba (transform), rozměry, mezery ani dotyková plocha se nemění.
    „Odstranit animace“ v Androidu: jen barva. Sekce je na konci souboru, aby stisk přebil barvy prvků
    (druh série .stype.w, vybraný čip…) se stejnou váhou pravidla. Klávesa číselníku (.kk-b) má vlastní barvu
-   stisku. Nový ovládací prvek = přidat ho sem i do PRESS_SEL v js/app.js. */
+   stisku. Zaškrtávátko (.switch) a čtvereček ve výběru cviků (.pick .chk) se zmenší a dostanou šedý podklad.
+   Nový ovládací prvek = přidat ho sem i do PRESS_SEL v js/app.js; prvek s vlastní barvou pozadí potřebuje
+   vlastní pravidlo stisku (test stisk.js ho najde). */
 :root {
   --press: color-mix(in srgb, var(--ink) 10%, var(--surface));
   --press-on: color-mix(in srgb, var(--ink) 78%, var(--surface));
@@ -4365,6 +4367,49 @@ tr.done .okb:is(:active, .prs) {
 .pickrow:has(.pick:is(:active, .prs)) {
   background: var(--surface-2);
 }
+/* tlačítka s vlastní barvou pozadí, která by stisk přebila (najde je test stisk.js) */
+.card.exinfo > .gal-addb:is(:active, .prs) {
+  background: var(--press);
+}
+.banner.act .btn:is(:active, .prs) {
+  background: color-mix(in srgb, var(--warm) 82%, var(--ink));
+  border-color: color-mix(in srgb, var(--warm) 82%, var(--ink));
+}
+/* zaškrtávátko (nativní políčko, stín kolem něj nejde zakulatit): políčko se zmenší a za ním se objeví
+   zaoblený podklad ::before; stisk má celý řádek .switch (klepnout jde i na text) */
+.switch input {
+  position: relative; /* nad podkladem ::before */
+  transition: transform 0.12s ease;
+}
+.switch::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  margin-top: -17px;
+  border-radius: 10px;
+  background: var(--press);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.switch:is(:active, .prs)::before {
+  opacity: 1;
+}
+.switch:is(:active, .prs) input {
+  transform: scale(0.88);
+}
+/* čtvereček ve výběru cviků: řádek ztmavne (výš), čtvereček se zmenší a dostane šedý okraj */
+.pick .chk {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.pick:is(:active, .prs) .chk {
+  transform: scale(0.88);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--ink) 16%, var(--surface));
+}
 @media (prefers-reduced-motion: reduce) {
   .btn:is(:active, .prs),
   .btn.block:is(:active, .prs),
@@ -4372,7 +4417,9 @@ tr.done .okb:is(:active, .prs) {
   .okb:is(:active, .prs),
   .stype:is(:active, .prs),
   .chip:is(:active, .prs),
-  .tabs button:is(:active, .prs) {
+  .tabs button:is(:active, .prs),
+  .switch:is(:active, .prs) input,
+  .pick:is(:active, .prs) .chk {
     transform: none;
   }
 }

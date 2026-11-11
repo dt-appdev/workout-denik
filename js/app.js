@@ -15056,7 +15056,8 @@
      nestačí: Chrome na Androidu ho při rychlém klepnutí skoro neukáže (čeká, jestli nejde o rolování) a appka
      tlačítko hned po akci překreslí, takže stisk zmizí dřív, než je vidět (zjištěno na videu z telefonu).
      - Při dotyku (pointerdown) dostane prvek z PRESS_SEL třídu .prs, vzhled stisku je v CSS (sekce STISK
-       TLAČÍTEK na konci css/app.css, :active i .prs).
+       TLAČÍTEK na konci css/app.css, :active i .prs). Zaškrtávátko: .prs má celý řádek .switch, políčko se
+       zaškrtne hned (dělá to prohlížeč), odloží se jen akce data-act políčka uvnitř řádku.
      - Klepnutí kratší než PRESS_MIN (160 ms, odsouhlaseno v náhledu) odloží akci o zbytek, takže je stisk vidět
        aspoň 160 ms; delší stisk spustí akci hned po zvednutí prstu jako dřív (pressRun).
      - Další dotyk během čekání nejdřív provede čekající akci (pressFlush), rychlé ✓ ✓ nic neztratí.
@@ -15089,9 +15090,11 @@
   let press = null; // právě stisknutý prvek: {el, at, x, y}
   let pressPending = null; // odložená akce: {el, run, timer}
 
-  // prvek, který dostane stisk (tlačítko s data-act ze seznamu PRESS_SEL), jinak null
+  // prvek, který dostane stisk (tlačítko s data-act ze seznamu PRESS_SEL nebo řádek zaškrtávátka), jinak null
   function pressTarget(node) {
     if (!node || !node.closest || node.closest(".dnd-h")) return null;
+    const box = node.closest(".switch");
+    if (box) return box; // zaškrtávátko: stisk má celý řádek, akci (data-act) políčko uvnitř
     const el = node.closest("[data-act]");
     if (!el || el.matches("input, select, textarea, [data-kk]") || !el.matches(PRESS_SEL)) return null;
     return el;
@@ -15113,16 +15116,18 @@
   function pressRun(el, run) {
     const p = press;
     press = null;
-    const wait = p && p.el === el ? PRESS_MIN - (performance.now() - p.at) : 0;
+    const mine = p && p.el.contains(el); // klepnutí patří k právě stisknutému prvku (i políčko v řádku)
+    const shown = mine ? p.el : el; // prvek, který má stisk vidět
+    const wait = mine ? PRESS_MIN - (performance.now() - p.at) : 0;
     if (wait <= 0) {
-      pressOff(el);
+      pressOff(shown);
       run();
       return;
     }
     pressPending = {
-      el,
+      el: shown,
       run: () => {
-        pressOff(el);
+        pressOff(shown);
         run();
       },
       timer: setTimeout(pressFlush, wait),
