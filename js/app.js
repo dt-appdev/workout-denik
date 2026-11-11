@@ -15051,11 +15051,136 @@
     rsT = setTimeout(drawCharts, 150);
   });
 
+  /* ---------- STISK TLAČÍTEK (F3-53) ----------
+     Ovládací prvek ukáže stisk, jakmile na něj prst sáhne, a to i při rychlém klepnutí. Samotné CSS :active
+     nestačí: Chrome na Androidu ho při rychlém klepnutí skoro neukáže (čeká, jestli nejde o rolování) a appka
+     tlačítko hned po akci překreslí, takže stisk zmizí dřív, než je vidět (zjištěno na videu z telefonu).
+     - Při dotyku (pointerdown) dostane prvek z PRESS_SEL třídu .prs, vzhled stisku je v CSS (sekce STISK
+       TLAČÍTEK na konci css/app.css, :active i .prs). Zaškrtávátko: .prs má celý řádek .switch, políčko se
+       zaškrtne hned (dělá to prohlížeč), odloží se jen akce data-act políčka uvnitř řádku.
+     - Klepnutí kratší než PRESS_MIN (160 ms, odsouhlaseno v náhledu) odloží akci o zbytek, takže je stisk vidět
+       aspoň 160 ms; delší stisk spustí akci hned po zvednutí prstu jako dřív (pressRun).
+     - Další dotyk během čekání nejdřív provede čekající akci (pressFlush), rychlé ✓ ✓ nic neztratí.
+     - Rolování (pointercancel) nebo posun prstu o víc než PRESS_MOVE stisk zruší, akce se odloží jen u prvku,
+       na který prst opravdu klepl.
+     - Bez zdržení zůstává: krokovač − / + (reaguje už na dotyk, data-kk), políčka, ztmavení pozadí panelu (scrim),
+       prvky mimo PRESS_SEL a klepnutí bez prstu (klávesnice, testy přes app.act).
+     - Krok Zpět po odložené akci doplní vykreslení (navEnsure v render), klepnutí zůstává pro Chrome
+       uživatelským gestem několik sekund; stejně tak výběr fotky nebo sdílení fungují i po odkladu.
+     Nový ovládací prvek s vlastní třídou doplnit do PRESS_SEL i do CSS. Žádné vibrace (zamítnuto v návrhu). */
+  const PRESS_MIN = 160; // ms
+  const PRESS_MOVE = 10; // px, větší posun prstu = rolování, ne klepnutí
+  const PRESS_SEL = [
+    ".btn",
+    ".iconbtn",
+    ".okb",
+    ".stype",
+    ".chip",
+    ".seg button",
+    ".tabs button",
+    ".hw",
+    ".exrow",
+    ".pickrow .pick",
+    ".tpl.tap",
+    ".gym-c",
+    ".setrow",
+    ".exh-w",
+    ".infob",
+  ].join(", ");
+  let press = null; // právě stisknutý prvek: {el, at, x, y}
+  let pressPending = null; // odložená akce: {el, run, timer}
+
+  // prvek, který dostane stisk (tlačítko s data-act ze seznamu PRESS_SEL nebo řádek zaškrtávátka), jinak null
+  function pressTarget(node) {
+    if (!node || !node.closest || node.closest(".dnd-h")) return null;
+    const box = node.closest(".switch");
+    if (box) return box; // zaškrtávátko: stisk má celý řádek, akci (data-act) políčko uvnitř
+    const el = node.closest("[data-act]");
+    if (!el || el.matches("input, select, textarea, [data-kk]") || !el.matches(PRESS_SEL)) return null;
+    return el;
+  }
+  function pressOff(el) {
+    if (el) {
+      el.classList.remove("prs");
+    }
+  }
+  // provede odloženou akci hned (další dotyk nebo uplynutí PRESS_MIN)
+  function pressFlush() {
+    if (!pressPending) return;
+    const pending = pressPending;
+    pressPending = null;
+    clearTimeout(pending.timer);
+    pending.run();
+  }
+  // spustí akci klepnutí: hned, nebo až stisk trval aspoň PRESS_MIN
+  function pressRun(el, run) {
+    const p = press;
+    press = null;
+    const mine = p && p.el.contains(el); // klepnutí patří k právě stisknutému prvku (i políčko v řádku)
+    const shown = mine ? p.el : el; // prvek, který má stisk vidět
+    const wait = mine ? PRESS_MIN - (performance.now() - p.at) : 0;
+    if (wait <= 0) {
+      pressOff(shown);
+      run();
+      return;
+    }
+    pressPending = {
+      el: shown,
+      run: () => {
+        pressOff(shown);
+        run();
+      },
+      timer: setTimeout(pressFlush, wait),
+    };
+  }
+  document.addEventListener(
+    "pointerdown",
+    (ev) => {
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+      pressFlush();
+      if (press) {
+        pressOff(press.el);
+      }
+      const el = pressTarget(ev.target);
+      press = el ? { el, at: performance.now(), x: ev.clientX, y: ev.clientY } : null;
+      if (el) {
+        el.classList.add("prs");
+      }
+    },
+    true,
+  );
+  document.addEventListener("pointermove", (ev) => {
+    if (!press) return;
+    if (Math.hypot(ev.clientX - press.x, ev.clientY - press.y) > PRESS_MOVE) {
+      pressOff(press.el);
+      press = null;
+    }
+  });
+  document.addEventListener("pointercancel", () => {
+    if (!press) return;
+    pressOff(press.el);
+    press = null;
+  });
+  // prst puštěný mimo prvek (bez klepnutí): stisk zmizí po PRESS_MIN
+  document.addEventListener("pointerup", () => {
+    if (!press) return;
+    const el = press.el;
+    setTimeout(() => {
+      if (!pressPending || pressPending.el !== el) {
+        pressOff(el);
+      }
+    }, PRESS_MIN);
+  });
+
   /* ---------- akce: klepnutí (data-act), psaní a změny v políčkách ---------- */
   document.addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-act]");
     if (!t) return;
     if (ev.target.closest(".dnd-h")) return; // úchyt v kartě, která je tlačítko (F2-06), kartu neotevře
+    pressRun(t, () => actClick(ev, t)); // F3-53: krátké klepnutí počká, až je stisk vidět
+  });
+  // provedení akce klepnutí (t = prvek s data-act)
+  function actClick(ev, t) {
     const act = t.dataset.act,
       v = t.dataset.v,
       i = +t.dataset.i,
@@ -16907,7 +17032,7 @@
         deleteTestData();
         break;
     }
-  });
+  }
   /* F1-11: Enter (✓ na klávesnici) v jednořádkovém textovém poli (hledání, názvy, poznámka u měření) schová
      klávesnici, napsaný text zůstane. Od F3-33 i v číselných políčkách mimo sérii (hmotnost a výška
      v Nastavení, formulář měření, délka tréninku, rozsah opakování), od F1-25 tam Enter přechází na další

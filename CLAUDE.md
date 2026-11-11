@@ -72,7 +72,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/wdlog.js` | Text WD-LOG v2 pro coache za období (F4-18): čisté funkce bez úložiště, používá ho `js/app.js`, testuje `tools/testy/wdlog.js` přímo v Node. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `klavesnice.js` (F1-27), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
@@ -191,6 +191,12 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   viditelně nezvětšovat prvky ani mezery (zamítnuto: vyšší přepínače `.seg`, ✓ 52 × 40, který zvýšil řádek série).
   Okraj sahá nejvýš do poloviny mezery k sousednímu prvku, plochy se nesmí překrývat (zaškrtávátka 36 px).
   Všechny prvky v řádku série mají výšku `--row-h` (odznak, políčka, RIR/RPE, ✓), řádek `--tap`.
+- Stisk (F3-53, sekce STISK TLAČÍTEK v `js/app.js` a na konci `css/app.css`): každý ovládací prvek reaguje na dotyk
+  prstu (`:active` i třída `.prs`; tlačítko ztmavne a nepatrně se zmenší, karta jen ztmavne). Rychlé klepnutí drží stisk
+  aspoň 160 ms a akci o zbytek odloží (`pressRun`), bez vibrace. Nový prvek s vlastní třídou doplnit do `PRESS_SEL`
+  i do CSS sekce; zmenšení jen `transform`, nikdy změna rozměru. Akce reagující už na dotyk (krokovač) bez odkladu.
+  Tlačítko s vlastní barvou pozadí potřebuje vlastní pravidlo stisku (test `stisk.js` takové na hlavních obrazovkách
+  ohlásí). Zaškrtávátko `.switch`: stisk má celý řádek, políčko se jen zmenší (šedý podklad za ním zamítnut).
 - Mezery (F3-43, sekce „SVISLÉ MEZERY“): svislé mezery mezi bloky stránky jen z proměnných v `:root`: `--gap-in` 10 px
   uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu), `--gap-out` 22 px mezi skupinami
   (sekce, nadpis sekce i pod filtry, samostatné velké tlačítko), `--gap-list` 8 px karty a řádky seznamu pod sebou

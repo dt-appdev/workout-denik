@@ -704,7 +704,7 @@ a.btn {
 .setrow + .setrow {
   border-top: 1px solid var(--line);
 }
-.setrow:active {
+.setrow:is(:active, .prs) {
   background: var(--surface-2);
 }
 .setrow b {
@@ -1036,7 +1036,7 @@ select.inp {
 .tpl.tap {
   cursor: pointer;
 }
-.tpl.tap:active {
+.tpl.tap:is(:active, .prs) {
   background: var(--surface-2);
 }
 /* F3-49: karta tréninku v historii cviku, klepnutí otevře stránku tréninku */
@@ -1045,14 +1045,14 @@ select.inp {
   width: 100%;
   text-align: left;
 }
-.exh-w:active {
+.exh-w:is(:active, .prs) {
   background: var(--surface-2);
 }
 /* F2-06: karta fitka v Nastavení → Fitka, klepnutí otevře panel fitka */
 .gym-c {
   cursor: pointer;
 }
-.gym-c:active {
+.gym-c:is(:active, .prs) {
   background: var(--surface-2);
 }
 .tpl-h {
@@ -2724,7 +2724,7 @@ body.kb .rest {
   justify-content: center;
   color: var(--ink-2);
 }
-.infob:active {
+.infob:is(:active, .prs) {
   background: var(--surface-2);
 }
 .infob svg {
@@ -4290,4 +4290,119 @@ textarea.inp {
   width: 44px;
   height: 34px;
   font-size: var(--fs-sm);
+}
+/* STISK TLAČÍTEK (F3-53): odezva ve chvíli, kdy prst sáhne na ovládací prvek. Stisk = :active nebo třída .prs
+   z js/app.js (sekce STISK TLAČÍTEK): Chrome při rychlém klepnutí :active skoro neukáže a appka tlačítko hned
+   překreslí, proto ho .prs drží aspoň PRESS_MIN (160 ms) a akci o zbytek odloží (delší stisk bez zdržení).
+   Tlačítka ztmavnou (--press) a nepatrně se zmenší: malá 4 %, přes celou šířku 2 %, ikony a záložky 8 %.
+   Hlavní tlačítko tmavším odstínem --accent-2 (v tmavém motivu světlejší), nebezpečné vyplní --fail-bg,
+   vybraný čip a dílek přepínače zesvětlá (--press-on). Karty a řádky seznamu jen ztmavnou na --surface-2,
+   bez zmenšení. Zmenšení je jen kresba (transform), rozměry, mezery ani dotyková plocha se nemění.
+   „Odstranit animace“ v Androidu: jen barva. Sekce je na konci souboru, aby stisk přebil barvy prvků
+   (druh série .stype.w, vybraný čip…) se stejnou váhou pravidla. Klávesa číselníku (.kk-b) má vlastní barvu
+   stisku. Zaškrtávátko (.switch) se zmenší, čtvereček ve výběru cviků (.pick .chk) se zmenší se šedým okrajem.
+   Nový ovládací prvek = přidat ho sem i do PRESS_SEL v js/app.js; prvek s vlastní barvou pozadí potřebuje
+   vlastní pravidlo stisku (test stisk.js ho najde). */
+:root {
+  --press: color-mix(in srgb, var(--ink) 10%, var(--surface));
+  --press-on: color-mix(in srgb, var(--ink) 78%, var(--surface));
+}
+.btn,
+.iconbtn,
+.okb,
+.stype,
+.chip,
+.seg button,
+.tabs button {
+  transition:
+    transform 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.btn:is(:active, .prs),
+.okb:is(:active, .prs),
+.stype:is(:active, .prs),
+.chip:is(:active, .prs) {
+  background: var(--press);
+  transform: scale(0.96);
+}
+.btn.block:is(:active, .prs) {
+  transform: scale(0.98);
+}
+.btn.primary:is(:active, .prs) {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.btn.danger:is(:active, .prs) {
+  background: var(--fail-bg);
+}
+tr.done .okb:is(:active, .prs) {
+  background: var(--good);
+  opacity: 0.8;
+}
+.iconbtn:is(:active, .prs) {
+  background: var(--press);
+  transform: scale(0.92);
+}
+.seg button:is(:active, .prs) {
+  background: var(--press);
+}
+.chip[aria-pressed="true"]:is(:active, .prs),
+.seg button[aria-pressed="true"]:is(:active, .prs) {
+  background: var(--press-on);
+}
+.tabs button:is(:active, .prs) {
+  transform: scale(0.92);
+  color: var(--ink);
+}
+.tabs button[aria-current="true"]:is(:active, .prs) {
+  color: var(--accent);
+}
+.kk-b:is(:active, .prs) {
+  background: var(--accent-soft);
+}
+.hw:is(:active, .prs),
+.exrow:is(:active, .prs),
+.pickrow:has(.pick:is(:active, .prs)) {
+  background: var(--surface-2);
+}
+/* tlačítka s vlastní barvou pozadí, která by stisk přebila (najde je test stisk.js) */
+.card.exinfo > .gal-addb:is(:active, .prs) {
+  background: var(--press);
+}
+.banner.act .btn:is(:active, .prs) {
+  background: color-mix(in srgb, var(--warm) 82%, var(--ink));
+  border-color: color-mix(in srgb, var(--warm) 82%, var(--ink));
+}
+/* zaškrtávátko: stisk má celý řádek .switch (klepnout jde i na text), políčko se jen zmenší; šedý podklad
+   za políčkem uživatel zamítl (pod červeným políčkem vypadal špatně) */
+.switch input {
+  transition: transform 0.12s ease;
+}
+.switch:is(:active, .prs) input {
+  transform: scale(0.88);
+}
+/* čtvereček ve výběru cviků: řádek ztmavne (výš), čtvereček se zmenší a dostane šedý okraj */
+.pick .chk {
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.pick:is(:active, .prs) .chk {
+  transform: scale(0.88);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--ink) 16%, var(--surface));
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn:is(:active, .prs),
+  .btn.block:is(:active, .prs),
+  .iconbtn:is(:active, .prs),
+  .okb:is(:active, .prs),
+  .stype:is(:active, .prs),
+  .chip:is(:active, .prs),
+  .tabs button:is(:active, .prs),
+  .switch:is(:active, .prs) input,
+  .pick:is(:active, .prs) .chk {
+    transform: none;
+  }
 }

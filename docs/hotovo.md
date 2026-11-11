@@ -392,6 +392,27 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   uloženého tréninku. Data a záloha beze změny. Konflikt s odloženým F1-20 (zmenšení řádků po první sérii):
   řádek jde později zkrátit. Test `tools/testy/poznamka.js`. Popis v sekci „POZNÁMKA KE CVIKU V KARTĚ (F3-52)“
   v `js/app.js`.
+- **F3-53** Stisk tlačítek (přání uživatele 11. 11. 2026, náhled schválen). Dřív: tlačítka při dotyku nedělala
+  nic (výchozí probliknutí Chromu je vypnuté, `-webkit-tap-highlight-color: transparent`), stisk měly jen některé
+  karty a řádky (šablona, fitko, řádek nastavení, historie cviku, číselník), appka působila ploše. **Vzhled:**
+  tlačítka ztmavnou a zmenší se (malá 4 %, přes celou šířku 2 %, ikony a záložky spodní lišty 8 %), hlavní
+  tlačítko odstínem `--accent-2`, nebezpečné vyplní `--fail-bg`, vybraný čip a dílek přepínače zesvětlá; karty
+  a řádky seznamu (Historie, cviky ve Statistikách, výběr cviků) jen ztmavnou na `--surface-2` bez zmenšení.
+  S „Odstranit animace“ jen barva. Zmenšení je jen kresba (`transform`), rozměry, mezery a dotyková plocha
+  (F3-23) se nemění. **Nejkratší stisk:** první verze jen s CSS `:active` při rychlém klepnutí nebyla vidět
+  vůbec (video uživatele z telefonu): Chrome na Androidu `:active` při rychlém klepnutí skoro neukáže a appka
+  tlačítko hned překreslí. Proto appka sama dává při dotyku třídu `.prs` a klepnutí kratší než 160 ms akci
+  o zbytek odloží (vybráno v náhledu z 0 / 80 / 120 / 160 ms); delší stisk spustí akci hned. Další dotyk během
+  čekání čekající akci nejdřív provede. Bez zdržení: krokovač − / +, políčka, pozadí panelu, prvky bez stisku.
+  **Zaškrtávátka** (doplněno na přání): políčko se při stisku zmenší, stisk má celý řádek `.switch`, políčko se
+  zaškrtne hned a odloží se jen akce. Zaoblený šedý podklad za políčkem (byl v náhledu) uživatel po vyzkoušení
+  zamítl, pod červeným políčkem vypadal špatně. Čtvereček ve výběru cviků se zmenší a dostane šedý okraj
+  (vlastní kreslený čtvereček, ne nativní políčko). **Opravy:** Přidat fotku a tlačítko v oranžovém pruhu
+  (Zálohovat, Označit) měly vlastní barvu pozadí, která stisk přebila; test teď projde tlačítka hlavních
+  obrazovek a takové tlačítko ohlásí.
+  **Zamítnuto:** pevné zpoždění každého klepnutí, vibrace (zůstává jen u pauzy a přetažení), vlna (ripple).
+  Data beze změny. Test `tools/testy/stisk.js`. Popis v sekci STISK TLAČÍTEK (F3-53) v `js/app.js` (chování)
+  a na konci `css/app.css` (vzhled).
 
 ## Fáze 4 – Chytré funkce
 
