@@ -4291,3 +4291,86 @@ textarea.inp {
   height: 34px;
   font-size: var(--fs-sm);
 }
+/* STISK TLAČÍTEK (F3-53): odezva ve chvíli, kdy prst sáhne na ovládací prvek (:active), akce sama zůstává
+   okamžitá (žádné zpoždění, žádná vibrace). Tlačítka ztmavnou (--press) a nepatrně se zmenší: malá 4 %,
+   přes celou šířku 2 %, ikony a záložky 8 %. Hlavní tlačítko tmavším odstínem --accent-2 (v tmavém motivu
+   světlejší), nebezpečné vyplní --fail-bg, vybraný čip a dílek přepínače zesvětlá (--press-on). Karty
+   a řádky seznamu jen ztmavnou na --surface-2 jako dřív karta šablony, bez zmenšení. Zmenšení je jen kresba
+   (transform), rozměry, mezery ani dotyková plocha se nemění. „Odstranit animace“ v Androidu: jen barva.
+   Sekce je na konci souboru, aby stisk přebil barvy prvků (druh série .stype.w, vybraný čip…) se stejnou
+   váhou pravidla. Klávesa číselníku (.kk-b) má vlastní barvu stisku. Nový ovládací prvek = přidat ho sem. */
+:root {
+  --press: color-mix(in srgb, var(--ink) 10%, var(--surface));
+  --press-on: color-mix(in srgb, var(--ink) 78%, var(--surface));
+}
+.btn,
+.iconbtn,
+.okb,
+.stype,
+.chip,
+.seg button,
+.tabs button {
+  transition:
+    transform 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.btn:active,
+.okb:active,
+.stype:active,
+.chip:active {
+  background: var(--press);
+  transform: scale(0.96);
+}
+.btn.block:active {
+  transform: scale(0.98);
+}
+.btn.primary:active {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.btn.danger:active {
+  background: var(--fail-bg);
+}
+tr.done .okb:active {
+  background: var(--good);
+  opacity: 0.8;
+}
+.iconbtn:active {
+  background: var(--press);
+  transform: scale(0.92);
+}
+.seg button:active {
+  background: var(--press);
+}
+.chip[aria-pressed="true"]:active,
+.seg button[aria-pressed="true"]:active {
+  background: var(--press-on);
+}
+.tabs button:active {
+  transform: scale(0.92);
+  color: var(--ink);
+}
+.tabs button[aria-current="true"]:active {
+  color: var(--accent);
+}
+.kk-b:active {
+  background: var(--accent-soft);
+}
+.hw:active,
+.exrow:active,
+.pickrow:has(.pick:active) {
+  background: var(--surface-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn:active,
+  .btn.block:active,
+  .iconbtn:active,
+  .okb:active,
+  .stype:active,
+  .chip:active,
+  .tabs button:active {
+    transform: none;
+  }
+}

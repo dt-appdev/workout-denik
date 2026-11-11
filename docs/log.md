@@ -4,6 +4,7 @@ Nejnovější nahoře. Po každé otestované úloze přidat řádek na začáte
 
 | Datum | Úloha | Poznámka |
 |---|---|---|
+| 11. 11. 2026 | F3-53 | Stisk tlačítek: odezva na dotyk prstu (`:active`), tlačítka ztmavnou a nepatrně se zmenší, karty a řádky jen ztmavnou. Akce dál okamžitá, bez vibrace. Jen CSS, data beze změny. Test `stisk.js`. |
 | 11. 11. 2026 | F1-27 | Klávesnice nezakryje řádek série: ve viewportu `interactive-widget=resizes-content` (stránka se s klávesnicí zmenší, panely nad ní celé), s otevřenou klávesnicí třída `kb` na body: lišta se záložkami schovaná, pruh pauzy těsně nad klávesnicí, políčko doprostřed viditelné části. Panel krokovače u posledního cviku už řádek nezakryje (místo navíc pod stránkou `--kk-room`). Data beze změny. Test `klavesnice.js`. |
 | 11. 11. 2026 | – | Plán: vyhodnoceno Ověřit při používání. Nová etapa 7 Z používání (F1-27 klávesnice nezakryje řádek série, F0-19 místo v `localStorage` a rozdělaný trénink při plné schránce), nativní appka posunuta na etapu 8 hned za ni, F0-20 gesto Zpět od okraje hned po F6-01. Odpovědi v `hotovo.md`. |
 | 19. 10. 2026 | F4-19 | Zdroj měření: nová pole `src` / `srcName` (ručně v deníku, ručně v Samsung Health, hodinky, zařízení, jiná aplikace). Import ze Samsung Health bere i `device_profile` (jeden i oba soubory najednou, zařízení se pamatují jen v telefonu), opakovaný import zdroj doplní. Řádek Zdroj ve formuláři měření, export pro coache krátce „· zdroj: Watch9“ / „ručně“ / „Hevy“. Formát zálohy beze změny. Test `zdroj-mereni.js`. |

@@ -5794,6 +5794,10 @@
      - Mazání: .btn.danger je vždy červený obrys. Patička panelu: vedlejší vlevo, hlavní vpravo, stejně široká
        (Smazat | Uložit u měření a fitka); potvrzovací okno má plné potvrzení (Smazat fotku?), menu cviku
        Odebrat cvik za čárou .bzone. */
+  /* ---------- STISK TLAČÍTEK (F3-53) ----------
+     Odezva na dotyk prstu je jen v CSS (sekce STISK TLAČÍTEK na konci css/app.css, :active), žádný kód tady.
+     Akce se dál spouští hned po zvednutí prstu (click), bez zpoždění a bez vibrace. Nový ovládací prvek
+     s vlastní třídou doplnit do seznamu v té sekci. */
   /* ---------- SVISLÉ MEZERY (F3-43) ----------
      Svislé mezery mezi bloky stránky jen ze tří proměnných v :root v css/app.css, žádné ruční style="margin…"
      v px (úloha „kontrola“ v .github/workflows/nasazeni.yml takový nový řádek v js/app.js odmítne):

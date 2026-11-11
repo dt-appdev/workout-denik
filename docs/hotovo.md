@@ -392,6 +392,17 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   uloženého tréninku. Data a záloha beze změny. Konflikt s odloženým F1-20 (zmenšení řádků po první sérii):
   řádek jde později zkrátit. Test `tools/testy/poznamka.js`. Popis v sekci „POZNÁMKA KE CVIKU V KARTĚ (F3-52)“
   v `js/app.js`.
+- **F3-53** Stisk tlačítek (přání uživatele 11. 11. 2026, náhled schválen bez připomínek). Dřív: tlačítka při
+  dotyku nedělala nic (výchozí probliknutí Chromu je vypnuté, `-webkit-tap-highlight-color: transparent`), stisk
+  měly jen některé karty a řádky (šablona, fitko, řádek nastavení, historie cviku, číselník), appka působila ploše.
+  **Rozhodnuto:** žádné umělé zpoždění akce (zpomalilo by každé klepnutí, i ✓ série), žádná vibrace (zůstává jen
+  u pauzy a přetažení), žádná vlna (ripple, potřebovala by JavaScript). Odezva jen přes CSS `:active`, tedy už
+  ve chvíli, kdy prst sáhne na prvek: tlačítka ztmavnou a zmenší se (malá 4 %, přes celou šířku 2 %, ikony
+  a záložky spodní lišty 8 %), hlavní tlačítko odstínem `--accent-2`, nebezpečné vyplní `--fail-bg`, vybraný čip
+  a dílek přepínače zesvětlá; karty a řádky seznamu (Historie, cviky ve Statistikách, výběr cviků) jen ztmavnou
+  na `--surface-2` bez zmenšení, stejně slabě jako dosavadní karty. S „Odstranit animace“ jen barva. Zmenšení je
+  jen kresba (`transform`), rozměry, mezery a dotyková plocha (F3-23) se nemění. Data beze změny.
+  Test `tools/testy/stisk.js`. Popis v sekci STISK TLAČÍTEK (F3-53) na konci `css/app.css`.
 
 ## Fáze 4 – Chytré funkce
 
