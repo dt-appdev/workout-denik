@@ -654,16 +654,37 @@
         return d;
       }
     },
+    /* zápis; plná schránka (F0-19): smazat kopii pro rychlý start (cache) a zkusit znovu, když ani to
+       nepomůže, nastavit full a ukázat varování (storageFull, F0-19); zápis samotné cache při plné schránce cache smaže */
+    full: false,
     set(k, v) {
       try {
         if (v === undefined || v === null) {
           localStorage.removeItem(this.P + k);
         } else {
-          localStorage.setItem(this.P + k, JSON.stringify(v));
+          const text = JSON.stringify(v);
+          try {
+            localStorage.setItem(this.P + k, text);
+          } catch (e) {
+            if (!lsQuotaErr(e)) throw e;
+            localStorage.removeItem(this.P + "cache");
+            if (k === "cache") return;
+            try {
+              localStorage.setItem(this.P + k, text);
+            } catch (e2) {
+              if (!lsQuotaErr(e2)) throw e2;
+              this.full = true;
+              storageFull();
+            }
+          }
         }
       } catch (e) {}
     },
   };
+  // chyba „schránka je plná“ (Chrome QuotaExceededError), ne zablokovaný zápis pojistkou F0-18
+  function lsQuotaErr(e) {
+    return !!e && (e.name === "QuotaExceededError" || e.code === 22);
+  }
   const lsGet = (k, d) => Local.get(k, d),
     lsSet = (k, v) => Local.set(k, v);
 
@@ -1063,17 +1084,27 @@
     loadActive() {
       return Local.get("active", null);
     },
-    // rozdělaný trénink hned do Local, do databáze (state/active) se zpožděním 2,5 s
+    /* rozdělaný trénink hned do Local, do databáze (state/active) se zpožděním 2,5 s; čas změny d.upd
+       rozhoduje při startu, která kopie je novější (F0-19). Konec tréninku (null) jde do databáze hned,
+       jinak by se po zavření appky do 2,5 s vrátil už uložený trénink. */
     saveActive(draft) {
+      if (draft) {
+        draft.upd = Date.now();
+      }
       Local.set("active", draft);
       clearTimeout(this._at);
-      this._at = setTimeout(() => {
+      const write = () => {
         if (this.backend) {
           this.backend.set("state/active", { draft: draft ? JSON.stringify(draft) : "" }).catch(() => {});
         }
-      }, 2500);
+      };
+      if (draft) {
+        this._at = setTimeout(write, 2500);
+      } else {
+        write();
+      }
     },
-    // rozdělaný trénink z databáze (když v Local chybí)
+    // rozdělaný trénink z databáze (při startu, porovná se s kopií v Local)
     async fetchActive() {
       if (!this.backend) return null;
       try {
@@ -11501,6 +11532,21 @@
         ],
       ],
     },
+    storage: {
+      title: "Místo v zařízení",
+      items: () => [
+        [
+          "Rychlá schránka",
+          "Kopie dat pro rychlý start a rozdělaný trénink. Má limit asi 5 MB, který sdílí appka se všemi " +
+            "testovacími verzemi. Data jsou vždy i v databázi appky, plná schránka je neztratí, jen zpomalí start.",
+        ],
+        [
+          "Testovací verze",
+          "Každá testovací verze, kterou jsi otevřel, má v telefonu vlastní data a ta zůstanou i po skončení " +
+            "testu. Smazání uvolní místo, data téhle appky se ho netýkají.",
+        ],
+      ],
+    },
     samsung: {
       title: "Samsung Health",
       items: () => [
@@ -11801,7 +11847,7 @@
       id: "data",
       name: "Data a záloha",
       icon: "backup",
-      body: () => backupSettings() + nativeSettings() + shSettings() + cxSettings(),
+      body: () => backupSettings() + storageSettings() + nativeSettings() + shSettings() + cxSettings(),
     },
     {
       id: "about",
@@ -18535,6 +18581,93 @@
     return h;
   }
 
+  /* ---------- MÍSTO V ZAŘÍZENÍ (F0-19) ----------
+     Rychlá schránka (localStorage) má limit asi 5 milionů znaků (LS_LIMIT) a sdílí ho vydaná appka se všemi
+     testovacími verzemi na stejné doméně. Při plné schránce Local.set smaže kopii pro rychlý start (cache)
+     a zkusí zápis znovu; když ani to nepomůže, nastaví Local.full a jednou za spuštění ukáže hlášku
+     (storageFull). Rozdělaný trénink má čas změny upd a při startu vyhrává novější kopie (Local nebo
+     databáze, Store.saveActive / boot), konec tréninku jde do databáze hned.
+     Sekci Data a záloha → Místo v zařízení (storageSettings) běžný uživatel nevidí: ukáže se, jen když
+     testovací verze mají v telefonu data (scanTestData, jen ve vydané verzi), schránka je zaplněná aspoň
+     z LS_WARN, nebo zápis selhal. Pruh zaplnění: tahle verze / ostatní (lsUsage). Mazání dat testovacích
+     verzí (testDel, deleteTestData) bylo do F0-19 v O aplikaci. */
+  const LS_LIMIT = 5 * 1024 * 1024,
+    LS_WARN = 0.8;
+  // obsazené místo v localStorage ve znacích (klíč + hodnota): own = tahle verze, other = vše ostatní
+  function lsUsage() {
+    let own = 0,
+      other = 0;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i) || "";
+        const n = k.length + (localStorage.getItem(k) || "").length;
+        if (k.startsWith(Local.P)) {
+          own += n;
+        } else {
+          other += n;
+        }
+      }
+    } catch (e) {}
+    return { own, other };
+  }
+  // hláška při plné schránce, jednou za spuštění
+  function storageFull() {
+    if (storageFull.shown) return;
+    storageFull.shown = true;
+    setTimeout(() => {
+      toast("Místo v zařízení je plné. Data jsou v bezpečí, víc v Nastavení → Data a záloha.");
+      scheduleRender();
+    }, 0);
+  }
+  const pctTxt = (x) => (x > 0 && x < 0.005 ? "< 1 %" : Math.min(100, Math.round(x * 100)) + " %");
+  function storageSettings() {
+    if (!TEST_PR && S.testData === undefined) {
+      scanTestData();
+    }
+    const u = lsUsage();
+    const used = (u.own + u.other) / LS_LIMIT;
+    const tests = !TEST_PR && S.testData && S.testData.n ? S.testData : null;
+    if (!tests && !Local.full && used < LS_WARN) return "";
+    const own = Math.min(1, u.own / LS_LIMIT),
+      other = Math.min(1 - own, u.other / LS_LIMIT);
+    let h = `<section class="sec">
+      <div class="sec-h">
+        <h2>Místo v zařízení</h2>
+        ${helpBtn("storage")}
+      </div>
+      <div class="card stack inner">
+        <div class="kv">
+          <span>Rychlá schránka</span>
+          <b>${Local.full ? "plná" : "zaplněno asi " + pctTxt(used)}</b>
+        </div>
+        <div class="lsbar" role="img" aria-label="Zaplněno ${pctTxt(used)}">
+          <i style="width:${(own * 100).toFixed(1)}%"></i>
+          <i class="o" style="width:${(other * 100).toFixed(1)}%"></i>
+        </div>
+        <div class="xs muted">
+          ${TEST_PR ? "Tahle verze" : "Tahle appka"} ${pctTxt(u.own / LS_LIMIT)} ·
+          ${TEST_PR ? "ostatní" : "testovací verze a jiné"} ${pctTxt(u.other / LS_LIMIT)}
+        </div>
+        ${
+          Local.full
+            ? `<div class="fmsg">
+              Schránka je plná. Trénink se ukládá jen do databáze, start appky bude pomalejší.
+            </div>`
+            : ""
+        }
+      </div>`;
+    if (tests) {
+      h += `<div class="card stack inner mt-in">
+        <div class="kv">
+          <span>Testovací verze</span>
+          <b>${tests.n} ${plural(tests.n, "verze", "verze", "verzí")} · ${fmtSize(tests.bytes)}</b>
+        </div>
+        <button class="btn danger block" data-act="testDel">Smazat data testovacích verzí</button>
+      </div>`;
+    }
+    return h + "</section>";
+  }
+
   /* obsah souboru zálohy jako text a název souboru bez přípony; fotky podle přepínače Zálohovat i fotky;
      null = fotky se nepodařilo přidat */
   // withPhotos: true / false = s fotkami / bez nich bez ohledu na přepínač (přesun do nativní appky, F6-01)
@@ -19166,8 +19299,9 @@
      (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
      Údaje o nasazení jsou v BUILD (js/verze.js), aktualizaci řídí js/pwa.js (window.PWA).
      BUILD (z js/verze.js), TEST_PR (číslo PR z adresy, jinak ""). Nastavení → O aplikaci → Verze aplikace:
-     versionSettings, kontrola aktualizace window.PWA.check(), v testu copyFromMain, ve vydané verzi
-     scanTestData / deleteTestData. Pruh testBar() je součástí topbar(). */
+     versionSettings, kontrola aktualizace window.PWA.check(), v testu copyFromMain. Data testovacích verzí
+     (scanTestData / deleteTestData) se od F0-19 ukazují a mažou v Data a záloha → Místo v zařízení
+     (storageSettings). Pruh testBar() je součástí topbar(). */
   const MAIN_URL = BUILD.vydana || "../"; // adresa vydané verze (z testovací verze)
   const fmtSize = (b) =>
     b < 1048576
@@ -19224,17 +19358,6 @@
       </div>`;
       h += `<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button>
       <a class="btn" href="${esc(MAIN_URL)}">Otevřít vydanou verzi</a>`;
-    } else if (S.testData === undefined) {
-      scanTestData();
-    } else if (S.testData.n) {
-      h +=
-        `<div class="row">
-        <span class="small grow">
-          Data testovacích verzí v telefonu: ${S.testData.n} ` +
-        `${plural(S.testData.n, "verze", "verze", "verzí")} (≈ ${fmtSize(S.testData.bytes)})
-        </span>
-        <button class="btn sm" data-act="testDel">Smazat</button>
-      </div>`;
     }
     if (DEV && window.caches) {
       h += '<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>';
@@ -19771,9 +19894,10 @@
       autoPoint();
       migrateEx();
     }
-    if (ok && !S.active) {
+    if (ok) {
+      // F0-19: novější kopie rozdělaného tréninku vyhrává (v Local mohla při plné schránce zůstat starší)
       const a = await Store.fetchActive();
-      if (a) {
+      if (a && (!S.active || (a.upd || 0) > (S.active.upd || 0))) {
         S.active = a;
         Local.set("active", a);
         scheduleRender();
