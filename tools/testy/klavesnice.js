@@ -1,11 +1,13 @@
-/* Test (F1-27): klávesnice nezakryje řádek série. Otevření klávesnice se simuluje zmenšením okna (stejně jako
+/* Test (F1-27): klávesnice ani panel krokovače nezakryjí řádek série. Krokovač u poslední série posledního cviku
+   (se sloupcem RIR je panel vyšší): řádek je nad panelem (chybějící místo pod stránkou přidá --kk-room) a po zavření
+   panelu místo zmizí. Otevření klávesnice se simuluje zmenšením okna (stejně jako
    s interactive-widget=resizes-content v telefonu). Po Napsat u poslední série posledního cviku: body má třídu kb,
    lišta se záložkami je schovaná a políčko je celé ve viditelné části pod horní lištou. Panel poznámky s klávesnicí
    je nad ní celý i s tlačítkem Uložit. Po zavření klávesnice (původní výška) třída kb zmizí a lišta je zpět. */
 const P = require("./pomocne.js");
 
-const FULL = 915;
-const WITH_KB = 625; // výška okna s otevřenou klávesnicí (asi 290 px klávesnice)
+const FULL = 752; // telefon s lištou Chromu (snímek uživatele)
+const WITH_KB = 462; // výška okna s otevřenou klávesnicí (asi 290 px klávesnice)
 
 // klepnutí na tlačítko s data-act a data-i (delegace kliknutí v appce)
 const actI = (page, name, i) =>
@@ -46,6 +48,10 @@ module.exports = {
     const app = await P.openApp(browser, url, { height: FULL });
     const { page } = app;
 
+    // sloupec RIR: vyšší panel krokovače
+    await app.act("tab", "set");
+    await app.act("effort", "rir");
+    await app.settle();
     // rozdělaný trénink se třemi cviky, aby byl poslední cvik dole na stránce
     await app.act("tab", "train");
     await app.act("startEmpty");
@@ -66,6 +72,16 @@ module.exports = {
     await last.click();
     await app.settle();
     check.ok(await page.$('.sheet [data-act="kkKbd"]'), "krokovač má tlačítko Napsat");
+    const cover = await page.evaluate(() => {
+      const row = document.querySelector(".sets tr.kk-on").getBoundingClientRect();
+      const sheet = document.querySelector("#sheetRoot .sheet").getBoundingClientRect();
+      return { rowBottom: row.bottom, sheetTop: sheet.top };
+    });
+    check.ok(
+      cover.rowBottom <= cover.sheetTop,
+      `krokovač: řádek série je nad panelem (řádek do ${Math.round(cover.rowBottom)}, ` +
+        `panel od ${Math.round(cover.sheetTop)})`,
+    );
     await page.click('.sheet [data-act="kkKbd"]');
     await app.settle();
     // klávesnice se otevře: okno se zmenší
@@ -86,6 +102,8 @@ module.exports = {
     await app.settle(500);
     s = await pageState(page);
     check.ok(!s.kb && s.tabs, "po zavření klávesnice lišta zpět a třída kb pryč");
+    const room = await page.evaluate(() => document.documentElement.style.getPropertyValue("--kk-room"));
+    check.eq(room, "", "po zavření krokovače není pod stránkou místo navíc");
 
     // panel poznámky s klávesnicí: celý nad klávesnicí i s tlačítkem Uložit
     await page.evaluate(() => document.activeElement && document.activeElement.blur());

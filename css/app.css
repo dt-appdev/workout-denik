@@ -299,6 +299,10 @@ button {
   padding-inline: 16px;
   padding-block: 0 calc(96px + env(safe-area-inset-bottom, 0px));
 }
+/* místo pod stránkou, aby šel řádek posledního cviku posunout nad panel krokovače (F1-27, kkScroll) */
+.wrap {
+  margin-bottom: var(--kk-room, 0px);
+}
 /* pruh pauzy nad spodní lištou nesmí zakrýt konec stránky: místo navíc o výšku pruhu (F1-16) */
 body:has(#rest:not([hidden])) .wrap {
   padding-bottom: calc(96px + 16px + max(38px, var(--fs-4xl)) + 8px + env(safe-area-inset-bottom, 0px));
