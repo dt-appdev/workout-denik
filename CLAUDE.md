@@ -191,9 +191,10 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   viditelně nezvětšovat prvky ani mezery (zamítnuto: vyšší přepínače `.seg`, ✓ 52 × 40, který zvýšil řádek série).
   Okraj sahá nejvýš do poloviny mezery k sousednímu prvku, plochy se nesmí překrývat (zaškrtávátka 36 px).
   Všechny prvky v řádku série mají výšku `--row-h` (odznak, políčka, RIR/RPE, ✓), řádek `--tap`.
-- Stisk (F3-53, sekce STISK TLAČÍTEK na konci `css/app.css`): každý ovládací prvek reaguje na dotyk prstu přes `:active`
-  (tlačítko ztmavne a nepatrně se zmenší, karta jen ztmavne), akce zůstává okamžitá, bez zpoždění a vibrace. Nový prvek
-  s vlastní třídou doplnit do té sekce; zmenšení jen `transform`, nikdy změna rozměru.
+- Stisk (F3-53, sekce STISK TLAČÍTEK v `js/app.js` a na konci `css/app.css`): každý ovládací prvek reaguje na dotyk
+  prstu (`:active` i třída `.prs`; tlačítko ztmavne a nepatrně se zmenší, karta jen ztmavne). Rychlé klepnutí drží stisk
+  aspoň 160 ms a akci o zbytek odloží (`pressRun`), bez vibrace. Nový prvek s vlastní třídou doplnit do `PRESS_SEL`
+  i do CSS sekce; zmenšení jen `transform`, nikdy změna rozměru. Akce reagující už na dotyk (krokovač) bez odkladu.
 - Mezery (F3-43, sekce „SVISLÉ MEZERY“): svislé mezery mezi bloky stránky jen z proměnných v `:root`: `--gap-in` 10 px
   uvnitř skupiny (nadpis sekce → obsah, blok ovládání nahoře mezi sebou i k obsahu), `--gap-out` 22 px mezi skupinami
   (sekce, nadpis sekce i pod filtry, samostatné velké tlačítko), `--gap-list` 8 px karty a řádky seznamu pod sebou
