@@ -404,9 +404,10 @@ Archiv k `docs/plan-vyvoje.md`: celé popisy hotových úloh a vyřešené otáz
   tlačítko hned překreslí. Proto appka sama dává při dotyku třídu `.prs` a klepnutí kratší než 160 ms akci
   o zbytek odloží (vybráno v náhledu z 0 / 80 / 120 / 160 ms); delší stisk spustí akci hned. Další dotyk během
   čekání čekající akci nejdřív provede. Bez zdržení: krokovač − / +, políčka, pozadí panelu, prvky bez stisku.
-  **Zaškrtávátka** (doplněno na přání, náhled schválen): políčko se při stisku zmenší a za ním se objeví zaoblený
-  šedý podklad (nativní políčko kulatý stín neumí), stisk má celý řádek `.switch`, políčko se zaškrtne hned
-  a odloží se jen akce. Čtvereček ve výběru cviků stejně. **Opravy:** Přidat fotku a tlačítko v oranžovém pruhu
+  **Zaškrtávátka** (doplněno na přání): políčko se při stisku zmenší, stisk má celý řádek `.switch`, políčko se
+  zaškrtne hned a odloží se jen akce. Zaoblený šedý podklad za políčkem (byl v náhledu) uživatel po vyzkoušení
+  zamítl, pod červeným políčkem vypadal špatně. Čtvereček ve výběru cviků se zmenší a dostane šedý okraj
+  (vlastní kreslený čtvereček, ne nativní políčko). **Opravy:** Přidat fotku a tlačítko v oranžovém pruhu
   (Zálohovat, Označit) měly vlastní barvu pozadí, která stisk přebila; test teď projde tlačítka hlavních
   obrazovek a takové tlačítko ohlásí.
   **Zamítnuto:** pevné zpoždění každého klepnutí, vibrace (zůstává jen u pauzy a přetažení), vlna (ripple).
