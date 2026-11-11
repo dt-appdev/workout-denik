@@ -57,7 +57,8 @@ flowchart LR
   E3 --> E4[Etapa 4<br/>Drobnosti]
   E4 --> E5[Etapa 5<br/>Jednotný vzhled]
   E5 --> E6[Etapa 6<br/>Testy a stopky]
-  E6 -.-> E7[Etapa 7<br/>Nativní appka]
+  E6 --> E7[Etapa 7<br/>Z používání]
+  E7 --> E8[Etapa 8<br/>Nativní appka]
 ```
 
 #### Etapa 0 – Priorita uživatele (zapsáno 30. 9. 2026, začít ve čtvrtek 1. 10. 2026)
@@ -117,30 +118,30 @@ flowchart LR
 21. ~~**F1-24** Stopky u série na čas~~ – hotovo 14. 10. 2026.
 22. Bez priority (užitek zatím nejasný, rozhodne uživatel): F1-12, F1-20, F3-15, F4-09, F4-11, F5-04, F5-05, F5-08, F5-09.
 
-#### Etapa 7 – Nativní appka (zapsáno 13. 10. 2026)
+#### Etapa 7 – Z používání (zapsáno 11. 11. 2026)
 
-Kdy začít, určí uživatel; úlohy jdou jen v tomto pořadí (každá stojí na předchozí). Popis a rozhodnutí ve Fázi 6. Před F6-01 je hotová F0-17 (testy). F5-02 nezávisí na nativní appce, doporučené místo je za F6-03.
+Vady zjištěné při skutečném používání v telefonu (odpovědi uživatele na Ověřit při používání, 11. 11. 2026). Mají přednost před nativní appkou.
 
-23. **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
-24. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
-25. **F6-03** Záloha se zálohou telefonu (Google One).
-26. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
-27. **F6-04** Složení těla ze Samsung Health do Těla.
-28. **F6-05** Tep z hodinek k tréninku (až po F6-04).
+23. **F1-27** Klávesnice nezakryje řádek série.
+24. **F0-19** Místo v rychlé schránce (`localStorage`) a rozdělaný trénink při plné schránce.
+
+#### Etapa 8 – Nativní appka (zapsáno 13. 10. 2026, posunuto 11. 11. 2026)
+
+Začít hned po etapě 7: konec pauzy na pozadí ve webové appce nefunguje (ověřeno 11. 11. 2026, oznámení chodí jen s appkou na popředí), spolehlivě ho vyřeší jen F6-02. Úlohy jdou jen v tomto pořadí (každá stojí na předchozí). Popis a rozhodnutí ve Fázi 6. Před F6-01 je hotová F0-17 (testy). F5-02 nezávisí na nativní appce, doporučené místo je za F6-03.
+
+25. **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
+26. **F0-20** Gesto Zpět od okraje (ověřit a opravit v nativní appce).
+27. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
+28. **F6-03** Záloha se zálohou telefonu (Google One).
+29. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
+30. **F6-04** Složení těla ze Samsung Health do Těla.
+31. **F6-05** Tep z hodinek k tréninku (až po F6-04).
 
 Zrušené 14. 10. 2026 (popisy v `hotovo.md`, sekce Zrušené úlohy): F2-04, F3-04, F3-05, F3-29, F3-48, F4-03, F4-10, F5-01, F5-03, F5-06, F5-07. Odložené: F0-11 (podmínky u úlohy), F0-16, F1-15, F3-07, F4-02. Nahrazené: F0-14 (F6-03).
 
-#### Ověřit při používání (souběžně s etapou 1)
+#### Ověřit při používání
 
-Audit testoval v prohlížeči v režimu telefonu, ne v telefonu. Tohle rozhodne jen skutečné používání, nejlépe týden tréninků s poznámkami. Výsledek může změnit pořadí nebo zadání uvedených úloh.
-
-- Jak často cvičíš cvik, který v daném fitku nemá historii (přínos F1-13).
-- Chodí oznámení a vibrace konce pauzy se zhasnutým displejem a appkou na pozadí? (F1-04; Android uspává časovače.)
-- Gboard po Napsat: nezakryje klávesnice řádek? (Přechod klávesou Další z kg na Opak. vyřešila F3-24.)
-- Prediktivní gesto Zpět (Android 14+) v nainstalované appce (F0-06).
-- Čitelnost šedého předvyplnění na slunci a v ostře osvětlené posilovně ve světlém motivu (F3-01, F3-23).
-- Vadí 6 záložek ve spodní liště? (Odloženo, viz Co neděláme.)
-- Velikost dat v `localStorage`: `zd1:cache` drží celou knihovnu cviků i všechny tréninky a limit cca 5 MB sdílí vydaná appka i testovací verze. Časem zkontrolovat; když poroste k limitu, cache zmenšit (např. bez výchozích cviků z `EX_DB`). Databáze pro online hledání (`js/fedb.js`) se už teď načítá až při hledání.
+Vyhodnoceno 11. 11. 2026 (odpovědi v `hotovo.md`, Vyřešené otázky): z výsledků vznikly F1-27, F0-19 a F0-20 a nativní appka (etapa 8) šla dopředu.
 
 ### Převod na PWA
 
@@ -168,6 +169,8 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [ ] **F0-16** Hromadné a hromadné selektivní mazání záznamů (tréninků, měření) (přání uživatele 13. 10. 2026, **odloženo 14. 10. 2026**: pro jednoho uživatele malý přínos, nevratné mazání): dnes jde smazat jen jeden trénink nebo jedno měření. Rozhodnout: kde (Historie, Tělo, Nastavení → Data a záloha), jak vybírat (zaškrtávání v seznamu, filtr podle období, fitka, u měření podle zdroje: ruční / import ze Samsung Health F4-13 s `shId`), potvrzení s počtem a bod obnovy před smazáním (jako před obnovou ze zálohy).
 - [x] **F0-17** Automatické testy (kouřový test, záloha tam a zpět, starší formát zálohy)
 - [x] **F0-18** Pojistka dat vydané verze v testovacích verzích
+- [ ] **F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce (zjištěno 11. 11. 2026): kopie dat pro rychlý start (`zd1:cache`), fronta zápisů a rozdělaný trénink (`zd1:active`) jsou v `localStorage` s limitem asi 5 MB, který sdílí vydaná appka i všechny testovací verze. Při plné schránce zápis tiše selže (`Local.set` chybu zahodí) a ve schránce zůstane starší verze rozdělaného tréninku; po zavření appky se načte ta, ne novější kopie z IndexedDB (`state/active`, bere se jen při prázdné schránce). Návrh: v Nastavení → Data a záloha ukázat obsazené místo, při plné schránce varovat, rozdělaný trénink načítat podle toho, která kopie je novější, případně zmenšit cache (bez výchozích cviků z `EX_DB`).
+- [ ] **F0-20** Gesto Zpět od okraje (zjištěno 11. 11. 2026, Android 17, nainstalovaná appka): tah od okraje neudělá vůbec nic (navazuje na F0-06). Ve webové appce se nehledá, protože v nativní appce (F6-01) se Zpět obsluhuje jinak; ověřit a opravit až tam, hned po F6-01.
 
 ### Fáze 1 – Ovládání při tréninku
 
@@ -198,6 +201,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-26** Poznámka k tréninku už během tréninku
 - [x] **F1-24** Stopky u série na čas
 - [x] **F1-25** Přepisování čísel ve formulářích
+- [ ] **F1-27** Klávesnice nezakryje řádek série (zjištěno 11. 11. 2026): Gboard po klepnutí do políčka série zakryje řádek. V `index.html` chybí ve `viewport` volba `interactive-widget=resizes-content`, bez ní Chrome stránku pod klávesnicí nezmenší. Ověřit i pruh pauzy dole a formuláře v panelech; změna vzhledu podle F3-23 nejdřív v náhledu.
 
 ### Fáze 2 – Šablony a historie
 
@@ -359,7 +363,7 @@ Odloženo (vrátit se, až bude fáze 3 hotová; položky z UX auditu podle pozn
 - Automatická volba fitka podle GPS: ruční volba stačí, GPS vyžaduje oprávnění a baterii.
 - Silueta postavy obarvená podle zatížení ve Statistikách (radar F3-04 zrušen 14. 10. 2026; v souhrnu po tréninku je postava od F3-03).
 - Jemnější dělení partií (biceps/triceps, kvadricepsy/hamstringy/hýždě): podle odpovědi na otevřenou otázku.
-- Méně záložek ve spodní liště (dnes 6, Material Design doporučuje 3–5; UX audit 27. 9. 2026, D): audit doporučuje neměnit, přínos je malý a změna zvyku velká. Vrátit se, jen když přibude záložka nebo to začne vadit (Ověřit při používání).
+- Méně záložek ve spodní liště (dnes 6, Material Design doporučuje 3–5; UX audit 27. 9. 2026, D): audit doporučuje neměnit, přínos je malý a změna zvyku velká. Uživateli nevadí (11. 11. 2026); vrátit se, jen když přibude záložka.
 - Filtry v záložce Cviky schované pod jedno tlačítko „Filtr“ (audit, C): není nutné.
 
 ## Otevřené otázky
