@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Barva podkladu ikony (F6-01): vydaná appka červená jako icons/icon.svg, testovací APK
+         ji při sestavení přepíše na oranžovou (nativni/sestav-apk.sh). -->
+    <color name="ic_launcher_background">#CF3A31</color>
+    <!-- Pozadí při spuštění, stejné jako theme-color v index.html -->
+    <color name="splash_background">#0E1013</color>
+</resources>

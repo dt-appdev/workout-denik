@@ -2,3 +2,10 @@
 *.json
 # Playwright pro automatické testy (F0-17) se instaluje jen lokálně nebo v GitHub Actions.
 node_modules/
+# Nativní obal (F6-01): konfigurace Capacitoru a seznam balíčků do repa patří (nejsou to zálohy).
+!nativni/package.json
+!nativni/package-lock.json
+!nativni/capacitor.config.json
+# Klíč k podpisu APK (F6-01) do repa nikdy nepatří, je jen v secretu GitHubu a v záloze uživatele.
+*.jks
+*.keystore

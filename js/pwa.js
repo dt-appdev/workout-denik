@@ -14,6 +14,8 @@
 (function () {
   "use strict";
   if (!("serviceWorker" in navigator)) return;
+  // nativní appka (F6-01, js/nativni.js) má soubory přímo v APK, aktualizuje se novým APK
+  if (window.NATIVNI) return;
   const loadedAt = Date.now();
   // false = úplně první spuštění, nic nenačítat znovu. Cizí service worker (jiná kopie appky
   // o úroveň výš) se nepočítá, stránku pak převezme vlastní worker.

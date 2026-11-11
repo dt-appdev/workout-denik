@@ -1,0 +1,113 @@
+# APK nativní appky (F6-01), skript nativni/sestav-apk.sh, postup a nastavení v nativni/README.md:
+#   push do main          → podepsané APK jako GitHub Release vN (N = číslo běhu = číslo verze pro Android);
+#                           v telefonu ho stáhne a nainstaluje Obtainium (sleduje poslední vydání, ne předběžná)
+#   PR, který mění nativní obal (nativni/, js/nativni.js, tento soubor)
+#                         → testovací APK „WD TEST #N“ (jiné ID aplikace, jde vedle hlavní) jako předběžné
+#                           vydání test-pr-N, odkaz v komentáři v PR; po zavření PR se vydání smaže.
+#                           Ostatní PR mají jen testovací webovou verzi pr-N (nasazeni.yml).
+#   ručně (Actions → APK → Run workflow) → jako push do main.
+# Klíč k podpisu je v secretech WD_KEYSTORE_B64 (soubor .jks v base64) a WD_KEYSTORE_PASSWORD. Bez nich se APK
+# jen sestaví na zkoušku (nepodepsané, nejde nainstalovat) a nic se nevydá.
+# Secrets dostane jen PR z větve tohoto repa (ne z cizího forku), kód z forku se tak ke klíči nedostane.
+name: APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+    paths:
+      - "nativni/**"
+      - "js/nativni.js"
+      - ".github/workflows/apk.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: apk-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # vydání (GitHub Release)
+      pull-requests: write # komentář s odkazem na testovací APK
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      HAS_KEY: ${{ secrets.WD_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: nativni/package-lock.json
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Sestavit APK
+        env:
+          WD_KEYSTORE_B64: ${{ secrets.WD_KEYSTORE_B64 }}
+          WD_KEYSTORE_PASSWORD: ${{ secrets.WD_KEYSTORE_PASSWORD }}
+          WD_VERSION_CODE: ${{ github.run_number }}
+          NAZEV: ${{ github.event.pull_request.title }}
+          VETEV: ${{ github.head_ref }}
+        run: |
+          if [ -n "$PR" ]; then
+            bash nativni/sestav-apk.sh test "$PR"
+          else
+            bash nativni/sestav-apk.sh vydana
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: nativni/out/*.apk
+          retention-days: 7
+      - name: Vydat APK (main)
+        if: env.PR == '' && env.HAS_KEY == 'true'
+        run: |
+          N=${{ github.run_number }}
+          git log -1 --format='Změna: %s (%h)' > notes.txt
+          gh release create "v$N" nativni/out/workout-denik.apk --target "$GITHUB_SHA" \
+            --title "Workout deník $N" --notes-file notes.txt --latest
+      - name: Vydat testovací APK (PR)
+        if: env.PR != '' && env.HAS_KEY == 'true'
+        run: |
+          TAG="test-pr-$PR"
+          gh release delete "$TAG" --cleanup-tag --yes || true
+          gh release create "$TAG" "nativni/out/workout-denik-test-pr$PR.apk" \
+            --target "${{ github.event.pull_request.head.sha }}" --prerelease \
+            --title "Testovací APK · PR #$PR" --notes "Testovací APK pro PR #$PR, po zavření PR se smaže."
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/workout-denik-test-pr$PR.apk"
+          BODY="<!-- wd-apk -->
+          **Testovací APK** (WD TEST #$PR, jde nainstalovat vedle hlavní appky, má vlastní data):
+          $URL
+
+          Sestaveno z ${{ github.event.pull_request.head.sha }}. Po každém pushi se APK přepíše, stáhni ho znovu
+          a nainstaluj přes staré (data zůstanou)."
+          ID=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '[.[] | select(.body | startswith("<!-- wd-apk -->"))][0].id // empty')
+          if [ -n "$ID" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$ID" -f body="$BODY" > /dev/null
+          else
+            gh pr comment "$PR" --body "$BODY"
+          fi
+
+  # po zavření PR smazat jeho testovací APK
+  uklid:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Smazat testovací APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "test-pr-${{ github.event.pull_request.number }}" --repo "$GITHUB_REPOSITORY" \
+            --cleanup-tag --yes || true

@@ -62,6 +62,8 @@ async function openApp(browser, url, opts) {
     viewport: { width: o.width, height: o.height },
     acceptDownloads: true,
   });
+  // init = skript, který běží v každé stránce před appkou (napodobení nativní appky, F6-01)
+  if (o.init) await context.addInitScript(o.init);
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));

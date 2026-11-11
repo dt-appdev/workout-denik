@@ -358,6 +358,18 @@ body:has(#rest:not([hidden])) .wrap {
   white-space: nowrap;
   text-decoration: none;
 }
+/* pruh ve webové appce po přesunu dat do nativní appky (F6-01, movedBar v js/app.js) */
+.movedbar {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 8px;
+  margin-inline: -16px;
+  padding: 8px 16px;
+  background: #c0322b; /* pevná červená v obou motivech, bílý text musí být čitelný */
+  color: #fff;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+}
 .top h1 small {
   display: block;
   font-family: var(--body);

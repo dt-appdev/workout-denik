@@ -45,7 +45,7 @@ build_time() {
 export_tree() {
   mkdir -p "$2"
   git archive "$1" | tar -x -C "$2"
-  rm -rf "$2/.github" "$2/docs" "$2/puvodni" "$2/tools" "$2/.gitignore" "$2/.ignore" "$2/.git-blame-ignore-revs" \
+  rm -rf "$2/.github" "$2/docs" "$2/puvodni" "$2/tools" "$2/nativni" "$2/.gitignore" "$2/.ignore" "$2/.git-blame-ignore-revs" \
     "$2"/*.md
 }
 
