@@ -122,7 +122,7 @@ flowchart LR
 
 Vady zjištěné při skutečném používání v telefonu (odpovědi uživatele na Ověřit při používání, 11. 11. 2026). Mají přednost před nativní appkou.
 
-23. **F1-27** Klávesnice nezakryje řádek série.
+23. ~~**F1-27** Klávesnice nezakryje řádek série~~ – hotovo 11. 11. 2026.
 24. **F0-19** Místo v rychlé schránce (`localStorage`) a rozdělaný trénink při plné schránce.
 
 #### Etapa 8 – Nativní appka (zapsáno 13. 10. 2026, posunuto 11. 11. 2026)
@@ -201,7 +201,7 @@ Největší přínos při každém tréninku, většinou malé úpravy.
 - [x] **F1-26** Poznámka k tréninku už během tréninku
 - [x] **F1-24** Stopky u série na čas
 - [x] **F1-25** Přepisování čísel ve formulářích
-- [ ] **F1-27** Klávesnice nezakryje řádek série (zjištěno 11. 11. 2026): Gboard po klepnutí do políčka série zakryje řádek. V `index.html` chybí ve `viewport` volba `interactive-widget=resizes-content`, bez ní Chrome stránku pod klávesnicí nezmenší. Ověřit i pruh pauzy dole a formuláře v panelech; změna vzhledu podle F3-23 nejdřív v náhledu.
+- [x] **F1-27** Klávesnice nezakryje řádek série
 
 ### Fáze 2 – Šablony a historie
 

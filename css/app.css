@@ -1964,6 +1964,13 @@ tr.done .okb {
   padding-inline: 12px;
   pointer-events: none;
 }
+/* otevřená klávesnice (F1-27, třída kb na body): lišta se záložkami schovaná, pruh pauzy těsně nad klávesnicí */
+body.kb .tabs {
+  display: none;
+}
+body.kb .rest {
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
 .rest-in {
   max-width: 536px;
   margin: 0 auto;

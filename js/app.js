@@ -13256,7 +13256,7 @@
     const tabs = document.querySelector(".tabs");
     return {
       top: bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0,
-      bottom: tabs ? tabs.getBoundingClientRect().top : window.innerHeight,
+      bottom: tabs && tabs.offsetHeight ? tabs.getBoundingClientRect().top : window.innerHeight,
     };
   }
   function dndStart(ev, grip) {
@@ -17293,6 +17293,52 @@
       }
     }
   });
+
+  /* ---------- KLÁVESNICE NEZAKRYJE ŘÁDEK SÉRIE (F1-27) ----------
+     V index.html má viewport volbu interactive-widget=resizes-content: s otevřenou klávesnicí Chrome zmenší
+     stránku na místo nad klávesnicí (dřív ji klávesnice jen překryla a řádek série u posledního cviku zůstal
+     schovaný). Pevné prvky dole (lišta se záložkami, pruh pauzy, panely) tím vyjedou nad klávesnici, panel celý
+     i s tlačítky. Aby lišta nebrala místo, appka pozná otevřenou klávesnici (kbSync: okno je výrazně nižší než
+     nejvyšší naměřené při stejné šířce a fokus je v políčku pro psaní, kbEditable) a dá body třídu kb: lišta se
+     záložkami se schová (vždy, na všech obrazovkách), pruh pauzy zůstane těsně nad klávesnicí (css/app.css,
+     body.kb). Při otevření klávesnice appka posune políčko s fokusem na stránce (ne v panelu) doprostřed viditelné
+     části: pojistka, kdyby to Chrome neudělal sám (např. po Napsat z krokovače).
+     Pravidla: nový pevný prvek dole musí počítat s body.kb (schovaná lišta má nulový rozměr). V nativní appce
+     (F6-01) řídí zmenšení stránky Android, třída kb platí dál. */
+  const KB_RATIO = 0.8; // klávesnice je otevřená, když okno kleslo pod 80 % plné výšky
+  let kbFullH = window.innerHeight;
+  let kbFullW = window.innerWidth;
+  // otevírá políčko při psaní klávesnici? (zaškrtávátka, datum a čas mají vlastní výběr)
+  function kbEditable(el) {
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    if (el.tagName === "TEXTAREA") return !el.readOnly;
+    if (el.tagName !== "INPUT" || el.readOnly) return false;
+    return !/^(checkbox|radio|range|button|submit|reset|color|file|date|time|datetime-local|month|week)$/.test(
+      el.type,
+    );
+  }
+  // zjistí, jestli je otevřená klávesnice, a nastaví třídu kb; při otevření posune políčko do viditelné části
+  function kbSync() {
+    const height = window.innerHeight;
+    if (window.innerWidth !== kbFullW) {
+      // otočení telefonu: plná výška se měří znovu
+      kbFullW = window.innerWidth;
+      kbFullH = height;
+    }
+    kbFullH = Math.max(kbFullH, height);
+    const input = document.activeElement;
+    const open = height < kbFullH * KB_RATIO && kbEditable(input);
+    if (open === document.body.classList.contains("kb")) return;
+    document.body.classList.toggle("kb", open);
+    if (open && !input.closest(".sheet")) {
+      requestAnimationFrame(() => input.scrollIntoView({ block: "center" }));
+    }
+  }
+  window.addEventListener("resize", kbSync);
+  document.addEventListener("focusin", kbSync);
+  // po opuštění políčka až po přesunu fokusu (přechod na další políčko klávesnici nezavře)
+  document.addEventListener("focusout", () => setTimeout(kbSync, 0));
 
   /* ---------- pravidla zabezpečení (F0-08) ----------
      Content-Security-Policy v index.html: kód a data jen z vlastních souborů, obrázky navíc
