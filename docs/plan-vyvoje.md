@@ -123,7 +123,7 @@ flowchart LR
 Vady zjištěné při skutečném používání v telefonu (odpovědi uživatele na Ověřit při používání, 11. 11. 2026). Mají přednost před nativní appkou.
 
 23. ~~**F1-27** Klávesnice nezakryje řádek série~~ – hotovo 11. 11. 2026.
-24. **F0-19** Místo v rychlé schránce (`localStorage`) a rozdělaný trénink při plné schránce.
+24. ~~**F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce~~ – hotovo 11. 11. 2026.
 
 #### Etapa 8 – Nativní appka (zapsáno 13. 10. 2026, posunuto 11. 11. 2026)
 
@@ -169,7 +169,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [ ] **F0-16** Hromadné a hromadné selektivní mazání záznamů (tréninků, měření) (přání uživatele 13. 10. 2026, **odloženo 14. 10. 2026**: pro jednoho uživatele malý přínos, nevratné mazání): dnes jde smazat jen jeden trénink nebo jedno měření. Rozhodnout: kde (Historie, Tělo, Nastavení → Data a záloha), jak vybírat (zaškrtávání v seznamu, filtr podle období, fitka, u měření podle zdroje: ruční / import ze Samsung Health F4-13 s `shId`), potvrzení s počtem a bod obnovy před smazáním (jako před obnovou ze zálohy).
 - [x] **F0-17** Automatické testy (kouřový test, záloha tam a zpět, starší formát zálohy)
 - [x] **F0-18** Pojistka dat vydané verze v testovacích verzích
-- [ ] **F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce (zjištěno 11. 11. 2026): kopie dat pro rychlý start (`zd1:cache`), fronta zápisů a rozdělaný trénink (`zd1:active`) jsou v `localStorage` s limitem asi 5 MB, který sdílí vydaná appka i všechny testovací verze. Při plné schránce zápis tiše selže (`Local.set` chybu zahodí) a ve schránce zůstane starší verze rozdělaného tréninku; po zavření appky se načte ta, ne novější kopie z IndexedDB (`state/active`, bere se jen při prázdné schránce). Návrh: v Nastavení → Data a záloha ukázat obsazené místo, při plné schránce varovat, rozdělaný trénink načítat podle toho, která kopie je novější, případně zmenšit cache (bez výchozích cviků z `EX_DB`).
+- [x] **F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce
 - [ ] **F0-20** Gesto Zpět od okraje (zjištěno 11. 11. 2026, Android 17, nainstalovaná appka): tah od okraje neudělá vůbec nic (navazuje na F0-06). Ve webové appce se nehledá, protože v nativní appce (F6-01) se Zpět obsluhuje jinak; ověřit a opravit až tam, hned po F6-01.
 
 ### Fáze 1 – Ovládání při tréninku

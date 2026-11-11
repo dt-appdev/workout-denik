@@ -4291,6 +4291,35 @@ textarea.inp {
   height: 34px;
   font-size: var(--fs-sm);
 }
+/* ---------- místo v zařízení (F0-19) ----------
+   .kv = řádek název vlevo, hodnota vpravo (bez políčka); .lsbar = pruh zaplnění schránky: tahle verze, ostatní */
+.kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.kv b {
+  font-weight: 600;
+  text-align: right;
+}
+.lsbar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.lsbar i {
+  display: block;
+  height: 100%;
+  background: var(--chart);
+}
+.lsbar i.o {
+  background: var(--ink-3);
+  opacity: 0.55;
+}
+
 /* STISK TLAČÍTEK (F3-53): odezva ve chvíli, kdy prst sáhne na ovládací prvek. Stisk = :active nebo třída .prs
    z js/app.js (sekce STISK TLAČÍTEK): Chrome při rychlém klepnutí :active skoro neukáže a appka tlačítko hned
    překreslí, proto ho .prs drží aspoň PRESS_MIN (160 ms) a akci o zbytek odloží (delší stisk bez zdržení).
