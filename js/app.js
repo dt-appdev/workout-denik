@@ -14101,6 +14101,7 @@
      verzi PR a lokálně, ve vydané ne. */
   const DEV = !!TEST_PR || !!NATIVE_PR || BUILD.kanal === "lokal";
   const REST_LOG = "wdlog-" + (TEST_PR ? "pr" + TEST_PR : "main");
+  const REST_LOG_MAX = 30;
   async function restLogRead() {
     try {
       const r = await (await caches.open(REST_LOG)).match("log");
@@ -14109,20 +14110,27 @@
       return [];
     }
   }
-  async function restLog(txt) {
+  // zápisy jdou za sebou (restLogQueue), aby se dva rychlé po sobě nepřepsaly
+  let restLogQueue = Promise.resolve();
+  function restLog(txt) {
     if (!DEV || !window.caches) return;
-    try {
-      const a = await restLogRead();
-      a.unshift({ at: Date.now(), txt });
-      await (await caches.open(REST_LOG)).put("log", new Response(JSON.stringify(a.slice(0, 12))));
-    } catch (e) {}
+    const at = Date.now();
+    restLogQueue = restLogQueue.then(async () => {
+      try {
+        const a = await restLogRead();
+        a.unshift({ at, txt });
+        await (
+          await caches.open(REST_LOG)
+        ).put("log", new Response(JSON.stringify(a.slice(0, REST_LOG_MAX))));
+      } catch (e) {}
+    });
   }
   async function sheetRestLog() {
     const a = await restLogRead();
     openSheet(
       "Záznam oznámení",
       `<div class="xs muted mb-list">
-        Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
+        Posledních ${REST_LOG_MAX} událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
       </div>
       ${
         a.length
@@ -14266,6 +14274,7 @@
       const seen = !document.hidden && visibleSince <= S.restEnd;
       if (seen) {
         beep();
+        restLog("konec pauzy: appka na očích, upozornila sama (" + S.cfg.restAlert + ")");
         setTimeout(restClearNotif, 1500);
       } else if (!document.hidden && !(S.cfg.restNotify && notifState() === "granted")) {
         toast("Odpočinek skončil");
@@ -14341,6 +14350,8 @@
        a oznámení se může o minuty zpozdit. Stav obou povolení drží NATIVNI.notif (perm, exact).
      - Zvuk a vibraci oznámení určuje kanál Androidu podle S.cfg.restAlert (tři kanály v js/nativni.js),
        vlastní rytmus vibrace REST_VIB oznámení nemá.
+     - Záznam oznámení (jen DEV, restLog): naplánování, zrušení, kdo na konci upozornil a co o appce
+       hlásí Android (NATIVNI.onState), pro hledání chyb v telefonu.
      Ve webové verzi se nic z toho nevolá. */
   const REST_NAT_ID = 1,
     REST_NAT_TEST_ID = 2;
@@ -14350,6 +14361,13 @@
   function restNative(on) {
     restNatOff = false;
     if (on && S.restEnd > Date.now()) {
+      restLog(
+        "Android: naplánováno na " +
+          new Date(S.restEnd).toLocaleTimeString("cs-CZ") +
+          (window.NATIVNI.notif.exact === "granted" ? "" : " (nepřesně)") +
+          ", " +
+          S.cfg.restAlert,
+      );
       window.NATIVNI.notif.schedule({
         id: REST_NAT_ID,
         at: S.restEnd,
@@ -14358,12 +14376,14 @@
         mode: S.cfg.restAlert,
       });
     } else {
+      restLog("Android: oznámení zrušeno");
       window.NATIVNI.notif.cancel(REST_NAT_ID);
     }
   }
   // appka je vteřinu před koncem pauzy na očích: konec ohlásí sama, oznámení se zruší
   function restNativeSeen(left) {
     if (!NATIVE || restNatOff || document.hidden || left <= 0 || left > 1) return;
+    restLog("Android: oznámení zrušeno vteřinu před koncem, appka je na očích");
     window.NATIVNI.notif.cancel(REST_NAT_ID);
     restNatOff = true;
   }
@@ -14408,6 +14428,17 @@
     window.NATIVNI.notif.onChange = () => {
       restPost();
       scheduleRender();
+    };
+    // záznam oznámení (jen DEV): co o appce hlásí Android (aktivní = na popředí)
+    window.NATIVNI.onState = (active) => {
+      if (S.restEnd && S.active) {
+        restLog(
+          "Android: appka " +
+            (active ? "aktivní" : "neaktivní") +
+            ", stránka " +
+            (document.hidden ? "skrytá" : "viditelná"),
+        );
+      }
     };
   }
 

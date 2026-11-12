@@ -161,6 +161,8 @@
         throw err;
       }
     },
+    // změna stavu appky podle Androidu (true = na popředí), nastaví js/app.js pro záznam oznámení (F6-02)
+    onState: null,
     // co udělat při systémovém Zpět (nastaví js/app.js); dokud appka neběží, Zpět aplikaci schová
     onBack: null,
     // schová aplikaci na pozadí (neukončí ji, pauza a rozdělaný trénink běží dál)
@@ -175,6 +177,13 @@
       window.NATIVNI.onBack();
     } else {
       window.NATIVNI.minimize();
+    }
+  });
+
+  // stav appky podle Androidu (na popředí / na pozadí), jen pro záznam oznámení v testovací verzi
+  App.addListener("appStateChange", (state) => {
+    if (window.NATIVNI.onState) {
+      window.NATIVNI.onState(!!(state && state.isActive));
     }
   });
 
