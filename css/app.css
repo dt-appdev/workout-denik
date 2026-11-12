@@ -308,6 +308,22 @@ body:has(#rest:not([hidden])) .wrap {
   padding-bottom: calc(96px + 16px + max(38px, var(--fs-4xl)) + 8px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Nativní appka (F6-01, třída nativni na <html> z js/nativni.js): WebView kreslí stránku i pod stavový řádek
+   a navigační lištu Androidu (env(safe-area-inset-*) = jejich výška). Pruh v barvě pozadí pod stavovým řádkem,
+   aby pod ním neprosvítala posouvaná stránka (nad lištou se záložkami, pod tmavým pozadím panelu .scrim). Spodní
+   okraj už má .wrap, okraj :root by ho počítal podruhé a stránka by šla posunout, i když se vejde. */
+html.nativni {
+  padding-bottom: 0;
+}
+html.nativni body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  z-index: 40;
+}
+
 /* top bar */
 .top {
   position: sticky;

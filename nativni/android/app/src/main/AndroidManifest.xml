@@ -35,6 +35,13 @@
         </provider>
     </application>
 
+    <!-- Android 11+ jinak aplikaci Fotoaparát nevidí a místo ní otevře jen galerii (fotka u cviku, F2-05) -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <!-- Permissions -->
 
     <!-- obrázky cviků z free-exercise-db (raw.githubusercontent.com), jinak appka běží offline -->

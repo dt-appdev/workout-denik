@@ -34,9 +34,51 @@ v zabudovaném Chromu (WebView). Co WebView neumí, doplní `js/nativni.js` pře
    Soubor klíče `workout-denik-klic.jks` a heslo si ulož i mimo GitHub (Disk, správce hesel). Ze secretu se
    zpátky přečíst nedají. **Ztráta klíče = novou verzi nepůjde nainstalovat přes starou**, jen odinstalovat
    a nainstalovat znovu (s obnovou ze zálohy). Klíč do repa nikdy nepatří (`*.jks` je v `.gitignore`).
-2. **Obtainium** v telefonu (zdarma, z GitHubu nebo F-Droidu): Přidat aplikaci → adresa repa
-   `https://github.com/dt-appdev/workout-denik` → Přidat. Obtainium sleduje poslední vydání (testovací APK jsou
-   předběžná vydání a ignoruje je). Při první instalaci Android požádá o povolení instalace z Obtainia.
+2. **Obtainium** v telefonu, podrobně v další sekci.
+
+## Instalace a aktualizace v telefonu (návod pro nováčka)
+
+**APK** je instalační soubor aplikace pro Android (jako `.exe` ve Windows). Appka není v Obchodu Play, proto se
+APK instaluje „mimo Obchod“ a Android se na to jednou zeptá. **Obtainium** je bezplatná aplikace, která hlídá
+vydání na GitHubu, upozorní na novou verzi a jedním klepnutím ji nainstaluje (náhrada aktualizací z Obchodu Play).
+Data v appce aktualizace nemaže, nová verze se nainstaluje přes starou (obě podepsané stejným klíčem).
+Přesné názvy tlačítek se podle verze Androidu a Obtainia můžou trochu lišit.
+
+### Testovací APK z PR (bez Obtainia)
+
+1. V PR přijde komentář „Testovací APK“ s odkazem (asi 3–5 minut po pushi). Otevři ho v telefonu v Chromu.
+2. Klepni na stažený soubor (oznámení nebo Chrome → ⋮ → Stažené soubory).
+3. Když Android napíše, že Chrome nesmí instalovat neznámé aplikace: **Nastavení** → zapnout **Povolit z tohoto
+   zdroje** → zpět.
+4. **Instalovat**. Varování Play Protect „Neznámá aplikace“: **Další podrobnosti → Přesto nainstalovat**
+   (normální u každého APK mimo Obchod).
+5. Na ploše přibude **WD TEST #N** s oranžovou ikonou. Po další změně v PR stejný postup, nainstaluje se přes
+   předchozí.
+
+### Obtainium (jednou, po prvním vydání z `main`)
+
+1. **Instalace Obtainia:** v Chromu otevři `https://github.com/ImranR98/Obtainium/releases`, u nejnovější verze
+   (štítek **Latest**) rozbal **Assets** a stáhni soubor končící na **`arm64-v8a-release.apk`** (ne `fdroid`).
+   Nainstaluj ho stejně jako testovací APK (body 2–4 výše).
+2. Otevři Obtainium a povol **oznámení** (bez nich se o nové verzi nedozvíš).
+3. Dole záložka **Add App**, do políčka **App Source URL** vlož `https://github.com/dt-appdev/workout-denik`
+   a klepni na **Add**. Ostatní volby nech, hlavně nezapínej **Include prereleases** (to by stahovalo testovací APK).
+4. **Install**. Android se zeptá, jestli smí instalovat Obtainium: povolit stejně jako u Chromu.
+5. Na ploše přibude **Workout deník** s červenou ikonou.
+
+### Aktualizace
+
+Každé sloučení do `main` vydá novou verzi. Obtainium ji samo najde (kontroluje zhruba po několika hodinách)
+a pošle oznámení. Klepni na něj (nebo v Obtainiu u appky **Update**) → **Instalovat**. Hned to zkontroluješ tahem
+prstem dolů na seznamu aplikací v Obtainiu.
+
+### Na co pozor
+
+- Do nativní appky nic skutečného nezapisuj před dnem přechodu (sekce Přechod níže), data by byla ve dvou appkách.
+- Ztráta klíče (`workout-denik-klic.jks` a heslo) = Obtainium další verzi nenainstaluje, jen odinstalovat
+  a obnovit ze zálohy.
+- Google chystá od roku 2027 ověření vývojářů i pro aplikace mimo Obchod Play. Pak bude potřeba jednou
+  zaregistrovat bezplatný účet pro koníčkáře (do 20 zařízení), jinak by Android instalaci odmítl.
 
 ## Přechod z webové appky (až po F6-02)
 

@@ -9,12 +9,15 @@
      (soubor se zapíše do cache/sdileni/ a předá systémové nabídce Sdílet). Zavření nabídky = AbortError,
      stejně jako v Chromu, appka pak zálohu nepočítá jako hotovou (F0-13).
    - Barva ikon ve stavovém řádku podle pozadí appky (světlý / tmavý motiv), doplněk SystemBars.
+   - Třída nativni na <html>: styly jen pro nativní appku (pruh pod stavovým řádkem, okraje, css/app.css).
    Doplňky Capacitoru se volají přes window.Capacitor bez npm a bez build kroku (Capacitor je do stránky
    vloží sám). Nový nativní doplněk = balíček v nativni/package.json a jeho volání tady. */
 (function () {
   "use strict";
   const cap = window.Capacitor;
   if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return;
+  // třída pro styly jen nativní appky (okraj pod stavovým řádkem, css/app.css)
+  document.documentElement.classList.add("nativni");
 
   // doplněk podle názvu (Capacitor ho do stránky vloží, když je v APK)
   function plugin(name) {

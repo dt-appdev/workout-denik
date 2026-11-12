@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Soubory, které appka smí předat jiným aplikacím (sdílení, F6-01): jen dočasná složka sdileni/ v cache -->
+<!-- Soubory, které appka předává jiným aplikacím (F6-01): sdileni/ v cache = soubory ke sdílení (js/nativni.js),
+     Pictures/ = fotka z fotoaparátu u cviku (Capacitor ji tam nechá fotoaparát uložit, BridgeWebChromeClient) -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="sdileni" path="sdileni/" />
+    <external-files-path name="fotoaparat" path="Pictures/" />
 </paths>
