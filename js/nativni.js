@@ -12,6 +12,9 @@
    - Zpět (F0-20): WebView systémové Zpět (tlačítko i tah od okraje) samo neobslouží a aplikace by se hned
      zavřela. Doplněk App ho předá appce: NATIVNI.onBack (nastaví js/app.js, sekce tlačítko Zpět),
      NATIVNI.minimize() schová aplikaci na pozadí (běží dál, jako tlačítko Domů).
+   - Oznámení o konci pauzy (F6-02): NATIVNI.notif, doplněk LocalNotifications. Android oznámení ukáže sám
+     v naplánovaný čas, i když appka spí nebo je displej zamčený. Popis u NATIVNI.notif níže a v js/app.js
+     (sekce KONEC PAUZY V NATIVNÍ APPCE).
    - Třída nativni na <html>: styly jen pro nativní appku (pruh pod stavovým řádkem, okraje, css/app.css).
    Doplňky Capacitoru se volají přes window.Capacitor bez npm a bez build kroku (Capacitor je do stránky
    vloží sám). Nový nativní doplněk = balíček v nativni/package.json a jeho volání tady. */
@@ -30,6 +33,7 @@
   const Share = plugin("Share");
   const SystemBars = plugin("SystemBars");
   const App = plugin("App");
+  const Notif = plugin("LocalNotifications");
 
   // obsah souboru jako base64 (Filesystem zapisuje binární data jen takhle)
   function toBase64(blob) {
@@ -55,7 +59,97 @@
   // název souboru bez lomítek a znaků, které Android v názvu nedovolí
   const safeName = (name) => String(name || "soubor").replace(/[\\/:*?"<>|]+/g, "-");
 
+  /* Oznámení o konci pauzy (F6-02). Zvuk a vibraci oznámení určuje v Androidu „kanál“, ne appka, proto má
+     každá volba Na konci pauzy (S.cfg.restAlert) vlastní kanál; kanál jen s vibrací má místo zvuku ticho
+     (res/raw/ticho.wav, doplněk kanál bez zvuku neumí). Uživatel si kanály může v nastavení Androidu změnit.
+     Volání doplňku jdou za sebou ve frontě (notifRun), aby zrušení nepředběhlo naplánování. */
+  const NOTIF_CHANNELS = {
+    both: { id: "pauza-zvuk-vibrace", name: "Konec pauzy (zvuk i vibrace)", vibration: true },
+    sound: { id: "pauza-zvuk", name: "Konec pauzy (zvuk)", vibration: false },
+    vib: { id: "pauza-vibrace", name: "Konec pauzy (vibrace)", vibration: true, sound: "ticho.wav" },
+  };
+  let notifQueue = Promise.resolve();
+  function notifRun(job) {
+    notifQueue = notifQueue.then(job).catch(() => {});
+    return notifQueue;
+  }
+  // stav povolení z doplňku na stav, který zná appka ("granted", "denied", "default" = ještě se neptala)
+  const permState = (value) => (value === "granted" || value === "denied" ? value : "default");
+  const notif = {
+    // povolení oznámení a povolení plánovat na přesný čas (Android 12+ „Budíky a připomenutí“)
+    perm: "default",
+    exact: "granted",
+    // zavolá se, když se některé povolení změní (nastaví js/app.js)
+    onChange: null,
+    // načte obě povolení ze systému (start appky, návrat do appky z nastavení Androidu)
+    async refresh() {
+      const before = notif.perm + "/" + notif.exact;
+      try {
+        notif.perm = permState((await Notif.checkPermissions()).display);
+        notif.exact =
+          (await Notif.checkExactNotificationSetting()).exact_alarm === "granted" ? "granted" : "denied";
+      } catch (e) {}
+      if (before !== notif.perm + "/" + notif.exact && notif.onChange) {
+        notif.onChange();
+      }
+    },
+    // systémový dotaz Povolit oznámení (Android 13+)
+    async ask() {
+      try {
+        await Notif.requestPermissions();
+      } catch (e) {}
+      await notif.refresh();
+    },
+    // otevře nastavení Androidu „Budíky a připomenutí“, po návratu načte stav
+    async exactAsk() {
+      try {
+        await Notif.changeExactNotificationSetting();
+      } catch (e) {}
+      await notif.refresh();
+    },
+    // naplánuje oznámení id na čas at (ms); mode = klíč kanálu (both / sound / vib). Stejné id nahradí.
+    schedule({ id, at, title, body, mode }) {
+      const channel = NOTIF_CHANNELS[mode] || NOTIF_CHANNELS.both;
+      return notifRun(async () => {
+        await Notif.cancel({ notifications: [{ id }] }).catch(() => {});
+        await Notif.schedule({
+          notifications: [
+            {
+              id,
+              title,
+              body,
+              channelId: channel.id,
+              schedule: { at: new Date(at), allowWhileIdle: true },
+              // bez povolení přesného času naplánovat nepřesně; jinak by doplněk sám otevřel nastavení Androidu
+              isExactNotification: notif.exact === "granted",
+              autoCancel: true,
+            },
+          ],
+        });
+      });
+    },
+    // zruší naplánované oznámení id
+    cancel(id) {
+      return notifRun(() => Notif.cancel({ notifications: [{ id }] }));
+    },
+    // odstraní už zobrazená oznámení appky (naplánovaná nechá)
+    clear() {
+      return notifRun(() => Notif.removeAllDeliveredNotifications());
+    },
+  };
+  for (const channel of Object.values(NOTIF_CHANNELS)) {
+    // důležitost 4 = oznámení vyskočí i přes jinou aplikaci; existující kanál Android nechá, jak je
+    notifRun(() => Notif.createChannel(Object.assign({ importance: 4, visibility: 1 }, channel)));
+  }
+  notif.refresh();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      notif.refresh();
+    }
+  });
+
   window.NATIVNI = {
+    notif,
     // uložení souboru do složky Download v telefonu (stejné místo, kam ukládá Chrome)
     async save({ filename, data, type }) {
       const content = typeof data === "string" ? data : new Blob([data], { type: type || data.type });
