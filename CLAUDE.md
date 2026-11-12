@@ -73,8 +73,9 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/atlas.js` | Anatomické SVG pro svalovou mapu (velké, needitovat ručně). |
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/wdlog.js` | Text WD-LOG v2 pro coache za období (F4-18): čisté funkce bez úložiště, používá ho `js/app.js`, testuje `tools/testy/wdlog.js` přímo v Node. |
+| `js/zaznam.js` | Záznam událostí (F0-21, `window.ZAZNAM`): vlastní databáze IndexedDB `workout-denik-log`, posledních 200 řádků. Načítá se hned po `js/verze.js` (zachytí i chybu, kvůli které `app.js` nenaběhne) a v `sw.js` přes `importScripts`. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `misto.js` (F0-19), `nativni.js` (F6-01), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `misto.js` (F0-19), `nativni.js` (F6-01), `zaznam.js` (F0-21), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
@@ -273,8 +274,11 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Rozepsaná stránka po restartu (F3-16): formulář cviku a úprava tréninku / šablony se ukládají samy
   (`unsavedSync`, `Local` `unsaved`) a po startu je vrací `unsavedRestore`. Nová stránka s rozepsanými daty se doplní
   do `unsavedSnap` a `unsavedRestore`; koncept nikde jinde ručně nemazat ani nezapisovat.
-- Vývojové nástroje (záznam oznámení, zkušební data `FAKE_PLAN`) jen v `DEV` (testovací verze a lokálně), ve vydané
-  verzi nikdy. Nová úloha může do `FAKE_PLAN` přidat své scénáře.
+- Vývojové nástroje (zkušební data `FAKE_PLAN`, zkouška rekordu) jen v `DEV` (testovací verze a lokálně), ve vydané
+  verzi nikdy. Nová úloha může do `FAKE_PLAN` přidat své scénáře. Výjimka: záznam událostí (F0-21) běží i ve vydané verzi.
+- Záznam událostí (F0-21, sekce ZÁZNAM UDÁLOSTÍ v `js/app.js`, `js/zaznam.js`): nová funkce zapisuje své důležité
+  události a selhání přes `evLog("oblast: text")` (v service workeru `ZAZNAM.add(text, true)`). Nikdy tréninková data
+  (názvy cviků, váhy, poznámky), nic při každém překreslení. Do zálohy nepatří a nikam se neposílá.
 - Odmítnuté nápady, znovu nenavrhovat: udržování telefonu vzhůru neslyšitelným tónem (F1-04), swipe na ✓ série
   (tah od levého okraje je v Chromu Zpět), tlačítko Vrátit u smazané série (F2-03),
   schovat přečas pauzy mimo záložku Trénink (F1-16), výchozí graf Max
@@ -294,6 +298,7 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
     `body/all` (měření), `state/active` (rozdělaný trénink),
   - úložiště `points` – body obnovy (celá záloha jako JSON text),
   - úložiště `photos` – fotky u cviků (F2-05, databáze verze 2; `Idb.VER`), mimo `Store`.
+- Záznam událostí (F0-21) má vlastní databázi `workout-denik-log` (`js/zaznam.js`), mimo `Store` a zálohu.
 - Při startu se volá `navigator.storage.persist()`, aby Chrome data nemazal.
 - Drobná nastavení zobrazení jsou v `localStorage` s prefixem `zd1:` (přes `Local`).
 - Cviky (F0-02): `S.exLib` = `EX_DB` + odchylky (`exLoad`), zápis vždy přes `putEx(items)`. Partie jsou klíče

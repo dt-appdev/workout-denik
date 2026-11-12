@@ -16,6 +16,9 @@
      v naplánovaný čas, i když appka spí nebo je displej zamčený. Popis u NATIVNI.notif níže a v js/app.js
      (sekce KONEC PAUZY V NATIVNÍ APPCE).
    - Třída nativni na <html>: styly jen pro nativní appku (pruh pod stavovým řádkem, okraje, css/app.css).
+   - Záznam událostí (F0-21): každé selhání doplňku (oznámení, povolení, uložení, sdílení, stavový řádek)
+     zapíše nlog do záznamu (js/zaznam.js) s názvem akce a chybou Androidu, místo aby se tiše ztratilo.
+     Zavření nabídky Sdílet chyba není. Nový doplněk: chyby jeho volání taky přes nlog.
    Doplňky Capacitoru se volají přes window.Capacitor bez npm a bez build kroku (Capacitor je do stránky
    vloží sám). Nový nativní doplněk = balíček v nativni/package.json a jeho volání tady. */
 (function () {
@@ -34,6 +37,14 @@
   const SystemBars = plugin("SystemBars");
   const App = plugin("App");
   const Notif = plugin("LocalNotifications");
+
+  // selhání doplňku do záznamu událostí (F0-21): co se nepovedlo a co hlásí Android
+  function nlog(what, e) {
+    const msg = (e && (e.message || e.code)) || String(e || "chyba");
+    if (window.ZAZNAM) {
+      window.ZAZNAM.add("Android: " + what + " selhalo (" + msg + ")");
+    }
+  }
 
   // obsah souboru jako base64 (Filesystem zapisuje binární data jen takhle)
   function toBase64(blob) {
@@ -69,8 +80,9 @@
     vib: { id: "pauza-vibrace", name: "Konec pauzy (vibrace)", vibration: true, sound: "ticho.wav" },
   };
   let notifQueue = Promise.resolve();
-  function notifRun(job) {
-    notifQueue = notifQueue.then(job).catch(() => {});
+  // what = název akce pro záznam událostí, když se nepovede
+  function notifRun(what, job) {
+    notifQueue = notifQueue.then(job).catch((e) => nlog(what, e));
     return notifQueue;
   }
   // stav povolení z doplňku na stav, který zná appka ("granted", "denied", "default" = ještě se neptala)
@@ -88,7 +100,9 @@
         notif.perm = permState((await Notif.checkPermissions()).display);
         notif.exact =
           (await Notif.checkExactNotificationSetting()).exact_alarm === "granted" ? "granted" : "denied";
-      } catch (e) {}
+      } catch (e) {
+        nlog("zjištění povolení oznámení", e);
+      }
       if (before !== notif.perm + "/" + notif.exact && notif.onChange) {
         notif.onChange();
       }
@@ -97,20 +111,24 @@
     async ask() {
       try {
         await Notif.requestPermissions();
-      } catch (e) {}
+      } catch (e) {
+        nlog("dotaz na povolení oznámení", e);
+      }
       await notif.refresh();
     },
     // otevře nastavení Androidu „Budíky a připomenutí“, po návratu načte stav
     async exactAsk() {
       try {
         await Notif.changeExactNotificationSetting();
-      } catch (e) {}
+      } catch (e) {
+        nlog("otevření nastavení přesného času", e);
+      }
       await notif.refresh();
     },
     // naplánuje oznámení id na čas at (ms); mode = klíč kanálu (both / sound / vib). Stejné id nahradí.
     schedule({ id, at, title, body, mode }) {
       const channel = NOTIF_CHANNELS[mode] || NOTIF_CHANNELS.both;
-      return notifRun(async () => {
+      return notifRun("naplánování oznámení", async () => {
         await Notif.cancel({ notifications: [{ id }] }).catch(() => {});
         await Notif.schedule({
           notifications: [
@@ -130,16 +148,18 @@
     },
     // zruší naplánované oznámení id
     cancel(id) {
-      return notifRun(() => Notif.cancel({ notifications: [{ id }] }));
+      return notifRun("zrušení oznámení", () => Notif.cancel({ notifications: [{ id }] }));
     },
     // odstraní už zobrazená oznámení appky (naplánovaná nechá)
     clear() {
-      return notifRun(() => Notif.removeAllDeliveredNotifications());
+      return notifRun("odstranění zobrazených oznámení", () => Notif.removeAllDeliveredNotifications());
     },
   };
   for (const channel of Object.values(NOTIF_CHANNELS)) {
     // důležitost 4 = oznámení vyskočí i přes jinou aplikaci; existující kanál Android nechá, jak je
-    notifRun(() => Notif.createChannel(Object.assign({ importance: 4, visibility: 1 }, channel)));
+    notifRun("založení kanálu oznámení " + channel.id, () =>
+      Notif.createChannel(Object.assign({ importance: 4, visibility: 1 }, channel)),
+    );
   }
   notif.refresh();
   document.addEventListener("visibilitychange", () => {
@@ -156,18 +176,19 @@
       try {
         await writeFile("Download/" + safeName(filename), "EXTERNAL_STORAGE", content);
       } catch (e) {
+        nlog("uložení souboru do Stažených", e);
         const err = new Error((e && e.message) || "zápis se nepovedl");
         err.code = "zápis do Stažených se nepovedl";
         throw err;
       }
     },
-    // změna stavu appky podle Androidu (true = na popředí), nastaví js/app.js pro záznam oznámení (F6-02)
+    // změna stavu appky podle Androidu (true = na popředí), nastaví js/app.js pro záznam událostí (F0-21)
     onState: null,
     // co udělat při systémovém Zpět (nastaví js/app.js); dokud appka neběží, Zpět aplikaci schová
     onBack: null,
     // schová aplikaci na pozadí (neukončí ji, pauza a rozdělaný trénink běží dál)
     minimize() {
-      App.minimizeApp().catch(() => {});
+      App.minimizeApp().catch((e) => nlog("schování appky na pozadí", e));
     },
   };
 
@@ -180,7 +201,7 @@
     }
   });
 
-  // stav appky podle Androidu (na popředí / na pozadí), jen pro záznam oznámení v testovací verzi
+  // stav appky podle Androidu (na popředí / na pozadí), pro záznam událostí během pauzy (F0-21)
   App.addListener("appStateChange", (state) => {
     if (window.NATIVNI.onState) {
       window.NATIVNI.onState(!!(state && state.isActive));
@@ -197,14 +218,22 @@
     if (d.url) opts.url = d.url;
     if (Array.isArray(d.files) && d.files.length) {
       opts.files = [];
-      for (const f of d.files) {
-        opts.files.push(await writeFile("sdileni/" + safeName(f.name), "CACHE", f));
+      try {
+        for (const f of d.files) {
+          opts.files.push(await writeFile("sdileni/" + safeName(f.name), "CACHE", f));
+        }
+      } catch (e) {
+        nlog("příprava souboru ke sdílení", e);
+        throw e;
       }
     }
     try {
       await Share.share(opts);
     } catch (e) {
       const msg = (e && e.message) || "";
+      if (!/cancel/i.test(msg)) {
+        nlog("sdílení", e);
+      }
       throw new DOMException(msg || "Sdílení se nepovedlo", /cancel/i.test(msg) ? "AbortError" : "DataError");
     }
   };
@@ -218,7 +247,7 @@
     const m = bg.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
     if (!m) return;
     const light = parseInt(m[1], 16) * 0.299 + parseInt(m[2], 16) * 0.587 + parseInt(m[3], 16) * 0.114 > 140;
-    SystemBars.setStyle({ style: light ? "LIGHT" : "DARK" }).catch(() => {});
+    SystemBars.setStyle({ style: light ? "LIGHT" : "DARK" }).catch((e) => nlog("barva stavového řádku", e));
   }
   document.addEventListener("DOMContentLoaded", () => {
     barsStyle();
