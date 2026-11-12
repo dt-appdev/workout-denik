@@ -1,0 +1,16 @@
+{
+  "appId": "cz.workoutdenik.app",
+  "appName": "Workout deník",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "loggingBehavior": "none",
+  "plugins": {
+    "SystemBars": {
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

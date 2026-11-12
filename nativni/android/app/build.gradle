@@ -1,0 +1,72 @@
+apply plugin: 'com.android.application'
+
+// F6-01: sestavení řídí nativni/sestav-apk.sh (v GitHub Actions), údaje přicházejí v proměnných prostředí:
+//   WD_TEST=1               testovací APK s jiným ID aplikace (jde nainstalovat vedle hlavní, vlastní data)
+//   WD_VERSION_CODE / _NAME  číslo verze (roste s každým sestavením, jinak Android aktualizaci odmítne) a název
+//   WD_KEYSTORE, WD_KEYSTORE_PASSWORD, WD_KEY_ALIAS  klíč k podpisu (secret v GitHubu); bez něj nepodepsané APK
+def wdEnv = { String name, String fallback -> System.getenv(name) ?: fallback }
+def wdTest = wdEnv('WD_TEST', '') == '1'
+def wdKeystore = wdEnv('WD_KEYSTORE', '')
+
+android {
+    namespace = "cz.workoutdenik.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId wdTest ? "cz.workoutdenik.test" : "cz.workoutdenik.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode wdEnv('WD_VERSION_CODE', '1').toInteger()
+        versionName wdEnv('WD_VERSION_NAME', 'lokal')
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (wdKeystore) {
+                storeFile file(wdKeystore)
+                storePassword wdEnv('WD_KEYSTORE_PASSWORD', '')
+                keyAlias wdEnv('WD_KEY_ALIAS', 'workout-denik')
+                keyPassword wdEnv('WD_KEYSTORE_PASSWORD', '')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (wdKeystore) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

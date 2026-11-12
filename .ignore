@@ -8,3 +8,9 @@ fonts/
 icons/
 docs/navrhy/**/*.png
 tools/testy/node_modules/
+nativni/package-lock.json
+nativni/node_modules/
+nativni/www/
+nativni/android/gradlew*
+nativni/android/gradle/
+nativni/android/app/src/main/res/mipmap-*/

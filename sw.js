@@ -25,6 +25,7 @@ const FILES = [
   "js/app.js",
   "js/atlas.js",
   "js/cviky.js",
+  "js/nativni.js",
   "js/pwa.js",
   "js/verze.js",
   "js/wdlog.js",

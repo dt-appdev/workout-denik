@@ -1,7 +1,8 @@
 # Workout deník – kontext pro Claude
 
 Osobní appka na zapisování tréninků ve fitku (inspirovaná Hevy). Běží jako PWA
-na GitHub Pages, používá se na Androidu v Chromu, nainstalovaná na plochu.
+na GitHub Pages, používá se na Androidu v Chromu, nainstalovaná na plochu. Od F6-01 jde stejný kód nainstalovat
+i jako nativní aplikace (APK přes Capacitor, složka `nativni/`, návod v `nativni/README.md`).
 Do září 2026 běžela jako Claude artefakt (jeden HTML soubor, v gitu `d491407:puvodni/workout-denik.html`).
 
 Plán vývoje a priority: `docs/plan-vyvoje.md` (jen otevřené úlohy). Je to jediný zdroj pravdy o tom,
@@ -21,8 +22,9 @@ v `docs/hotovo.md`, log v `docs/log.md`.
   změně popis a pole pro komentář. Komentáře si přečti, zapracuj a implementuj až po pokynu. Když uživatel žádá jen
   kontrolu („ověř, jestli…“), odpověz zjištěním a změnu navrhni jen u skutečné nekonzistence.
 - Jen řešení zdarma, žádné placené služby, API ani knihovny.
-- Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí (jediná výjimka: Playwright pro testy v `tools/testy`,
-  instaluje se jen v úloze „testy" a lokálně při vývoji, F0-17). Nasazuje
+- Čisté HTML/CSS/JavaScript bez build kroku a bez npm závislostí (výjimky: Playwright pro testy v `tools/testy`,
+  instaluje se jen v úloze „testy" a lokálně při vývoji, F0-17; Capacitor ve složce `nativni/` jen pro sestavení
+  APK v GitHub Actions, F6-01, kód appky se nesestavuje). Nasazuje
   GitHub Actions (`.github/workflows/nasazeni.yml`, F0-04): `main` = vydaná verze
   v kořeni webu, každý otevřený PR = testovací verze v `…/workout-denik-test/pr-N/`
   (web samostatného repa `workout-denik-test`, aby šla v Androidu nainstalovat
@@ -72,10 +74,13 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/cviky.js` | Výchozí databáze cviků (`EX_DB`) s partiemi, `EX_DB_OLD` pro převod starých dat. |
 | `js/wdlog.js` | Text WD-LOG v2 pro coache za období (F4-18): čisté funkce bez úložiště, používá ho `js/app.js`, testuje `tools/testy/wdlog.js` přímo v Node. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `misto.js` (F0-19), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `misto.js` (F0-19), `nativni.js` (F6-01), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
-| `js/pwa.js` | Registrace service workeru a automatická aktualizace. |
+| `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
+| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku. Ve webové verzi nic nedělá. |
+| `nativni/` | Nativní obal (F6-01, Capacitor): `capacitor.config.json`, `package.json`, projekt `android/`, skript `sestav-apk.sh`, návod `README.md`. Na web se nekopíruje. |
+| `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST #N“ jen pro PR, který mění nativní obal; klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
 | `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08, a přímého přístupu k úložišti, F0-18) a úloha „testy" (F0-17). |
@@ -250,6 +255,12 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   Při plné schránce `Local.set` obětuje jen `cache`; nový velký klíč v `Local` zvažovat (limit asi 5 MB sdílí
   vydaná appka se všemi testovacími verzemi), sekce MÍSTO V ZAŘÍZENÍ.
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
+- Nativní appka (F6-01, sekce NATIVNÍ APPKA): stejný kód jako web, rozdíly jen přes `NATIVE` / `NATIVE_PR`
+  v `js/app.js` a doplňky v `js/nativni.js` (bez npm, přes `window.Capacitor`). Soubory ukládat jen přes
+  `LocalDownloads`, sdílet přes `navigator.share` (obojí v nativní appce řeší `js/nativni.js`); nová věc, kterou
+  WebView neumí (oznámení, budík, Samsung Health), = doplněk Capacitoru a volání v `js/nativni.js`, ve webové verzi
+  vše jako dřív. Nový soubor appky se do APK dostane sám (`sestav-apk.sh` bere celý commit). Každé sloučení do
+  `main` vydá nové APK.
 - Úložiště jen přes `Local` / `Idb` / `Store`, nikdy přímo `localStorage.setItem`, `indexedDB.open` apod.
   (F0-18, sekce POJISTKA DAT VYDANÉ VERZE): testovací verze PR je na stejné doméně jako vydaná a mohla by
   přepsat skutečná data. Hlídá to úloha „kontrola“ (`.github/kontrola-uloziste.sh`, schválená místa)
@@ -302,7 +313,8 @@ NODE_PATH=$(npm root -g) node tools/testy/spust.js [část názvu testu]
 texty. Změna `data-act`, struktury panelu nebo formátu zálohy proto vyžaduje úpravu testu v téže úloze. Nová úloha,
 která mění zálohu, data nebo hlavní obrazovky, přidá ke svému PR příslušný test; nové pole v datech patří
 do `zaloha-v2-plna.json.txt`. Testy nevidí Android WebView ani
-nativní prostředí, to se zkouší ručně. Ostatní kontroly zůstávají ruční (telefon, náhled).
+nativní prostředí, to se zkouší ručně (testovací APK z PR, F6-01; test `nativni.js` jen napodobuje
+`window.Capacitor`). Ostatní kontroly zůstávají ruční (telefon, náhled).
 
 Appku ručně lokálně: statický server z kořene repa, např. `python3 -m http.server`, a otevřít
 `http://localhost:8000/`. Service worker funguje jen na `localhost` nebo přes HTTPS. Pro kontrolu v prohlížeči lze

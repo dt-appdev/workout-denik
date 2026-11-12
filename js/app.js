@@ -634,9 +634,15 @@
     window.APP_BUILD || {},
   );
   const TEST_PR = (location.pathname.match(/\/pr-(\d+)\//) || [])[1] || "";
+  /* Nativní appka (F6-01, sekce NATIVNÍ APPKA): NATIVE = běží v APK (js/nativni.js), NATIVE_PR = číslo PR
+     u testovacího APK (kanál „nativni-pr“). Testovací APK má jiné ID aplikace, a tím i vlastní úložiště. */
+  const NATIVE = !!window.NATIVNI;
+  const NATIVE_PR = NATIVE && BUILD.kanal === "nativni-pr" ? String(BUILD.pr || "") : "";
   const MAIN_P = "zd1:",
     MAIN_DB = "workout-denik";
-  const FILE_P = "workout-denik" + (TEST_PR ? "-test-pr" + TEST_PR : ""); // začátek názvu staženého souboru
+  // začátek názvu staženého souboru
+  const FILE_P =
+    "workout-denik" + (TEST_PR ? "-test-pr" + TEST_PR : "") + (NATIVE_PR ? "-test-apk-pr" + NATIVE_PR : "");
   const Local = {
     // drobnosti v zařízení (cache, fronta, nastavení zobrazení)
     P: TEST_PR ? "zd1-pr" + TEST_PR + ":" : MAIN_P,
@@ -948,6 +954,8 @@
   const LocalDownloads = {
     // data = text zálohy, nebo soubor / Blob (obrázek souhrnu, F4-08)
     async save({ filename, data, type }) {
+      // F6-01: zabudovaný prohlížeč nativní appky odkaz s download neumí, soubor uloží js/nativni.js
+      if (window.NATIVNI) return window.NATIVNI.save({ filename, data, type });
       const url = URL.createObjectURL(new Blob([data], { type: type || "application/json" }));
       const a = document.createElement("a");
       a.href = url;
@@ -4438,7 +4446,7 @@
         aria-label="${esc(label)}">${IC[icon]}</button>`;
   }
   function topbar(title, sub, left, subCls) {
-    return `${testBar()}
+    return `${testBar()}${movedBar()}
     <header class="top">
       ${left || ""}
       <h1${String(title).length > 18 ? ' class="long"' : ""}>
@@ -11491,6 +11499,27 @@
         return list;
       },
     },
+    native: {
+      title: "Nativní appka",
+      items: () => [
+        [
+          "Co je nativní appka",
+          "Stejná appka nainstalovaná jako aplikace pro Android (APK), ne přes Chrome. Umí víc (třeba " +
+            "spolehlivý konec pauzy), data má ale vlastní: co je tady, nevidí.",
+        ],
+        [
+          "Přesunout data",
+          "Stáhne zálohu i s fotkami. V nativní appce ji obnov (Obnovit ze souboru → Nahradit vše) a od té " +
+            "doby zapisuj jen tam. Tady se pak na každé obrazovce ukáže pruh, aby se trénink nezapsal do " +
+            "špatné appky. Data se nesynchronizují.",
+        ],
+        [
+          "Zrušit přesun",
+          "Vypne pruh. Data tady se při přesunu nemažou, appku jde používat dál (třeba když se nativní " +
+            "appka neosvědčí). Co mezitím přibylo v nativní appce, přeneseš zálohou opačně.",
+        ],
+      ],
+    },
     points: {
       title: "Body obnovy",
       items: () => [
@@ -11818,7 +11847,7 @@
       id: "data",
       name: "Data a záloha",
       icon: "backup",
-      body: () => backupSettings() + storageSettings() + shSettings() + cxSettings(),
+      body: () => backupSettings() + storageSettings() + nativeSettings() + shSettings() + cxSettings(),
     },
     {
       id: "about",
@@ -14051,7 +14080,7 @@
   /* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo,
      kdy byla appka skrytá. Jen pro vývoj: vede se a ukazuje (Nastavení → O aplikaci) jen v testovací
      verzi PR a lokálně, ve vydané ne. */
-  const DEV = !!TEST_PR || BUILD.kanal === "lokal";
+  const DEV = !!TEST_PR || !!NATIVE_PR || BUILD.kanal === "lokal";
   const REST_LOG = "wdlog-" + (TEST_PR ? "pr" + TEST_PR : "main");
   async function restLogRead() {
     try {
@@ -17016,6 +17045,15 @@
       case "bkShare":
         bkShare();
         break;
+      case "natMove":
+        natMove();
+        break;
+      case "natMoveOk":
+        natMoveOk();
+        break;
+      case "natBack":
+        natBack();
+        break;
       case "importOk":
         doImport(v);
         break;
@@ -18632,10 +18670,12 @@
 
   /* obsah souboru zálohy jako text a název souboru bez přípony; fotky podle přepínače Zálohovat i fotky;
      null = fotky se nepodařilo přidat */
-  async function bkBuild() {
+  // withPhotos: true / false = s fotkami / bez nich bez ohledu na přepínač (přesun do nativní appky, F6-01)
+  async function bkBuild(withPhotos) {
     const o = snapshotAll();
     const name = FILE_P + "-" + toDateInput(Date.now());
-    if (lsGet("bkPhotos", true) && photoStats().n) {
+    const photos = withPhotos === undefined ? lsGet("bkPhotos", true) : withPhotos;
+    if (photos && photoStats().n) {
       // F2-05: fotky jako base64 (soubor naroste asi o třetinu víc, než fotky zabírají)
       toast("Připravuji zálohu s fotkami…");
       try {
@@ -18648,7 +18688,7 @@
     }
     return { name, data: bkJson(o) };
   }
-  /* stažení souboru (b = už připravená záloha z bkBuild, jinak se připraví) */
+  /* stažení souboru (b = už připravená záloha z bkBuild, jinak se připraví); true = stažena */
   async function doExport(b) {
     if (!downloads) {
       toast("Stahování tady není dostupné.");
@@ -18666,6 +18706,7 @@
       } else {
         toast("Záloha stažena");
       }
+      return true;
     } catch (e) {
       if (e && e.code !== "declined") {
         toast("Stažení se nepovedlo (" + (e.code || "chyba") + ")");
@@ -19191,6 +19232,68 @@
     }
   }
 
+  /* ---------- NATIVNÍ APPKA (F6-01) ----------
+     Appka jde nainstalovat i jako nativní aplikace pro Android (APK z GitHub Releases, aktualizace přes
+     Obtainium). Je to stejný kód zabalený Capacitorem (složka nativni/, postup v nativni/README.md), nativní
+     doplňky dodává js/nativni.js (window.NATIVNI, uložení a sdílení souborů). Tady jen to, co se z toho
+     ukazuje v appce: NATIVE / NATIVE_PR (definice u BUILD), testBar a versionSettings v sekci verze appky,
+     a přesun dat z webové appky do nativní.
+     Přesun dat (rozhodnuto 14. 10. 2026: žádné dvě živé kopie dat, synchronizace není): ve webové appce
+     Nastavení → Data a záloha → Nativní appka → Přesunout data do nativní appky stáhne zálohu i s fotkami
+     (bkBuild(true), doExport) a zapamatuje si čas přesunu (Local „nativeMoved“). Od té chvíle je na každé
+     obrazovce webové appky výrazný pruh movedBar „Data jsou v nativní appce“. Data webové appky zůstanou,
+     jen se dál nemají používat; Zrušit přesun (natBack) pruh vypne. V nativní appce se sekce neukazuje,
+     zálohu tam obnoví Obnovit ze souboru → Nahradit vše. Hlavní funkce: nativeSettings, movedBar,
+     natMove (potvrzení), natMoveOk, natBack. */
+  const nativeMoved = () => (NATIVE ? 0 : +Local.get("nativeMoved", 0) || 0);
+  // pruh nahoře na každé obrazovce webové appky po přesunu dat
+  function movedBar() {
+    if (!nativeMoved()) return "";
+    return `<div class="movedbar">
+        <b>Data jsou v nativní appce</b>
+        <span>Co zapíšeš tady, se do ní nepřenese.</span>
+      </div>`;
+  }
+  /* Nastavení → Data a záloha → Nativní appka (jen ve webové appce) */
+  function nativeSettings() {
+    if (NATIVE) return "";
+    const at = nativeMoved();
+    let h = `<section class="sec">
+      <div class="sec-h">
+        <h2>Nativní appka</h2>
+        ${helpBtn("native")}
+      </div>
+      <div class="card stack">`;
+    if (at) {
+      h += `<div class="small">Data přesunuta do nativní appky ${esc(fmtDate(at))}.</div>
+        <button class="btn" data-act="natBack">Zrušit přesun</button>`;
+    } else {
+      h += '<button class="btn" data-act="natMove">Přesunout data do nativní appky</button>';
+    }
+    return h + "</div></section>";
+  }
+  function natMove() {
+    confirmSheet(
+      "Přesunout data?",
+      "Stáhne se záloha i s fotkami. Obnov ji v nativní appce (Obnovit ze souboru → Nahradit vše) a dál " +
+        "zapisuj jen tam. Tady pak bude pruh, že data jsou v nativní appce.",
+      "Přesunout",
+      "natMoveOk",
+    );
+  }
+  async function natMoveOk() {
+    closeSheet();
+    const b = await bkBuild(true);
+    if (!b || !(await doExport(b))) return;
+    Local.set("nativeMoved", Date.now());
+    scheduleRender();
+  }
+  function natBack() {
+    Local.set("nativeMoved", null);
+    toast("Přesun zrušen, appku tady můžeš zase používat.");
+    scheduleRender();
+  }
+
   /* ---------- verze appky (F0-04) ----------
      Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
      (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
@@ -19205,6 +19308,11 @@
       ? Math.max(1, Math.round(b / 1024)) + " kB"
       : (b / 1048576).toLocaleString("cs-CZ", { maximumFractionDigits: 1 }) + " MB";
   function testBar() {
+    if (NATIVE_PR) {
+      return `<div class="testbar"><b>TEST APK · PR #${esc(NATIVE_PR)}</b><span class="grow">
+          ${esc(BUILD.nazev)}
+        </span></div>`;
+    }
     if (!TEST_PR) return "";
     return `<div class="testbar"><b>TEST · PR #${esc(TEST_PR)}</b><span class="grow">
         ${esc(BUILD.nazev)}
@@ -19220,21 +19328,29 @@
     h += `<div class="row" data-act="verTap"><b class="grow">${
       TEST_PR
         ? "Testovací verze · PR #" + esc(TEST_PR)
-        : BUILD.kanal === "main"
-          ? "Vydaná verze"
-          : "Lokální spuštění"
-    }</b>${TEST_PR ? '<span class="pill test">TEST</span>' : ""}</div>`;
-    if (TEST_PR && BUILD.nazev) {
+        : NATIVE_PR
+          ? "Testovací APK · PR #" + esc(NATIVE_PR)
+          : NATIVE
+            ? "Nativní appka"
+            : BUILD.kanal === "main"
+              ? "Vydaná verze"
+              : "Lokální spuštění"
+    }</b>${TEST_PR || NATIVE_PR ? '<span class="pill test">TEST</span>' : ""}</div>`;
+    if ((TEST_PR || NATIVE_PR) && BUILD.nazev) {
       h += `<div class="small">
         ${esc(BUILD.nazev)}${BUILD.vetev ? `<div class="xs muted">Větev ${esc(BUILD.vetev)}</div>` : ""}
       </div>`;
     }
     h += `<div class="small muted">${
       BUILD.commit && isFinite(t)
-        ? "Nasazeno " + fmtDate(t) + " " + fmtTime(t) + " · kód změny " + esc(BUILD.commit)
+        ? (NATIVE ? "Sestaveno " : "Nasazeno ") + fmtDate(t) + " " + fmtTime(t) + " · kód změny " +
+          esc(BUILD.commit)
         : "Bez údajů o nasazení (spuštěno mimo GitHub Pages)."
     }</div>`;
-    h += '<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
+    // F6-01: nativní appka se aktualizuje novým APK (Obtainium z GitHub Releases), ne sama
+    h += NATIVE
+      ? '<div class="small muted">Novou verzi stáhne aplikace Obtainium.</div>'
+      : '<button class="btn" data-act="updCheck">Zkontrolovat aktualizaci</button>';
     if (TEST_PR) {
       h += `<div class="small muted">
         Testovací verze má vlastní data, oddělená od vydané verze. Co tady zapíšeš nebo smažeš, se

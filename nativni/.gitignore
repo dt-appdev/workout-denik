@@ -1,0 +1,4 @@
+# F6-01: sestavené a stažené soubory, vznikají při sestavení APK (sestav-apk.sh)
+www/
+out/
+node_modules/
