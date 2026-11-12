@@ -78,7 +78,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
-| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku. Ve webové verzi nic nedělá. |
+| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20). Ve webové verzi nic nedělá. |
 | `nativni/` | Nativní obal (F6-01, Capacitor): `capacitor.config.json`, `package.json`, projekt `android/`, skript `sestav-apk.sh`, návod `README.md`. Na web se nekopíruje. |
 | `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST #N“ jen pro PR, který mění nativní obal; klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
@@ -169,7 +169,7 @@ Původní artefakt (verze 9, `puvodni/workout-denik.html`) je jen v historii git
   V krátkých panelech (`openSheet`) tlačítko není, text nejvýš jedna věta. Texty, které říkají, co se stane teď,
   zůstávají u ovládání.
 - Tlačítko Zpět (F0-06, sekce „tlačítko Zpět"): každý stisk = jeden krok `navBack()`, šipky ← v appce ho volají.
-  Nový panel přes `openSheet(…, noanim, nav)`, nová podstránka (route) se musí doplnit do `navBack`, `navDepth`
+  V nativní appce přichází Zpět přes `nativeBack` (F0-20), ne přes historii prohlížeče. Nový panel přes `openSheet(…, noanim, nav)`, nová podstránka (route) se musí doplnit do `navBack`, `navDepth`
   a `go`; postup v úvodním komentáři sekce. Panel nad jiným panelem (F3-46) má místo × šipku ← vlevo
   (`openSheet` volba `backBtn`), která vrací o úroveň.
 - Písmo (F3-11): velikost jen přes proměnné `--fs-*` ze stupnice v `:root` v `css/app.css`, nikdy `font-size`

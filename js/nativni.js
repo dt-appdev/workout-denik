@@ -9,6 +9,9 @@
      (soubor se zapíše do cache/sdileni/ a předá systémové nabídce Sdílet). Zavření nabídky = AbortError,
      stejně jako v Chromu, appka pak zálohu nepočítá jako hotovou (F0-13).
    - Barva ikon ve stavovém řádku podle pozadí appky (světlý / tmavý motiv), doplněk SystemBars.
+   - Zpět (F0-20): WebView systémové Zpět (tlačítko i tah od okraje) samo neobslouží a aplikace by se hned
+     zavřela. Doplněk App ho předá appce: NATIVNI.onBack (nastaví js/app.js, sekce tlačítko Zpět),
+     NATIVNI.minimize() schová aplikaci na pozadí (běží dál, jako tlačítko Domů).
    - Třída nativni na <html>: styly jen pro nativní appku (pruh pod stavovým řádkem, okraje, css/app.css).
    Doplňky Capacitoru se volají přes window.Capacitor bez npm a bez build kroku (Capacitor je do stránky
    vloží sám). Nový nativní doplněk = balíček v nativni/package.json a jeho volání tady. */
@@ -26,6 +29,7 @@
   const Filesystem = plugin("Filesystem");
   const Share = plugin("Share");
   const SystemBars = plugin("SystemBars");
+  const App = plugin("App");
 
   // obsah souboru jako base64 (Filesystem zapisuje binární data jen takhle)
   function toBase64(blob) {
@@ -63,7 +67,22 @@
         throw err;
       }
     },
+    // co udělat při systémovém Zpět (nastaví js/app.js); dokud appka neběží, Zpět aplikaci schová
+    onBack: null,
+    // schová aplikaci na pozadí (neukončí ji, pauza a rozdělaný trénink běží dál)
+    minimize() {
+      App.minimizeApp().catch(() => {});
+    },
   };
+
+  // systémové Zpět (tlačítko i tah od okraje, F0-20): s posluchačem ho Capacitor nechá celé na appce
+  App.addListener("backButton", () => {
+    if (window.NATIVNI.onBack) {
+      window.NATIVNI.onBack();
+    } else {
+      window.NATIVNI.minimize();
+    }
+  });
 
   // sdílení souborů přes systémovou nabídku Androidu (náhrada navigator.share)
   navigator.canShare = (d) => !!d && (Array.isArray(d.files) ? d.files.length > 0 : !!(d.text || d.url));

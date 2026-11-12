@@ -130,7 +130,7 @@ Vady zjištěné při skutečném používání v telefonu (odpovědi uživatele
 Začít hned po etapě 7: konec pauzy na pozadí ve webové appce nefunguje (ověřeno 11. 11. 2026, oznámení chodí jen s appkou na popředí), spolehlivě ho vyřeší jen F6-02. Úlohy jdou jen v tomto pořadí (každá stojí na předchozí). Popis a rozhodnutí ve Fázi 6. Před F6-01 je hotová F0-17 (testy). F5-02 nezávisí na nativní appce, doporučené místo je za F6-03.
 
 25. ~~**F6-01** Nativní obal (Capacitor), APK z GitHub Actions~~ – hotovo 11. 11. 2026.
-26. **F0-20** Gesto Zpět od okraje (ověřit a opravit v nativní appce).
+26. ~~**F0-20** Zpět v nativní appce~~ – hotovo 12. 11. 2026.
 27. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
 28. **F6-03** Záloha se zálohou telefonu (Google One).
 29. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
@@ -170,7 +170,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-17** Automatické testy (kouřový test, záloha tam a zpět, starší formát zálohy)
 - [x] **F0-18** Pojistka dat vydané verze v testovacích verzích
 - [x] **F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce
-- [ ] **F0-20** Gesto Zpět od okraje (zjištěno 11. 11. 2026, Android 17, nainstalovaná appka): tah od okraje neudělá vůbec nic (navazuje na F0-06). Ve webové appce se nehledá, protože v nativní appce (F6-01) se Zpět obsluhuje jinak; ověřit a opravit až tam, hned po F6-01.
+- [x] **F0-20** Zpět v nativní appce
 
 ### Fáze 1 – Ovládání při tréninku
 
