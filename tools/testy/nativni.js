@@ -11,8 +11,9 @@
    (display, exact_alarm). Odškrtnutí série naplánuje oznámení id 1 na konec pauzy do kanálu podle volby
    Na konci pauzy, +15 ho přeplánuje, Přeskočit zruší; bez povolení přesného času se plánuje nepřesně
    a Nastavení nabízí Povolit (exactAsk); Vyzkoušet naplánuje oznámení id 2. Panel Přesný čas oznámení
-   (sheetExact) se bez povolení přesného času ukáže při zapnutí Oznámení na pozadí a jednou při první pauze. Skutečné APK test nevidí,
-   to se zkouší ručně v telefonu. */
+   (sheetExact) se bez povolení přesného času ukáže při zapnutí Oznámení na pozadí a jednou při první pauze.
+   Záznam událostí (F0-21): window.__natFail = název volání, které selže; selhání se zapíše do záznamu, zavření
+   nabídky Sdílet ne. Skutečné APK test nevidí, to se zkouší ručně v telefonu. */
 const P = require("./pomocne.js");
 
 // falešný Capacitor (běží před appkou); window.__nat = záznam volání doplňků, __natCancel = zavřít Sdílet
@@ -23,6 +24,7 @@ function fakeCapacitor() {
   const rec = (name) => (args) => {
     window.__nat.push({ name, args });
     if (name === "Share.share" && window.__natCancel) return Promise.reject(new Error("Share canceled"));
+    if (name === window.__natFail) return Promise.reject(new Error("zkouska selhani"));
     if (name === "Filesystem.writeFile") return Promise.resolve({ uri: "file:///x/" + args.path });
     return Promise.resolve({});
   };
@@ -338,6 +340,27 @@ async function native(browser, url, check) {
   // verze appky: bez Zkontrolovat aktualizaci (nativní appka se aktualizuje novým APK)
   await P.openSettings(app, "about");
   check.ok(!(await page.$('#app [data-act="updCheck"]')), "nativní: nabízí Zkontrolovat aktualizaci");
+  // záznam událostí (F0-21): selhání doplňku se zapíše, zavření nabídky Sdílet ne
+  const failRows = await page.evaluate(async () => {
+    window.__natFail = "Notif.schedule";
+    await window.NATIVNI.notif.schedule({
+      id: 9,
+      at: Date.now() + 60000,
+      title: "x",
+      body: "",
+      mode: "both",
+    });
+    window.__natFail = "";
+    return (await window.ZAZNAM.read()).map((r) => r.txt);
+  });
+  check.ok(
+    failRows.includes("Android: naplánování oznámení selhalo (zkouska selhani)"),
+    "nativní: selhání doplňku není v záznamu událostí",
+  );
+  check.ok(
+    !failRows.some((t) => t.startsWith("Android: sdílení")),
+    "nativní: zavření nabídky Sdílet je v záznamu jako chyba",
+  );
   check.eq(app.errors, [], "nativní: chyby stránky");
   await app.close();
 }
