@@ -133,12 +133,13 @@ Začít hned po etapě 7: konec pauzy na pozadí ve webové appce nefunguje (ov�
 26. ~~**F0-20** Zpět v nativní appce~~ – hotovo 12. 11. 2026.
 27. ~~**F6-02** Spolehlivý konec pauzy~~ – hotovo 12. 11. 2026.
 28. ~~**F0-21** Záznam událostí i ve vydané appce~~ – hotovo 12. 11. 2026.
-29. **F6-03** Záloha se zálohou telefonu (Google One).
-30. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
-31. **F6-04** Složení těla ze Samsung Health do Těla.
-32. **F6-05** Tep z hodinek k tréninku (až po F6-04).
-33. **F6-06** Odpočet pauzy v oznámení (až se F6-02 osvědčí v telefonu).
-34. **F6-07** Pípnutí konce pauzy do sluchátek i se ztlumeným vyzváněním (se stejným nativním doplňkem jako F6-06).
+29. **F6-08** Testovací APK přes Obtainium (ostatní nativní úlohy se pak zkouší jedním klepnutím).
+30. **F6-03** Záloha se zálohou telefonu (Google One).
+31. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
+32. **F6-04** Složení těla ze Samsung Health do Těla.
+33. **F6-05** Tep z hodinek k tréninku (až po F6-04).
+34. **F6-06** Odpočet pauzy v oznámení (až se F6-02 osvědčí v telefonu).
+35. **F6-07** Pípnutí konce pauzy do sluchátek i se ztlumeným vyzváněním (se stejným nativním doplňkem jako F6-06).
 
 Zrušené 14. 10. 2026 (popisy v `hotovo.md`, sekce Zrušené úlohy): F2-04, F3-04, F3-05, F3-29, F3-48, F4-03, F4-10, F5-01, F5-03, F5-06, F5-07. Odložené: F0-11 (podmínky u úlohy), F0-16, F1-15, F3-07, F4-02. Nahrazené: F0-14 (F6-03).
 
@@ -349,6 +350,7 @@ Rozhodnuto 13. 10. 2026:
 - [ ] **F6-05** Tep z hodinek k tréninku · *střední*, až po F6-04: k uloženému tréninku průměrný a maximální tep z Galaxy Watch podle času začátku a konce (stejný doplněk jako F6-04), v souhrnu a detailu tréninku. Nové pole tréninku s výchozí hodnotou (bez tepu chybí), záloha zpětně kompatibilně. Kalorie dál ne (Co neděláme), dokud se nerozhodne jinak.
 - [ ] **F6-06** Odpočet pauzy v oznámení · *střední* (přání 12. 11. 2026), až se F6-02 osvědčí v telefonu: během pauzy tiché trvalé oznámení „Odpočinek 1:45“ s odpočtem, který si přepisuje Android sám (appka nemusí běžet), vidět v liště oznámení a na zamčené obrazovce; na konci ho nahradí oznámení „Odpočinek skončil“ z F6-02. +15 / −15 a Přeskočit ho přepíšou / zruší přes `restPost`. Doplněk `@capacitor/local-notifications` odpočet neumí, proto první vlastní nativní kód (malý doplněk v Javě v `nativni/android`, bez npm); automatický test ho neověří, jen telefon. Hodinky trvalé oznámení nejspíš nezrcadlí. Vlastní doplněk sdílí s F6-07, dělat je spolu nebo F6-07 hned potom. Odpočet přímo ve stavovém řádku (služba na popředí) ne, to by byla další, větší úloha.
 - [ ] **F6-07** Pípnutí konce pauzy do sluchátek · *střední* (přání 12. 11. 2026), se stejným nativním doplňkem jako F6-06: zjištěno v telefonu 12. 11. 2026, že oznámení z F6-02 se ztlumeným vyzváněním nezazní, ani když ve sluchátkách hraje hudba; se zamčeným telefonem upozorní jen hodinky, s odemčeným telefonem jen telefon (rozhoduje Android a Galaxy Wearable, ne appka). Uživatel chce, aby konec pauzy pípl ve sluchátkách i se ztlumeným vyzváněním a zamčeným telefonem. Řešení: vlastní nativní kód v doplňku z F6-06 v čase konce pauzy (stejný budík jako oznámení) přehraje krátké pípnutí jako zvuk médií, který se ztlumeným vyzváněním hraje do sluchátek (bez sluchátek podle hlasitosti médií), a krátce ztiší hudbu (audio focus). Oznámení na hodinky zůstává. K rozhodnutí při zadání: pípat přes reproduktor, když sluchátka nejsou připojená (výchozí návrh ne, jen se sluchátky); vlastní volba v Nastavení → Trénink, nebo součást Na konci pauzy. Ověřit jde jen v telefonu.
+- [ ] **F6-08** Testovací APK přes Obtainium · *nízká–střední* (přání 12. 11. 2026, před F6-03): dnes vzniká testovací APK „WD TEST #N“ jen u PR, který mění nativní obal (`apk.yml`, cesty `nativni/**`, `js/nativni.js`), jako předběžné vydání `test-pr-N` v tomto repu, a stahuje se ručně z komentáře v PR. Nově: testovací APK u **každého** PR (při každém pushi) a zveřejněné jako vydání v repu `workout-denik-test` (kam už jde testovací web), takže ho v Obtainiu sleduje druhá appka s adresou toho repa a nejnovější testovací APK se instaluje jedním klepnutím. Hlavní appka dál sleduje `workout-denik` bez předběžných vydání. Rozhodnuto 12. 11. 2026: APK u každého PR (po přechodu na nativní appku nic jiného nezbude; repo je veřejné, minuty Actions zdarma), jedno testovací APK pro všechny PR (vždy z naposledy změněného PR; ID `cz.workoutdenik.test` i data jsou společné pro všechny PR, číslo verze = číslo běhu, takže novější jde vždy přes starší; ze kterého PR je, ukáže Nastavení → O aplikaci), komentář s odkazem na APK v PR zůstává. Zamítnuto: pravidlo „jen jedno otevřené PR“ (neřeší to, že APK vzniká jen u nativních PR, a brání souběžné práci). K řešení při zadání: token pro zápis vydání do `workout-denik-test` (dnešní `TEST_REPO_TOKEN`, ověřit oprávnění), úklid starých testovacích vydání (stačí poslední, nebo nechat pár), co s vydáním po zavření PR (dnes se maže), návod pro Obtainium v `nativni/README.md` (přidání druhé appky).
 
 ## Co neděláme
 
