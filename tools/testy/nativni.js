@@ -4,7 +4,10 @@
    Nativní appka: napodobená falešným window.Capacitor (doplňky Filesystem, Share, SystemBars zapisují volání
    do window.__nat). Kontroluje, že js/nativni.js nastaví window.NATIVNI, appka nezaregistruje service worker,
    Stáhnout zálohu zapíše soubor do Download přes Filesystem, Sdílet předá soubor z cache doplňku Share a zavření
-   nabídky Sdílet (Share canceled) appka bere jako AbortError (záloha se nepočítá). Skutečné APK test nevidí,
+   nabídky Sdílet (Share canceled) appka bere jako AbortError (záloha se nepočítá). Zpět (F0-20): doplněk App
+   s posluchačem backButton, window.__natBack() = stisk systémového Zpět: panel zavře, podstránka Nastavení →
+   rozcestník → Trénink, tam hláška a podruhé App.minimizeApp; dotyk po hlášce pojistku obnoví; historie
+   prohlížeče se nepoužívá. Skutečné APK test nevidí,
    to se zkouší ručně v telefonu. */
 const P = require("./pomocne.js");
 
@@ -22,6 +25,13 @@ function fakeCapacitor() {
     Filesystem: { writeFile: rec("Filesystem.writeFile") },
     Share: { share: rec("Share.share") },
     SystemBars: { setStyle: rec("SystemBars.setStyle") },
+    App: {
+      minimizeApp: rec("App.minimizeApp"),
+      addListener: (event, fn) => {
+        if (event === "backButton") window.__natBack = () => fn({ canGoBack: false });
+        return Promise.resolve({ remove() {} });
+      },
+    },
   };
   window.Capacitor = {
     isNativePlatform: () => true,
@@ -41,7 +51,10 @@ async function webMove(browser, url, check) {
   const download = page.waitForEvent("download", { timeout: 10000 });
   await page.click('.sheet [data-act="natMoveOk"]');
   const file = await download;
-  check.ok(/\.json\.txt$/.test(file.suggestedFilename()), "web: přesun nestáhl zálohu " + file.suggestedFilename());
+  check.ok(
+    /\.json\.txt$/.test(file.suggestedFilename()),
+    "web: přesun nestáhl zálohu " + file.suggestedFilename(),
+  );
   await app.settle();
   await page.click(".sheet [data-act=closeSheet]").catch(() => {}); // okno s návodem po stažení
   await app.act("tab", "train");
@@ -54,6 +67,60 @@ async function webMove(browser, url, check) {
   check.ok(!(await page.$("#app .movedbar")), "web: pruh zůstal po Zrušit přesun");
   check.eq(app.errors, [], "web: chyby stránky");
   await app.close();
+}
+
+// systémové Zpět v nativní appce (F0-20): kroky zpět, hláška a schování appky
+async function nativeBackTest(app, check) {
+  const { page } = app;
+  const back = async () => {
+    await page.evaluate(() => window.__natBack());
+    await app.settle(300);
+  };
+  // dotyk do appky bez klepnutí na konkrétní prvek
+  const touch = () =>
+    page.evaluate(() => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
+  const minimized = () =>
+    page.evaluate(() => window.__nat.filter((c) => c.name === "App.minimizeApp").length);
+  check.ok(
+    await page.evaluate(() => typeof window.__natBack === "function"),
+    "zpět: chybí posluchač backButton",
+  );
+  const histLen = await page.evaluate(() => history.length);
+
+  // podstránka Nastavení s otevřeným panelem: panel → rozcestník → Trénink
+  await P.openSettings(app, "data");
+  await app.act("export");
+  await app.settle(800);
+  check.ok(await page.$(".sheet"), "zpět: po Stáhnout není otevřený panel");
+  await back();
+  check.ok(!(await page.$(".sheet")), "zpět: první Zpět nezavřel panel");
+  check.ok(await page.$('#app [data-act="export"]'), "zpět: zavření panelu opustilo stránku Data a záloha");
+  await back();
+  check.ok(!(await page.$('#app [data-act="export"]')), "zpět: druhé Zpět nevrátilo na rozcestník Nastavení");
+  await back();
+  check.ok(!(await page.$(".toast.exit")), "zpět: hláška o zavření už při návratu na Trénink");
+
+  // úvodní obrazovka Tréninku: hláška, dotyk pojistku obnoví, dvakrát po sobě appku schová
+  await back();
+  check.ok(await page.$(".toast.exit"), "zpět: na úvodní obrazovce chybí hláška");
+  check.eq(await minimized(), 0, "zpět: appka se schovala už prvním Zpět");
+  await touch();
+  await app.settle(200);
+  check.ok(!(await page.$(".toast.exit")), "zpět: dotyk hlášku neschoval");
+  await back();
+  check.eq(await minimized(), 0, "zpět: po dotyku se appka schovala bez nové hlášky");
+  await back();
+  check.eq(await minimized(), 1, "zpět: druhé Zpět appku neschovalo");
+  check.ok(!(await page.$(".toast.exit")), "zpět: hláška zůstala po schování");
+  await back();
+  check.eq(await minimized(), 1, "zpět: po návratu do appky chybí znovu hláška");
+  check.eq(
+    await page.evaluate(() => history.length),
+    histLen,
+    "zpět: nativní appka přidala záznamy historie",
+  );
+  await touch();
+  await app.settle(200);
 }
 
 async function native(browser, url, check) {
@@ -89,7 +156,9 @@ async function native(browser, url, check) {
   await page.evaluate(() => (window.__nat.length = 0));
   await app.act("bkShare");
   await app.settle(800);
-  const shared = await page.evaluate(() => window.__nat.map((c) => [c.name, c.args.directory || c.args.files]));
+  const shared = await page.evaluate(() =>
+    window.__nat.map((c) => [c.name, c.args.directory || c.args.files]),
+  );
   check.eq(
     shared.map(([n, a]) => [n, JSON.stringify(a).replace(/\d{4}-\d\d-\d\d/, "D")]),
     [
@@ -110,6 +179,8 @@ async function native(browser, url, check) {
     }
   });
   check.eq(err, "AbortError", "nativní: zavření nabídky Sdílet");
+
+  await nativeBackTest(app, check);
 
   // verze appky: bez Zkontrolovat aktualizaci (nativní appka se aktualizuje novým APK)
   await P.openSettings(app, "about");

@@ -17603,7 +17603,11 @@
      Nový panel přes openSheet(…, noanim, nav): panel v panelu dostane nav.lv (hloubka) a nav.back (krok o
      úroveň), dynamický panel nav.re (znovu otevření). Nová podstránka (jako exd, edit, exed, wd) uloží místo
      návratu S.nav.push(navFrame()) a musí se doplnit do navBack, navDepth a go (stránky, které nemažou
-     S.nav). Šipky ← v appce volají navBack(). Záznamy historie se přidávají jen po klepnutí (navEnsure). */
+     S.nav). Šipky ← v appce volají navBack(). Záznamy historie se přidávají jen po klepnutí (navEnsure).
+     Nativní appka (F0-20): WebView historii prohlížeče pro Zpět nepoužívá, systémové Zpět (tlačítko i tah
+     od okraje) přijde přes doplněk App v js/nativni.js a volá nativeBack: stejný krok navBack(), na úvodní
+     obrazovce Tréninku první Zpět hláška, druhé aplikaci schová na pozadí (neukončí ji, pauza běží dál).
+     Záznamy historie se tam nepřidávají (navEnsure nic nedělá). */
   // pos = kde v historii appky jsme, top = nejvyšší existující záznam, wait = čeká se na krok vpřed
   const Nav = { pos: 0, top: 0, ignore: false, exit: false, wait: false };
   (function () {
@@ -17770,6 +17774,7 @@
   }
   // doplní záznamy do historie prohlížeče, aby na každý krok zpět zbyl jeden (jen po klepnutí)
   function navEnsure() {
+    if (NATIVE) return; // nativní appka historii prohlížeče nepoužívá (nativeBack)
     if (Nav.exit || Nav.wait || (navigator.userActivation && !navigator.userActivation.isActive)) return;
     const need = navDepth() + 1;
     while (Nav.pos < need) {
@@ -17804,6 +17809,27 @@
     Nav.exit = true;
     toast("Stiskni Zpět ještě jednou pro zavření", "exit");
   });
+  // systémové Zpět v nativní appce (F0-20): krok zpět, na úvodní obrazovce hláška a podruhé schovat appku
+  function nativeBack() {
+    wakeActivity();
+    dimHide();
+    saveChipScroll();
+    if (Nav.exit) {
+      Nav.exit = false;
+      const t = document.querySelector(".toast.exit");
+      if (t) {
+        t.remove();
+      }
+      window.NATIVNI.minimize();
+      return;
+    }
+    if (navBack()) return;
+    Nav.exit = true;
+    toast("Stiskni Zpět ještě jednou pro zavření", "exit");
+  }
+  if (NATIVE) {
+    window.NATIVNI.onBack = nativeBack;
+  }
   // dotyk do appky (klepnutí i swipe) po hlášce: schovat ji a obnovit pojistku proti zavření
   function navRearm() {
     if (!Nav.exit) return;
