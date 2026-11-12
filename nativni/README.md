@@ -78,8 +78,9 @@ Konec pauzy hlásí oznámení Androidu naplánované na přesný čas, i se zam
 po instalaci (i u každého testovacího APK):
 
 1. Při první pauze povol **oznámení** (Android se zeptá sám).
-2. V appce Nastavení → Trénink → Odpočinek mezi sériemi → **Povolit** (přesný čas). Otevře se nastavení Androidu
+2. Hned potom appka nabídne panel **Přesný čas oznámení** → **Povolit**. Otevře se nastavení Androidu
    **Budíky a připomenutí**, zapni vypínač a vrať se. Bez toho oznámení přijde, ale třeba o minuty později.
+   Když dáš Teď ne, najdeš tlačítko Povolit v Nastavení → Trénink → Odpočinek mezi sériemi.
 3. Vyzkoušej: **Vyzkoušet**, zamkni displej a počkej 10 s.
 
 Když oznámení chodí pozdě nebo vůbec:

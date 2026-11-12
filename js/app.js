@@ -14177,7 +14177,8 @@
       .catch(() => {});
     toast("Oznámení přijde za 10 s");
   }
-  function notifAsk() {
+  // once = dotaz při první pauze: navazující panel o přesném čase (F6-02) se pak ukáže jen jednou
+  function notifAsk(once) {
     if (notifState() !== "default") return;
     Local.set("notifAsked", true);
     const asked = NATIVE ? window.NATIVNI.notif.ask() : Notification.requestPermission();
@@ -14185,6 +14186,7 @@
       .then(() => {
         restPost();
         scheduleRender();
+        exactOffer(once);
       })
       .catch(() => {});
   }
@@ -14204,7 +14206,9 @@
     S.restFired = false;
     if (S.cfg.restNotify && notifState() === "default" && !Local.get("notifAsked", false)) {
       // jednou, pak jen v Nastavení
-      notifAsk();
+      notifAsk(true);
+    } else if (S.cfg.restNotify) {
+      exactOffer(true); // nativní appka: jednou nabídnout povolení přesného času (F6-02)
     }
     restSave();
     renderRest();
@@ -14329,9 +14333,12 @@
        pípnutím a vibrací, aby telefon nevibroval dvakrát. Když se appka v té poslední vteřině schová,
        restNativeHidden oznámení naplánuje znovu.
      - Povolení: oznámení (Android 13+, dotaz při první pauze jako na webu, notifAsk) a přesný čas
-       (SCHEDULE_EXACT_ALARM, uživatel ho zapíná v nastavení Androidu „Budíky a připomenutí“, tlačítko
-       Povolit v Nastavení → Trénink, akce exactAsk). Bez přesného času se plánuje nepřesně a oznámení se
-       může o minuty zpozdit; restSettings na to upozorní. Stav obou drží NATIVNI.notif (perm, exact).
+       (SCHEDULE_EXACT_ALARM). Přesný čas nemá systémový dotaz, uživatel ho zapíná na obrazovce nastavení
+       Androidu „Budíky a připomenutí“ (akce exactAsk). Appka ho proto nabízí panelem sheetExact (exactOffer):
+       jednou při první pauze s povolenými oznámeními (Local „exactAsked“; když je zrovna otevřený jiný
+       panel, zkusí to při další pauze) a pokaždé při zapnutí Oznámení na pozadí. Dokud chybí, zůstává
+       v Nastavení → Trénink záložní řádek s tlačítkem Povolit. Bez přesného času se plánuje nepřesně
+       a oznámení se může o minuty zpozdit. Stav obou povolení drží NATIVNI.notif (perm, exact).
      - Zvuk a vibraci oznámení určuje kanál Androidu podle S.cfg.restAlert (tři kanály v js/nativni.js),
        vlastní rytmus vibrace REST_VIB oznámení nemá.
      Ve webové verzi se nic z toho nevolá. */
@@ -14365,6 +14372,25 @@
     if (NATIVE && restNatOff && S.restEnd > Date.now() && !S.restFired) {
       restPost();
     }
+  }
+  // panel s nabídkou povolit přesný čas; Povolit otevře nastavení Androidu
+  function sheetExact() {
+    openSheet(
+      "Přesný čas oznámení",
+      `<p>
+        Aby konec pauzy přišel na vteřinu přesně, povol appce v Androidu Budíky a připomenutí.
+      </p>`,
+      `<button class="btn grow" data-act="closeSheet">Teď ne</button>
+      <button class="btn primary grow" data-act="exactAsk">Povolit</button>`,
+    );
+  }
+  /* nabídne povolení přesného času, když jsou oznámení povolená a přesný čas chybí;
+     once = při první pauze: jen jednou a ne přes jiný otevřený panel */
+  function exactOffer(once) {
+    if (!NATIVE || notifState() !== "granted" || window.NATIVNI.notif.exact === "granted") return;
+    if (once && (sheetNav || Local.get("exactAsked", false))) return;
+    Local.set("exactAsked", true);
+    sheetExact();
   }
   // zkouška z Nastavení: oznámení za 10 s
   function restNativeTest() {
@@ -17086,6 +17112,7 @@
         put("config/main", Object.assign({}, S.cfg, { restNotify: t.checked }));
         if (t.checked) {
           notifAsk();
+          exactOffer(); // nativní appka s povolenými oznámeními: chybí-li přesný čas, nabídnout ho (F6-02)
         }
         restPost();
         break;
@@ -17094,6 +17121,7 @@
         break;
       case "exactAsk":
         // nativní appka: nastavení Androidu „Budíky a připomenutí“ (F6-02)
+        closeSheet();
         window.NATIVNI.notif.exactAsk();
         break;
       case "recCelEx":

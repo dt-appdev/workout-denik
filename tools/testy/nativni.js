@@ -10,7 +10,8 @@
    prohlížeče se nepoužívá. Konec pauzy (F6-02): doplněk LocalNotifications, window.__natPerm = stav povolení
    (display, exact_alarm). Odškrtnutí série naplánuje oznámení id 1 na konec pauzy do kanálu podle volby
    Na konci pauzy, +15 ho přeplánuje, Přeskočit zruší; bez povolení přesného času se plánuje nepřesně
-   a Nastavení nabízí Povolit (exactAsk); Vyzkoušet naplánuje oznámení id 2. Skutečné APK test nevidí,
+   a Nastavení nabízí Povolit (exactAsk); Vyzkoušet naplánuje oznámení id 2. Panel Přesný čas oznámení
+   (sheetExact) se bez povolení přesného času ukáže při zapnutí Oznámení na pozadí a jednou při první pauze. Skutečné APK test nevidí,
    to se zkouší ručně v telefonu. */
 const P = require("./pomocne.js");
 
@@ -178,10 +179,6 @@ async function nativeRestTest(app, check) {
     ],
     "pauza: Vyzkoušet bez přesného času",
   );
-  await app.act("exactAsk");
-  await app.settle(300);
-  check.ok(!(await page.$('#app [data-act="exactAsk"]')), "pauza: Povolit zůstalo po povolení přesného času");
-  check.ok(await page.$('#app [data-act="notifTest"]'), "pauza: chybí Vyzkoušet");
 
   // trénink: ✓ první série spustí pauzu a naplánuje oznámení na její konec
   await app.act("tab", "train");
@@ -202,8 +199,11 @@ async function nativeRestTest(app, check) {
     await page.click('.sheet [data-act="kkDone"]');
     await app.settle();
   }
-  await app.act("closeSheet");
+  // první pauza bez přesného času: jednou panel, Povolit otevře nastavení Androidu a oznámení přeplánuje přesně
+  check.ok(await page.$('.sheet [data-act="exactAsk"]'), "pauza: první pauza nenabídla přesný čas");
+  await page.click('.sheet [data-act="exactAsk"]');
   await app.settle(300);
+  check.ok(!(await page.$(".sheet")), "pauza: panel přesného času zůstal po Povolit");
   const end = () => page.evaluate(() => JSON.parse(localStorage.getItem("zd1:rest") || "null"));
   const rest = await end();
   check.ok(rest && rest.end > Date.now(), "pauza: po ✓ neběží pauza");
@@ -233,6 +233,36 @@ async function nativeRestTest(app, check) {
     [["Notif.cancel", 1]],
     "pauza: Přeskočit oznámení nezrušilo",
   );
+
+  // další pauza už panel nenabízí (jen jednou), ani když přesný čas zase chybí
+  await page.evaluate(() => {
+    window.__natPerm.exact_alarm = "denied";
+    return window.NATIVNI.notif.refresh();
+  });
+  // zrušit ✓ a odškrtnout znovu (klepnutí skriptem, tlačítko může být pod spodní lištou)
+  const tick = () => page.$eval('#app [data-act="done"][data-i="0"][data-j="0"]', (el) => el.click());
+  await tick();
+  await app.settle(400);
+  await tick();
+  await app.settle(400);
+  check.ok((await end()) !== null, "pauza: druhá pauza se nespustila");
+  check.ok(!(await page.$('.sheet [data-act="exactAsk"]')), "pauza: panel přesného času podruhé");
+  await page.click('#rest [data-act="restSkip"]').catch(() => {});
+  await P.openSettings(app, "train");
+  // vypnutí a zapnutí Oznámení na pozadí bez přesného času nabídne panel, Teď ne ho jen zavře
+  await page.$eval('#app [data-act="restNotify"]', (el) => el.click());
+  await app.settle(200);
+  check.ok(!(await page.$(".sheet")), "pauza: panel přesného času při vypnutí oznámení");
+  await page.$eval('#app [data-act="restNotify"]', (el) => el.click());
+  await app.settle(300);
+  check.ok(await page.$('.sheet [data-act="exactAsk"]'), "pauza: zapnutí oznámení nenabídlo přesný čas");
+  await page.click('.sheet [data-act="closeSheet"]');
+  await app.settle(200);
+  check.ok(await page.$('#app [data-act="exactAsk"]'), "pauza: po Teď ne zmizel záložní řádek");
+  await app.act("exactAsk");
+  await app.settle(300);
+  check.ok(!(await page.$('#app [data-act="exactAsk"]')), "pauza: Povolit zůstalo po povolení přesného času");
+  check.ok(await page.$('#app [data-act="notifTest"]'), "pauza: chybí Vyzkoušet");
 }
 
 async function native(browser, url, check) {
