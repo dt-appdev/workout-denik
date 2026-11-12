@@ -48,4 +48,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- vibrace na konci pauzy (navigator.vibrate, F1-04) -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- konec pauzy (F6-02): oznámení (Android 13+ se na něj ptá) a jeho naplánování na přesný čas;
+         přesný čas uživatel povoluje v nastavení systému (Budíky a připomenutí), bez něj se oznámení zpozdí -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 </manifest>

@@ -131,11 +131,14 @@ Začít hned po etapě 7: konec pauzy na pozadí ve webové appce nefunguje (ov�
 
 25. ~~**F6-01** Nativní obal (Capacitor), APK z GitHub Actions~~ – hotovo 11. 11. 2026.
 26. ~~**F0-20** Zpět v nativní appce~~ – hotovo 12. 11. 2026.
-27. **F6-02** Spolehlivý konec pauzy (i se zamčeným displejem a na hodinkách).
-28. **F6-03** Záloha se zálohou telefonu (Google One).
-29. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
-30. **F6-04** Složení těla ze Samsung Health do Těla.
-31. **F6-05** Tep z hodinek k tréninku (až po F6-04).
+27. ~~**F6-02** Spolehlivý konec pauzy~~ – hotovo 12. 11. 2026.
+28. **F0-21** Záznam událostí i ve vydané appce (další nativní úlohy se bez něj ladí naslepo).
+29. **F6-03** Záloha se zálohou telefonu (Google One).
+30. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
+31. **F6-04** Složení těla ze Samsung Health do Těla.
+32. **F6-05** Tep z hodinek k tréninku (až po F6-04).
+33. **F6-06** Odpočet pauzy v oznámení (až se F6-02 osvědčí v telefonu).
+34. **F6-07** Pípnutí konce pauzy do sluchátek i se ztlumeným vyzváněním (se stejným nativním doplňkem jako F6-06).
 
 Zrušené 14. 10. 2026 (popisy v `hotovo.md`, sekce Zrušené úlohy): F2-04, F3-04, F3-05, F3-29, F3-48, F4-03, F4-10, F5-01, F5-03, F5-06, F5-07. Odložené: F0-11 (podmínky u úlohy), F0-16, F1-15, F3-07, F4-02. Nahrazené: F0-14 (F6-03).
 
@@ -171,6 +174,17 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-18** Pojistka dat vydané verze v testovacích verzích
 - [x] **F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce
 - [x] **F0-20** Zpět v nativní appce
+- [ ] **F0-21** Záznam událostí · *nízká–střední* (přání 12. 11. 2026, před F6-03): appka si v telefonu vede záznam
+  událostí, aby šlo zjistit, co se stalo, i ve vydané verzi (při ladění F6-02 ukázal vývojový záznam oznámení, že
+  domnělá chyba appky byla chování Androidu). Zapisuje start appky a verzi, chyby kódu (`error`,
+  `unhandledrejection`, blokace CSP), selhání uložení, události pauzy a oznámení, změny povolení, návrat z pozadí
+  a stav appky podle Androidu (`NATIVNI.onState`); žádná tréninková data. Posledních asi 200 řádků v IndexedDB
+  (ne v `Local`, limit 5 MB sdílí vydaná appka s testovacími verzemi), zápisy sdružené, ne při každém překreslení.
+  Nastavení → O aplikaci → Záznam událostí s tlačítky Zkopírovat (text vložit do chatu) a Smazat. Nikam se
+  neposílá, do zálohy nepatří. Nahradí dnešní vývojový záznam oznámení (`restLog`, cache `wdlog-…`, jen DEV),
+  aby nebyly dva. Rozhodnuto 12. 11. 2026: pravidlo „vývojové nástroje ve vydané verzi nikdy“ pro záznam
+  událostí neplatí (upravit v `CLAUDE.md`), zkušební data a ostatní nástroje zůstávají jen v DEV. Nová funkce pak
+  zapisuje své důležité události do záznamu (pravidlo do `CLAUDE.md`).
 
 ### Fáze 1 – Ovládání při tréninku
 
@@ -339,10 +353,12 @@ Rozhodnuto 13. 10. 2026:
 - Mění pravidla projektu (upraví F6-01 v `CLAUDE.md`): npm a sestavení jen v GitHub Actions a ve složce nativního obalu, appka sama dál bez build kroku; aktualizace nativní appky už nejsou automatické jako u PWA. Ověřit při zadání: Google chystá ověření vývojářů i pro APK mimo Play (v ČR podle oznámení od 2027, pro hobby vývojáře bezplatná varianta).
 
 - [x] **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
-- [ ] **F6-02** Spolehlivý konec pauzy · *nízká–střední*: místo oznámení ze service workeru (F1-04) nativní budík na přesný čas konce pauzy (`S.restEnd`) a systémové oznámení s vibrací; přijde i se zamčeným displejem, bez internetu, a Galaxy Watch ho zrcadlí (zavibrují). Úprava +15 / −15 a Přeskočit budík přeplánuje / zruší (`restStop`). Ve webové verzi beze změny. Oprávnění pro přesné budíky (Android 12+) a pro oznámení si appka vyžádá při prvním spuštění pauzy. Vyřeší bod „Chodí oznámení… se zhasnutým displejem“ z Ověřit při používání.
+- [x] **F6-02** Spolehlivý konec pauzy.
 - [ ] **F6-03** Záloha se zálohou telefonu (Google One) · *nízká*: Android Auto Backup zálohuje data nativní appky do Google One sám (zdarma, bez přihlašování, zhruba jednou denně při nabíjení a Wi-Fi) a na novém telefonu je po přihlášení obnoví. Limit 25 MB: appka po uložení tréninku zapíše zálohu bez fotek (formát F0-01 / F0-15) do souboru, který Android zálohuje; data WebView ze zálohy vyřadit, obnova jen z tohoto souboru. Fotky dál v ruční záloze (F0-13). Nahrazuje F0-14.
 - [ ] **F6-04** Složení těla ze Samsung Health · *střední*: appka při otevření načte nová měření ze Samsung Health a doplní je do Těla (`body/all`, pole `BODY_F`: hmotnost, tuk %, hmotnost tuku, kosterní sval, voda, bazální metabolismus…). Přes **Samsung Health Data SDK** ve vývojářském režimu (Samsung Health → Nastavení → O Samsung Health → 10× klepnout na verzi → Developer Mode for Data Read): ke čtení stačí bez registrace a partnerství, Samsung ho oficiálně uvádí jako režim pro vývoj a testování, pro appku jen pro sebe to stačí. Health Connect zamítnut: kosterní sval a vodu nepřenáší (jen hmotnost, tuk, bazální metabolismus). Vlastní nativní doplněk (Kotlin), hotový pro Capacitor neexistuje; knihovnu SDK možná bude potřeba jednou stáhnout ze Samsung Developers pod účtem uživatele. **Nejdřív zkouška:** malá verze, která jen ukáže poslední měření složení těla z telefonu (ověří, že SDK kosterní sval z Galaxy Watch 9 opravdu vrací), teprve pak import. Rozhodnuto: import automaticky při otevření appky, měření ze Samsung Health s označením zdroje (pole `src` / `srcName` z F4-19, zdroj ze SDK převést na stejné druhy), ručně zapsané hodnoty se nepřepisují, stejné měření se nenačte dvakrát. Náhradní cesta, kdyby Samsung vývojářský režim zrušil: Health Connect (hmotnost, tuk, bazální metabolismus, zbytek ručně). Navazuje na F4-13 (import souboru ze Samsung Health, hotovo): měření z importu nese ID řádku Samsungu `shId` (`datauuid`); když ho SDK vrací stejné, F6-04 už importovaná měření nezdvojí. Rozpor k vyřešení: F4-13 ruční měření ze stejného dne a hmotnosti ±0,1 kg přepisuje údaji ze Samsungu (přání uživatele 13. 10. 2026), F6-04 má „ručně zapsané hodnoty se nepřepisují“.
 - [ ] **F6-05** Tep z hodinek k tréninku · *střední*, až po F6-04: k uloženému tréninku průměrný a maximální tep z Galaxy Watch podle času začátku a konce (stejný doplněk jako F6-04), v souhrnu a detailu tréninku. Nové pole tréninku s výchozí hodnotou (bez tepu chybí), záloha zpětně kompatibilně. Kalorie dál ne (Co neděláme), dokud se nerozhodne jinak.
+- [ ] **F6-06** Odpočet pauzy v oznámení · *střední* (přání 12. 11. 2026), až se F6-02 osvědčí v telefonu: během pauzy tiché trvalé oznámení „Odpočinek 1:45“ s odpočtem, který si přepisuje Android sám (appka nemusí běžet), vidět v liště oznámení a na zamčené obrazovce; na konci ho nahradí oznámení „Odpočinek skončil“ z F6-02. +15 / −15 a Přeskočit ho přepíšou / zruší přes `restPost`. Doplněk `@capacitor/local-notifications` odpočet neumí, proto první vlastní nativní kód (malý doplněk v Javě v `nativni/android`, bez npm); automatický test ho neověří, jen telefon. Hodinky trvalé oznámení nejspíš nezrcadlí. Vlastní doplněk sdílí s F6-07, dělat je spolu nebo F6-07 hned potom. Odpočet přímo ve stavovém řádku (služba na popředí) ne, to by byla další, větší úloha.
+- [ ] **F6-07** Pípnutí konce pauzy do sluchátek · *střední* (přání 12. 11. 2026), se stejným nativním doplňkem jako F6-06: zjištěno v telefonu 12. 11. 2026, že oznámení z F6-02 se ztlumeným vyzváněním nezazní, ani když ve sluchátkách hraje hudba; se zamčeným telefonem upozorní jen hodinky, s odemčeným telefonem jen telefon (rozhoduje Android a Galaxy Wearable, ne appka). Uživatel chce, aby konec pauzy pípl ve sluchátkách i se ztlumeným vyzváněním a zamčeným telefonem. Řešení: vlastní nativní kód v doplňku z F6-06 v čase konce pauzy (stejný budík jako oznámení) přehraje krátké pípnutí jako zvuk médií, který se ztlumeným vyzváněním hraje do sluchátek (bez sluchátek podle hlasitosti médií), a krátce ztiší hudbu (audio focus). Oznámení na hodinky zůstává. K rozhodnutí při zadání: pípat přes reproduktor, když sluchátka nejsou připojená (výchozí návrh ne, jen se sluchátky); vlastní volba v Nastavení → Trénink, nebo součást Na konci pauzy. Ověřit jde jen v telefonu.
 
 ## Co neděláme
 

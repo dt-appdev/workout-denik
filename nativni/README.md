@@ -72,6 +72,26 @@ Každé sloučení do `main` vydá novou verzi. Obtainium ji samo najde (kontrol
 a pošle oznámení. Klepni na něj (nebo v Obtainiu u appky **Update**) → **Instalovat**. Hned to zkontroluješ tahem
 prstem dolů na seznamu aplikací v Obtainiu.
 
+### Konec pauzy (F6-02)
+
+Konec pauzy hlásí oznámení Androidu naplánované na přesný čas, i se zamčeným displejem a bez internetu. Jednou
+po instalaci (i u každého testovacího APK):
+
+1. Při první pauze povol **oznámení** (Android se zeptá sám).
+2. Hned potom appka nabídne panel **Přesný čas oznámení** → **Povolit**. Otevře se nastavení Androidu
+   **Budíky a připomenutí**, zapni vypínač a vrať se. Bez toho oznámení přijde, ale třeba o minuty později.
+   Když dáš Teď ne, najdeš tlačítko Povolit v Nastavení → Trénink → Odpočinek mezi sériemi.
+3. Vyzkoušej: **Vyzkoušet**, zamkni displej a počkej 10 s.
+
+Když oznámení chodí pozdě nebo vůbec:
+
+- Nastavení Androidu → Aplikace → Workout deník → **Baterie** → **Neomezeno** (Samsung jinak málo používané
+  aplikace uspává).
+- Tichý režim a Nerušit oznámení ztlumí. Zvuk a vibraci jde doladit v Nastavení Androidu → Aplikace → Workout
+  deník → Oznámení (tři kategorie „Konec pauzy“ podle volby Na konci pauzy v appce).
+- Hodinky: v telefonu **Galaxy Wearable** → Nastavení hodinek → Oznámení → zapnout **Workout deník**. Hodinky
+  oznámení zopakují hlavně tehdy, když telefon zrovna nepoužíváš.
+
 ### Na co pozor
 
 - Do nativní appky nic skutečného nezapisuj před dnem přechodu (sekce Přechod níže), data by byla ve dvou appkách.

@@ -7,7 +7,11 @@
    nabídky Sdílet (Share canceled) appka bere jako AbortError (záloha se nepočítá). Zpět (F0-20): doplněk App
    s posluchačem backButton, window.__natBack() = stisk systémového Zpět: panel zavře, podstránka Nastavení →
    rozcestník → Trénink, tam hláška a podruhé App.minimizeApp; dotyk po hlášce pojistku obnoví; historie
-   prohlížeče se nepoužívá. Skutečné APK test nevidí,
+   prohlížeče se nepoužívá. Konec pauzy (F6-02): doplněk LocalNotifications, window.__natPerm = stav povolení
+   (display, exact_alarm). Odškrtnutí série naplánuje oznámení id 1 na konec pauzy do kanálu podle volby
+   Na konci pauzy, +15 ho přeplánuje, Přeskočit zruší; bez povolení přesného času se plánuje nepřesně
+   a Nastavení nabízí Povolit (exactAsk); Vyzkoušet naplánuje oznámení id 2. Panel Přesný čas oznámení
+   (sheetExact) se bez povolení přesného času ukáže při zapnutí Oznámení na pozadí a jednou při první pauze. Skutečné APK test nevidí,
    to se zkouší ručně v telefonu. */
 const P = require("./pomocne.js");
 
@@ -15,6 +19,7 @@ const P = require("./pomocne.js");
 function fakeCapacitor() {
   window.__nat = [];
   window.__natCancel = false;
+  window.__natPerm = { display: "granted", exact_alarm: "granted" };
   const rec = (name) => (args) => {
     window.__nat.push({ name, args });
     if (name === "Share.share" && window.__natCancel) return Promise.reject(new Error("Share canceled"));
@@ -25,6 +30,19 @@ function fakeCapacitor() {
     Filesystem: { writeFile: rec("Filesystem.writeFile") },
     Share: { share: rec("Share.share") },
     SystemBars: { setStyle: rec("SystemBars.setStyle") },
+    LocalNotifications: {
+      createChannel: rec("Notif.createChannel"),
+      schedule: rec("Notif.schedule"),
+      cancel: rec("Notif.cancel"),
+      removeAllDeliveredNotifications: rec("Notif.clear"),
+      checkPermissions: () => Promise.resolve({ display: window.__natPerm.display }),
+      requestPermissions: () => Promise.resolve({ display: window.__natPerm.display }),
+      checkExactNotificationSetting: () => Promise.resolve({ exact_alarm: window.__natPerm.exact_alarm }),
+      changeExactNotificationSetting: () => {
+        window.__natPerm.exact_alarm = "granted";
+        return Promise.resolve({ exact_alarm: "granted" });
+      },
+    },
     App: {
       minimizeApp: rec("App.minimizeApp"),
       addListener: (event, fn) => {
@@ -123,6 +141,130 @@ async function nativeBackTest(app, check) {
   await app.settle(200);
 }
 
+// konec pauzy v nativní appce (F6-02): plánování oznámení přes doplněk LocalNotifications
+async function nativeRestTest(app, check) {
+  const { page } = app;
+  // volání doplňku od posledního vyprázdnění: [název, id, čas v ms, kanál, přesně]
+  const calls = async () => {
+    const list = await page.evaluate(() =>
+      window.__nat
+        .filter((c) => c.name === "Notif.schedule" || c.name === "Notif.cancel")
+        .map((c) => {
+          const n = c.args.notifications[0];
+          const at = n.schedule ? new Date(n.schedule.at).getTime() : 0;
+          return [c.name, n.id, at, n.channelId || "", n.isExactNotification];
+        }),
+    );
+    await page.evaluate(() => (window.__nat.length = 0));
+    return list;
+  };
+
+  // Nastavení: oznámení povolená, přesný čas ne → nabídka Povolit, po povolení zmizí
+  await page.evaluate(() => {
+    window.__natPerm.exact_alarm = "denied";
+    return window.NATIVNI.notif.refresh();
+  });
+  await P.openSettings(app, "train");
+  check.ok(!(await page.$('#app [data-act="restNotify"][disabled]')), "pauza: vypínač oznámení je zešedlý");
+  check.ok(await page.$('#app [data-act="exactAsk"]'), "pauza: chybí Povolit přesný čas");
+  await calls();
+  await app.act("notifTest");
+  await app.settle(300);
+  const test = await calls();
+  check.eq(
+    test.map((c) => [c[0], c[1], c[4]]),
+    [
+      ["Notif.cancel", 2, undefined],
+      ["Notif.schedule", 2, false],
+    ],
+    "pauza: Vyzkoušet bez přesného času",
+  );
+
+  // trénink: ✓ první série spustí pauzu a naplánuje oznámení na její konec
+  await app.act("tab", "train");
+  await app.act("startEmpty");
+  await app.settle();
+  await app.act("addEx");
+  await app.act("pickToggle", "bench-press-barbell");
+  await app.act("pickDone");
+  await app.settle();
+  // druhá série, aby ✓ první nebyla poslední sérií tréninku (po té se pauza nespouští)
+  await page.click('#app [data-act="addSet"][data-i="0"]');
+  await app.settle();
+  await calls();
+  await page.click('#app [data-act="done"][data-i="0"][data-j="0"]');
+  await app.settle();
+  if (await page.$(".sheet .kk-b")) {
+    await page.click('.sheet .kk-b[data-kf="reps"][data-kk="1"]');
+    await page.click('.sheet [data-act="kkDone"]');
+    await app.settle();
+  }
+  // první pauza bez přesného času: jednou panel, Povolit otevře nastavení Androidu a oznámení přeplánuje přesně
+  check.ok(await page.$('.sheet [data-act="exactAsk"]'), "pauza: první pauza nenabídla přesný čas");
+  await page.click('.sheet [data-act="exactAsk"]');
+  await app.settle(300);
+  check.ok(!(await page.$(".sheet")), "pauza: panel přesného času zůstal po Povolit");
+  const end = () => page.evaluate(() => JSON.parse(localStorage.getItem("zd1:rest") || "null"));
+  const rest = await end();
+  check.ok(rest && rest.end > Date.now(), "pauza: po ✓ neběží pauza");
+  const started = await calls();
+  check.eq(
+    started.slice(-2),
+    [
+      ["Notif.cancel", 1, 0, "", undefined],
+      ["Notif.schedule", 1, rest && rest.end, "pauza-zvuk-vibrace", true],
+    ],
+    "pauza: naplánované oznámení",
+  );
+
+  // +15 přeplánuje na nový konec, Přeskočit zruší
+  await page.click('#rest [data-act="restAdj"][data-v="15"]');
+  await app.settle(300);
+  const moved = await calls();
+  check.eq(
+    moved.slice(-1).map((c) => [c[0], c[1], c[2] - rest.end]),
+    [["Notif.schedule", 1, 15000]],
+    "pauza: +15 oznámení nepřeplánovalo",
+  );
+  await page.click('#rest [data-act="restSkip"]');
+  await app.settle(300);
+  check.eq(
+    (await calls()).map((c) => [c[0], c[1]]),
+    [["Notif.cancel", 1]],
+    "pauza: Přeskočit oznámení nezrušilo",
+  );
+
+  // další pauza už panel nenabízí (jen jednou), ani když přesný čas zase chybí
+  await page.evaluate(() => {
+    window.__natPerm.exact_alarm = "denied";
+    return window.NATIVNI.notif.refresh();
+  });
+  // zrušit ✓ a odškrtnout znovu (klepnutí skriptem, tlačítko může být pod spodní lištou)
+  const tick = () => page.$eval('#app [data-act="done"][data-i="0"][data-j="0"]', (el) => el.click());
+  await tick();
+  await app.settle(400);
+  await tick();
+  await app.settle(400);
+  check.ok((await end()) !== null, "pauza: druhá pauza se nespustila");
+  check.ok(!(await page.$('.sheet [data-act="exactAsk"]')), "pauza: panel přesného času podruhé");
+  await page.click('#rest [data-act="restSkip"]').catch(() => {});
+  await P.openSettings(app, "train");
+  // vypnutí a zapnutí Oznámení na pozadí bez přesného času nabídne panel, Teď ne ho jen zavře
+  await page.$eval('#app [data-act="restNotify"]', (el) => el.click());
+  await app.settle(200);
+  check.ok(!(await page.$(".sheet")), "pauza: panel přesného času při vypnutí oznámení");
+  await page.$eval('#app [data-act="restNotify"]', (el) => el.click());
+  await app.settle(300);
+  check.ok(await page.$('.sheet [data-act="exactAsk"]'), "pauza: zapnutí oznámení nenabídlo přesný čas");
+  await page.click('.sheet [data-act="closeSheet"]');
+  await app.settle(200);
+  check.ok(await page.$('#app [data-act="exactAsk"]'), "pauza: po Teď ne zmizel záložní řádek");
+  await app.act("exactAsk");
+  await app.settle(300);
+  check.ok(!(await page.$('#app [data-act="exactAsk"]')), "pauza: Povolit zůstalo po povolení přesného času");
+  check.ok(await page.$('#app [data-act="notifTest"]'), "pauza: chybí Vyzkoušet");
+}
+
 async function native(browser, url, check) {
   const app = await P.openApp(browser, url, { init: fakeCapacitor });
   const { page } = app;
@@ -136,6 +278,16 @@ async function native(browser, url, check) {
   check.ok(
     await page.evaluate(() => window.__nat.some((c) => c.name === "SystemBars.setStyle")),
     "nativní: barva stavového řádku se nenastavila",
+  );
+  // kanály oznámení o konci pauzy (F6-02) vznikají hned při startu
+  check.eq(
+    await page.evaluate(() =>
+      window.__nat
+        .filter((c) => c.name === "Notif.createChannel")
+        .map((c) => c.args.id + (c.args.vibration ? "+v" : "") + (c.args.sound ? "+" + c.args.sound : "")),
+    ),
+    ["pauza-zvuk-vibrace+v", "pauza-zvuk", "pauza-vibrace+v+ticho.wav"],
+    "pauza: kanály oznámení",
   );
 
   // Data a záloha: bez přesunu do nativní appky, Stáhnout přes Filesystem do Download
@@ -181,6 +333,7 @@ async function native(browser, url, check) {
   check.eq(err, "AbortError", "nativní: zavření nabídky Sdílet");
 
   await nativeBackTest(app, check);
+  await nativeRestTest(app, check);
 
   // verze appky: bez Zkontrolovat aktualizaci (nativní appka se aktualizuje novým APK)
   await P.openSettings(app, "about");

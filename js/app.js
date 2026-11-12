@@ -11330,8 +11330,13 @@
         ],
         [
           "Oznámení na pozadí",
-          "Když je appka na pozadí nebo máš zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. Zvuk " +
-            "a vibraci oznámení určuje nastavení oznámení v Androidu.",
+          NATIVE
+            ? "Když je appka na pozadí nebo máš zamčený displej, konec pauzy ohlásí oznámení Androidu, " +
+              "i bez internetu, a hodinky ho zopakují. Zvuk a vibrace podle volby Na konci pauzy; tichý " +
+              "režim a Nerušit ho ztlumí. Aby přišlo na vteřinu přesně, povol appce přesný čas (tlačítko " +
+              "Povolit, v Androidu Budíky a připomenutí)."
+            : "Když je appka na pozadí nebo máš zhasnutý displej, konec pauzy ohlásí oznámení v telefonu. " +
+              "Zvuk a vibraci oznámení určuje nastavení oznámení v Androidu.",
         ],
         [
           "Displej nezhasne během pauzy",
@@ -13930,11 +13935,18 @@
     } else if (ns === "denied") {
       h += `<div class="xs muted ${dep}"${inert}>
         Oznámení jsou v telefonu zakázaná. Povol je v Nastavení Androidu → Aplikace → Workout deník
-        → Oznámení (v prohlížeči přes ikonu vedle adresy → Oprávnění).
+        → Oznámení${NATIVE ? "" : " (v prohlížeči přes ikonu vedle adresy → Oprávnění)"}.
       </div>`;
     } else if (ns === "default") {
       h += `<button class="btn block ${dep}" data-act="notifAsk"${inert}>Povolit oznámení</button>`;
     } else {
+      if (NATIVE && window.NATIVNI.notif.exact !== "granted") {
+        // nativní appka bez povolení přesného času (F6-02): oznámení by se mohlo zpozdit
+        h += `<div class="row ${dep}"${inert}>
+          <span class="grow xs muted">Bez povolení přesného času může oznámení přijít o minuty později.</span>
+          <button class="btn sm" data-act="exactAsk">Povolit</button>
+        </div>`;
+      }
       h += `<div class="row ${dep}"${inert}>
         <span class="grow xs muted">
           Oznámení jsou povolená. Vyzkoušej: klepni, zhasni displej a počkej 10 s.
@@ -13966,7 +13978,8 @@
      Záznam událostí oznámení (cache wdlog-prN, píše sw.js i appka) je vývojový nástroj: jen v testovací verzi
      a lokálně (DEV), tlačítko v Nastavení → O aplikaci (sheetRestLog). Ve vydané verzi nic takového být nemá
      (přání uživatele). Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
-     vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat. */
+     vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
+     Nativní appka (F6-02) service worker nemá, oznámení plánuje Android: sekce KONEC PAUZY V NATIVNÍ APPCE. */
   const REST_VIB = [700, 300, 700],
     REST_OVER_MAX = 5 * 60; // 2 dlouhé vibrace; přečas zmizí po 5 min (F1-16)
   let audioCtx = null,
@@ -14011,8 +14024,10 @@
     }
   }
   /* oznámení: podporuje prohlížeč / stav povolení ("granted", "denied", "default", "none") */
-  const notifState = () =>
-    "Notification" in window && "serviceWorker" in navigator ? Notification.permission : "none";
+  const notifState = () => {
+    if (NATIVE) return window.NATIVNI.notif.perm; // nativní appka: oznámení Androidu (F6-02)
+    return "Notification" in window && "serviceWorker" in navigator ? Notification.permission : "none";
+  };
   const REST_TAG = "rest-" + (TEST_PR ? "pr" + TEST_PR : "main");
   /* co je na řadě po pauze: první nehotová série za naposledy odškrtnutou, jinak kdekoli
      (v supersérii další kolo, F4-05) */
@@ -14065,6 +14080,10 @@
   function restPost() {
     if (notifState() === "none") return;
     const on = S.restEnd && !S.restFired && S.active && S.cfg.restNotify && notifState() === "granted";
+    if (NATIVE) {
+      restNative(on);
+      return;
+    }
     const msg = on
       ? {
           type: "rest",
@@ -14082,6 +14101,7 @@
      verzi PR a lokálně, ve vydané ne. */
   const DEV = !!TEST_PR || !!NATIVE_PR || BUILD.kanal === "lokal";
   const REST_LOG = "wdlog-" + (TEST_PR ? "pr" + TEST_PR : "main");
+  const REST_LOG_MAX = 30;
   async function restLogRead() {
     try {
       const r = await (await caches.open(REST_LOG)).match("log");
@@ -14090,20 +14110,27 @@
       return [];
     }
   }
-  async function restLog(txt) {
+  // zápisy jdou za sebou (restLogQueue), aby se dva rychlé po sobě nepřepsaly
+  let restLogQueue = Promise.resolve();
+  function restLog(txt) {
     if (!DEV || !window.caches) return;
-    try {
-      const a = await restLogRead();
-      a.unshift({ at: Date.now(), txt });
-      await (await caches.open(REST_LOG)).put("log", new Response(JSON.stringify(a.slice(0, 12))));
-    } catch (e) {}
+    const at = Date.now();
+    restLogQueue = restLogQueue.then(async () => {
+      try {
+        const a = await restLogRead();
+        a.unshift({ at, txt });
+        await (
+          await caches.open(REST_LOG)
+        ).put("log", new Response(JSON.stringify(a.slice(0, REST_LOG_MAX))));
+      } catch (e) {}
+    });
   }
   async function sheetRestLog() {
     const a = await restLogRead();
     openSheet(
       "Záznam oznámení",
       `<div class="xs muted mb-list">
-        Posledních 12 událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
+        Posledních ${REST_LOG_MAX} událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
       </div>
       ${
         a.length
@@ -14124,6 +14151,10 @@
     );
   }
   function restClearNotif() {
+    if (NATIVE) {
+      window.NATIVNI.notif.clear();
+      return;
+    }
     if (notifState() !== "none") {
       navigator.serviceWorker.ready
         .then((r) => r.getNotifications({ tag: REST_TAG }))
@@ -14133,6 +14164,10 @@
   }
   /* zkouška z Nastavení: oznámení za 10 s, i když je appka na očích */
   function restTest() {
+    if (NATIVE) {
+      restNativeTest();
+      return;
+    }
     navigator.serviceWorker.ready
       .then(
         (r) =>
@@ -14150,13 +14185,16 @@
       .catch(() => {});
     toast("Oznámení přijde za 10 s");
   }
-  function notifAsk() {
+  // once = dotaz při první pauze: navazující panel o přesném čase (F6-02) se pak ukáže jen jednou
+  function notifAsk(once) {
     if (notifState() !== "default") return;
     Local.set("notifAsked", true);
-    Notification.requestPermission()
+    const asked = NATIVE ? window.NATIVNI.notif.ask() : Notification.requestPermission();
+    asked
       .then(() => {
         restPost();
         scheduleRender();
+        exactOffer(once);
       })
       .catch(() => {});
   }
@@ -14176,7 +14214,9 @@
     S.restFired = false;
     if (S.cfg.restNotify && notifState() === "default" && !Local.get("notifAsked", false)) {
       // jednou, pak jen v Nastavení
-      notifAsk();
+      notifAsk(true);
+    } else if (S.cfg.restNotify) {
+      exactOffer(true); // nativní appka: jednou nabídnout povolení přesného času (F6-02)
     }
     restSave();
     renderRest();
@@ -14228,11 +14268,13 @@
     });
     if (!S.restEnd || !S.active) return;
     const left = (S.restEnd - Date.now()) / 1000;
+    restNativeSeen(left);
     if (left <= 0 && !S.restFired) {
       // pípnout jen tehdy, když je appka na očích už od doby před koncem pauzy; jinak upozornilo oznámení
       const seen = !document.hidden && visibleSince <= S.restEnd;
       if (seen) {
         beep();
+        restLog("konec pauzy: appka na očích, upozornila sama (" + S.cfg.restAlert + ")");
         setTimeout(restClearNotif, 1500);
       } else if (!document.hidden && !(S.cfg.restNotify && notifState() === "granted")) {
         toast("Odpočinek skončil");
@@ -14280,12 +14322,125 @@
     }
     if (document.hidden) {
       visibleSince = Infinity;
+      restNativeHidden();
       return;
     }
     visibleSince = Date.now();
     restClearNotif();
     restTick(); // po návratu hned správný čas, staré oznámení pryč
   });
+
+  /* ---------- KONEC PAUZY V NATIVNÍ APPCE (F6-02) ----------
+     Ve webové appce konec pauzy na pozadí hlásí service worker (F1-04), což se zhasnutým displejem nefunguje
+     spolehlivě. Nativní appka service worker nemá: restPost místo zprávy workeru naplánuje v Androidu
+     oznámení na přesný čas konce pauzy (restNative → NATIVNI.notif.schedule v js/nativni.js). Android ho
+     ukáže sám, i když appka spí, displej je zamčený a telefon bez internetu; hodinky ho zrcadlí.
+     - Každá změna pauzy jde přes restSave → restPost: +15 / −15 oznámení přeplánuje (stejné id nahradí),
+       Přeskočit, konec tréninku a vypnutí časovače ho zruší. Nové místo, které mění S.restEnd, proto musí
+       volat restSave (nebo restPost).
+     - Appka na očích: vteřinu před koncem se oznámení zruší (restNativeSeen) a konec ohlásí appka sama
+       pípnutím a vibrací, aby telefon nevibroval dvakrát. Když se appka v té poslední vteřině schová,
+       restNativeHidden oznámení naplánuje znovu.
+     - Povolení: oznámení (Android 13+, dotaz při první pauze jako na webu, notifAsk) a přesný čas
+       (SCHEDULE_EXACT_ALARM). Přesný čas nemá systémový dotaz, uživatel ho zapíná na obrazovce nastavení
+       Androidu „Budíky a připomenutí“ (akce exactAsk). Appka ho proto nabízí panelem sheetExact (exactOffer):
+       jednou při první pauze s povolenými oznámeními (Local „exactAsked“; když je zrovna otevřený jiný
+       panel, zkusí to při další pauze) a pokaždé při zapnutí Oznámení na pozadí. Dokud chybí, zůstává
+       v Nastavení → Trénink záložní řádek s tlačítkem Povolit. Bez přesného času se plánuje nepřesně
+       a oznámení se může o minuty zpozdit. Stav obou povolení drží NATIVNI.notif (perm, exact).
+     - Zvuk a vibraci oznámení určuje kanál Androidu podle S.cfg.restAlert (tři kanály v js/nativni.js),
+       vlastní rytmus vibrace REST_VIB oznámení nemá.
+     - Záznam oznámení (jen DEV, restLog): naplánování, zrušení, kdo na konci upozornil a co o appce
+       hlásí Android (NATIVNI.onState), pro hledání chyb v telefonu.
+     Ve webové verzi se nic z toho nevolá. */
+  const REST_NAT_ID = 1,
+    REST_NAT_TEST_ID = 2;
+  // oznámení zrušené těsně před koncem pauzy, protože appka je na očích
+  let restNatOff = false;
+  // naplánuje (on) nebo zruší oznámení o konci pauzy
+  function restNative(on) {
+    restNatOff = false;
+    if (on && S.restEnd > Date.now()) {
+      restLog(
+        "Android: naplánováno na " +
+          new Date(S.restEnd).toLocaleTimeString("cs-CZ") +
+          (window.NATIVNI.notif.exact === "granted" ? "" : " (nepřesně)") +
+          ", " +
+          S.cfg.restAlert,
+      );
+      window.NATIVNI.notif.schedule({
+        id: REST_NAT_ID,
+        at: S.restEnd,
+        title: "Odpočinek skončil",
+        body: restNext(),
+        mode: S.cfg.restAlert,
+      });
+    } else {
+      restLog("Android: oznámení zrušeno");
+      window.NATIVNI.notif.cancel(REST_NAT_ID);
+    }
+  }
+  // appka je vteřinu před koncem pauzy na očích: konec ohlásí sama, oznámení se zruší
+  function restNativeSeen(left) {
+    if (!NATIVE || restNatOff || document.hidden || left <= 0 || left > 1) return;
+    restLog("Android: oznámení zrušeno vteřinu před koncem, appka je na očích");
+    window.NATIVNI.notif.cancel(REST_NAT_ID);
+    restNatOff = true;
+  }
+  // appka se schovala po zrušení oznámení a pauza ještě běží: naplánovat znovu
+  function restNativeHidden() {
+    if (NATIVE && restNatOff && S.restEnd > Date.now() && !S.restFired) {
+      restPost();
+    }
+  }
+  // panel s nabídkou povolit přesný čas; Povolit otevře nastavení Androidu
+  function sheetExact() {
+    openSheet(
+      "Přesný čas oznámení",
+      `<p>
+        Aby konec pauzy přišel na vteřinu přesně, povol appce v Androidu Budíky a připomenutí.
+      </p>`,
+      `<button class="btn grow" data-act="closeSheet">Teď ne</button>
+      <button class="btn primary grow" data-act="exactAsk">Povolit</button>`,
+    );
+  }
+  /* nabídne povolení přesného času, když jsou oznámení povolená a přesný čas chybí;
+     once = při první pauze: jen jednou a ne přes jiný otevřený panel */
+  function exactOffer(once) {
+    if (!NATIVE || notifState() !== "granted" || window.NATIVNI.notif.exact === "granted") return;
+    if (once && (sheetNav || Local.get("exactAsked", false))) return;
+    Local.set("exactAsked", true);
+    sheetExact();
+  }
+  // zkouška z Nastavení: oznámení za 10 s
+  function restNativeTest() {
+    window.NATIVNI.notif.schedule({
+      id: REST_NAT_TEST_ID,
+      at: Date.now() + 10000,
+      title: "Zkouška oznámení",
+      body: "Takhle tě appka upozorní na konec pauzy.",
+      mode: S.cfg.restAlert,
+    });
+    toast("Oznámení přijde za 10 s");
+  }
+  if (NATIVE) {
+    // změna povolení v nastavení Androidu: přeplánovat běžící pauzu a překreslit Nastavení
+    window.NATIVNI.notif.onChange = () => {
+      restPost();
+      scheduleRender();
+    };
+    // záznam oznámení (jen DEV): co o appce hlásí Android (aktivní = na popředí)
+    window.NATIVNI.onState = (active) => {
+      if (S.restEnd && S.active) {
+        restLog(
+          "Android: appka " +
+            (active ? "aktivní" : "neaktivní") +
+            ", stránka " +
+            (document.hidden ? "skrytá" : "viditelná"),
+        );
+      }
+    };
+  }
 
   /* ---------- STOPKY U SÉRIE NA ČAS (F1-24) ----------
      U sérií druhů se sloupcem Čas (KIND time, timew, dist; isTimed) je v rozdělaném tréninku za políčky
@@ -16988,11 +17143,17 @@
         put("config/main", Object.assign({}, S.cfg, { restNotify: t.checked }));
         if (t.checked) {
           notifAsk();
+          exactOffer(); // nativní appka s povolenými oznámeními: chybí-li přesný čas, nabídnout ho (F6-02)
         }
         restPost();
         break;
       case "notifAsk":
         notifAsk();
+        break;
+      case "exactAsk":
+        // nativní appka: nastavení Androidu „Budíky a připomenutí“ (F6-02)
+        closeSheet();
+        window.NATIVNI.notif.exactAsk();
         break;
       case "recCelEx":
       case "recCelW":
@@ -17874,8 +18035,7 @@
   // stránky nad záložkou (mají místo návratu v S.nav)
   const UNSAVED_SUB = ["exd", "exed", "edit", "wd", "replan"];
   // formulář cviku má neuložené změny (jako exEdChanged, ale i se stránkou cviku otevřenou nad ním)
-  const exEdDirty = () =>
-    !!exEd && (exEdSnap() !== exEd.orig || ((!!exEd.fx || !!exEd.copyOf) && !exEd.id));
+  const exEdDirty = () => !!exEd && (exEdSnap() !== exEd.orig || ((!!exEd.fx || !!exEd.copyOf) && !exEd.id));
   // co je teď rozepsané: {pages, ed, ex}, null = nic
   function unsavedSnap() {
     const chain = S.nav.map((f) => ({ r: f.route, wd: f.wd })).concat({ r: S.route });
@@ -19369,7 +19529,11 @@
     }
     h += `<div class="small muted">${
       BUILD.commit && isFinite(t)
-        ? (NATIVE ? "Sestaveno " : "Nasazeno ") + fmtDate(t) + " " + fmtTime(t) + " · kód změny " +
+        ? (NATIVE ? "Sestaveno " : "Nasazeno ") +
+          fmtDate(t) +
+          " " +
+          fmtTime(t) +
+          " · kód změny " +
           esc(BUILD.commit)
         : "Bez údajů o nasazení (spuštěno mimo GitHub Pages)."
     }</div>`;

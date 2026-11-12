@@ -11,6 +11,10 @@
   "plugins": {
     "SystemBars": {
       "initialViewportFitValueHint": "cover"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_pauza",
+      "iconColor": "#CF3A31"
     }
   }
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikona oznámení o konci pauzy (F6-02): činka z ikony appky jako jednobarevná silueta. Android ji ve
+     stavovém řádku obarví sám (bílá / tmavá), barvu kroužku v oznámení určuje iconColor v capacitor.config.json. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M6.5,6.5v11M17.5,6.5v11M3.5,9v6M20.5,9v6M6.5,12h11"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.1"
+        android:strokeLineCap="round" />
+</vector>

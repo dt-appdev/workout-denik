@@ -78,7 +78,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
-| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20). Ve webové verzi nic nedělá. |
+| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20), oznámení o konci pauzy přes doplněk LocalNotifications (`NATIVNI.notif`, F6-02). Ve webové verzi nic nedělá. |
 | `nativni/` | Nativní obal (F6-01, Capacitor): `capacitor.config.json`, `package.json`, projekt `android/`, skript `sestav-apk.sh`, návod `README.md`. Na web se nekopíruje. |
 | `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST #N“ jen pro PR, který mění nativní obal; klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
@@ -254,6 +254,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
 - Rozdělaný trénink do úložiště jen přes `saveActive()` (čas změny `upd`, při startu vyhrává novější kopie, F0-19).
   Při plné schránce `Local.set` obětuje jen `cache`; nový velký klíč v `Local` zvažovat (limit asi 5 MB sdílí
   vydaná appka se všemi testovacími verzemi), sekce MÍSTO V ZAŘÍZENÍ.
+- Konec pauzy (F6-02, sekce KONEC PAUZY V NATIVNÍ APPCE): každá změna `S.restEnd` jde přes `restSave` / `restPost`,
+  jinak v nativní appce zůstane naplánované oznámení na starý čas. Stav povolení jen přes `notifState()`.
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Nativní appka (F6-01, sekce NATIVNÍ APPKA): stejný kód jako web, rozdíly jen přes `NATIVE` / `NATIVE_PR`
   v `js/app.js` a doplňky v `js/nativni.js` (bez npm, přes `window.Capacitor`). Soubory ukládat jen přes
