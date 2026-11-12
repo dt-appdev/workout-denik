@@ -15,7 +15,7 @@
    poznamka-treninku.js (poznámka k tréninku už během tréninku, F1-26), zdroj-mereni.js (zdroj měření
    z importu ze Samsung Health, F4-19), klavesnice.js (klávesnice nezakryje řádek série, F1-27),
    stisk.js (odezva tlačítek na stisk, F3-53), misto.js (místo v rychlé schránce a rozdělaný trénink, F0-19),
-   nativni.js (napodobená nativní appka a přesun dat do ní, F6-01).
+   nativni.js (napodobená nativní appka a přesun dat do ní, F6-01), zaznam.js (záznam událostí, F0-21).
    Každý test dostane čistý profil prohlížeče a dá se spustit i samostatně (část názvu v argumentu).
    Skončí kódem 1, když některá kontrola selže. Žádný z testů nezapisuje do repa. */
 const P = require("./pomocne.js");
@@ -42,6 +42,7 @@ const TESTS = [
   require("./stisk.js"),
   require("./misto.js"),
   require("./nativni.js"),
+  require("./zaznam.js"),
 ];
 
 (async () => {

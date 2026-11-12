@@ -132,7 +132,7 @@ Začít hned po etapě 7: konec pauzy na pozadí ve webové appce nefunguje (ov�
 25. ~~**F6-01** Nativní obal (Capacitor), APK z GitHub Actions~~ – hotovo 11. 11. 2026.
 26. ~~**F0-20** Zpět v nativní appce~~ – hotovo 12. 11. 2026.
 27. ~~**F6-02** Spolehlivý konec pauzy~~ – hotovo 12. 11. 2026.
-28. **F0-21** Záznam událostí i ve vydané appce (další nativní úlohy se bez něj ladí naslepo).
+28. ~~**F0-21** Záznam událostí i ve vydané appce~~ – hotovo 12. 11. 2026.
 29. **F6-03** Záloha se zálohou telefonu (Google One).
 30. **F5-02** Týdenní cíl (zkusit, uživatel si není jistý přínosem).
 31. **F6-04** Složení těla ze Samsung Health do Těla.
@@ -174,17 +174,7 @@ Bez zálohy hrozí ztráta celé historie a bez svalových partií u cviků nejd
 - [x] **F0-18** Pojistka dat vydané verze v testovacích verzích
 - [x] **F0-19** Místo v rychlé schránce a rozdělaný trénink při plné schránce
 - [x] **F0-20** Zpět v nativní appce
-- [ ] **F0-21** Záznam událostí · *nízká–střední* (přání 12. 11. 2026, před F6-03): appka si v telefonu vede záznam
-  událostí, aby šlo zjistit, co se stalo, i ve vydané verzi (při ladění F6-02 ukázal vývojový záznam oznámení, že
-  domnělá chyba appky byla chování Androidu). Zapisuje start appky a verzi, chyby kódu (`error`,
-  `unhandledrejection`, blokace CSP), selhání uložení, události pauzy a oznámení, změny povolení, návrat z pozadí
-  a stav appky podle Androidu (`NATIVNI.onState`); žádná tréninková data. Posledních asi 200 řádků v IndexedDB
-  (ne v `Local`, limit 5 MB sdílí vydaná appka s testovacími verzemi), zápisy sdružené, ne při každém překreslení.
-  Nastavení → O aplikaci → Záznam událostí s tlačítky Zkopírovat (text vložit do chatu) a Smazat. Nikam se
-  neposílá, do zálohy nepatří. Nahradí dnešní vývojový záznam oznámení (`restLog`, cache `wdlog-…`, jen DEV),
-  aby nebyly dva. Rozhodnuto 12. 11. 2026: pravidlo „vývojové nástroje ve vydané verzi nikdy“ pro záznam
-  událostí neplatí (upravit v `CLAUDE.md`), zkušební data a ostatní nástroje zůstávají jen v DEV. Nová funkce pak
-  zapisuje své důležité události do záznamu (pravidlo do `CLAUDE.md`).
+- [x] **F0-21** Záznam událostí
 
 ### Fáze 1 – Ovládání při tréninku
 

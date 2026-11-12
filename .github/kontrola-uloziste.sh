@@ -12,7 +12,7 @@ set -euo pipefail
 # přímý přístup k úložišti a názvy úložiště vydané verze
 VZOR='indexedDB\.open\(|deleteDatabase\(|localStorage\.(setItem|removeItem|clear)|localStorage\[|localStorage\.[A-Za-z_$]+ *=[^=]|Storage\.prototype|IDBFactory|IDBDatabase\.prototype|MAIN_(DB|P)([^A-Za-z0-9_]|$)'
 # schválená místa: definice úložiště (Local, Idb, názvy), pojistka F0-18, data testovacích verzí (F0-04)
-POVOLENO=' MAIN_P Local Idb idbOpenExisting guardInstall guardInit testKeys testDbs scanTestData deleteTestData copyFromMain '
+POVOLENO=' MAIN_P Local Idb idbOpenExisting guardInstall guardInit logDb testKeys testDbs scanTestData deleteTestData copyFromMain '
 
 FILES=$(ls js/*.js sw.js | grep -vE '^js/(atlas|fedb|verze)\.js$')
 # vzor přes prostředí (ENVIRON), ne -v: awk by v -v zpracoval zpětná lomítka

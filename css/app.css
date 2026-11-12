@@ -4463,3 +4463,8 @@ tr.done .okb:is(:active, .prs) {
     transform: none;
   }
 }
+
+/* záznam událostí (F0-21): dlouhá adresa nebo chyba se zalomí kdekoli, ať panel nejde do šířky */
+.evlog > div {
+  overflow-wrap: anywhere;
+}

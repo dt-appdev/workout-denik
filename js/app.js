@@ -804,7 +804,7 @@
      Testovací verze PR běží na stejné doméně jako vydaná verze, prohlížeč je tedy nijak neodděluje: oddělení
      dat je jen jiný název databáze a jiný prefix v localStorage (Idb.NAME, Local.P). Tahle pojistka hlídá,
      aby chyba v kódu PR nepřepsala skutečná data v telefonu. Běží jen v testovací verzi (TEST_PR):
-       - databáze vydané verze (MAIN_DB) jde otevřít jen ke čtení: zápisová transakce, smazání databáze
+       - databáze vydané verze (MAIN_DB a její záznam událostí MAIN_DB-log, F0-21) jde otevřít jen ke čtení: zápisová transakce, smazání databáze
          a změna její verze (upgrade) se odmítnou; neexistující databázi otevření nezaloží,
        - localStorage: zápis a mazání klíčů vydané verze (MAIN_P) a localStorage.clear() se odmítnou,
        - při startu kontrola, že Idb.NAME a Local.P nejsou ty vydané verze.
@@ -812,7 +812,7 @@
      nahoře (.guard-stop), dokud se appka nezavře. Vydané verzi se nemění nic.
      Číst data vydané verze smí jen copyFromMain (Nastavení → O aplikaci). Úloha „kontrola“ v GitHub Actions
      navíc odmítne přímé indexedDB.open / deleteDatabase / zápis do localStorage mimo Local, Idb a schválené
-     funkce (seznam v .github/workflows/nasazeni.yml); test tools/testy/oddeleni-dat.js ověří, že průchod
+     funkce (seznam POVOLENO v .github/kontrola-uloziste.sh, i logDb záznamu událostí v js/zaznam.js); test tools/testy/oddeleni-dat.js ověří, že průchod
      testovací verzí data vydané verze nezmění. */
   function guardStop(what) {
     try {
@@ -853,7 +853,7 @@
       transaction = IDBDatabase.prototype.transaction;
     IDBFactory.prototype.open = function (name, version) {
       const rq = version === undefined ? open.call(this, name) : open.call(this, name, version);
-      if (name === MAIN_DB) {
+      if (name === MAIN_DB || name === MAIN_DB + "-log") {
         // neexistující databáze (oldVersion 0) se jen nezaloží, změna verze existující je chyba
         rq.addEventListener("upgradeneeded", (ev) => {
           try {
@@ -867,11 +867,13 @@
       return rq;
     };
     IDBFactory.prototype.deleteDatabase = function (name) {
-      if (name === MAIN_DB) throw guardStop("smazání databáze " + MAIN_DB);
+      if (name === MAIN_DB || name === MAIN_DB + "-log") throw guardStop("smazání databáze " + name);
       return deleteDatabase.call(this, name);
     };
     IDBDatabase.prototype.transaction = function (stores, mode, options) {
-      if (this.name === MAIN_DB && mode && mode !== "readonly") throw guardStop("zápis do " + MAIN_DB);
+      if ((this.name === MAIN_DB || this.name === MAIN_DB + "-log") && mode && mode !== "readonly") {
+        throw guardStop("zápis do " + this.name);
+      }
       return transaction.apply(this, arguments);
     };
   }
@@ -986,6 +988,7 @@
       this.onChange = onChange;
       const ok = await backend.open();
       if (!ok) {
+        evLog("uložení: databáze se neotevřela, appka jede jen z kopie v zařízení"); // F0-21
         this.state = "off";
         onChange();
         return false;
@@ -1012,6 +1015,7 @@
           onChange();
         },
         (e) => {
+          evLog("uložení: načtení dat selhalo (" + ((e && (e.code || e.name || e.message)) || "chyba") + ")");
           if (e && e.code === "revoked") {
             this.state = "off";
             onChange();
@@ -1055,11 +1059,12 @@
             } else if (e && e.code === "quota_exceeded") {
               toast("Databáze je plná — smaž staré záznamy.");
               failed = true;
-              break;
             } else {
               failed = true;
-              break;
             }
+            // záznam událostí (F0-21): cesta dokumentu a chyba, ne data
+            evLog("uložení selhalo: " + p + " (" + ((e && (e.code || e.name || e.message)) || "chyba") + ")");
+            if (failed) break;
           }
         }
       } finally {
@@ -1095,7 +1100,11 @@
       clearTimeout(this._at);
       const write = () => {
         if (this.backend) {
-          this.backend.set("state/active", { draft: draft ? JSON.stringify(draft) : "" }).catch(() => {});
+          this.backend
+            .set("state/active", { draft: draft ? JSON.stringify(draft) : "" })
+            .catch((e) =>
+              evLog("uložení selhalo: state/active (" + ((e && (e.code || e.name)) || "chyba") + ")"),
+            );
         }
       };
       if (draft) {
@@ -13975,10 +13984,9 @@
      Start jen přes restStart(). Nastavení v config/main: restOn (hlavní vypínač, vypnuto = po ✓ žádná pauza,
      F4-05), restSec, restSs (po pracovní supersérii, F4-05), restAlert (both / sound / vib), restOver,
      restNotify. Zpráva {type:"rest"} posílá restPost(), oznámení jen když appka není na očích.
-     Záznam událostí oznámení (cache wdlog-prN, píše sw.js i appka) je vývojový nástroj: jen v testovací verzi
-     a lokálně (DEV), tlačítko v Nastavení → O aplikaci (sheetRestLog). Ve vydané verzi nic takového být nemá
-     (přání uživatele). Se zamčeným displejem Android uspí procesor a oznámení se může zpozdit; udržování
-     vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
+     Start, zastavení, konec pauzy a oznámení (píše sw.js i appka) jdou do záznamu událostí (F0-21, evLog,
+     sekce ZÁZNAM UDÁLOSTÍ), Nastavení → O aplikaci → Záznam událostí. Se zamčeným displejem Android uspí
+     procesor a oznámení se může zpozdit; udržování vzhůru neslyšitelným tónem uživatel odmítl, znovu nenavrhovat.
      Nativní appka (F6-02) service worker nemá, oznámení plánuje Android: sekce KONEC PAUZY V NATIVNÍ APPCE. */
   const REST_VIB = [700, 300, 700],
     REST_OVER_MAX = 5 * 60; // 2 dlouhé vibrace; přečas zmizí po 5 min (F1-16)
@@ -14096,60 +14104,9 @@
       : { type: "rest", tag: REST_TAG };
     navigator.serviceWorker.ready.then((r) => r.active && r.active.postMessage(msg)).catch(() => {});
   }
-  /* záznam oznámení (sdílený se sw.js, cache "wdlog-…"): kdy se oznámení naplánovalo, zobrazilo,
-     kdy byla appka skrytá. Jen pro vývoj: vede se a ukazuje (Nastavení → O aplikaci) jen v testovací
-     verzi PR a lokálně, ve vydané ne. */
+  /* Vývojové nástroje (zkušební data, zkouška rekordu) jen v testovací verzi PR a lokálně, ve vydané ne.
+     Záznam událostí (F0-21, sekce ZÁZNAM UDÁLOSTÍ) běží i ve vydané verzi. */
   const DEV = !!TEST_PR || !!NATIVE_PR || BUILD.kanal === "lokal";
-  const REST_LOG = "wdlog-" + (TEST_PR ? "pr" + TEST_PR : "main");
-  const REST_LOG_MAX = 30;
-  async function restLogRead() {
-    try {
-      const r = await (await caches.open(REST_LOG)).match("log");
-      return r ? await r.json() : [];
-    } catch (e) {
-      return [];
-    }
-  }
-  // zápisy jdou za sebou (restLogQueue), aby se dva rychlé po sobě nepřepsaly
-  let restLogQueue = Promise.resolve();
-  function restLog(txt) {
-    if (!DEV || !window.caches) return;
-    const at = Date.now();
-    restLogQueue = restLogQueue.then(async () => {
-      try {
-        const a = await restLogRead();
-        a.unshift({ at, txt });
-        await (
-          await caches.open(REST_LOG)
-        ).put("log", new Response(JSON.stringify(a.slice(0, REST_LOG_MAX))));
-      } catch (e) {}
-    });
-  }
-  async function sheetRestLog() {
-    const a = await restLogRead();
-    openSheet(
-      "Záznam oznámení",
-      `<div class="xs muted mb-list">
-        Posledních ${REST_LOG_MAX} událostí, nejnovější nahoře. Pomáhá zjistit, proč oznámení nepřišlo.
-      </div>
-      ${
-        a.length
-          ? `<div class="stack tight">
-            ${a
-              .map(
-                (x) =>
-                  `<div class="small">
-                    <b class="num">${esc(new Date(x.at).toLocaleTimeString("cs-CZ"))}</b> ${esc(x.txt)}
-                  </div>`,
-              )
-              .join("")}
-          </div>`
-          : '<div class="muted small">Zatím nic.</div>'
-      }`,
-      `<button class="btn grow" data-act="restLogClear">Smazat záznam</button>
-      <button class="btn primary grow" data-act="closeSheet">Zavřít</button>`,
-    );
-  }
   function restClearNotif() {
     if (NATIVE) {
       window.NATIVNI.notif.clear();
@@ -14192,6 +14149,7 @@
     const asked = NATIVE ? window.NATIVNI.notif.ask() : Notification.requestPermission();
     asked
       .then(() => {
+        evPermCheck(); // záznam událostí (F0-21)
         restPost();
         scheduleRender();
         exactOffer(once);
@@ -14218,10 +14176,14 @@
     } else if (S.cfg.restNotify) {
       exactOffer(true); // nativní appka: jednou nabídnout povolení přesného času (F6-02)
     }
+    evLog("pauza: start " + S.restTotal + " s, konec " + new Date(S.restEnd).toLocaleTimeString("cs-CZ"));
     restSave();
     renderRest();
   }
   function restStop() {
+    if (S.restEnd && !S.restFired) {
+      evLog("pauza: zastavena před koncem");
+    }
     S.restEnd = null;
     S.restFired = false;
     restSave();
@@ -14274,7 +14236,7 @@
       const seen = !document.hidden && visibleSince <= S.restEnd;
       if (seen) {
         beep();
-        restLog("konec pauzy: appka na očích, upozornila sama (" + S.cfg.restAlert + ")");
+        evLog("pauza: konec, appka na očích, upozornila sama (" + S.cfg.restAlert + ")");
         setTimeout(restClearNotif, 1500);
       } else if (!document.hidden && !(S.cfg.restNotify && notifState() === "granted")) {
         toast("Odpočinek skončil");
@@ -14317,8 +14279,9 @@
     wakeSync(); // pojistka 10 min a ztmavení po 30 s (F1-02)
   }, 500);
   document.addEventListener("visibilitychange", () => {
-    if (S.restEnd && S.active && !S.restFired) {
-      restLog(document.hidden ? "appka na pozadí / zhasnutý displej" : "appka zpět na očích");
+    // návrat na oči zapisuje sekce ZÁZNAM UDÁLOSTÍ vždy, odchod do pozadí jen během pauzy (šetří řádky)
+    if (document.hidden && S.restEnd && S.active && !S.restFired) {
+      evLog("pauza: appka na pozadí / zhasnutý displej");
     }
     if (document.hidden) {
       visibleSince = Infinity;
@@ -14350,8 +14313,8 @@
        a oznámení se může o minuty zpozdit. Stav obou povolení drží NATIVNI.notif (perm, exact).
      - Zvuk a vibraci oznámení určuje kanál Androidu podle S.cfg.restAlert (tři kanály v js/nativni.js),
        vlastní rytmus vibrace REST_VIB oznámení nemá.
-     - Záznam oznámení (jen DEV, restLog): naplánování, zrušení, kdo na konci upozornil a co o appce
-       hlásí Android (NATIVNI.onState), pro hledání chyb v telefonu.
+     - Záznam událostí (F0-21, evLog): naplánování, zrušení, kdo na konci upozornil a co o appce
+       hlásí Android během pauzy (NATIVNI.onState), pro hledání chyb v telefonu.
      Ve webové verzi se nic z toho nevolá. */
   const REST_NAT_ID = 1,
     REST_NAT_TEST_ID = 2;
@@ -14361,8 +14324,8 @@
   function restNative(on) {
     restNatOff = false;
     if (on && S.restEnd > Date.now()) {
-      restLog(
-        "Android: naplánováno na " +
+      evLog(
+        "oznámení (Android): naplánováno na " +
           new Date(S.restEnd).toLocaleTimeString("cs-CZ") +
           (window.NATIVNI.notif.exact === "granted" ? "" : " (nepřesně)") +
           ", " +
@@ -14376,14 +14339,14 @@
         mode: S.cfg.restAlert,
       });
     } else {
-      restLog("Android: oznámení zrušeno");
+      evLog("oznámení (Android): zrušeno");
       window.NATIVNI.notif.cancel(REST_NAT_ID);
     }
   }
   // appka je vteřinu před koncem pauzy na očích: konec ohlásí sama, oznámení se zruší
   function restNativeSeen(left) {
     if (!NATIVE || restNatOff || document.hidden || left <= 0 || left > 1) return;
-    restLog("Android: oznámení zrušeno vteřinu před koncem, appka je na očích");
+    evLog("oznámení (Android): zrušeno vteřinu před koncem, appka je na očích");
     window.NATIVNI.notif.cancel(REST_NAT_ID);
     restNatOff = true;
   }
@@ -14426,14 +14389,15 @@
   if (NATIVE) {
     // změna povolení v nastavení Androidu: přeplánovat běžící pauzu a překreslit Nastavení
     window.NATIVNI.notif.onChange = () => {
+      evPermCheck(); // záznam událostí (F0-21)
       restPost();
       scheduleRender();
     };
-    // záznam oznámení (jen DEV): co o appce hlásí Android (aktivní = na popředí)
+    // záznam událostí (F0-21): co o appce hlásí Android během pauzy (aktivní = na popředí)
     window.NATIVNI.onState = (active) => {
       if (S.restEnd && S.active) {
-        restLog(
-          "Android: appka " +
+        evLog(
+          "pauza: Android hlásí appku " +
             (active ? "aktivní" : "neaktivní") +
             ", stránka " +
             (document.hidden ? "skrytá" : "viditelná"),
@@ -14843,14 +14807,14 @@
           wakeLock = null;
         }
       });
-      restLog("displej: zámek zapnutý");
+      evLog("displej: zámek zapnutý");
       // mezitím se stav mohl změnit (pauza skončila, appka šla na pozadí)
       if (!wakeActive()) {
         wakeRelease();
       }
     } catch (e) {
       wakeFailAt = Date.now();
-      restLog("displej: telefon zámek odmítl (" + ((e && e.name) || "chyba") + ")");
+      evLog("displej: telefon zámek odmítl (" + ((e && e.name) || "chyba") + ")");
     }
     wakeBusy = false;
   }
@@ -14860,7 +14824,7 @@
     wakeLock = null;
     if (!lock) return;
     lock.release().catch(() => {});
-    restLog("displej: zámek puštěný");
+    evLog("displej: zámek puštěný");
   }
 
   // černá obrazovka se odpočtem (po WAKE_DIM bez dotyku)
@@ -17178,8 +17142,11 @@
       case "notifTest":
         restTest();
         break;
-      case "restLog":
-        sheetRestLog();
+      case "evLog":
+        sheetEvLog();
+        break;
+      case "evLogCopy":
+        evLogCopy();
         break;
       case "fakeAdd":
         fakeAdd();
@@ -17187,10 +17154,8 @@
       case "fakeDel":
         fakeRemove();
         break;
-      case "restLogClear":
-        if (window.caches) {
-          caches.delete(REST_LOG).then(sheetRestLog);
-        }
+      case "evLogClear":
+        evLogClear();
         break;
       case "theme":
         setTheme(v);
@@ -17743,7 +17708,7 @@
     },
     true,
   );
-  // v testovací verzi a lokálně ukázat, co pravidla zablokovala (zapomenutá úprava pravidel)
+  // v testovací verzi a lokálně ukázat, co pravidla zablokovala (do záznamu událostí to píše vždy js/zaznam.js)
   document.addEventListener("securitypolicyviolation", (ev) => {
     if (!DEV) return;
     const what = !ev.blockedURI || ev.blockedURI === "inline" ? "kód přímo v HTML" : ev.blockedURI;
@@ -18767,6 +18732,147 @@
     return h;
   }
 
+  /* ---------- ZÁZNAM UDÁLOSTÍ (F0-21) ----------
+     Záznam toho, co se v appce stalo, i ve vydané verzi (dřív jen vývojový záznam oznámení restLog).
+     Zapisuje js/zaznam.js (ZAZNAM, vlastní databáze IndexedDB, posledních 200 řádků, zápisy sdružené,
+     popis tam); sám zachytí chyby kódu, nezachycené Promise a blokace CSP. Tady:
+     - evLog(text) = řádek do záznamu; text krátký, s předponou oblasti („pauza: …“, „uložení: …“),
+       nikdy tréninková data (názvy cviků, váhy, poznámky). Nová funkce zapisuje své důležité události.
+     - evStart(): start appky (verze, web / PWA / APK, persist, povolení oznámení), evVisible(): návrat
+       na oči s délkou pobytu v pozadí (odchod do pozadí jen během pauzy, aby záznam vydržel déle),
+       evPermCheck(): změna povolení oznámení (při návratu, po dotazu a po změně v Androidu).
+     - Panel sheetEvLog (Nastavení → O aplikaci → Záznam událostí): seznam, nejnovější nahoře;
+       Smazat (evLogClear) vlevo, Zkopírovat (evLogCopy, text s hlavičkou evLogText) vpravo.
+     Do zálohy nepatří a nikam se neposílá. */
+  function evLog(txt) {
+    if (window.ZAZNAM) {
+      window.ZAZNAM.add(txt);
+    }
+  }
+  // popis verze appky jedním řádkem
+  function evVer() {
+    const kind = TEST_PR
+      ? "testovací PR #" + TEST_PR
+      : NATIVE_PR
+        ? "testovací APK PR #" + NATIVE_PR
+        : NATIVE
+          ? "APK"
+          : BUILD.kanal === "main"
+            ? "vydaná"
+            : "lokální";
+    return kind + (BUILD.commit ? " " + BUILD.commit : "") + (BUILD.cas ? " (" + BUILD.cas + ")" : "");
+  }
+  let evPerm = "";
+  // zapíše změnu povolení oznámení od minulé kontroly
+  function evPermCheck() {
+    const now = notifState() + (NATIVE ? ", přesný čas " + window.NATIVNI.notif.exact : "");
+    if (evPerm && now !== evPerm) {
+      evLog("povolení oznámení: " + now);
+    }
+    evPerm = now;
+  }
+  function evStart() {
+    const how = NATIVE
+      ? "APK"
+      : matchMedia("(display-mode: standalone)").matches
+        ? "nainstalovaná PWA"
+        : "prohlížeč";
+    evLog("start appky: " + evVer() + ", " + how);
+    evPermCheck();
+    evLog("povolení oznámení: " + evPerm);
+    if (navigator.storage && navigator.storage.persisted) {
+      navigator.storage
+        .persisted()
+        .then((ok) => {
+          if (!ok) {
+            evLog("úložiště: Chrome neslíbil data nemazat (persist)");
+          }
+        })
+        .catch(() => {});
+    }
+  }
+  let evHiddenAt = document.hidden ? Date.now() : 0;
+  function evVisible() {
+    if (document.hidden) {
+      evHiddenAt = Date.now();
+      return;
+    }
+    if (evHiddenAt) {
+      const min = Math.round((Date.now() - evHiddenAt) / 60000);
+      evLog("appka zpět na očích po " + (min < 1 ? "méně než minutě" : min + " min"));
+    }
+    evHiddenAt = 0;
+    evPermCheck();
+  }
+  document.addEventListener("visibilitychange", evVisible);
+  // řádek záznamu jako text: „12. 11. 14:03:05 text ×3“
+  function evRowTxt(r) {
+    const d = new Date(r.at);
+    return (
+      d.getDate() +
+      ". " +
+      (d.getMonth() + 1) +
+      ". " +
+      d.toLocaleTimeString("cs-CZ") +
+      " " +
+      r.txt +
+      (r.n > 1 ? " ×" + r.n : "")
+    );
+  }
+  // text pro vložení do chatu: hlavička (verze, zařízení) a řádky, nejnovější nahoře
+  function evLogText(rows) {
+    return [
+      "Workout deník – záznam událostí",
+      "Verze: " + evVer(),
+      "Zařízení: " + navigator.userAgent,
+      "Zkopírováno: " + evRowTxt({ at: Date.now(), txt: "" }).trim(),
+      "",
+      ...rows.map(evRowTxt),
+    ].join("\n");
+  }
+  async function sheetEvLog() {
+    const rows = window.ZAZNAM ? await window.ZAZNAM.read() : [];
+    openSheet(
+      "Záznam událostí",
+      `<div class="xs muted mb-list">Posledních ${rows.length} z nejvýš 200 událostí, nejnovější nahoře.</div>
+      ${
+        rows.length
+          ? `<div class="stack tight evlog">
+            ${rows
+              .map((r) => {
+                const t = evRowTxt(r);
+                const sp = t.indexOf(" ", t.indexOf(":"));
+                return `<div class="small">
+                  <b class="num">${esc(t.slice(0, sp))}</b> ${esc(t.slice(sp + 1))}
+                </div>`;
+              })
+              .join("")}
+          </div>`
+          : '<div class="muted small">Zatím nic.</div>'
+      }`,
+      `<button class="btn danger grow" data-act="evLogClear">Smazat</button>
+      <button class="btn primary grow" data-act="evLogCopy">Zkopírovat</button>`,
+    );
+  }
+  async function evLogCopy() {
+    const rows = window.ZAZNAM ? await window.ZAZNAM.read() : [];
+    const text = evLogText(rows);
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      toast("Kopírování tu nejde.");
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => toast("Záznam zkopírován, vlož ho do chatu"),
+      () => toast("Kopírování se nepovedlo."),
+    );
+  }
+  async function evLogClear() {
+    if (window.ZAZNAM) {
+      await window.ZAZNAM.clear();
+    }
+    sheetEvLog();
+  }
+
   /* ---------- MÍSTO V ZAŘÍZENÍ (F0-19) ----------
      Rychlá schránka (localStorage) má limit asi 5 milionů znaků (LS_LIMIT) a sdílí ho vydaná appka se všemi
      testovacími verzemi na stejné doméně. Při plné schránce Local.set smaže kopii pro rychlý start (cache)
@@ -18800,6 +18906,7 @@
   function storageFull() {
     if (storageFull.shown) return;
     storageFull.shown = true;
+    evLog("úložiště: místo v zařízení je plné (localStorage)"); // F0-21
     setTimeout(() => {
       toast("Místo v zařízení je plné. Data jsou v bezpečí, víc v Nastavení → Data a záloha.");
       scheduleRender();
@@ -19549,9 +19656,7 @@
       h += `<button class="btn" data-act="copyMain">Zkopírovat data z vydané verze</button>
       <a class="btn" href="${esc(MAIN_URL)}">Otevřít vydanou verzi</a>`;
     }
-    if (DEV && window.caches) {
-      h += '<button class="btn" data-act="restLog">Záznam oznámení o pauze</button>';
-    } // jen pro vývoj (F1-04)
+    h += '<button class="btn" data-act="evLog">Záznam událostí</button>'; // F0-21
     return `${h}</div></section>`;
   }
   /* ---------- ZKUŠEBNÍ DATA (jen vývoj) ----------
@@ -19873,7 +19978,7 @@
       return indexedDB.databases
         ? (await indexedDB.databases())
             .map((d) => d.name)
-            .filter((n) => /^workout-denik-pr\d+$/.test(n || ""))
+            .filter((n) => /^workout-denik(-log)?-pr\d+$/.test(n || "")) // i záznam událostí (F0-21)
         : [];
     } catch (e) {
       return [];
@@ -19922,7 +20027,7 @@
             await caches.delete(k);
           }
         }
-      } // i záznam oznámení (F1-04)
+      } // i starý záznam oznámení (F1-04, nahradil ho záznam událostí F0-21)
       if (navigator.serviceWorker) {
         for (const r of await navigator.serviceWorker.getRegistrations()) {
           if (/\/pr-\d+\/$/.test(new URL(r.scope).pathname)) {
@@ -20064,6 +20169,7 @@
   }
   (async function boot() {
     downloads = LocalDownloads;
+    evStart(); // záznam událostí (F0-21)
     // požádat Chrome, ať data appky nikdy sám nemaže (u nainstalované PWA obvykle povolí bez dotazu)
     if (navigator.storage && navigator.storage.persist) {
       navigator.storage.persist().catch(() => {});

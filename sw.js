@@ -9,7 +9,7 @@
    Vydaná verze (…/workout-denik/) a testovací verze PR (…/workout-denik-test/pr-12/)
    běží na stejné doméně a sdílejí úložiště cache. Každá proto maže jen své
    cache (předpona wd-main- / wd-pr12-). */
-importScripts("js/verze.js");
+importScripts("js/verze.js", "js/zaznam.js"); // zaznam.js = záznam událostí (F0-21)
 const B = self.APP_BUILD || {};
 const VERSION = B.commit ? B.commit + "-" + B.cas : "lokal";
 // "/workout-denik/" nebo "/workout-denik-test/pr-12/"
@@ -29,6 +29,7 @@ const FILES = [
   "js/pwa.js",
   "js/verze.js",
   "js/wdlog.js",
+  "js/zaznam.js",
   "fonts/fonts.css",
   "fonts/barlow-400-latin.woff2",
   "fonts/barlow-400-latin-ext.woff2",
@@ -66,8 +67,13 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       for (const key of await caches.keys()) {
-        // vlastní starší cache; vydaná verze smaže i cache z doby před F0-04 ("workout-denik-…")
-        if ((key.startsWith(PREFIX) && key !== CACHE) || (!PR && key.startsWith("workout-denik-"))) {
+        /* vlastní starší cache; vydaná verze smaže i cache z doby před F0-04 ("workout-denik-…");
+           starý vývojový záznam oznámení "wdlog-…" nahradil záznam událostí (F0-21) */
+        const old =
+          (key.startsWith(PREFIX) && key !== CACHE) ||
+          (!PR && key.startsWith("workout-denik-")) ||
+          key === "wdlog-" + (PR ? "pr" + PR : "main");
+        if (old) {
           await caches.delete(key);
         }
       }
@@ -104,29 +110,12 @@ self.addEventListener("fetch", (event) => {
    bez "end" = zrušit. Web neumí naplánovat oznámení do systému, proto worker čeká sám:
    waitUntil ho drží vzhůru, Chrome to dovolí nejvýš asi 5 minut (každá nová zpráva lhůtu obnoví).
    Když je appka zrovna na očích (viditelná a aktivní), oznámení se neukáže (pípne appka sama),
-   kromě zkoušky (always). V testovací verzi PR (a lokálně) se průběh zapisuje
-   do záznamu (cache "wdlog-…"), appka ho ukáže v Nastavení → Verze aplikace. */
+   kromě zkoušky (always). Průběh jde do záznamu událostí (F0-21, js/zaznam.js), appka ho ukáže
+   v Nastavení → O aplikaci → Záznam událostí. */
 const restTimers = new Map(); // tag → {t: časovač, done: ukončí waitUntil}
-const LOG = "wdlog-" + (PR ? "pr" + PR : "main");
-const DEV = !!PR || B.kanal === "lokal"; // záznam jen v testovací verzi PR a lokálně, ve vydané ne
-async function restLog(txt) {
-  if (!DEV) return;
-  try {
-    const c = await caches.open(LOG),
-      r = await c.match("log");
-    const a = r ? await r.json() : [];
-    // opakované přeplánování (±15 s) za sebou = jen jeden řádek
-    if (
-      a[0] &&
-      txt.startsWith("naplánováno") &&
-      a[0].txt.startsWith("naplánováno") &&
-      Date.now() - a[0].at < 15000
-    ) {
-      a.shift();
-    }
-    a.unshift({ at: Date.now(), txt });
-    await c.put("log", new Response(JSON.stringify(a.slice(0, 12))));
-  } catch (e) {}
+// řádek záznamu událostí (zapisuje hned, worker může Chrome kdykoli uspat)
+function restLog(txt) {
+  return self.ZAZNAM ? self.ZAZNAM.add("oznámení (web): " + txt, true) : Promise.resolve();
 }
 self.addEventListener("message", (event) => {
   const m = event.data || {};
