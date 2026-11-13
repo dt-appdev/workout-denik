@@ -1381,6 +1381,7 @@
   function put(path, data) {
     applyDoc(path, data);
     Store.put(path, data);
+    pbSchedule(); // záloha se zálohou telefonu (F6-03)
   }
   // ukazatel uložení v horní liště (Uloženo / Ukládám… / Jen v zařízení)
   function updSync() {
@@ -11534,6 +11535,38 @@
         ],
       ],
     },
+    // F6-03: Nastavení → Data a záloha → Záloha telefonu (jen nativní appka)
+    phonebk: {
+      title: "Záloha telefonu",
+      items: () => [
+        [
+          "Co to je",
+          "Appka po každé změně dat (do 15 s a při odchodu z appky) zapíše zálohu do souboru uvnitř appky. " +
+            "Android ho sám zhruba jednou denně (při nabíjení a na Wi-Fi) nahraje do zálohy telefonu " +
+            "v Google One. Drží se jen nejnovější verze.",
+        ],
+        [
+          "Co v ní není",
+          "Fotky u cviků a rozdělaný trénink. Fotky ochrání jen záloha do souboru s fotkami.",
+        ],
+        [
+          "Nový telefon",
+          "Přihlas se do Googlu, obnov zálohu telefonu a nainstaluj appku. Android při instalaci vrátí " +
+            "soubor zálohy a prázdná appka sama nabídne obnovu. Jde to i tlačítkem Obnovit ze zálohy " +
+            "telefonu.",
+        ],
+        [
+          "Zapnutí",
+          "Záloha musí být zapnutá v telefonu: Nastavení → Google → Zálohování. Tam jde zálohovat i hned " +
+            "(Zálohovat nyní). Kdy záloha do Googlu opravdu proběhla, appka nevidí.",
+        ],
+        [
+          "Před chybou nechrání",
+          "Smazaný trénink zmizí do 15 s i ze souboru zálohy a do druhého dne i z Google One. Na vrácení " +
+            "chyby jsou body obnovy.",
+        ],
+      ],
+    },
     points: {
       title: "Body obnovy",
       items: () => [
@@ -11861,7 +11894,8 @@
       id: "data",
       name: "Data a záloha",
       icon: "backup",
-      body: () => backupSettings() + storageSettings() + nativeSettings() + shSettings() + cxSettings(),
+      body: () =>
+        backupSettings() + pbSettings() + storageSettings() + nativeSettings() + shSettings() + cxSettings(),
     },
     {
       id: "about",
@@ -17202,6 +17236,9 @@
       case "bkRestore":
         openPoint(v);
         break;
+      case "pbRestore":
+        pbRestore();
+        break;
       case "bkSave":
         savePoint(v);
         break;
@@ -19587,6 +19624,122 @@
     scheduleRender();
   }
 
+  /* ---------- ZÁLOHA SE ZÁLOHOU TELEFONU (F6-03) ----------
+     Jen v nativní appce. Android sám (zhruba jednou denně při nabíjení a na Wi-Fi) zálohuje do Google One
+     jediný soubor ve vnitřní složce appky; data zabudovaného prohlížeče ze zálohy vyřazují pravidla
+     nativni/android/app/src/main/res/xml/zaloha_pravidla.xml. Soubor zapisuje a čte js/nativni.js
+     (NATIVNI.phoneBackup), tady se řeší kdy a co:
+     - Zápis (pbWrite): celá záloha bez fotek (snapshotAll, formát F0-01) jako kompaktní JSON, 15 s
+       po poslední změně dat (put → pbSchedule) a hned při odchodu appky do pozadí, pokud zápis čeká.
+       Pojistka: appka bez tréninků nebo s nenačtenými daty soubor nikdy nepřepíše (smazaná data appky by
+       jinak přepsala dobrou zálohu prázdnou).
+     - Obnova (pbOffer): když nativní appka po načtení dat nemá žádný trénink a soubor tréninky má (nový
+       telefon, přeinstalovaná appka; Android soubor vrátí při instalaci), otevře jednou za spuštění stejné
+       okno obnovy jako soubor zálohy (importSheet, Sloučit / Nahradit vše). Trvale Nastavení → Data a záloha
+       → Záloha telefonu → Obnovit ze zálohy telefonu (pbRestore).
+     - Stav (S.pbInfo z NATIVNI.phoneBackup.info: čas posledního zápisu, velikost) ukazuje pbSettings.
+       Kdy soubor opravdu odešel do Google One, appka nezjistí.
+     Záznam událostí: nabídnutí obnovy a selhání zápisu nebo čtení (pbLog, selhání jednou za spuštění). */
+  // doplněk nativní appky (null ve webové verzi); funkce a stav jako vlastnosti funkcí, protože put volá
+  // pbSchedule i dřív, než start appky dojde až sem
+  function phoneBk() {
+    return (NATIVE && window.NATIVNI && window.NATIVNI.phoneBackup) || null;
+  }
+  // zápis selhal: do záznamu událostí jen poprvé za spuštění (zápisy se opakují po každé změně)
+  function pbLog(what, e) {
+    if (pbLog[what]) return;
+    pbLog[what] = true;
+    evLog("záloha telefonu: " + what + " selhal (" + ((e && (e.message || e.code)) || "chyba") + ")");
+  }
+  // změna dat: zápis za 15 s (další změna ho odsune)
+  function pbSchedule() {
+    if (!phoneBk()) return;
+    clearTimeout(pbSchedule.timer);
+    pbSchedule.timer = setTimeout(pbWrite, 15000);
+  }
+  // zapíše soubor pro zálohu telefonu (jen s načtenými daty a aspoň jedním tréninkem)
+  async function pbWrite() {
+    clearTimeout(pbSchedule.timer);
+    pbSchedule.timer = 0;
+    const api = phoneBk();
+    if (!api || Store.state !== "ok" || !countW(S.months)) return;
+    if (pbWrite.busy) {
+      pbSchedule();
+      return;
+    }
+    pbWrite.busy = true;
+    try {
+      await api.write(JSON.stringify(snapshotAll()));
+      await pbInfoLoad();
+    } catch (e) {
+      pbLog("zápis", e);
+    } finally {
+      pbWrite.busy = false;
+    }
+  }
+  // čas a velikost souboru pro Nastavení
+  async function pbInfoLoad() {
+    const api = phoneBk();
+    if (!api) return;
+    S.pbInfo = await api.info();
+    scheduleRender();
+  }
+  // obsah souboru jako záloha (normBackup), null = soubor není nebo nejde přečíst
+  async function pbRead() {
+    try {
+      const text = await phoneBk().read();
+      return text ? normBackup(JSON.parse(text)) : null;
+    } catch (e) {
+      pbLog("čtení", e);
+      return null;
+    }
+  }
+  // po načtení dat: prázdná appka a soubor s tréninky = nabídka obnovy (jednou za spuštění)
+  async function pbOffer() {
+    if (!phoneBk() || pbOffer.done || Store.state !== "ok") return;
+    pbOffer.done = true;
+    pbInfoLoad();
+    if (countW(S.months)) return;
+    const o = await pbRead();
+    if (!o || !countW(o.months) || countW(S.months)) return;
+    evLog("záloha telefonu: prázdná appka, nabízím obnovu");
+    importSheet(o, "Záloha telefonu");
+  }
+  // Nastavení → Obnovit ze zálohy telefonu
+  async function pbRestore() {
+    const o = await pbRead();
+    if (!o) {
+      toast("Záloha telefonu nejde načíst.");
+      return;
+    }
+    importSheet(o, "Záloha telefonu");
+  }
+  // při odchodu do pozadí zapsat hned, pokud zápis čeká
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && pbSchedule.timer) {
+      pbWrite();
+    }
+  });
+  /* Nastavení → Data a záloha → Záloha telefonu (jen v nativní appce) */
+  function pbSettings() {
+    if (!phoneBk()) return "";
+    const info = S.pbInfo;
+    const state = info
+      ? `Poslední zápis: ${fmtDate(info.mtime)} ${toTimeInput(info.mtime)} (${agoLabel(info.mtime)}) · ` +
+        fmtSize(info.size)
+      : "Zatím nezapsáno, zapíše se po prvním uloženém tréninku.";
+    return `<section class="sec">
+      <div class="sec-h">
+        <h2>Záloha telefonu</h2>
+        ${helpBtn("phonebk")}
+      </div>
+      <div class="card stack">
+        ${info ? '<button class="btn" data-act="pbRestore">Obnovit ze zálohy telefonu</button>' : ""}
+        <div class="xs muted">${esc(state)}</div>
+      </div>
+    </section>`;
+  }
+
   /* ---------- verze appky (F0-04) ----------
      Vydaná verze = …/workout-denik/ (větev main), testovací verze PR = …/workout-denik-test/pr-12/
      (jiné repo, aby šla v Androidu nainstalovat vedle vydané appky; stejná doména = stejné úložiště).
@@ -20181,6 +20334,7 @@
       migrateEx();
       if (Store.state === "ok") {
         planClean(); // zmeškané plány pryč (F4-07)
+        pbOffer(); // záloha telefonu: prázdná appka nabídne obnovu (F6-03)
       }
     });
     if (ok) {

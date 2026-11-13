@@ -110,6 +110,21 @@ Když oznámení chodí pozdě nebo vůbec:
 - Hodinky: v telefonu **Galaxy Wearable** → Nastavení hodinek → Oznámení → zapnout **Workout deník**. Hodinky
   oznámení zopakují hlavně tehdy, když telefon zrovna nepoužíváš.
 
+### Záloha se zálohou telefonu (F6-03)
+
+Appka po každé změně dat zapíše zálohu (bez fotek) do jednoho souboru uvnitř appky a Android ho zhruba jednou
+denně při nabíjení a na Wi-Fi nahraje do zálohy telefonu v Google One. Data zabudovaného prohlížeče se nezálohují
+(pravidla `android/app/src/main/res/xml/zaloha_pravidla.xml`, Android 12 a novější). Stav ukazuje Nastavení →
+Data a záloha → Záloha telefonu.
+
+- Zapnutí: Nastavení Androidu → Google → Zálohování → Záloha Googlem zapnutá.
+- Hned zálohovat: tamtéž **Zálohovat nyní** (jinak až v noci u nabíječky).
+- Obnova: při instalaci appky (nový telefon, přeinstalace) Android soubor vrátí. Prázdná appka pak sama
+  nabídne obnovu, jinak Nastavení → Data a záloha → Záloha telefonu → Obnovit ze zálohy telefonu.
+- Vymazat data aplikace v Androidu smaže i soubor; kopie v Google One se vrátí jen odinstalováním
+  a novou instalací.
+- Fotky u cviků v ní nejsou, ty ochrání jen ruční záloha s fotkami.
+
 ### Na co pozor
 
 - Do nativní appky nic skutečného nezapisuj před dnem přechodu (sekce Přechod níže), data by byla ve dvou appkách.

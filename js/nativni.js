@@ -15,6 +15,8 @@
    - Oznámení o konci pauzy (F6-02): NATIVNI.notif, doplněk LocalNotifications. Android oznámení ukáže sám
      v naplánovaný čas, i když appka spí nebo je displej zamčený. Popis u NATIVNI.notif níže a v js/app.js
      (sekce KONEC PAUZY V NATIVNÍ APPCE).
+   - Záloha se zálohou telefonu (F6-03): NATIVNI.phoneBackup (write, info, read), jeden soubor ve vnitřní
+     složce appky, který Android posílá do Google One. Popis u phoneBackup níže a v js/app.js.
    - Třída nativni na <html>: styly jen pro nativní appku (pruh pod stavovým řádkem, okraje, css/app.css).
    - Záznam událostí (F0-21): každé selhání doplňku (oznámení, povolení, uložení, sdílení, stavový řádek)
      zapíše nlog do záznamu (js/zaznam.js) s názvem akce a chybou Androidu, místo aby se tiše ztratilo.
@@ -168,6 +170,58 @@
     }
   });
 
+  /* Soubor pro zálohu telefonu (F6-03): jediný soubor ve vnitřní složce appky (files/zaloha-telefonu/),
+     kterou Android zálohuje do Google One (pravidla v nativni/android/app/src/main/res/xml/
+     zaloha_pravidla.xml).
+     Zápis jde nejdřív do dočasného souboru a ten se pak přejmenuje, takže přerušený zápis nepoškodí poslední
+     dobrou zálohu; read() při chybějícím hlavním souboru vezme dočasný (zápis přerušený mezi smazáním
+     a přejmenováním). Co, kdy a proč zapisovat, řeší js/app.js (sekce ZÁLOHA SE ZÁLOHOU TELEFONU). */
+  const PB_DIR = "zaloha-telefonu";
+  const PB_FILE = PB_DIR + "/zaloha.json";
+  const PB_TMP = PB_DIR + "/zaloha.tmp";
+  const phoneBackup = {
+    async write(text) {
+      try {
+        await Filesystem.writeFile({
+          path: PB_TMP,
+          directory: "DATA",
+          data: text,
+          encoding: "utf8",
+          recursive: true,
+        });
+        await Filesystem.deleteFile({ path: PB_FILE, directory: "DATA" }).catch(() => {});
+        await Filesystem.rename({ from: PB_TMP, to: PB_FILE, directory: "DATA", toDirectory: "DATA" });
+      } catch (e) {
+        nlog("zápis zálohy telefonu", e);
+        throw e;
+      }
+    },
+    // čas posledního zápisu a velikost ({ mtime, size }), null = soubor není
+    async info() {
+      for (const path of [PB_FILE, PB_TMP]) {
+        try {
+          const s = await Filesystem.stat({ path, directory: "DATA" });
+          return { mtime: +s.mtime || 0, size: +s.size || 0 };
+        } catch (e) {
+          // soubor není, zkusí se dočasný
+        }
+      }
+      return null;
+    },
+    // obsah souboru jako text, null = soubor není
+    async read() {
+      for (const path of [PB_FILE, PB_TMP]) {
+        try {
+          const r = await Filesystem.readFile({ path, directory: "DATA", encoding: "utf8" });
+          return String(r.data);
+        } catch (e) {
+          // soubor není, zkusí se dočasný
+        }
+      }
+      return null;
+    },
+  };
+
   window.NATIVNI = {
     notif,
     // uložení souboru do složky Download v telefonu (stejné místo, kam ukládá Chrome)
@@ -182,6 +236,7 @@
         throw err;
       }
     },
+    phoneBackup,
     // změna stavu appky podle Androidu (true = na popředí), nastaví js/app.js pro záznam událostí (F0-21)
     onState: null,
     // co udělat při systémovém Zpět (nastaví js/app.js); dokud appka neběží, Zpět aplikaci schová
