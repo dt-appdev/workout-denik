@@ -19,10 +19,16 @@ v zabudovaném Chromu (WebView). Co WebView neumí, doplní `js/nativni.js` pře
 - **Po každém sloučení do `main`** sestaví GitHub Actions (workflow „APK“) podepsané APK a vydá ho jako
   GitHub Release `vN` (Releases v repu). Číslo `N` je zároveň číslo verze pro Android, takže každé další APK
   jde nainstalovat přes předchozí a data zůstanou.
-- **PR, který mění nativní obal** (`nativni/`, `js/nativni.js`, `.github/workflows/apk.yml`), dostane testovací
-  APK „WD TEST #N“: oranžová ikona, jiné ID aplikace (jde nainstalovat vedle hlavní a má vlastní data), pruh
-  TEST nahoře a zapnuté ladění přes `chrome://inspect`. Odkaz přijde do komentáře v PR, po zavření PR se smaže.
-  Ostatní PR mají dál jen testovací webovou verzi.
+- **Každý PR při každém pushi** (F6-08) dostane testovací APK **„WD TEST“**: oranžová ikona, jiné ID aplikace
+  (jde nainstalovat vedle hlavní a má vlastní data), pruh TEST s číslem PR nahoře a zapnuté ladění přes
+  `chrome://inspect`. Je jedno pro všechny PR (vždy z naposledy změněného, data společná pro všechny PR)
+  a vydává se jako `tN` v repu `workout-denik-test` (vedle testovacího webu), kde ho sleduje Obtainium jako
+  druhou appku. Vydání s nejvyšším číslem je vždy označené Latest, drží se posledních 5, po zavření PR se nic
+  nemaže. Odkaz přijde i do komentáře v PR. Zapisuje se tokenem `TEST_REPO_TOKEN` (stejný jako pro testovací
+  web), ten potřebuje u repa `workout-denik-test` oprávnění **Contents: Read and write**; bez něj workflow
+  jen varuje a APK nevydá.
+- **Ručně** (Actions → APK → Run workflow): bez čísla PR = vydaná verze z `main`, s číslem PR = testovací APK
+  z toho PR (když chceš vyzkoušet PR, do kterého jsi naposled nepushoval).
 - Aktualizace nejsou automatické jako u webové appky: novou verzi stáhne a nainstaluje aplikace **Obtainium**.
 
 ## Nastavení (jednou)
@@ -44,27 +50,39 @@ vydání na GitHubu, upozorní na novou verzi a jedním klepnutím ji nainstaluj
 Data v appce aktualizace nemaže, nová verze se nainstaluje přes starou (obě podepsané stejným klíčem).
 Přesné názvy tlačítek se podle verze Androidu a Obtainia můžou trochu lišit.
 
-### Testovací APK z PR (bez Obtainia)
+### Ruční instalace APK (bez Obtainia)
 
-1. V PR přijde komentář „Testovací APK“ s odkazem (asi 3–5 minut po pushi). Otevři ho v telefonu v Chromu.
+Takhle se instaluje Obtainium samo, nebo APK z odkazu v komentáři PR.
+
+1. Otevři odkaz na soubor `.apk` v telefonu v Chromu.
 2. Klepni na stažený soubor (oznámení nebo Chrome → ⋮ → Stažené soubory).
 3. Když Android napíše, že Chrome nesmí instalovat neznámé aplikace: **Nastavení** → zapnout **Povolit z tohoto
    zdroje** → zpět.
 4. **Instalovat**. Varování Play Protect „Neznámá aplikace“: **Další podrobnosti → Přesto nainstalovat**
    (normální u každého APK mimo Obchod).
-5. Na ploše přibude **WD TEST #N** s oranžovou ikonou. Po další změně v PR stejný postup, nainstaluje se přes
-   předchozí.
 
 ### Obtainium (jednou, po prvním vydání z `main`)
 
 1. **Instalace Obtainia:** v Chromu otevři `https://github.com/ImranR98/Obtainium/releases`, u nejnovější verze
    (štítek **Latest**) rozbal **Assets** a stáhni soubor končící na **`arm64-v8a-release.apk`** (ne `fdroid`).
-   Nainstaluj ho stejně jako testovací APK (body 2–4 výše).
+   Nainstaluj ho podle sekce Ruční instalace APK výše.
 2. Otevři Obtainium a povol **oznámení** (bez nich se o nové verzi nedozvíš).
 3. Dole záložka **Add App**, do políčka **App Source URL** vlož `https://github.com/dt-appdev/workout-denik`
-   a klepni na **Add**. Ostatní volby nech, hlavně nezapínej **Include prereleases** (to by stahovalo testovací APK).
+   a klepni na **Add**. Ostatní volby nech (**Include prereleases** nezapínej).
 4. **Install**. Android se zeptá, jestli smí instalovat Obtainium: povolit stejně jako u Chromu.
 5. Na ploše přibude **Workout deník** s červenou ikonou.
+
+### Testovací APK v Obtainiu (F6-08, jednou)
+
+1. V Obtainiu **Add App**, do **App Source URL** vlož `https://github.com/dt-appdev/workout-denik-test` → **Add**
+   → **Install**.
+2. Na ploše přibude **WD TEST** s oranžovou ikonou (vedle hlavní appky, data má vlastní).
+3. Po pushi do kteréhokoli PR (asi 5 minut, odkaz přijde i do komentáře v PR) otevři Obtainium, stáhni seznam
+   tahem prstem dolů a u WD TEST klepni na **Update** → **Instalovat**. Ze kterého PR je, ukáže pruh TEST nahoře
+   v appce.
+4. Kdyby Obtainium hlásilo, že nepozná verzi (nabízí stále stejnou aktualizaci): u appky v Obtainiu ozubené kolo →
+   vypnout **Version detection**. Název verze APK je od F6-08 stejný jako název vydání (`vN`, `tN`), takže by to
+   nemělo být potřeba.
 
 ### Aktualizace
 

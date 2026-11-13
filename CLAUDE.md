@@ -81,7 +81,7 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
 | `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20), oznámení o konci pauzy přes doplněk LocalNotifications (`NATIVNI.notif`, F6-02). Ve webové verzi nic nedělá. |
 | `nativni/` | Nativní obal (F6-01, Capacitor): `capacitor.config.json`, `package.json`, projekt `android/`, skript `sestav-apk.sh`, návod `README.md`. Na web se nekopíruje. |
-| `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST #N“ jen pro PR, který mění nativní obal; klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`. |
+| `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST“ u každého PR jako vydání `tN` v repu `workout-denik-test` (Obtainium ho sleduje jako druhou appku, F6-08); klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
 | `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08, a přímého přístupu k úložišti, F0-18) a úloha „testy" (F0-17). |
@@ -320,7 +320,7 @@ NODE_PATH=$(npm root -g) node tools/testy/spust.js [část názvu testu]
 texty. Změna `data-act`, struktury panelu nebo formátu zálohy proto vyžaduje úpravu testu v téže úloze. Nová úloha,
 která mění zálohu, data nebo hlavní obrazovky, přidá ke svému PR příslušný test; nové pole v datech patří
 do `zaloha-v2-plna.json.txt`. Testy nevidí Android WebView ani
-nativní prostředí, to se zkouší ručně (testovací APK z PR, F6-01; test `nativni.js` jen napodobuje
+nativní prostředí, to se zkouší ručně (testovací APK z PR přes Obtainium, F6-08; test `nativni.js` jen napodobuje
 `window.Capacitor`). Ostatní kontroly zůstávají ruční (telefon, náhled).
 
 Appku ručně lokálně: statický server z kořene repa, např. `python3 -m http.server`, a otevřít
