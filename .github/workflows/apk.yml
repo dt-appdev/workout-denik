@@ -1,11 +1,15 @@
-# APK nativní appky (F6-01), skript nativni/sestav-apk.sh, postup a nastavení v nativni/README.md:
-#   push do main          → podepsané APK jako GitHub Release vN (N = číslo běhu = číslo verze pro Android);
-#                           v telefonu ho stáhne a nainstaluje Obtainium (sleduje poslední vydání, ne předběžná)
-#   PR, který mění nativní obal (nativni/, js/nativni.js, tento soubor)
-#                         → testovací APK „WD TEST #N“ (jiné ID aplikace, jde vedle hlavní) jako předběžné
-#                           vydání test-pr-N, odkaz v komentáři v PR; po zavření PR se vydání smaže.
-#                           Ostatní PR mají jen testovací webovou verzi pr-N (nasazeni.yml).
-#   ručně (Actions → APK → Run workflow) → jako push do main.
+# APK nativní appky (F6-01, testovací APK F6-08), skript nativni/sestav-apk.sh, postup a nastavení
+# v nativni/README.md:
+#   push do main          → podepsané APK jako GitHub Release vN v tomto repu (N = číslo běhu = číslo verze pro
+#                           Android i název verze); v telefonu ho stáhne a nainstaluje Obtainium
+#   každý PR, každý push  → jedno společné testovací APK „WD TEST“ (cz.workoutdenik.test, jde vedle hlavní, data
+#                           společná pro všechny PR) jako vydání tN v repu workout-denik-test (secret
+#                           TEST_REPO_TOKEN, stejný jako pro testovací web). Obtainium ho sleduje jako druhou appku.
+#                           Jako nejnovější (Latest) se označí vždy vydání s nejvyšším N, takže starší běh, který
+#                           doběhne později, Obtainium nenabídne. Drží se posledních 5 vydání, po zavření PR se
+#                           nic nemaže. Odkaz na APK přijde i do komentáře v PR.
+#   ručně (Actions → APK → Run workflow) bez čísla PR → jako push do main;
+#                         s číslem PR → testovací APK z toho PR (jen PR z větve tohoto repa).
 # Klíč k podpisu je v secretech WD_KEYSTORE_B64 (soubor .jks v base64) a WD_KEYSTORE_PASSWORD. Bez nich se APK
 # jen sestaví na zkoušku (nepodepsané, nejde nainstalovat) a nic se nevydá.
 # Secrets dostane jen PR z větve tohoto repa (ne z cizího forku), kód z forku se tak ke klíči nedostane.
@@ -15,20 +19,24 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, reopened, synchronize, closed]
-    paths:
-      - "nativni/**"
-      - "js/nativni.js"
-      - ".github/workflows/apk.yml"
+    types: [opened, reopened, synchronize]
   workflow_dispatch:
+    inputs:
+      pr:
+        description: "Číslo PR pro testovací APK (prázdné = vydaná verze z main)"
+        required: false
+        default: ""
 
 concurrency:
-  group: apk-${{ github.event.pull_request.number || 'main' }}
+  group: apk-${{ github.event.pull_request.number || inputs.pr || 'main' }}
   cancel-in-progress: true
+
+env:
+  TEST_REPO: ${{ github.repository }}-test
+  KEEP: 5 # kolik testovacích vydání nechat v workout-denik-test
 
 jobs:
   apk:
-    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -36,10 +44,39 @@ jobs:
       pull-requests: write # komentář s odkazem na testovací APK
     env:
       GH_TOKEN: ${{ github.token }}
-      PR: ${{ github.event.pull_request.number }}
+      PR: ${{ github.event.pull_request.number || inputs.pr }}
       HAS_KEY: ${{ secrets.WD_KEYSTORE_B64 != '' }}
+      N: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v5
+      # ruční spuštění s číslem PR: kód PR (jen z větve tohoto repa, kód z forku ke klíči nesmí)
+      - name: Kód PR (ruční spuštění)
+        if: github.event_name == 'workflow_dispatch' && inputs.pr != ''
+        run: |
+          INFO=$(gh pr view "$PR" --json title,headRefName,headRefOid,isCrossRepository)
+          if [ "$(jq -r .isCrossRepository <<< "$INFO")" = true ]; then
+            echo "::error::PR #$PR je z cizího forku, testovací APK z něj ručně nesestavím."
+            exit 1
+          fi
+          git fetch -q origin "refs/pull/$PR/head"
+          git checkout -q FETCH_HEAD
+          {
+            echo "NAZEV=$(jq -r .title <<< "$INFO")"
+            echo "VETEV=$(jq -r .headRefName <<< "$INFO")"
+            echo "HEAD_SHA=$(jq -r .headRefOid <<< "$INFO")"
+          } >> "$GITHUB_ENV"
+      - name: Údaje o PR
+        if: github.event_name == 'pull_request'
+        env:
+          T: ${{ github.event.pull_request.title }}
+          B: ${{ github.head_ref }}
+          S: ${{ github.event.pull_request.head.sha }}
+        run: |
+          {
+            echo "NAZEV=$T"
+            echo "VETEV=$B"
+            echo "HEAD_SHA=$S"
+          } >> "$GITHUB_ENV"
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -55,13 +92,11 @@ jobs:
           WD_KEYSTORE_B64: ${{ secrets.WD_KEYSTORE_B64 }}
           WD_KEYSTORE_PASSWORD: ${{ secrets.WD_KEYSTORE_PASSWORD }}
           WD_VERSION_CODE: ${{ github.run_number }}
-          NAZEV: ${{ github.event.pull_request.title }}
-          VETEV: ${{ github.head_ref }}
         run: |
           if [ -n "$PR" ]; then
-            bash nativni/sestav-apk.sh test "$PR"
+            WD_VERSION_NAME="t$N" bash nativni/sestav-apk.sh test "$PR"
           else
-            bash nativni/sestav-apk.sh vydana
+            WD_VERSION_NAME="v$N" bash nativni/sestav-apk.sh vydana
           fi
       - uses: actions/upload-artifact@v4
         with:
@@ -71,25 +106,53 @@ jobs:
       - name: Vydat APK (main)
         if: env.PR == '' && env.HAS_KEY == 'true'
         run: |
-          N=${{ github.run_number }}
           git log -1 --format='Změna: %s (%h)' > notes.txt
           gh release create "v$N" nativni/out/workout-denik.apk --target "$GITHUB_SHA" \
             --title "Workout deník $N" --notes-file notes.txt --latest
+          # úklid předběžných vydání test-pr-N z doby před F6-08 (testovací APK jsou teď v workout-denik-test)
+          gh release list --limit 100 --json tagName --jq '.[].tagName | select(startswith("test-pr-"))' |
+            while read -r TAG; do
+              gh release delete "$TAG" --cleanup-tag --yes || true
+            done
       - name: Vydat testovací APK (PR)
         if: env.PR != '' && env.HAS_KEY == 'true'
+        env:
+          TEST_TOKEN: ${{ secrets.TEST_REPO_TOKEN }}
         run: |
-          TAG="test-pr-$PR"
-          gh release delete "$TAG" --cleanup-tag --yes || true
-          gh release create "$TAG" "nativni/out/workout-denik-test-pr$PR.apk" \
-            --target "${{ github.event.pull_request.head.sha }}" --prerelease \
-            --title "Testovací APK · PR #$PR" --notes "Testovací APK pro PR #$PR, po zavření PR se smaže."
-          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/workout-denik-test-pr$PR.apk"
+          if [ -z "$TEST_TOKEN" ]; then
+            echo "::warning::Chybí secret TEST_REPO_TOKEN, testovací APK se nevydá (návod v nativni/README.md)."
+            exit 0
+          fi
+          TAG="t$N"
+          APK=workout-denik-test.apk
+          cp nativni/out/workout-denik-test-pr$PR.apk "$APK"
+          printf 'Testovací APK z PR #%s: %s\nVětev %s, commit %s.\n' "$PR" "$NAZEV" "$VETEV" "${HEAD_SHA::7}" \
+            > notes.txt
+          # vydání v workout-denik-test (token toho repa); bez práva zapisovat vydání jen varování
+          if ! GH_TOKEN="$TEST_TOKEN" gh release create "$TAG" "$APK" --repo "$TEST_REPO" \
+            --title "WD TEST $N · PR #$PR" --notes-file notes.txt --latest=false; then
+            echo "::warning::Testovací APK se nepodařilo vydat v $TEST_REPO. Token TEST_REPO_TOKEN potřebuje" \
+              "oprávnění Contents: Read and write (návod v nativni/README.md)."
+            exit 0
+          fi
+          # Latest = vydání s nejvyšším číslem (souběžné PR se můžou předběhnout), starší než posledních KEEP smazat
+          TAGS=$(GH_TOKEN="$TEST_TOKEN" gh release list --repo "$TEST_REPO" --limit 100 --json tagName \
+            --jq '.[].tagName | select(test("^t[0-9]+$"))' | sort -t t -k 2 -n -r)
+          NEWEST=$(head -n 1 <<< "$TAGS")
+          GH_TOKEN="$TEST_TOKEN" gh release edit "$NEWEST" --repo "$TEST_REPO" --latest > /dev/null
+          tail -n +$((KEEP + 1)) <<< "$TAGS" | while read -r OLD; do
+            [ -n "$OLD" ] || continue
+            GH_TOKEN="$TEST_TOKEN" gh release delete "$OLD" --repo "$TEST_REPO" --cleanup-tag --yes || true
+          done
+          # komentář v PR (token tohoto repa)
+          URL="https://github.com/$TEST_REPO/releases/download/$TAG/$APK"
           BODY="<!-- wd-apk -->
-          **Testovací APK** (WD TEST #$PR, jde nainstalovat vedle hlavní appky, má vlastní data):
+          **Testovací APK** WD TEST verze $N (jde vedle hlavní appky, data má společná pro všechny PR):
           $URL
 
-          Sestaveno z ${{ github.event.pull_request.head.sha }}. Po každém pushi se APK přepíše, stáhni ho znovu
-          a nainstaluj přes staré (data zůstanou)."
+          Sestaveno z $HEAD_SHA. Nejjednodušší je aktualizovat v Obtainiu (appka sledující \`$TEST_REPO\`,
+          návod v nativni/README.md). Testovací APK je jedno pro všechny PR, vždy z naposledy změněného;
+          ze kterého PR je, ukáže pruh TEST nahoře."
           ID=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
             --jq '[.[] | select(.body | startswith("<!-- wd-apk -->"))][0].id // empty')
           if [ -n "$ID" ]; then
@@ -97,17 +160,3 @@ jobs:
           else
             gh pr comment "$PR" --body "$BODY"
           fi
-
-  # po zavření PR smazat jeho testovací APK
-  uklid:
-    if: github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Smazat testovací APK
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete "test-pr-${{ github.event.pull_request.number }}" --repo "$GITHUB_REPOSITORY" \
-            --cleanup-tag --yes || true

@@ -2,9 +2,12 @@
 # Sestaví APK nativní appky (F6-01). Spouští ho GitHub Actions (.github/workflows/apk.yml), lokálně jen
 # s Android SDK a JDK 21 (Android Studio není potřeba). Postup a nastavení v nativni/README.md.
 #   bash nativni/sestav-apk.sh vydana     APK „Workout deník“ (cz.workoutdenik.app)
-#   bash nativni/sestav-apk.sh test N     testovací APK „WD TEST #N“ pro PR č. N (cz.workoutdenik.test)
+#   bash nativni/sestav-apk.sh test N     testovací APK „WD TEST“ z PR č. N (cz.workoutdenik.test, jedno pro
+#                                         všechny PR, číslo PR ukáže pruh TEST v appce, F6-08)
 # Proměnné prostředí:
 #   WD_VERSION_CODE   číslo verze pro Android (musí růst, GitHub Actions dává číslo běhu), výchozí 1
+#   WD_VERSION_NAME   název verze (GitHub Actions dává název vydání vN / tN, aby ho Obtainium poznalo),
+#                     výchozí zkrácený commit
 #   NAZEV, VETEV      název a větev PR (zobrazí se v testovacím APK)
 #   WD_KEYSTORE_B64   klíč k podpisu (soubor .jks v base64), WD_KEYSTORE_PASSWORD heslo, WD_KEY_ALIAS alias;
 #                     bez klíče vznikne nepodepsané APK (nejde nainstalovat, jen kontrola sestavení)
@@ -46,9 +49,9 @@ printf '/* Údaje o verzi appky, vygenerováno při sestavení APK (nativni/sest
 # 3) testovací APK: jiný název, oranžová ikona, ladění přes chrome://inspect (jen pracovní kopie)
 if [ "$MODE" = test ]; then
   export WD_TEST=1
-  sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">WD TEST #$PR</string>|" \
+  sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">WD TEST</string>|" \
     android/app/src/main/res/values/strings.xml
-  sed -i "s|<string name=\"title_activity_main\">.*</string>|<string name=\"title_activity_main\">WD TEST #$PR</string>|" \
+  sed -i "s|<string name=\"title_activity_main\">.*</string>|<string name=\"title_activity_main\">WD TEST</string>|" \
     android/app/src/main/res/values/strings.xml
   sed -i 's|<color name="ic_launcher_background">#CF3A31</color>|<color name="ic_launcher_background">#F59F00</color>|' \
     android/app/src/main/res/values/ic_launcher_background.xml
@@ -69,7 +72,7 @@ else
   echo "::warning::Chybí klíč k podpisu (secret WD_KEYSTORE_B64), APK nepůjde nainstalovat."
 fi
 export WD_VERSION_CODE=${WD_VERSION_CODE:-1}
-export WD_VERSION_NAME="$SHA"
+export WD_VERSION_NAME=${WD_VERSION_NAME:-$SHA}
 
 # 6) sestavení
 (cd android && ./gradlew --no-daemon assembleRelease)
