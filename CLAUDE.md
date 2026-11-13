@@ -75,11 +75,11 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `js/wdlog.js` | Text WD-LOG v2 pro coache za období (F4-18): čisté funkce bez úložiště, používá ho `js/app.js`, testuje `tools/testy/wdlog.js` přímo v Node. |
 | `js/zaznam.js` | Záznam událostí (F0-21, `window.ZAZNAM`): vlastní databáze IndexedDB `workout-denik-log`, posledních 200 řádků. Načítá se hned po `js/verze.js` (zachytí i chybu, kvůli které `app.js` nenaběhne) a v `sw.js` přes `importScripts`. |
 | `js/fedb.js` | Kopie free-exercise-db pro hledání cviků (F0-03). Needitovat ručně, vytváří ho `tools/fedb/build.py`. |
-| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `misto.js` (F0-19), `nativni.js` (F6-01), `zaznam.js` (F0-21), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
+| `tools/testy/` | Automatické testy (F0-17, Playwright): `spust.js` (spouštěč), `kourovy.js`, `zaloha.js`, `zaloha-plna.js`, `stara-zaloha.js`, `oddeleni-dat.js` (F0-18), `sane.js` (F4-16), `online-cviky.js` (F3-50), `pridat-fotku.js` (F3-51), `poznamka.js` (F3-52), `wdlog.js` (F4-18, i unit testy `js/wdlog.js` v Node), `poznamka-treninku.js` (F1-26), `stisk.js` (F3-53), `klavesnice.js` (F1-27), `misto.js` (F0-19), `nativni.js` (F6-01), `zaznam.js` (F0-21), `zaloha-telefonu.js` (F6-03), `pomocne.js`, vymyšlené zálohy `zaloha-v2-plna.json.txt` (všechny druhy dat) a `zaloha-v1.json.txt`. Není součást appky. |
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
-| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20), oznámení o konci pauzy přes doplněk LocalNotifications (`NATIVNI.notif`, F6-02). Ve webové verzi nic nedělá. |
+| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20), oznámení o konci pauzy přes doplněk LocalNotifications (`NATIVNI.notif`, F6-02), soubor pro zálohu telefonu (`NATIVNI.phoneBackup`, F6-03). Ve webové verzi nic nedělá. |
 | `nativni/` | Nativní obal (F6-01, Capacitor): `capacitor.config.json`, `package.json`, projekt `android/`, skript `sestav-apk.sh`, návod `README.md`. Na web se nekopíruje. |
 | `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST“ u každého PR jako vydání `tN` v repu `workout-denik-test` (Obtainium ho sleduje jako druhou appku, F6-08); klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`. |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
@@ -257,6 +257,9 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   vydaná appka se všemi testovacími verzemi), sekce MÍSTO V ZAŘÍZENÍ.
 - Konec pauzy (F6-02, sekce KONEC PAUZY V NATIVNÍ APPCE): každá změna `S.restEnd` jde přes `restSave` / `restPost`,
   jinak v nativní appce zůstane naplánované oznámení na starý čas. Stav povolení jen přes `notifState()`.
+- Záloha se zálohou telefonu (F6-03, sekce ZÁLOHA SE ZÁLOHOU TELEFONU): nativní appka zapisuje `snapshotAll()` do souboru,
+  který Android zálohuje do Google One; spouští ho `put`. Nová data v záloze = v `snapshotAll` (pak jsou i tam). Android
+  zálohuje jen složku z `nativni/android/app/src/main/res/xml/zaloha_pravidla.xml`, nový soubor appky mimo ni se nezálohuje.
 - Fotky jen přes `photoSave` / `photoDel` / `photoUpdate` (ne `put`). Stažení souboru přes `LocalDownloads`.
 - Nativní appka (F6-01, sekce NATIVNÍ APPKA): stejný kód jako web, rozdíly jen přes `NATIVE` / `NATIVE_PR`
   v `js/app.js` a doplňky v `js/nativni.js` (bez npm, přes `window.Capacitor`). Soubory ukládat jen přes

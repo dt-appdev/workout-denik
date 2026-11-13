@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Záloha se zálohou telefonu (F6-03, Android 12 a novější): do Google One a při přenosu na nový telefon
+     jde jen soubor zálohy, který appka zapisuje do files/zaloha-telefonu/ (js/nativni.js, NATIVNI.phoneBackup).
+     Data zabudovaného prohlížeče (databáze appky s fotkami) se nezálohují: s fotkami by mohla přesáhnout
+     limit 25 MB a Android by pak nezálohoval nic. Obnova jen z tohoto souboru (appka ji nabídne po startu).
+     disableIfNoEncryptionCapabilities="false": zálohovat i na telefonu bez zámku obrazovky (rozhodnuto
+     13. 11. 2026, ruční záloha na Disk taky není šifrovaná zámkem). -->
+<data-extraction-rules>
+    <cloud-backup disableIfNoEncryptionCapabilities="false">
+        <include domain="file" path="zaloha-telefonu/" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="zaloha-telefonu/" />
+    </device-transfer>
+</data-extraction-rules>
