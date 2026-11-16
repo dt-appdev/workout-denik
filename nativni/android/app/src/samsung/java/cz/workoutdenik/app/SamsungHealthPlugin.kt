@@ -82,6 +82,7 @@ class SamsungHealthPlugin : Plugin() {
       val request = DataTypes.BODY_COMPOSITION.readDataRequestBuilder
         .setLocalTimeFilter(LocalTimeFilter.of(now.minusYears(20), now.plusDays(1)))
         .setOrdering(Ordering.DESC)
+        .setLimit(limit)
         .build()
       val points = store().readData(request).dataList.take(limit)
       val items = JSArray()

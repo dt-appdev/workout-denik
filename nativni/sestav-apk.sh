@@ -84,23 +84,6 @@ if [ -n "${WD_SDK_TOKEN:-}" ]; then
   if [ -n "$SDK_FILE" ]; then
     curl -fsSL -H "$SDK_AUTH" -H "Accept: application/vnd.github.raw" "$SDK_API/$SDK_FILE" -o "$LIBS/$SDK_FILE"
     echo "Samsung Health Data SDK: $SDK_FILE"
-    # DOČASNĚ (zkouška F6-04): výpis rozhraní SDK do logu, než se ověří názvy v doplňku
-    if [ "${WD_SDK_DUMP:-}" = 1 ]; then
-      DUMP=$(mktemp -d)
-      unzip -q -o "$LIBS/$SDK_FILE" -d "$DUMP"
-      echo "::group::SDK manifest"
-      cat "$DUMP/AndroidManifest.xml"
-      echo "::endgroup::"
-      echo "::group::SDK třídy"
-      (cd "$DUMP" && jar tf classes.jar | grep -v '\$' | sort)
-      echo "::endgroup::"
-      echo "::group::SDK rozhraní"
-      CLASSES=$(cd "$DUMP" && jar tf classes.jar | grep -E '/(HealthDataStore|HealthDataService|DataPoint|HealthDataPoint|DataSource|DeviceManager|Device|DeviceType|DataType\$BodyCompositionType(\$Companion)?|DataTypes(\$Companion)?|Permission(\$Companion)?|AccessType|ResolvablePlatformException|HealthDataException|LocalTimeFilter(\$Companion)?|Ordering|ReadDataRequest(\$[A-Za-z]+)?|DataResponse|Field)\.class$' |
-        sed 's/\.class$//; s#/#.#g')
-      # shellcheck disable=SC2086
-      javap -cp "$DUMP/classes.jar" $CLASSES || true
-      echo "::endgroup::"
-    fi
   else
     echo "::warning::V $SDK_REPO chybí samsung-health-data-api-*.aar, APK bude bez Samsung Health."
   fi
