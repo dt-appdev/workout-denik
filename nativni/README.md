@@ -119,7 +119,7 @@ Data a záloha → Záloha telefonu.
 
 - Zapnutí: Nastavení Androidu → Google → Zálohování → Záloha Googlem zapnutá.
 - Hned zálohovat: tamtéž **Zálohovat nyní** (jinak až v noci u nabíječky).
-- Obnova: při instalaci appky (nový telefon, přeinstalace) Android soubor vrátí. Prázdná appka pak sama
+- Obnova: při instalaci appky (nový telefon, přeinstalace, i přes Obtainium; ověřeno 16. 11. 2026) Android soubor vrátí. Prázdná appka pak sama
   nabídne obnovu, jinak Nastavení → Data a záloha → Záloha telefonu → Obnovit ze zálohy telefonu.
 - Vymazat data aplikace v Androidu smaže i soubor; kopie v Google One se vrátí jen odinstalováním
   a novou instalací.
