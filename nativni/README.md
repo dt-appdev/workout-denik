@@ -144,7 +144,7 @@ Data a záloha → Záloha telefonu.
 
 ### Na co pozor
 
-- Do nativní appky nic skutečného nezapisuj před dnem přechodu (sekce Přechod níže), data by byla ve dvou appkách.
+- Přechod proveden 16. 11. 2026: skutečná data jsou v nativní appce, do webové appky už nic nezapisuj (data by byla ve dvou appkách).
 - Ztráta klíče (`workout-denik-klic.jks` a heslo) = Obtainium další verzi nenainstaluje, jen odinstalovat
   a obnovit ze zálohy.
 - Google chystá od roku 2027 ověření vývojářů i pro aplikace mimo Obchod Play. Pak bude potřeba jednou
