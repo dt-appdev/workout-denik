@@ -13,7 +13,8 @@
    a Nastavení nabízí Povolit (exactAsk); Vyzkoušet naplánuje oznámení id 2. Panel Přesný čas oznámení
    (sheetExact) se bez povolení přesného času ukáže při zapnutí Oznámení na pozadí a jednou při první pauze.
    Záznam událostí (F0-21): window.__natFail = název volání, které selže; selhání se zapíše do záznamu, zavření
-   nabídky Sdílet ne. Skutečné APK test nevidí, to se zkouší ručně v telefonu. */
+   nabídky Sdílet ne. Samsung Health (F6-04): falešný doplněk SamsungHealth (granted, connect, read), Připojit
+   (shNatConnect) a Načíst teď (shNatNow) zapíšou měření do Těla podle pravidel importu. Skutečné APK test nevidí, to se zkouší ručně v telefonu. */
 const P = require("./pomocne.js");
 
 // falešný Capacitor (běží před appkou); window.__nat = záznam volání doplňků, __natCancel = zavřít Sdílet
@@ -44,6 +45,16 @@ function fakeCapacitor() {
         window.__natPerm.exact_alarm = "granted";
         return Promise.resolve({ exact_alarm: "granted" });
       },
+    },
+    // Samsung Health (F6-04): window.__natSh = měření, která „vrátí Samsung Health“, __natShOk = povoleno
+    SamsungHealth: {
+      granted: (args) => rec("SH.granted")(args).then(() => ({ granted: !!window.__natShOk })),
+      connect: (args) =>
+        rec("SH.connect")(args).then(() => {
+          window.__natShOk = true;
+          return { granted: true };
+        }),
+      read: (args) => rec("SH.read")(args).then(() => ({ items: window.__natSh || [] })),
     },
     App: {
       minimizeApp: rec("App.minimizeApp"),
@@ -267,6 +278,123 @@ async function nativeRestTest(app, check) {
   check.ok(await page.$('#app [data-act="notifTest"]'), "pauza: chybí Vyzkoušet");
 }
 
+// Samsung Health (F6-04): Připojit načte celou historii, převod polí a zdroje, přepsání ručního měření ze
+// stejného dne (±0,1 kg), vynechaná Hevy; automatické načtení nejvýš jednou za 30 minut, Načíst teď od at − 30 dní
+async function nativeShTest(app, check) {
+  const { page } = app;
+  const DAY = 86400000;
+  const day3 = new Date(Date.now() - 3 * DAY);
+  day3.setHours(8, 0, 0, 0);
+  const iso = (d) =>
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0");
+  // ruční měření před 3 dny (79 kg), Samsung ho má o 0,05 kg jinak → přepíše se
+  await P.addMeasurement(app, iso(day3), "79");
+  await page.evaluate((t3) => {
+    const watch = { type: "WATCH", name: "Galaxy Watch9", model: "SM-L350" };
+    window.__natSh = [
+      {
+        uid: "sh-novy",
+        time: Date.now() - 7200000,
+        appId: "com.sec.android.app.shealth",
+        deviceId: "d1",
+        device: watch,
+        values: {
+          WEIGHT: 80.04000091,
+          SKELETAL_MUSCLE_MASS: 34.29624557,
+          BASAL_METABOLIC_RATE: 1734,
+          HEIGHT: 177,
+        },
+      },
+      {
+        uid: "sh-rucni",
+        time: t3,
+        appId: "com.sec.android.app.shealth",
+        deviceId: "d1",
+        device: watch,
+        values: { WEIGHT: 79.05, BODY_FAT: 20.84567 },
+      },
+      {
+        uid: "sh-hevy",
+        time: Date.now() - 3600000,
+        appId: "com.hevy",
+        deviceId: "d2",
+        device: { type: "MOBILE", name: "Telefon" },
+        values: { WEIGHT: 81 },
+      },
+    ];
+    window.__nat.length = 0;
+  }, day3.getTime());
+  await P.openSettings(app, "data");
+  check.ok(await page.$('#app [data-act="shNatConnect"]'), "samsung: chybí Připojit Samsung Health");
+  check.ok(!(await page.$('#app [data-act="shNatNow"]')), "samsung: Načíst teď před připojením");
+  await app.act("shNatConnect");
+  await app.settle(800);
+  const calls = () => page.evaluate(() => window.__nat.filter((c) => /^SH\./.test(c.name)));
+  const first = await calls();
+  check.eq(
+    first.map((c) => c.name + (c.args.since ? ":since" : "")),
+    ["SH.connect", "SH.read"],
+    "samsung: připojení a první načtení (celá historie)",
+  );
+  check.ok(await page.$('#app [data-act="shNatNow"]'), "samsung: po připojení chybí Načíst teď");
+
+  // obsah Těla ze zálohy (Stáhnout zapisuje přes falešný Filesystem)
+  async function body() {
+    await page.evaluate(() => (window.__nat.length = 0));
+    await app.act("export");
+    await app.settle(800);
+    await page.click(".sheet [data-act=closeSheet]").catch(() => {});
+    const data = await page.evaluate(() => {
+      const w = window.__nat.filter((c) => c.name === "Filesystem.writeFile").pop();
+      return w ? JSON.parse(w.args.data) : null;
+    });
+    return Object.values((data && data.body) || {});
+  }
+  let items = await body();
+  const novy = items.find((b) => b.shId === "sh-novy");
+  check.ok(
+    novy &&
+      novy.weight === 80 &&
+      novy.muscleMass === 34.3 &&
+      novy.bmr === 1734 &&
+      novy.src === "watch" &&
+      novy.srcName === "Galaxy Watch9",
+    "samsung: nové měření " + JSON.stringify(novy),
+  );
+  const rucni = items.filter((b) => Math.abs(b.date - day3.getTime()) < DAY && b.weight < 80);
+  check.ok(
+    rucni.length === 1 && rucni[0].shId === "sh-rucni" && rucni[0].weight === 79.1 && rucni[0].fat === 20.8,
+    "samsung: ruční měření ze stejného dne se nepřepsalo " + JSON.stringify(rucni),
+  );
+  check.ok(!items.some((b) => b.shId === "sh-hevy"), "samsung: načetla se Hevy (výchozí vypnutá)");
+  const count = items.length;
+
+  // návrat do appky do 30 minut: nic nečte; Načíst teď čte od posledního načtení − 30 dní a nic nezdvojí
+  await page.evaluate(() => {
+    window.__nat.length = 0;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await app.settle(300);
+  check.eq((await calls()).length, 0, "samsung: automatické načtení dřív než za 30 minut");
+  await P.openSettings(app, "data");
+  await page.evaluate(() => (window.__nat.length = 0));
+  await app.act("shNatNow");
+  await app.settle(600);
+  const again = await calls();
+  check.ok(
+    again.length === 1 &&
+      again[0].args.since > Date.now() - 31 * DAY &&
+      again[0].args.since < Date.now() - 29 * DAY,
+    "samsung: Načíst teď " + JSON.stringify(again.map((c) => c.args)),
+  );
+  items = await body();
+  check.eq(items.length, count, "samsung: opakované načtení zdvojilo měření");
+}
+
 async function native(browser, url, check) {
   const app = await P.openApp(browser, url, { init: fakeCapacitor });
   const { page } = app;
@@ -334,6 +462,7 @@ async function native(browser, url, check) {
   });
   check.eq(err, "AbortError", "nativní: zavření nabídky Sdílet");
 
+  await nativeShTest(app, check);
   await nativeBackTest(app, check);
   await nativeRestTest(app, check);
 
