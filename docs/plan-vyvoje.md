@@ -134,7 +134,7 @@ Začít hned po etapě 7: konec pauzy na pozadí ve webové appce nefunguje (ov�
 27. ~~**F6-02** Spolehlivý konec pauzy~~ – hotovo 12. 11. 2026.
 28. ~~**F0-21** Záznam událostí i ve vydané appce~~ – hotovo 12. 11. 2026.
 29. ~~**F6-08** Testovací APK přes Obtainium~~ – hotovo 13. 11. 2026.
-30. **F6-03** Záloha se zálohou telefonu (Google One).
+30. ~~**F6-03** Záloha se zálohou telefonu (Google One)~~ – hotovo 13. 11. 2026.
 31. ~~**F6-04** Složení těla ze Samsung Health do Těla~~ – hotovo 16. 11. 2026.
 32. **F6-05** Tep z hodinek k tréninku (až po F6-04).
 33. **F6-06** Odpočet pauzy v oznámení (až se F6-02 osvědčí v telefonu).
@@ -344,7 +344,7 @@ Rozhodnuto 13. 10. 2026:
 
 - [x] **F6-01** Nativní obal (Capacitor), APK z GitHub Actions.
 - [x] **F6-02** Spolehlivý konec pauzy.
-- [ ] **F6-03** Záloha se zálohou telefonu (Google One) · *nízká*: Android Auto Backup zálohuje data nativní appky do Google One sám (zdarma, bez přihlašování, zhruba jednou denně při nabíjení a Wi-Fi) a na novém telefonu je po přihlášení obnoví. Limit 25 MB: appka po uložení tréninku zapíše zálohu bez fotek (formát F0-01 / F0-15) do souboru, který Android zálohuje; data WebView ze zálohy vyřadit, obnova jen z tohoto souboru. Fotky dál v ruční záloze (F0-13). Nahrazuje F0-14.
+- [x] **F6-03** Záloha se zálohou telefonu (Google One)
 - [x] **F6-04** Složení těla ze Samsung Health
 - [ ] **F6-05** Tep z hodinek k tréninku · *střední*, až po F6-04: k uloženému tréninku průměrný a maximální tep z Galaxy Watch podle času začátku a konce (stejný doplněk jako F6-04), v souhrnu a detailu tréninku. Nové pole tréninku s výchozí hodnotou (bez tepu chybí), záloha zpětně kompatibilně. Kalorie dál ne (Co neděláme), dokud se nerozhodne jinak.
 - [ ] **F6-06** Odpočet pauzy v oznámení · *střední* (přání 12. 11. 2026), až se F6-02 osvědčí v telefonu: během pauzy tiché trvalé oznámení „Odpočinek 1:45“ s odpočtem, který si přepisuje Android sám (appka nemusí běžet), vidět v liště oznámení a na zamčené obrazovce; na konci ho nahradí oznámení „Odpočinek skončil“ z F6-02. +15 / −15 a Přeskočit ho přepíšou / zruší přes `restPost`. Doplněk `@capacitor/local-notifications` odpočet neumí, proto první vlastní nativní kód (malý doplněk v Javě v `nativni/android`, bez npm); automatický test ho neověří, jen telefon. Hodinky trvalé oznámení nejspíš nezrcadlí. Vlastní doplněk sdílí s F6-07, dělat je spolu nebo F6-07 hned potom. Odpočet přímo ve stavovém řádku (služba na popředí) ne, to by byla další, větší úloha.
