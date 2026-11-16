@@ -41,6 +41,14 @@ v zabudovaném Chromu (WebView). Co WebView neumí, doplní `js/nativni.js` pře
    zpátky přečíst nedají. **Ztráta klíče = novou verzi nepůjde nainstalovat přes starou**, jen odinstalovat
    a nainstalovat znovu (s obnovou ze zálohy). Klíč do repa nikdy nepatří (`*.jks` je v `.gitignore`).
 2. **Obtainium** v telefonu, podrobně v další sekci.
+3. **Samsung Health Data SDK** (F6-04): knihovna `samsung-health-data-api-*.aar` ze Samsung Developers. Licence
+   Samsungu nedovoluje dát ji do veřejného repa, proto leží v soukromém repu `workout-denik-sdk` (v kořeni,
+   s původním názvem; novější verzi stačí nahrát vedle, bere se nejvyšší). Sestavení ji stáhne tokenem
+   v secretu `WD_SDK_TOKEN` (fine-grained token jen pro to repo, Contents: Read-only, platí rok, pak vytvořit
+   nový). Repo pod jiným vlastníkem: proměnná `WD_SDK_REPO` (Settings → Secrets and variables → Actions →
+   Variables, např. `jmeno/workout-denik-sdk`). Bez tokenu APK vznikne bez Samsung Health (jen varování).
+   Na telefonu: Samsung Health → Nastavení → O Samsung Health → 10× klepnout na verzi → zapnout
+   Developer Mode for Data Read. Doplněk je v `android/app/src/samsung` (Kotlin), překládá se jen s knihovnou.
 
 ## Instalace a aktualizace v telefonu (návod pro nováčka)
 
@@ -124,6 +132,15 @@ Data a záloha → Záloha telefonu.
 - Vymazat data aplikace v Androidu smaže i soubor; kopie v Google One se vrátí jen odinstalováním
   a novou instalací.
 - Fotky u cviků v ní nejsou, ty ochrání jen ruční záloha s fotkami.
+
+### Samsung Health (F6-04)
+
+- Jednou: v Samsung Health → Nastavení → O Samsung Health 10× klepni na verzi a zapni **Developer Mode for Data
+  Read**. Pak v appce Nastavení → Data a záloha → Samsung Health → **Připojit Samsung Health** a v okně Samsung
+  Health zapni Složení těla → Hotovo. Okno píše obecně „číst a zapisovat“, appka ale žádá jen čtení.
+- Appka pak sama načítá nová měření po otevření a po návratu do ní (nejvýš jednou za 30 minut), **Načíst teď**
+  hned. Viscerální tuk takhle nepřijde (Samsung ho v rozhraní nemá), ten jen z importu souboru.
+- Když Samsung vývojářský režim vypne nebo čtení zakážeš, appka ukáže chybu a nabídne znovu Připojit.
 
 ### Na co pozor
 

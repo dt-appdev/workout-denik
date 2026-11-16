@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-parcelize'
 
 // F6-01: sestavení řídí nativni/sestav-apk.sh (v GitHub Actions), údaje přicházejí v proměnných prostředí:
 //   WD_TEST=1               testovací APK s jiným ID aplikace (jde nainstalovat vedle hlavní, vlastní data)
@@ -7,6 +9,9 @@ apply plugin: 'com.android.application'
 def wdEnv = { String name, String fallback -> System.getenv(name) ?: fallback }
 def wdTest = wdEnv('WD_TEST', '') == '1'
 def wdKeystore = wdEnv('WD_KEYSTORE', '')
+// F6-04: knihovna Samsung Health Data SDK (do repa nepatří, licence); stáhne ji sestav-apk.sh do app/libs.
+// Bez ní se doplněk Samsung Health (src/samsung) nepřekládá a APK je bez něj.
+def shSdk = fileTree(dir: 'libs', include: 'samsung-health-data-api-*.aar').files.toList()
 
 android {
     namespace = "cz.workoutdenik.app"
@@ -34,6 +39,13 @@ android {
             }
         }
     }
+    sourceSets {
+        main {
+            if (shSdk) {
+                java.srcDirs += 'src/samsung/java'
+            }
+        }
+    }
     buildTypes {
         release {
             if (wdKeystore) {
@@ -58,6 +70,15 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     implementation project(':capacitor-cordova-android-plugins')
+    if (shSdk) {
+        implementation files(shSdk)
+        implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+        implementation 'com.google.code.gson:gson:2.13.2'
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
 }
 
 apply from: 'capacitor.build.gradle'

@@ -11599,8 +11599,21 @@
       items: () => [
         [
           "K čemu to je",
-          "Import měření těla (hmotnost, tuk, svaly…) ze souboru staženého ze Samsung Health.",
+          "Import měření těla (hmotnost, tuk, svaly…) ze Samsung Health: v nativní appce samo, jinak ze " +
+            "souboru staženého ze Samsung Health.",
         ],
+        ...(NATIVE
+          ? [
+              [
+                "Připojit Samsung Health",
+                "Appka pak sama načítá nová měření složení těla po otevření a po návratu do ní (nejvýš " +
+                  "jednou za 30 minut), Načíst teď hned. Jen čte, do Samsung Health nic nezapisuje. Potřebuje " +
+                  "v Samsung Health zapnutý vývojářský režim: Nastavení → O Samsung Health → 10× klepnout na " +
+                  "verzi → Developer Mode for Data Read. Viscerální tuk takhle nepřijde, ten jen ze souboru. " +
+                  "Co jednou načte, už nemění: opravu v Samsung Health oprav i v Těle.",
+              ],
+            ]
+          : []),
         [
           "Jak získat soubor",
           "V Samsung Health: Nastavení → Stáhnout osobní data. Telefon uloží do Stažených souborů složku " +
@@ -17179,6 +17192,12 @@
       case "evLog":
         sheetEvLog();
         break;
+      case "shNatConnect":
+        shNatConnect();
+        break;
+      case "shNatNow":
+        shNatRun(true);
+        break;
       case "evLogCopy":
         evLogCopy();
         break;
@@ -18218,6 +18237,7 @@
 
   /* zdroj řádku Samsungu (F4-19) jako { src, srcName? }; null = neznámé zařízení (chybí profil zařízení) */
   function shSrcOf(r, devs) {
+    if ("from" in r) return r.from; // měření z telefonu nese zdroj rovnou (F6-04)
     if (r.src === "?") return null;
     if (r.src !== SH_PKG) return { src: "ext", srcName: SH_SRC[r.src] || r.src };
     const dev = devs[r.dev];
@@ -18266,6 +18286,7 @@
         ${helpBtn("samsung")}
       </div>
       <div class="card stack">
+        ${shNatSettings()}
         <label class="btn" for="shFileIn">Vybrat soubor</label>
         <input type="file" id="shFileIn" multiple hidden>
       </div>
@@ -18417,7 +18438,8 @@
   /* co import udělá se zaškrtnutými zdroji: { add: [řádky], upd: [[id, řádek]], src: [[id, zdroj]], skip,
      off, unknown }; shody s ručním měřením a doplnění zdroje (src, F4-19) viz úvodní komentář sekce,
      unknown = měření z neznámých zařízení */
-  function shPlan() {
+  function shPlan(rows) {
+    rows = rows || shData.rows; // F6-04: řádky z telefonu (shNatRow)
     const have = new Map(),
       manual = [];
     for (const [id, b] of Object.entries(S.body)) {
@@ -18430,7 +18452,7 @@
     const devs = lsGet("shDev", {});
     const used = new Set();
     const plan = { add: [], upd: [], src: [], skip: 0, off: 0, unknown: 0 };
-    for (const r of shData.rows) {
+    for (const r of rows) {
       if (!shSrcOn(r.src)) {
         plan.off++;
         continue;
@@ -18564,6 +18586,23 @@
     return o;
   }
 
+  // zápis plánu importu (shPlan) do body/all; společné pro import souboru a z telefonu (F6-04)
+  function shWrite(p) {
+    if (!p.add.length && !p.upd.length && !p.src.length) return;
+    const items = Object.assign({}, S.body);
+    for (const [id, r] of p.upd) {
+      // ruční měření: Samsung přepíše své údaje, obvody, poznámka (a BMI, když ho soubor nemá) zůstanou
+      items[id] = shVals(r, items[id]);
+    }
+    for (const r of p.add) {
+      items[uid("b")] = shVals(r, {});
+    }
+    for (const [id, from] of p.src) {
+      items[id] = Object.assign({}, items[id], from); // F4-19: jen doplní zdroj
+    }
+    put("body/all", { items });
+  }
+
   /* Importovat: bod obnovy (v = "!" bez něj, když se nepodařil), pak zápis do body/all */
   async function shApply(v) {
     if (!shData) return;
@@ -18582,18 +18621,7 @@
       }
     }
     const p = shPlan();
-    const items = Object.assign({}, S.body);
-    for (const [id, r] of p.upd) {
-      // ruční měření: Samsung přepíše své údaje, obvody, poznámka (a BMI, když ho soubor nemá) zůstanou
-      items[id] = shVals(r, items[id]);
-    }
-    for (const r of p.add) {
-      items[uid("b")] = shVals(r, {});
-    }
-    for (const [id, from] of p.src) {
-      items[id] = Object.assign({}, items[id], from); // F4-19: jen doplní zdroj
-    }
-    put("body/all", { items });
+    shWrite(p);
     shData = null;
     closeSheet();
     toast(
@@ -19562,6 +19590,184 @@
     }
   }
 
+  /* ---------- SAMSUNG HEALTH Z TELEFONU (F6-04) ----------
+     Nativní appka sama načítá měření složení těla přímo ze Samsung Health (Samsung Health Data SDK ve
+     vývojářském režimu, jen čtení; doplněk SamsungHealth v nativni/android/app/src/samsung, v JS
+     window.NATIVNI.sh z js/nativni.js). Ve webové appce se nic nemění, zůstává import souboru (F4-13).
+     Nastavení → Data a záloha → Samsung Health (shNatSettings, nad Vybrat soubor): Připojit Samsung Health
+     (shNatConnect, okno Samsung Health s povolením ke čtení složení těla), po připojení Naposledy načteno,
+     chyba posledního načtení a Načíst teď (shNatNow).
+     Kdy: po startu appky a po návratu do ní (shNatAuto), nejvýš jednou za SH_NAT_EVERY (30 min), a Načíst teď.
+     Stav v Local „shNat“ (jen v tomto zařízení, do zálohy nejde): on = připojeno, at = poslední úspěšné
+     načtení, tried = poslední pokus, err = chyba posledního pokusu. Odkdy: poprvé celá historie, potom
+     od at − SH_NAT_BACK (30 dní; hodinky se synchronizují se zpožděním, zdvojení brání shId).
+     Převod (shNatRow): pole SDK podle SH_NAT_F na pole BODY_F se zaokrouhlením z SH_COLS (výšku, beztukovou
+     a svalovou hmotu appka nemá; viscerální tuk SDK nevrací, ten přinese jen import souboru). uid ze SDK =
+     datauuid z exportu (ověřeno v telefonu 16. 11. 2026), proto b.shId a stejná pravidla jako import souboru:
+     shPlan / shWrite z F4-13 (stejné shId se přeskočí, ruční měření ze stejného dne s hmotností ±SH_TOL
+     se přepíše, obvody a poznámka zůstanou; měřením bez zdroje se doplní zdroj; zdroje podle volby shSrcOn,
+     Hevy vypnutá). Co jednou načte, už nemění ani nemaže (oprava v Samsung Health se nepřenese).
+     Zdroj (shNatSrc, F4-19): aplikace jiná než Samsung Health = ext, zařízení WATCH = watch s názvem hodinek,
+     telefon (MOBILE) = sh, jiné zařízení = dev; řádek nese hotový zdroj v r.from (shSrcOf ho vezme).
+     Bod obnovy jen tehdy, když import přepisuje ruční měření; když se nepovede, ruční měření se nepřepíší.
+     Hláška jen když něco přibylo nebo se přepsalo (Načíst teď ohlásí i „nic nového“). Selhání čtení:
+     err do stavu, a když Samsung Health čtení už nepovoluje, on = false (znovu Připojit).
+     Záznam událostí: počty načtených a přepsaných měření, selhání (bez hodnot). */
+  const SH_NAT_EVERY = 30 * 60000; // automatické načtení nejvýš jednou za 30 minut
+  const SH_NAT_BACK = 30 * DAY; // kolik dní zpět číst při každém dalším načtení
+  // pole Samsung Health Data SDK → pole měření (BODY_F)
+  const SH_NAT_F = {
+    WEIGHT: "weight",
+    BODY_FAT: "fat",
+    BODY_FAT_MASS: "fatMass",
+    SKELETAL_MUSCLE_MASS: "muscleMass",
+    SKELETAL_MUSCLE: "muscle",
+    TOTAL_BODY_WATER: "water",
+    BASAL_METABOLIC_RATE: "bmr",
+    BODY_MASS_INDEX: "bmi",
+  };
+  let shNatReady = false; // data appky načtená (boot), automatické načtení může běžet
+  const shNatState = () => Object.assign({}, Local.get("shNat", {}));
+  const shNatApi = () => (NATIVE && window.NATIVNI && window.NATIVNI.sh) || null;
+  const shNatErr = (e) => String((e && (e.message || e.code)) || "chyba");
+
+  // zdroj měření ze SDK (F4-19); null = nejde zjistit
+  function shNatSrc(it) {
+    if (!it.appId) return null;
+    if (it.appId !== SH_PKG) return { src: "ext", srcName: SH_SRC[it.appId] || it.appId };
+    const dev = it.device;
+    if (!dev || dev.error) return null;
+    const type = String(dev.type || "").toUpperCase();
+    const name = dev.name || dev.model || "";
+    if (type === "WATCH") return { src: "watch", srcName: name };
+    if (/MOBILE|PHONE/.test(type)) return { src: "sh" };
+    return { src: "dev", srcName: name };
+  }
+
+  // měření ze SDK na řádek ve tvaru importu souboru (shParse); null = bez použitelných hodnot
+  function shNatRow(it) {
+    const values = it.values || {};
+    const vals = {};
+    for (const [field, key] of Object.entries(SH_NAT_F)) {
+      const n = +values[field];
+      if (isFinite(n) && n > 0) {
+        const col = SH_COLS.find((c) => c[1] === key);
+        const k = Math.pow(10, col ? col[2] : 1);
+        vals[key] = Math.round(n * k) / k;
+      }
+    }
+    const date = +it.time;
+    if (!it.uid || !isFinite(date) || !Object.keys(vals).length) return null;
+    return {
+      shId: it.uid,
+      src: it.appId || "?",
+      dev: it.deviceId || "",
+      date,
+      height: +values.HEIGHT || NaN,
+      vals,
+      from: shNatSrc(it),
+    };
+  }
+
+  /* Nastavení → Data a záloha → Samsung Health, jen v nativní appce (nad Vybrat soubor) */
+  function shNatSettings() {
+    if (!shNatApi()) return "";
+    const st = shNatState();
+    if (!st.on) {
+      return '<button class="btn" data-act="shNatConnect">Připojit Samsung Health</button>';
+    }
+    const last = st.at ? fmtDate(st.at) + " " + fmtTime(st.at) : "zatím ne";
+    return `<div class="frow"><span class="grow">Naposledy načteno</span><span>${esc(last)}</span></div>
+      ${st.err ? `<div class="fmsg">Načtení se nepovedlo: ${esc(st.err)}</div>` : ""}
+      <button class="btn" data-act="shNatNow">Načíst teď</button>`;
+  }
+
+  // Připojit Samsung Health: povolení ke čtení, pak hned první načtení (celá historie)
+  async function shNatConnect() {
+    const sh = shNatApi();
+    if (!sh) return;
+    try {
+      if (!(await sh.connect())) {
+        toast("Samsung Health čtení nepovolil.");
+        return;
+      }
+    } catch (e) {
+      toast(sh.missing(e) ? "Samsung Health v tomto sestavení APK chybí." : "Samsung Health: " + shNatErr(e));
+      return;
+    }
+    Local.set("shNat", Object.assign(shNatState(), { on: true, err: "" }));
+    evLog("samsung: připojeno");
+    scheduleRender();
+    shNatRun(true);
+  }
+
+  // automatické načtení po startu a návratu do appky (nejvýš jednou za SH_NAT_EVERY)
+  function shNatAuto() {
+    if (!shNatReady || !shNatApi() || document.hidden) return;
+    const st = shNatState();
+    if (!st.on || Date.now() - (st.tried || 0) < SH_NAT_EVERY) return;
+    shNatRun(false);
+  }
+
+  /* načtení a zápis měření; manual = Načíst teď (hlásí i „nic nového“ a chyby) */
+  async function shNatRun(manual) {
+    const sh = shNatApi();
+    if (!sh || shNatRun.busy) return;
+    shNatRun.busy = true;
+    const st = shNatState();
+    st.tried = Date.now();
+    Local.set("shNat", st);
+    try {
+      const items = await sh.read(st.at ? st.at - SH_NAT_BACK : 0);
+      const plan = shPlan(items.map(shNatRow).filter(Boolean));
+      if (plan.upd.length && pointsApi && !(await makePoint("sh"))) {
+        evLog("samsung: bod obnovy se nepovedl, ruční měření nepřepsána");
+        plan.upd = [];
+      }
+      shWrite(plan);
+      Object.assign(st, { at: Date.now(), err: "" });
+      Local.set("shNat", st);
+      const nAdd = plan.add.length,
+        nUpd = plan.upd.length;
+      evLog(`samsung: načteno ${items.length}, nová ${nAdd}, přepsaná ${nUpd}, zdroj ${plan.src.length}`);
+      if (nAdd || nUpd) {
+        toast(
+          "Načteno " +
+            nAdd +
+            " " +
+            plural(nAdd, "měření", "měření", "měření") +
+            " ze Samsung Health" +
+            (nUpd ? ", přepsáno " + nUpd : ""),
+        );
+      } else if (manual) {
+        toast("Ze Samsung Health nic nového.");
+      }
+    } catch (e) {
+      st.err = sh.missing(e) ? "v tomto sestavení APK chybí" : shNatErr(e);
+      if (!sh.missing(e)) {
+        try {
+          if (!(await sh.granted())) {
+            st.on = false; // čtení už není povolené, znovu Připojit
+          }
+        } catch (e2) {
+          // stav povolení nejde zjistit, nech připojeno
+        }
+      }
+      Local.set("shNat", st);
+      if (manual) {
+        toast("Samsung Health: " + st.err);
+      }
+    } finally {
+      shNatRun.busy = false;
+      scheduleRender();
+    }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      shNatAuto();
+    }
+  });
+
   /* ---------- NATIVNÍ APPKA (F6-01) ----------
      Appka jde nainstalovat i jako nativní aplikace pro Android (APK z GitHub Releases, aktualizace přes
      Obtainium). Je to stejný kód zabalený Capacitorem (složka nativni/, postup v nativni/README.md), nativní
@@ -20352,6 +20558,10 @@
         Local.set("active", a);
         scheduleRender();
       }
+    }
+    if (ok) {
+      shNatReady = true;
+      shNatAuto(); // F6-04: nová měření ze Samsung Health
     }
     if (S.restEnd > Date.now() && !S.restFired) {
       restPost();
