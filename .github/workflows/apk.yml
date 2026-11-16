@@ -10,6 +10,7 @@
 #                           nic nemaže. Odkaz na APK přijde i do komentáře v PR.
 #   ručně (Actions → APK → Run workflow) bez čísla PR → jako push do main;
 #                         s číslem PR → testovací APK z toho PR (jen PR z větve tohoto repa).
+# Knihovna Samsung Health Data SDK (F6-04) je v soukromém repu workout-denik-sdk, čte se tokenem WD_SDK_TOKEN.
 # Klíč k podpisu je v secretech WD_KEYSTORE_B64 (soubor .jks v base64) a WD_KEYSTORE_PASSWORD. Bez nich se APK
 # jen sestaví na zkoušku (nepodepsané, nejde nainstalovat) a nic se nevydá.
 # Secrets dostane jen PR z větve tohoto repa (ne z cizího forku), kód z forku se tak ke klíči nedostane.
@@ -91,6 +92,9 @@ jobs:
         env:
           WD_KEYSTORE_B64: ${{ secrets.WD_KEYSTORE_B64 }}
           WD_KEYSTORE_PASSWORD: ${{ secrets.WD_KEYSTORE_PASSWORD }}
+          WD_SDK_TOKEN: ${{ secrets.WD_SDK_TOKEN }}
+          WD_SDK_REPO: ${{ vars.WD_SDK_REPO }}
+          WD_SDK_DUMP: "1"
           WD_VERSION_CODE: ${{ github.run_number }}
         run: |
           if [ -n "$PR" ]; then

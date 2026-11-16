@@ -17145,6 +17145,12 @@
       case "evLog":
         sheetEvLog();
         break;
+      case "shTry":
+        shTry();
+        break;
+      case "shTryCopy":
+        shTryCopy();
+        break;
       case "evLogCopy":
         evLogCopy();
         break;
@@ -18231,6 +18237,7 @@
       <div class="card stack">
         <label class="btn" for="shFileIn">Vybrat soubor</label>
         <input type="file" id="shFileIn" multiple hidden>
+        ${shTryOn() ? '<button class="btn" data-act="shTry">Zkusit načíst ze Samsung Health</button>' : ""}
       </div>
     </section>`;
   }
@@ -19523,6 +19530,105 @@
         toast(e.message || "Stažení se nepovedlo.");
       }
     }
+  }
+
+  /* ---------- SAMSUNG HEALTH Z TELEFONU (F6-04) ----------
+     Nativní appka čte měření složení těla přímo ze Samsung Health (Samsung Health Data SDK ve vývojářském
+     režimu, doplněk SamsungHealth v nativni/android/app/src/samsung, v JS window.NATIVNI.sh z js/nativni.js).
+     Zatím jen ZKOUŠKA (první krok úlohy, jen v testovacím APK, DEV): Nastavení → Data a záloha → Samsung
+     Health → Zkusit načíst ze Samsung Health (shTry) požádá o povolení a ukáže poslední měření (SH_TRY_N)
+     se všemi poli, která SDK vrací, jejich uid a zdrojem (aplikace, zařízení). U každého ukáže, jestli
+     v Těle je měření se stejným shId (uid = datauuid z importu souboru F4-13?) a nejbližší měření v Těle
+     do SH_TRY_WIN (jeho shId), aby šla shoda ověřit. Zkopírovat (shTryCopy) dá výsledek jako text do schránky
+     (pro chat). Nic neukládá. Podle výsledku vznikne automatický import (pravidla v docs/plan-vyvoje.md, F6-04).
+     Hlavní funkce: shTryOn, shTry, shTryView, shTryCopy. */
+  const SH_TRY_N = 3; // kolik posledních měření zkouška načte
+  const SH_TRY_WIN = 5 * 60000; // okno pro nejbližší měření v Těle (ms)
+  let shTryData = null; // poslední výsledek zkoušky (pro Zkopírovat)
+  const shTryOn = () => NATIVE && DEV;
+
+  // výsledek zkoušky doplněný o porovnání s měřeními v Těle
+  function shTryMatch(items) {
+    const body = Object.entries(S.body).map(([id, b]) => Object.assign({ id }, b));
+    return items.map((it) => {
+      const same = body.find((b) => b.shId && b.shId === it.uid);
+      let near = null;
+      for (const b of body) {
+        const diff = Math.abs(b.date - it.time);
+        if (diff <= SH_TRY_WIN && (!near || diff < Math.abs(near.date - it.time))) near = b;
+      }
+      return Object.assign({}, it, {
+        sameId: !!same,
+        near: near
+          ? { date: near.date, shId: near.shId || "", src: near.src || "", weight: near.weight }
+          : null,
+      });
+    });
+  }
+
+  async function shTry() {
+    const sh = window.NATIVNI && window.NATIVNI.sh;
+    if (!sh) return;
+    try {
+      if (!(await sh.connect())) {
+        toast("Samsung Health čtení nepovolil.");
+        return;
+      }
+      const items = await sh.read(SH_TRY_N);
+      shTryData = shTryMatch(items);
+      evLog("samsung: zkouška načetla " + items.length + " měření");
+      shTryView();
+    } catch (e) {
+      if (sh.missing(e)) {
+        toast("Samsung Health v tomto sestavení APK chybí.");
+        return;
+      }
+      toast("Samsung Health: " + ((e && (e.message || e.code)) || "chyba"));
+    }
+  }
+
+  function shTryView() {
+    const items = shTryData || [];
+    let h = "";
+    if (!items.length) {
+      h = '<p class="muted">Samsung Health nevrátil žádné měření složení těla.</p>';
+    }
+    for (const it of items) {
+      const dev = it.device || {};
+      const devTxt = [dev.type, dev.name, dev.model, dev.error].filter(Boolean).join(", ");
+      const vals = Object.entries(it.values || {})
+        .map(([k, v]) => `<div class="small">${esc(k)}: ${esc(String(v))}</div>`)
+        .join("");
+      const near = it.near
+        ? `${esc(fmtDate(it.near.date))} ${esc(fmtTime(it.near.date))}, shId ${esc(it.near.shId || "žádné")}`
+        : "žádné";
+      h += `<div class="card stack inner mb-list">
+        <b>${esc(fmtDate(it.time))} ${esc(fmtTime(it.time))}</b>
+        <div class="small">uid ${esc(it.uid || "–")}</div>
+        <div class="small">Aplikace ${esc(it.appId || "–")}</div>
+        <div class="small">Zařízení ${esc(devTxt || "–")}</div>
+        <div>${vals || '<div class="small">Bez hodnot</div>'}</div>
+        <div class="small">Stejné shId v Těle: ${it.sameId ? "ano" : "ne"}</div>
+        <div class="small">Nejbližší měření v Těle: ${near}</div>
+      </div>`;
+    }
+    openSheet(
+      "Samsung Health (zkouška)",
+      h,
+      `<button class="btn grow" data-act="closeSheet">Zavřít</button>
+      <button class="btn primary grow" data-act="shTryCopy">Zkopírovat</button>`,
+    );
+  }
+
+  function shTryCopy() {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      toast("Kopírování tu nejde.");
+      return;
+    }
+    navigator.clipboard.writeText(JSON.stringify(shTryData || [], null, 1)).then(
+      () => toast("Výsledek zkopírován, vlož ho do chatu"),
+      () => toast("Kopírování se nepovedlo."),
+    );
   }
 
   /* ---------- NATIVNÍ APPKA (F6-01) ----------

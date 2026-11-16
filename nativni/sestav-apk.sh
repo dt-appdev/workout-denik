@@ -9,6 +9,8 @@
 #   WD_VERSION_NAME   název verze (GitHub Actions dává název vydání vN / tN, aby ho Obtainium poznalo),
 #                     výchozí zkrácený commit
 #   NAZEV, VETEV      název a větev PR (zobrazí se v testovacím APK)
+#   WD_SDK_TOKEN      token ke čtení soukromého repa s knihovnou Samsung Health Data SDK (F6-04); bez něj APK
+#                     vznikne bez doplňku Samsung Health. WD_SDK_REPO = to repo (výchozí <vlastník>/workout-denik-sdk)
 #   WD_KEYSTORE_B64   klíč k podpisu (soubor .jks v base64), WD_KEYSTORE_PASSWORD heslo, WD_KEY_ALIAS alias;
 #                     bez klíče vznikne nepodepsané APK (nejde nainstalovat, jen kontrola sestavení)
 # Výsledek: nativni/out/workout-denik[-test-prN].apk
@@ -62,6 +64,49 @@ fi
 # 4) Capacitor: soubory webu a doplňky do projektu pro Android
 npm ci --no-audit --no-fund
 npx cap sync android
+
+# 4b) Samsung Health Data SDK (F6-04): knihovna .aar ze soukromého repa (do veřejného repa nepatří, licence
+#     Samsungu), bere se nejnovější soubor samsung-health-data-api-*.aar z kořene repa
+LIBS=android/app/libs
+mkdir -p "$LIBS"
+rm -f "$LIBS"/samsung-health-data-api-*.aar
+if [ -n "${WD_SDK_TOKEN:-}" ]; then
+  SDK_REPO=${WD_SDK_REPO:-${GITHUB_REPOSITORY_OWNER:-dt-appdev}/workout-denik-sdk}
+  SDK_API="https://api.github.com/repos/$SDK_REPO/contents"
+  SDK_AUTH="Authorization: Bearer $WD_SDK_TOKEN"
+  if SDK_LIST=$(curl -fsSL -H "$SDK_AUTH" "$SDK_API/"); then
+    SDK_FILE=$(jq -r '[.[].name | select(test("^samsung-health-data-api-.*\\.aar$"))] | sort | last // empty' \
+      <<< "$SDK_LIST")
+  else
+    SDK_FILE=""
+    echo "::warning::Repo $SDK_REPO nejde přečíst (token WD_SDK_TOKEN, název repa WD_SDK_REPO)."
+  fi
+  if [ -n "$SDK_FILE" ]; then
+    curl -fsSL -H "$SDK_AUTH" -H "Accept: application/vnd.github.raw" "$SDK_API/$SDK_FILE" -o "$LIBS/$SDK_FILE"
+    echo "Samsung Health Data SDK: $SDK_FILE"
+    # DOČASNĚ (zkouška F6-04): výpis rozhraní SDK do logu, než se ověří názvy v doplňku
+    if [ "${WD_SDK_DUMP:-}" = 1 ]; then
+      DUMP=$(mktemp -d)
+      unzip -q -o "$LIBS/$SDK_FILE" -d "$DUMP"
+      echo "::group::SDK manifest"
+      cat "$DUMP/AndroidManifest.xml"
+      echo "::endgroup::"
+      echo "::group::SDK třídy"
+      (cd "$DUMP" && jar tf classes.jar | grep -v '\$' | sort)
+      echo "::endgroup::"
+      echo "::group::SDK rozhraní"
+      CLASSES=$(cd "$DUMP" && jar tf classes.jar | grep -E '/(HealthDataStore|HealthDataService|DataPoint|HealthDataPoint|DataSource|DeviceManager|Device|DeviceType|DataType\$BodyCompositionType(\$Companion)?|DataTypes(\$Companion)?|Permission(\$Companion)?|AccessType|ResolvablePlatformException|HealthDataException|LocalTimeFilter(\$Companion)?|Ordering|ReadDataRequest(\$[A-Za-z]+)?|DataResponse|Field)\.class$' |
+        sed 's/\.class$//; s#/#.#g')
+      # shellcheck disable=SC2086
+      javap -cp "$DUMP/classes.jar" $CLASSES || true
+      echo "::endgroup::"
+    fi
+  else
+    echo "::warning::V $SDK_REPO chybí samsung-health-data-api-*.aar, APK bude bez Samsung Health."
+  fi
+else
+  echo "::warning::Chybí secret WD_SDK_TOKEN, APK bude bez Samsung Health (návod v nativni/README.md)."
+fi
 
 # 5) klíč k podpisu ze secretu (soubor jen v dočasné složce běhu)
 if [ -n "${WD_KEYSTORE_B64:-}" ]; then

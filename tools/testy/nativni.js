@@ -13,7 +13,8 @@
    a Nastavení nabízí Povolit (exactAsk); Vyzkoušet naplánuje oznámení id 2. Panel Přesný čas oznámení
    (sheetExact) se bez povolení přesného času ukáže při zapnutí Oznámení na pozadí a jednou při první pauze.
    Záznam událostí (F0-21): window.__natFail = název volání, které selže; selhání se zapíše do záznamu, zavření
-   nabídky Sdílet ne. Skutečné APK test nevidí, to se zkouší ručně v telefonu. */
+   nabídky Sdílet ne. Samsung Health (F6-04): falešný doplněk SamsungHealth, Zkusit načíst (shTry) zavolá
+   connect a read a ukáže měření v panelu. Skutečné APK test nevidí, to se zkouší ručně v telefonu. */
 const P = require("./pomocne.js");
 
 // falešný Capacitor (běží před appkou); window.__nat = záznam volání doplňků, __natCancel = zavřít Sdílet
@@ -44,6 +45,11 @@ function fakeCapacitor() {
         window.__natPerm.exact_alarm = "granted";
         return Promise.resolve({ exact_alarm: "granted" });
       },
+    },
+    // Samsung Health (F6-04): window.__natSh = měření, která „vrátí Samsung Health“
+    SamsungHealth: {
+      connect: (args) => rec("SH.connect")(args).then(() => ({ granted: true })),
+      read: (args) => rec("SH.read")(args).then(() => ({ items: window.__natSh || [] })),
     },
     App: {
       minimizeApp: rec("App.minimizeApp"),
@@ -267,6 +273,37 @@ async function nativeRestTest(app, check) {
   check.ok(await page.$('#app [data-act="notifTest"]'), "pauza: chybí Vyzkoušet");
 }
 
+// Samsung Health, zkouška (F6-04): Zkusit načíst požádá o povolení, načte měření a ukáže je v panelu
+async function nativeShTest(app, check) {
+  const { page } = app;
+  await page.evaluate(() => {
+    window.__natSh = [
+      {
+        uid: "sh-uid-1",
+        time: Date.now() - 3600000,
+        appId: "com.sec.android.app.shealth",
+        deviceId: "d1",
+        device: { type: "WATCH", name: "Galaxy Watch" },
+        values: { WEIGHT: 80.1, SKELETAL_MUSCLE_MASS: 36.4 },
+      },
+    ];
+    window.__nat.length = 0;
+  });
+  await P.openSettings(app, "data");
+  await app.act("shTry");
+  await app.settle(500);
+  check.eq(
+    await page.evaluate(() => window.__nat.map((c) => c.name + (c.args.limit ? ":" + c.args.limit : ""))),
+    ["SH.connect", "SH.read:3"],
+    "samsung: volání doplňku",
+  );
+  check.ok(await page.$('.sheet [data-act="shTryCopy"]'), "samsung: chybí panel s výsledkem zkoušky");
+  const txt = await page.$eval(".sheet", (el) => el.textContent);
+  check.ok(/sh-uid-1/.test(txt) && /SKELETAL_MUSCLE_MASS/.test(txt), "samsung: panel neukazuje měření");
+  await page.click(".sheet [data-act=closeSheet]").catch(() => {});
+  await app.settle(200);
+}
+
 async function native(browser, url, check) {
   const app = await P.openApp(browser, url, { init: fakeCapacitor });
   const { page } = app;
@@ -334,6 +371,7 @@ async function native(browser, url, check) {
   });
   check.eq(err, "AbortError", "nativní: zavření nabídky Sdílet");
 
+  await nativeShTest(app, check);
   await nativeBackTest(app, check);
   await nativeRestTest(app, check);
 

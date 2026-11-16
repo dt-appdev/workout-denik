@@ -15,6 +15,9 @@
    - Oznámení o konci pauzy (F6-02): NATIVNI.notif, doplněk LocalNotifications. Android oznámení ukáže sám
      v naplánovaný čas, i když appka spí nebo je displej zamčený. Popis u NATIVNI.notif níže a v js/app.js
      (sekce KONEC PAUZY V NATIVNÍ APPCE).
+   - Samsung Health (F6-04): NATIVNI.sh, vlastní doplněk SamsungHealth (nativni/android/app/src/samsung, Kotlin,
+     Samsung Health Data SDK). Je v APK, jen když se sestavovalo s knihovnou SDK; jinak volání selže a appka
+     ukáže, že Samsung Health v tomto sestavení chybí (chyba „UNIMPLEMENTED“ / „not implemented“).
    - Třída nativni na <html>: styly jen pro nativní appku (pruh pod stavovým řádkem, okraje, css/app.css).
    - Záznam událostí (F0-21): každé selhání doplňku (oznámení, povolení, uložení, sdílení, stavový řádek)
      zapíše nlog do záznamu (js/zaznam.js) s názvem akce a chybou Androidu, místo aby se tiše ztratilo.
@@ -37,6 +40,7 @@
   const SystemBars = plugin("SystemBars");
   const App = plugin("App");
   const Notif = plugin("LocalNotifications");
+  const SamsungHealth = plugin("SamsungHealth");
 
   // selhání doplňku do záznamu událostí (F0-21): co se nepovedlo a co hlásí Android
   function nlog(what, e) {
@@ -168,8 +172,31 @@
     }
   });
 
+  /* Samsung Health (F6-04): tenké obaly volání doplňku SamsungHealth, chyby do záznamu událostí a dál appce.
+     missing = doplněk v APK není (sestavení bez knihovny SDK). */
+  const sh = {
+    missing: (e) => /UNIMPLEMENTED|not implemented/i.test(String((e && (e.code || e.message)) || "")),
+    async call(what, method, args) {
+      try {
+        return await SamsungHealth[method](args || {});
+      } catch (e) {
+        nlog(what, e);
+        throw e;
+      }
+    },
+    // povolení ke čtení složení těla (okno Samsung Health), vrací true / false
+    async connect() {
+      return !!(await sh.call("povolení Samsung Health", "connect")).granted;
+    },
+    // posledních limit měření složení těla, nejnovější první (položky popisuje SamsungHealthPlugin.kt)
+    async read(limit) {
+      return (await sh.call("čtení ze Samsung Health", "read", { limit: limit || 1 })).items || [];
+    },
+  };
+
   window.NATIVNI = {
     notif,
+    sh,
     // uložení souboru do složky Download v telefonu (stejné místo, kam ukládá Chrome)
     async save({ filename, data, type }) {
       const content = typeof data === "string" ? data : new Blob([data], { type: type || data.type });
