@@ -118,6 +118,15 @@ Když oznámení chodí pozdě nebo vůbec:
 - Hodinky: v telefonu **Galaxy Wearable** → Nastavení hodinek → Oznámení → zapnout **Workout deník**. Hodinky
   oznámení zopakují hlavně tehdy, když telefon zrovna nepoužíváš.
 
+### Samsung Health (F6-04)
+
+- Jednou: v Samsung Health → Nastavení → O Samsung Health 10× klepni na verzi a zapni **Developer Mode for Data
+  Read**. Pak v appce Nastavení → Data a záloha → Samsung Health → **Připojit Samsung Health** a v okně Samsung
+  Health zapni Složení těla → Hotovo. Okno píše obecně „číst a zapisovat“, appka ale žádá jen čtení.
+- Appka pak sama načítá nová měření po otevření a po návratu do ní (nejvýš jednou za 30 minut), **Načíst teď**
+  hned. Viscerální tuk takhle nepřijde (Samsung ho v rozhraní nemá), ten jen z importu souboru.
+- Když Samsung vývojářský režim vypne nebo čtení zakážeš, appka ukáže chybu a nabídne znovu Připojit.
+
 ### Na co pozor
 
 - Do nativní appky nic skutečného nezapisuj před dnem přechodu (sekce Přechod níže), data by byla ve dvou appkách.

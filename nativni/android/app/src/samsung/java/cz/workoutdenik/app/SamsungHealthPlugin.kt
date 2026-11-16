@@ -20,7 +20,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 /*
  * Samsung Health (F6-04): čtení měření složení těla přes Samsung Health Data SDK.
@@ -28,12 +30,14 @@ import java.time.LocalDateTime
  * nativni/sestav-apk.sh ze soukromého repa (secret WD_SDK_TOKEN). Bez ní APK vznikne bez doplňku
  * a MainActivity ho nezaregistruje (js/nativni.js pak hlásí, že Samsung Health v tomto sestavení chybí).
  * Ke čtení stačí vývojářský režim Samsung Health (Developer Mode for Data Read), bez partnerství se Samsungem.
- * Volání z JS (window.Capacitor.Plugins.SamsungHealth):
- *   connect()        povolení ke čtení složení těla (okno Samsung Health, jen když ještě není), { granted }
- *   read({ limit })  posledních limit měření, nejnovější první, { items: [ { uid, time, zone, appId,
- *                    deviceId, device: { type, name, model }, values: { WEIGHT: 80.1, … } } ] }
- * Hodnoty se berou ze všech polí, která SDK pro složení těla zná (podle názvu pole), aby zkouška ukázala
- * všechno, co Samsung vrací; převod na pole appky dělá js/app.js.
+ * Volání z JS (window.Capacitor.Plugins.SamsungHealth), jen čtení (oprávnění AccessType.READ):
+ *   granted()               je čtení povolené (bez dotazu), { granted }
+ *   connect()               povolení ke čtení složení těla (okno Samsung Health, jen když ještě není), { granted }
+ *   read({ since, limit })  měření od since (ms) nebo celá historie, nejnovější první, po stránkách;
+ *                           { items: [ { uid, time, zone, appId, deviceId, device: { type, name, model },
+ *                           values: { WEIGHT: 80.1, … } } ] }
+ * Hodnoty se berou ze všech polí, která SDK pro složení těla zná (podle názvu pole); převod na pole appky
+ * a pravidla importu dělá js/app.js (sekce SAMSUNG HEALTH Z TELEFONU).
  */
 @CapacitorPlugin(name = "SamsungHealth")
 class SamsungHealthPlugin : Plugin() {
@@ -63,6 +67,15 @@ class SamsungHealthPlugin : Plugin() {
     }
   }
 
+  // je čtení povolené (bez dotazu, pro automatický import)
+  @PluginMethod
+  fun granted(call: PluginCall) {
+    run(call) {
+      JSObject().put("granted", store().getGrantedPermissions(permissions).containsAll(permissions))
+    }
+  }
+
+  // povolení ke čtení: okno Samsung Health, jen když ještě není
   @PluginMethod
   fun connect(call: PluginCall) {
     run(call) {
@@ -74,37 +87,62 @@ class SamsungHealthPlugin : Plugin() {
     }
   }
 
+  // měření od since (ms, místní čas měření, bez since celá historie), nejnovější první; limit = jen prvních N
   @PluginMethod
   fun read(call: PluginCall) {
     run(call) {
-      val limit = call.getInt("limit", 1) ?: 1
+      val limit = call.getInt("limit")
+      val since = call.getLong("since")
       val now = LocalDateTime.now()
-      val request = DataTypes.BODY_COMPOSITION.readDataRequestBuilder
-        .setLocalTimeFilter(LocalTimeFilter.of(now.minusYears(20), now.plusDays(1)))
-        .setOrdering(Ordering.DESC)
-        .setLimit(limit)
-        .build()
-      val points = store().readData(request).dataList.take(limit)
-      val items = JSArray()
-      for (point in points) {
-        val item = JSObject()
-        item.put("uid", point.uid)
-        item.put("time", point.startTime.toEpochMilli())
-        item.put("zone", point.zoneOffset?.totalSeconds)
-        val source = point.dataSource
-        item.put("appId", source?.appId)
-        item.put("deviceId", source?.deviceId)
-        item.put("device", deviceInfo(source?.deviceId))
-        item.put("values", values(point))
-        items.put(item)
+      val from = if (since != null) {
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(since), ZoneId.systemDefault())
+      } else {
+        now.minusYears(30)
       }
+      val items = JSArray()
+      val devices = HashMap<String, JSObject?>()
+      var pageToken: String? = null
+      do {
+        var builder = DataTypes.BODY_COMPOSITION.readDataRequestBuilder
+          .setLocalTimeFilter(LocalTimeFilter.of(from, now.plusDays(1)))
+          .setOrdering(Ordering.DESC)
+        if (limit != null) {
+          builder = builder.setLimit(limit)
+        } else {
+          builder = builder.setPageSize(PAGE_SIZE)
+        }
+        if (pageToken != null) {
+          builder = builder.setPageToken(pageToken)
+        }
+        val response = store().readData(builder.build())
+        for (point in response.dataList) {
+          val item = JSObject()
+          item.put("uid", point.uid)
+          item.put("time", point.startTime.toEpochMilli())
+          item.put("zone", point.zoneOffset?.totalSeconds)
+          val source = point.dataSource
+          val deviceId = source?.deviceId
+          item.put("appId", source?.appId)
+          item.put("deviceId", deviceId)
+          if (deviceId != null) {
+            item.put("device", devices.getOrPut(deviceId) { deviceInfo(deviceId) })
+          }
+          item.put("values", values(point))
+          items.put(item)
+        }
+        pageToken = if (limit == null) response.pageToken?.takeIf { it.isNotEmpty() } else null
+      } while (pageToken != null && items.length() < MAX_ITEMS)
       JSObject().put("items", items)
     }
   }
 
+  companion object {
+    private const val PAGE_SIZE = 500 // měření na jednu stránku čtení
+    private const val MAX_ITEMS = 20000 // pojistka proti nekonečnému stránkování
+  }
+
   // zařízení, ze kterého měření je (hodinky, telefon, váha…); null = nejde zjistit
-  private suspend fun deviceInfo(deviceId: String?): JSObject? {
-    if (deviceId == null) return null
+  private suspend fun deviceInfo(deviceId: String): JSObject? {
     return try {
       val device = store().getDeviceManager().getDevice(deviceId) ?: return null
       JSObject()

@@ -184,13 +184,21 @@
         throw e;
       }
     },
+    // je čtení povolené (bez dotazu), vrací true / false
+    async granted() {
+      return !!(await sh.call("zjištění povolení Samsung Health", "granted")).granted;
+    },
     // povolení ke čtení složení těla (okno Samsung Health), vrací true / false
     async connect() {
       return !!(await sh.call("povolení Samsung Health", "connect")).granted;
     },
-    // posledních limit měření složení těla, nejnovější první (položky popisuje SamsungHealthPlugin.kt)
-    async read(limit) {
-      return (await sh.call("čtení ze Samsung Health", "read", { limit: limit || 1 })).items || [];
+    /* měření složení těla od since (ms; bez něj celá historie), nejnovější první, limit = jen prvních N
+       (položky popisuje SamsungHealthPlugin.kt) */
+    async read(since, limit) {
+      const args = {};
+      if (since) args.since = since;
+      if (limit) args.limit = limit;
+      return (await sh.call("čtení ze Samsung Health", "read", args)).items || [];
     },
   };
 

@@ -79,9 +79,9 @@ v `docs/hotovo.md`, log v `docs/log.md`.
 | `tools/mezery.js` | Měření svislých mezer mezi bloky hlavních obrazovek (Playwright, lokálně, F3-43). Není součást appky. |
 | `tools/fedb/` | Skript `build.py` a podklady: `cesky.tsv` (české názvy), `shody.tsv` (stejné cviky jako v `EX_DB`). Není součást appky. |
 | `js/pwa.js` | Registrace service workeru a automatická aktualizace (v nativní appce nic). |
-| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20), oznámení o konci pauzy přes doplněk LocalNotifications (`NATIVNI.notif`, F6-02). Ve webové verzi nic nedělá. |
+| `js/nativni.js` | Jen v nativní appce (F6-01): `window.NATIVNI`, uložení souboru do Download, `navigator.share` přes doplněk Share, barva stavového řádku, systémové Zpět přes doplněk App (F0-20), oznámení o konci pauzy přes doplněk LocalNotifications (`NATIVNI.notif`, F6-02), čtení ze Samsung Health přes vlastní doplněk SamsungHealth (`NATIVNI.sh`, F6-04). Ve webové verzi nic nedělá. |
 | `nativni/` | Nativní obal (F6-01, Capacitor): `capacitor.config.json`, `package.json`, projekt `android/` (vlastní doplněk Samsung Health v Kotlinu v `android/app/src/samsung`, F6-04), skript `sestav-apk.sh`, návod `README.md`. Na web se nekopíruje. |
-| `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST“ u každého PR jako vydání `tN` v repu `workout-denik-test` (Obtainium ho sleduje jako druhou appku, F6-08); klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`.; knihovna Samsung Health Data SDK ze soukromého repa `workout-denik-sdk` přes secret `WD_SDK_TOKEN` (F6-04, do veřejného repa nepatří). |
+| `.github/workflows/apk.yml` | GitHub Actions: APK po sloučení do `main` jako GitHub Release `vN` (aktualizace přes Obtainium), testovací APK „WD TEST“ u každého PR jako vydání `tN` v repu `workout-denik-test` (Obtainium ho sleduje jako druhou appku, F6-08); klíč k podpisu v secretech `WD_KEYSTORE_B64` a `WD_KEYSTORE_PASSWORD`; knihovna Samsung Health Data SDK ze soukromého repa `workout-denik-sdk` přes secret `WD_SDK_TOKEN` (F6-04, do veřejného repa nepatří). |
 | `js/verze.js` | Údaje o verzi (`APP_BUILD`): kanál, PR, větev, commit, čas nasazení. V repu jen „lokal", při nasazení ho přepíše `.github/sestav-web.sh`. Ručně needitovat. |
 | `sw.js` | Service worker: offline cache (verze z `js/verze.js`), seznam souborů (`FILES`). |
 | `.github/workflows/nasazeni.yml` | GitHub Actions: vydaná verze na Pages tohoto repa (při změně v `main`), testovací verze do repa `workout-denik-test` (token v secretu `TEST_REPO_TOKEN`), úloha „kontrola" v každém PR (i hledání kódu přímo v HTML, F0-08, a přímého přístupu k úložišti, F0-18) a úloha „testy" (F0-17). |
@@ -249,7 +249,8 @@ Platí i při práci na jiné funkci. Podrobnosti v úvodním komentáři uveden
   F2-06) jen tam, kde už je vybrané (úprava tréninku, šablony). Filtry Historie a Statistik přes `gymsFilter()`.
 - Štítek fitka u tréninku jen přes `gymPill` (trénink bez fitka štítek nemá, smazané fitko „Smazané fitko“, F3-24).
 - Každé místo, které vytváří měření, nastaví zdroj `src` (a `srcName`, F4-19, sekce IMPORT MĚŘENÍ ZE SAMSUNG HEALTH),
-  text zdroje jen přes `WDLOG.srcTxt` (v exportu pro coache krátce `WDLOG.srcShort`).
+  text zdroje jen přes `WDLOG.srcTxt` (v exportu pro coache krátce `WDLOG.srcShort`). Měření ze Samsung Health (soubor F4-13 i telefon F6-04)
+  vždy přes `shPlan` / `shWrite` (`shId` proti zdvojení, přepsání ručního měření ±0,1 kg).
 - Otevřená klávesnice (F1-27): stránka se zmenší nad ni (`interactive-widget` v `index.html`) a body má třídu `kb`
   (lišta se záložkami schovaná). Nový pevný prvek dole musí počítat s `body.kb`.
 - Rozdělaný trénink do úložiště jen přes `saveActive()` (čas změny `upd`, při startu vyhrává novější kopie, F0-19).
