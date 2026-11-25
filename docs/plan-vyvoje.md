@@ -310,6 +310,7 @@ Předpoklad: F0-02 (svalové partie).
 - [ ] **F4-17** Návrh progrese u cviku Vzdálenost se zátěží (vzniklo u F4-16 17. 10. 2026, odloženo): obdoba double progression (F4-01) pro saně: dokud není ve všech pracovních sériích dotlačená celá dráha, váha zůstává, pak návrh +krok kg. Otevřené: odkud brát cílovou vzdálenost, když se dráha liší podle fitka (nastavení stroje je volný text; návrh: nejdelší zapsaná vzdálenost v daném fitku). Navazuje na F4-16.
 - [x] **F4-18** Export WD-LOG v2 pro coache za období, čas u ručního měření
 - [x] **F4-19** Zdroj měření ze Samsung Health
+- [x] **F4-20** Naplánovat trénink i na den s měřením
 
 
 ### Fáze 5 – Motivace

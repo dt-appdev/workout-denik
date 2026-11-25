@@ -16,7 +16,8 @@
    z importu ze Samsung Health, F4-19), klavesnice.js (klávesnice nezakryje řádek série, F1-27),
    stisk.js (odezva tlačítek na stisk, F3-53), misto.js (místo v rychlé schránce a rozdělaný trénink, F0-19),
    nativni.js (napodobená nativní appka a přesun dat do ní, F6-01), zaznam.js (záznam událostí, F0-21),
-   zaloha-telefonu.js (záloha se zálohou telefonu v nativní appce, F6-03).
+   zaloha-telefonu.js (záloha se zálohou telefonu v nativní appce, F6-03), naplanovat-mereni.js (naplánovat
+   trénink i na den s měřením, F4-20).
    Každý test dostane čistý profil prohlížeče a dá se spustit i samostatně (část názvu v argumentu).
    Skončí kódem 1, když některá kontrola selže. Žádný z testů nezapisuje do repa. */
 const P = require("./pomocne.js");
@@ -45,6 +46,7 @@ const TESTS = [
   require("./nativni.js"),
   require("./zaznam.js"),
   require("./zaloha-telefonu.js"),
+  require("./naplanovat-mereni.js"),
 ];
 
 (async () => {

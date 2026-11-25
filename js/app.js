@@ -8118,7 +8118,11 @@
      aktuální, goTab("hist") ho vynuluje; calShift, swipe na [data-cal]). Tréninky podle dne wByDay (klíč
      dayKey, použít i pro heatmapu F3-07), měření bodyByDay, streak calStreak, volné dny calRest. Klepnutí
      sheetCalDay: jedna věc rovnou, víc = výběr, z něj stránka tréninku openWorkout (Zpět výběr znovu otevře
-     přes navFrame) nebo sheetBody s nav zpět do výběru. */
+     přes navFrame) nebo sheetBody s nav zpět do výběru.
+     Naplánovat i den s měřením (F4-20): dnešek nebo budoucí den s měřením, bez tréninku, bez rozdělaného
+     tréninku a bez plánu otevře vždy výběr (calCanPlan) a v něm poslední položka Naplánovat trénink
+     (calPlanNew) otevře panel Naplánovat se šipkou ← zpět do výběru (planBack "cal"). Den s tréninkem
+     naplánovat nejde: plán je jeden trénink na den (F4-07). */
   const dayKey = (t) => {
     const d = new Date(t);
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
@@ -8322,6 +8326,13 @@
     </div>`;
     return h;
   }
+  // jde den naplánovat i s měřením (F4-20)? dnes a dál, bez tréninku (ze všech fitek),
+  // bez rozdělaného tréninku a bez plánu
+  function calCanPlan(k) {
+    if (planDay(k) < dayStart(Date.now()) || S.plan[k]) return false;
+    if (S.active && k === dayKey(Date.now())) return false;
+    return !derive().all.some((w) => dayKey(w.start) === k);
+  }
   // klepnutí na den: jedna věc se otevře rovnou, víc (tréninky, měření) = výběr
   function sheetCalDay(k, noanim) {
     const ws = wByDay(derive().all.filter((w) => S.histGym === "all" || w.gymId === S.histGym))[k] || [],
@@ -8331,6 +8342,7 @@
     if (pl && planDone(k, pl, derive().all)) {
       pl = null;
     }
+    const canPlan = !pl && calCanPlan(k);
     if (!ws.length && !bs.length) {
       if (pl) {
         sheetPlanDay(k, noanim);
@@ -8339,7 +8351,7 @@
       }
       return;
     }
-    if (ws.length + bs.length === 1 && !pl) {
+    if (ws.length + bs.length === 1 && !pl && !canPlan) {
       if (ws.length) {
         openWorkout(ws[0]);
       } else {
@@ -8380,6 +8392,11 @@
           ${pl.gymId ? gymPill(pl.gymId) : ""}
         </div>
         <div class="line"><span>Naplánovaný trénink</span></div>
+      </button>`;
+    }
+    if (canPlan) {
+      b += `<button class="hw" data-act="calPlanNew" data-v="${k}">
+        <div class="row"><h3 class="grow">Naplánovat trénink</h3></div>
       </button>`;
     }
     const d = new Date(ws.length ? ws[0].start : bs[0].date);
@@ -8506,7 +8523,7 @@
   }
   let planGym = null, // fitko vybrané v panelu Naplánovat
     planOther = false, // ukázané ostatní šablony v panelu Naplánovat
-    planBack = false, // panel Naplánovat otevřený z panelu plánu (Zpět se do něj vrátí)
+    planBack = false, // panel Naplánovat otevřený z panelu plánu (Zpět se do něj vrátí), "cal" = z výběru dne
     planFromList = false, // panel plánu otevřený z výběru dne v kalendáři (Zpět se do něj vrátí)
     planHome = false; // panel plánu otevřený přes ⋯ na úvodu (F2-13)
   // nadpis panelu dne: „Dnes · po 12. 10.“ nebo „st 14. 10.“
@@ -8518,7 +8535,7 @@
       const p = planOf(k);
       planGym = p && p.gymId ? p.gymId : curGym();
       planOther = false;
-      planBack = !!back;
+      planBack = back === "cal" ? "cal" : !!back;
       delete CK.planGym; // čipy fitek od začátku, vybrané fitko se posune do zorného pole
     }
     const tpls = tplVisible();
@@ -8562,9 +8579,17 @@
     const root = document.getElementById("sheetRoot");
     saveChipScroll(root); // překreslení po výběru fitka: čipy zůstanou posunuté jako předtím
     // pevná výška panelu (třída plan): čipy fitek při přepnutí fitka neposkakují
-    const nav = planBack
-      ? { lv: planFromList ? 3 : 2, back: () => sheetPlanDay(k, true, planFromList, planHome), cls: "plan" }
-      : { cls: "plan" };
+    // Zpět (←): z výběru dne do výběru (F4-20), z panelu plánu do panelu plánu
+    let nav = { cls: "plan" };
+    if (planBack === "cal") {
+      nav = { lv: 2, back: () => sheetCalDay(k, true), cls: "plan", backBtn: true };
+    } else if (planBack) {
+      nav = {
+        lv: planFromList ? 3 : 2,
+        back: () => sheetPlanDay(k, true, planFromList, planHome),
+        cls: "plan",
+      };
+    }
     openSheet("Naplánovat · " + planTitle(k), b, null, noanim, nav);
     restoreChipScroll(root);
   }
@@ -16685,6 +16710,10 @@
         break;
       case "calPlan":
         sheetPlanDay(t.dataset.k, true, true);
+        break;
+      // Naplánovat trénink z výběru dne s měřením (F4-20), ← vrátí do výběru
+      case "calPlanNew":
+        sheetPlan(v, true, "cal", true);
         break;
       case "planGym":
         planGym = v;
